@@ -1,0 +1,62 @@
+<%- include('../partials/head', { title: 'Devoirs' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Publier un devoir</h1>
+    <p class="page-sub">Les parents seront notifiés automatiquement</p>
+  </div>
+
+  <% if (success) { %><div class="alert alert-success">Devoir publié — parents notifiés.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <form method="POST" action="/teacher/homeworks" enctype="multipart/form-data" class="form">
+        <div class="form-group">
+          <label for="classId">Classe</label>
+          <select id="classId" name="classId" required>
+            <option value="">— Choisir —</option>
+            <% classLinks.forEach(cl => { %>
+              <option value="<%= cl.class.id %>"><%= cl.class.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="title">Titre</label>
+          <input type="text" id="title" name="title" required placeholder="Ex: Exercices page 42">
+        </div>
+        <div class="form-group">
+          <label for="description">Description / consignes</label>
+          <textarea id="description" name="description" rows="3" placeholder="Détails pour les parents…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="dueDate">Date limite</label>
+          <input type="date" id="dueDate" name="dueDate" required>
+        </div>
+        <div class="form-group">
+          <label for="attachment">Fiche PDF (optionnel)</label>
+          <input type="file" id="attachment" name="attachment" accept=".pdf,image/*">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Publier le devoir</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Devoirs publiés</h2>
+      <% if (homeworkList.length === 0) { %>
+        <p class="empty">Aucun devoir.</p>
+      <% } else { %>
+        <ul class="list">
+          <% homeworkList.forEach(h => { %>
+            <li class="list-item">
+              <strong><%= h.title %></strong>
+              <span><%= h.class.name %> — <%= new Date(h.dueDate).toLocaleDateString('fr-FR') %></span>
+              <small><%= h._count.submissions %> élève(s)</small>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

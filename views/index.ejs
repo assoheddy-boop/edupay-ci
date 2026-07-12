@@ -1,0 +1,68 @@
+<%- include('partials/head') %>
+<%- include('partials/header', { user: null }) %>
+<main class="container">
+<div class="demo-banner">
+  <strong>Démo :</strong> École <code>ecole@demo.ci</code> · Parent <code>parent@demo.ci</code> · Prof <code>prof@demo.ci</code> — mot de passe <code>demo1234</code> (après <code>npm run db:seed</code>)
+</div>
+<section class="hero">
+  <div class="hero-content">
+    <span class="badge">🇨🇮 Côte d'Ivoire</span>
+    <h1>Gestion scolaire moderne &amp; paiements simplifiés</h1>
+    <p class="hero-sub">Connectez votre école, vos enseignants et les parents. Payez via Wave ou Orange Money, sans API compliquée.</p>
+    <div class="hero-actions">
+      <a href="/auth/register?role=SCHOOL_ADMIN" class="btn btn-primary btn-lg">Créer mon école</a>
+      <a href="/auth/register?role=PARENT" class="btn btn-success btn-lg">Espace parent</a>
+      <a href="/auth/register?role=TEACHER" class="btn btn-outline btn-lg">Espace enseignant</a>
+    </div>
+  </div>
+  <div class="hero-features">
+    <div class="feature-card">
+      <span class="feature-icon">💳</span>
+      <h3>Paiements Wave/OM</h3>
+      <p>Preuve uploadée, validation par l'école. Simple et efficace.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3>Notes & bulletins</h3>
+      <p>Suivi scolaire complet avec génération PDF.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">👨‍👩‍👧</span>
+      <h3>Sans écran pour l'enfant</h3>
+      <p>Les parents reçoivent tout : devoirs, absences, alertes.</p>
+    </div>
+  </div>
+</section>
+
+<section class="modules">
+  <h2>Modules V1</h2>
+  <div class="modules-grid">
+    <div class="module-card">
+      <h3>🏫 École</h3>
+      <ul>
+        <li>Classes, élèves, enseignants</li>
+        <li>Validation des paiements</li>
+        <li>Notes, absences, bulletins</li>
+      </ul>
+    </div>
+    <div class="module-card">
+      <h3>👨‍👩‍👧 Parent</h3>
+      <ul>
+        <li>Paiement Wave/OM</li>
+        <li>Consultation notes & bulletins</li>
+        <li>Notifications & chat</li>
+      </ul>
+    </div>
+    <div class="module-card">
+      <h3>👩‍🏫 Enseignant</h3>
+      <ul>
+        <li>Saisie notes & absences</li>
+        <li>Messages aux parents</li>
+        <li>Devoirs & comportement</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

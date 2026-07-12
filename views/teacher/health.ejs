@@ -1,0 +1,56 @@
+<%- include('../partials/head', { title: 'Santé' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🧑‍⚕️ Signalement santé</h1>
+    <p class="page-sub">Le parent est alerté immédiatement</p>
+  </div>
+  <% if (success) { %><div class="alert alert-success">Parent notifié.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <form method="POST" action="/teacher/health" class="form">
+        <div class="form-group">
+          <label>Élève</label>
+          <select name="studentId" required>
+            <option value="">— Choisir —</option>
+            <% classLinks.forEach(cl => { cl.class.students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
+            <% }) }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select name="type">
+            <option value="Fièvre">Fièvre</option>
+            <option value="Blessure">Blessure légère</option>
+            <option value="Malaise">Malaise</option>
+            <option value="Infirmerie">Passage infirmerie</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" rows="3" required placeholder="Détails pour le parent…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">🚨 Alerter le parent</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Incidents récents</h2>
+      <% if (incidents.length === 0) { %><p class="empty">Aucun incident.</p><% } else { %>
+        <ul class="list">
+          <% incidents.forEach(i => { %>
+            <li class="list-item">
+              <strong><%= i.student.firstName %> — <%= i.type %></strong>
+              <span><%= i.description %></span>
+              <small><%= new Date(i.createdAt).toLocaleString('fr-FR') %></small>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

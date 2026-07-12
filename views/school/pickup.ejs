@@ -1,0 +1,47 @@
+<%- include('../partials/head', { title: 'Sortie école' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🛡️ Validation sortie</h1>
+    <p class="page-sub">Scannez ou saisissez le code QR du parent / tiers autorisé</p>
+  </div>
+
+  <% if (success) { %><div class="alert alert-success">✅ <%= decodeURIComponent(success) %></div><% } %>
+  <% if (error === 'invalid') { %><div class="alert alert-error">Code invalide ou expiré.</div><% } %>
+
+  <div class="card card-highlight">
+    <form method="POST" action="/school/pickup/validate" class="form">
+      <div class="form-group">
+        <label for="qrCode">Code autorisation</label>
+        <input type="text" id="qrCode" name="qrCode" required placeholder="EP-XXXXXXXX" class="input-lg" autofocus>
+      </div>
+      <button type="submit" class="btn btn-success btn-lg btn-block">Valider la sortie</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Autorisations récentes</h2>
+    <% if (authorizations.length === 0) { %><p class="empty">Aucune autorisation.</p><% } else { %>
+      <table class="table">
+        <thead><tr><th>Élève</th><th>Personne</th><th>Code</th><th>Valide jusqu'au</th><th>Statut</th></tr></thead>
+        <tbody>
+          <% authorizations.forEach(a => { %>
+            <tr>
+              <td><%= a.student.firstName %> <%= a.student.lastName %></td>
+              <td><%= a.authorizedPerson %><br><small><%= a.authorizedPhone || '' %></small></td>
+              <td><code><%= a.qrCode %></code></td>
+              <td><%= new Date(a.validUntil).toLocaleDateString('fr-FR') %></td>
+              <td>
+                <% if (a.usedAt) { %><span class="badge-status badge-validated">Utilisé</span>
+                <% } else if (new Date(a.validUntil) < new Date()) { %><span class="badge-status badge-rejected">Expiré</span>
+                <% } else { %><span class="badge-status badge-pending">Actif</span><% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

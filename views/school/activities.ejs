@@ -1,0 +1,42 @@
+<%- include('../partials/head', { title: 'Activités' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>🎯 Activités extrascolaires</h1></div>
+  <% if (success) { %><div class="alert alert-success">Activité créée.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <form method="POST" action="/school/activities" class="form">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" name="name" required placeholder="Ex: Club football">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Horaires</label>
+          <input type="text" name="schedule" placeholder="Ex: Mercredi 15h-17h">
+        </div>
+        <button type="submit" class="btn btn-primary">Créer l'activité</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Activités disponibles</h2>
+      <% if (activities.length === 0) { %><p class="empty">Aucune activité.</p><% } else { %>
+        <ul class="list">
+          <% activities.forEach(a => { %>
+            <li class="list-item">
+              <strong><%= a.name %></strong>
+              <span><%= a.schedule || '—' %></span>
+              <small><%= a._count.enrollments %> inscrit(s)</small>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,53 @@
+<%- include('../partials/head', { title: 'Groupe — ' + organization.name }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <h1><%= organization.name %></h1>
+      <p class="page-sub">Vue consolidée multi-campus</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.campuses %></span>
+      <span class="stat-label">Campus</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.students %></span>
+      <span class="stat-label">Élèves (total)</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.absences %></span>
+      <span class="stat-label">Absences</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Par campus</h2></div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Campus</th>
+          <th>Élèves</th>
+          <th>Recettes validées</th>
+          <th>Comptabilité</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% campusStats.forEach(function(c) { %>
+          <tr>
+            <td><%= c.school.name %></td>
+            <td><%= c.school.campusLabel || '—' %></td>
+            <td><%= c.students %></td>
+            <td><%= c.revenue.toLocaleString('fr-FR') %> FCFA</td>
+            <td><%= c.modules.accounting?.enabled ? '✓' : '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

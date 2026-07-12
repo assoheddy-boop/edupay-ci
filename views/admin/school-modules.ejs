@@ -1,0 +1,59 @@
+<%- include('../partials/head', { title: 'Modules — ' + school.name }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <a href="/admin/dashboard" class="text-muted">← Retour admin</a>
+      <h1><%= school.name %></h1>
+      <p class="page-sub">Activer / désactiver les modules pour cette école</p>
+    </div>
+  </div>
+
+  <% if (success) { %><div class="alert alert-success">Modules mis à jour.</div><% } %>
+
+  <form method="POST" action="/admin/schools/<%= school.id %>/modules" class="card">
+    <div class="card-header">
+      <h2>Modules disponibles</h2>
+      <p class="page-sub">Cochez « Verrouillé » pour empêcher l'école de modifier ce module.</p>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Description</th>
+          <th>Activé</th>
+          <th>Verrouillé</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% MODULE_KEYS.forEach(function(key) {
+          const mod = modules[key];
+        %>
+          <tr>
+            <td><strong><%= mod.label %></strong><% if (mod.core) { %> <span class="badge">Core</span><% } %></td>
+            <td><%= mod.description %></td>
+            <td>
+              <label class="checkbox-label">
+                <input type="checkbox" name="mod_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
+                Activé
+              </label>
+            </td>
+            <td>
+              <label class="checkbox-label">
+                <input type="checkbox" name="lock_<%= key %>" <%= mod.locked ? 'checked' : '' %>>
+                Verrouillé
+              </label>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

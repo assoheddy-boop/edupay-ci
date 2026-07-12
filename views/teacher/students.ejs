@@ -1,0 +1,28 @@
+<%- include('../partials/head', { title: 'Élèves' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>Mes élèves</h1></div>
+
+  <% classLinks.forEach(link => { %>
+    <div class="card">
+      <h2><%= link.class.name %></h2>
+      <% if (link.class.students.length === 0) { %>
+        <p class="empty">Aucun élève.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Nom</th><th>Matricule</th></tr></thead>
+          <tbody>
+            <% link.class.students.forEach(s => { %>
+              <tr>
+                <td><%= s.firstName %> <%= s.lastName %></td>
+                <td><code><%= s.matricule || '—' %></code></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  <% }) %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

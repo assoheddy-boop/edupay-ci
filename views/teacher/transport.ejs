@@ -1,0 +1,54 @@
+<%- include('../partials/head', { title: 'Transport' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🚌 Transport scolaire</h1>
+    <p class="page-sub">Les parents seront notifiés à chaque événement</p>
+  </div>
+  <% if (success) { %><div class="alert alert-success">Notification envoyée aux parents.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <form method="POST" action="/teacher/transport" class="form">
+        <div class="form-group">
+          <label for="studentId">Élève</label>
+          <select id="studentId" name="studentId" required>
+            <option value="">— Choisir —</option>
+            <% classLinks.forEach(cl => { cl.class.students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %> (<%= cl.class.name %>)</option>
+            <% }) }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="event">Événement</label>
+          <select id="event" name="event" required>
+            <% Object.entries(labels).forEach(([k, v]) => { %>
+              <option value="<%= k %>"><%= v %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="note">Note (optionnel)</label>
+          <input type="text" id="note" name="note" placeholder="Ex: Bus ligne 12">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Notifier les parents</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Historique récent</h2>
+      <% if (logs.length === 0) { %><p class="empty">Aucun événement.</p><% } else { %>
+        <ul class="timeline">
+          <% logs.forEach(l => { %>
+            <li class="timeline-item">
+              <strong><%= l.student.firstName %> <%= l.student.lastName %></strong>
+              <span class="badge"><%= labels[l.event] %></span>
+              <small><%= new Date(l.createdAt).toLocaleString('fr-FR') %></small>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

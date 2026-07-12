@@ -1,0 +1,73 @@
+<%- include('../../partials/head', { title: 'Rapport comptable' }) %>
+<%- include('../../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <h1>Rapport — <%= period %></h1>
+      <p class="page-sub"><%= school.name %></p>
+    </div>
+    <a href="/school/accounting" class="btn btn-outline">← Comptabilité</a>
+  </div>
+
+  <form method="GET" action="/school/accounting/report" class="card" style="padding:1rem;margin-bottom:1.5rem">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Mois (AAAA-MM)</label>
+        <input type="month" name="month" value="<%= month %>">
+      </div>
+      <button type="submit" class="btn btn-primary">Afficher</button>
+    </div>
+  </form>
+
+  <div class="stats-grid">
+    <div class="stat-card stat-card-success">
+      <span class="stat-value"><%= totals.totalIn.toLocaleString('fr-FR') %></span>
+      <span class="stat-label">Entrées</span>
+    </div>
+    <div class="stat-card stat-card-warning">
+      <span class="stat-value"><%= totals.totalOut.toLocaleString('fr-FR') %></span>
+      <span class="stat-label">Dépenses</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= totals.net.toLocaleString('fr-FR') %></span>
+      <span class="stat-label">Résultat net</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h2>Entrées</h2></div>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Description</th><th>Compte</th><th>Montant</th></tr></thead>
+        <tbody>
+          <% income.forEach(function(t) { %>
+            <tr>
+              <td><%= new Date(t.createdAt).toLocaleDateString('fr-FR') %></td>
+              <td><%= t.description %></td>
+              <td><%= t.account.name %></td>
+              <td><%= t.amount.toLocaleString('fr-FR') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Dépenses</h2></div>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th></tr></thead>
+        <tbody>
+          <% expense.forEach(function(t) { %>
+            <tr>
+              <td><%= new Date(t.createdAt).toLocaleDateString('fr-FR') %></td>
+              <td><%= t.description %></td>
+              <td><%= t.category?.name || '—' %></td>
+              <td><%= t.amount.toLocaleString('fr-FR') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/scripts') %>

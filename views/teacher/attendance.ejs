@@ -1,0 +1,28 @@
+<%- include('../partials/head', { title: 'Appel' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>✅ Appel du jour</h1></div>
+  <% if (success) { %><div class="alert alert-success">Absences enregistrées — parents notifiés.</div><% } %>
+
+  <% classLinks.forEach(cl => { %>
+    <div class="card">
+      <h2><%= cl.class.name %></h2>
+      <form method="POST" action="/teacher/attendance" class="form">
+        <input type="hidden" name="classId" value="<%= cl.class.id %>">
+        <input type="hidden" name="date" value="<%= today %>">
+        <p class="page-sub">Cochez les élèves <strong>absents</strong> :</p>
+        <div class="attendance-grid">
+          <% cl.class.students.forEach(s => { %>
+            <label class="attendance-check">
+              <input type="checkbox" name="absentIds" value="<%= s.id %>">
+              <%= s.firstName %> <%= s.lastName %>
+            </label>
+          <% }) %>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer l'appel</button>
+      </form>
+    </div>
+  <% }) %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

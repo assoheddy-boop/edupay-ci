@@ -1,0 +1,48 @@
+<%- include('../partials/head', { title: 'Statistiques' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>📊 Statistiques</h1>
+    <div class="export-links">
+      <a href="/school/export/students" class="btn btn-outline btn-sm">Export élèves</a>
+      <a href="/school/export/payments" class="btn btn-outline btn-sm">Export paiements</a>
+      <a href="/school/export/grades" class="btn btn-outline btn-sm">Export notes</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-value"><%= stats.students %></span><span class="stat-label">Élèves</span></div>
+    <div class="stat-card stat-card-success"><span class="stat-value"><%= stats.validatedAmount.toLocaleString('fr-FR') %></span><span class="stat-label">FCFA encaissés</span></div>
+    <div class="stat-card stat-card-warning"><span class="stat-value"><%= stats.pendingCount %></span><span class="stat-label">Paiements en attente</span></div>
+    <div class="stat-card"><span class="stat-value"><%= stats.absences %></span><span class="stat-label">Absences totales</span></div>
+    <div class="stat-card"><span class="stat-value"><%= stats.avgGrade %></span><span class="stat-label">Moyenne générale /20</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Par classe</h2>
+    <table class="table">
+      <thead><tr><th>Classe</th><th>Élèves</th><th>Moyenne</th><th>Paiements validés</th></tr></thead>
+      <tbody>
+        <% byClass.forEach(c => { %>
+          <tr><td><%= c.name %></td><td><%= c.students %></td><td><%= c.avg.toFixed(2) %></td><td><%= c.paymentsValidated %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Journal d'audit (20 derniers)</h2>
+    <% if (auditLogs.length === 0) { %><p class="empty">Aucune action enregistrée.</p><% } else { %>
+      <table class="table">
+        <thead><tr><th>Action</th><th>Utilisateur</th><th>Date</th></tr></thead>
+        <tbody>
+          <% auditLogs.forEach(l => { %>
+            <tr><td><%= l.action %></td><td><%= l.userEmail || '—' %></td><td><%= new Date(l.createdAt).toLocaleString('fr-FR') %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

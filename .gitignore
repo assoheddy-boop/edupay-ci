@@ -1,0 +1,15 @@
+﻿node_modules/
+uploads/*
+!uploads/.gitkeep
+.env
+.env.local
+.env.*.local
+generated/
+dist/
+build/
+coverage/
+.cursor/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,52 @@
+<%- include('../partials/head', { title: 'Planning' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>📅 Planning des cours</h1></div>
+  <% if (success) { %><div class="alert alert-success">Créneau ajouté.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <form method="POST" action="/teacher/schedule" class="form">
+        <div class="form-group">
+          <label>Classe</label>
+          <select name="classId" required><option value="">—</option>
+            <% classLinks.forEach(cl => { %><option value="<%= cl.class.id %>"><%= cl.class.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jour</label>
+          <select name="dayOfWeek" required>
+            <% days.forEach((d, i) => { if (i > 0) { %><option value="<%= i %>"><%= d %></option><% } }) %>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Début</label><input type="time" name="startTime" required></div>
+          <div class="form-group"><label>Fin</label><input type="time" name="endTime" required></div>
+        </div>
+        <div class="form-group"><label>Matière</label><input type="text" name="subject" required></div>
+        <div class="form-group"><label>Salle</label><input type="text" name="room"></div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Mon emploi du temps</h2>
+      <% if (schedules.length === 0) { %><p class="empty">Aucun créneau.</p><% } else { %>
+        <table class="table">
+          <thead><tr><th>Jour</th><th>Horaire</th><th>Matière</th><th>Classe</th></tr></thead>
+          <tbody>
+            <% schedules.forEach(s => { %>
+              <tr>
+                <td><%= days[s.dayOfWeek] %></td>
+                <td><%= s.startTime %> - <%= s.endTime %></td>
+                <td><%= s.subject %></td>
+                <td><%= s.class.name %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

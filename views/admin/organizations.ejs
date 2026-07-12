@@ -1,0 +1,80 @@
+<%- include('../partials/head', { title: 'Groupes scolaires' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <a href="/admin/dashboard" class="text-muted">← Retour admin</a>
+      <h1>Groupes scolaires</h1>
+    </div>
+  </div>
+
+  <% if (success === 'admin') { %><div class="alert alert-success">Admin groupe créé.</div><% } %>
+  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
+  <% if (error === 'email') { %><div class="alert alert-error">Email déjà utilisé.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>Créer un groupe</h2>
+    <form method="POST" action="/admin/organizations" class="form">
+      <div class="form-row">
+        <div class="form-group"><label>Nom</label><input type="text" name="name" required></div>
+        <div class="form-group"><label>Slug</label><input type="text" name="slug" placeholder="groupe-les-etoiles"></div>
+      </div>
+      <button type="submit" class="btn btn-primary">Créer</button>
+    </form>
+  </div>
+
+  <% organizations.forEach(function(org) { %>
+    <div class="card" style="margin-bottom:1.5rem">
+      <h2><%= org.name %></h2>
+      <% if (org.schools.length) { %>
+        <table class="table">
+          <thead><tr><th>École</th><th>Campus</th><th>Ville</th></tr></thead>
+          <tbody>
+            <% org.schools.forEach(function(s) { %>
+              <tr><td><%= s.name %></td><td><%= s.campusLabel || '—' %></td><td><%= s.city %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+      <% if (org.admins.length) { %>
+        <p><small>Admins : <%= org.admins.map(a => a.user.email).join(', ') %></small></p>
+      <% } %>
+
+      <details class="edit-row" style="margin-top:1rem">
+        <summary>Créer un admin ORGANIZATION_ADMIN</summary>
+        <form method="POST" action="/admin/organizations/admins" class="form" style="margin-top:0.75rem">
+          <input type="hidden" name="organizationId" value="<%= org.id %>">
+          <div class="form-row">
+            <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
+            <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+            <div class="form-group"><label>Téléphone</label><input type="tel" name="phone"></div>
+          </div>
+          <div class="form-group"><label>Mot de passe</label><input type="password" name="password" placeholder="demo1234 par défaut"></div>
+          <button type="submit" class="btn btn-primary btn-sm">Créer admin groupe</button>
+        </form>
+      </details>
+    </div>
+  <% }) %>
+
+  <div class="card">
+    <h2>Assigner une école à un groupe</h2>
+    <form method="POST" action="/admin/organizations/assign" class="form">
+      <div class="form-group"><label>ID école</label><input type="text" name="schoolId" required></div>
+      <div class="form-group">
+        <label>Groupe</label>
+        <select name="organizationId" required>
+          <% organizations.forEach(function(org) { %>
+            <option value="<%= org.id %>"><%= org.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Label campus</label><input type="text" name="campusLabel"></div>
+      <button type="submit" class="btn btn-primary">Assigner</button>
+    </form>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

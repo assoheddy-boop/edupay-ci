@@ -1,0 +1,35 @@
+<%- include('../partials/head', { title: 'Cantine' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🍽️ Cantine — présences</h1>
+  </div>
+  <% if (success) { %><div class="alert alert-success">Enregistré.</div><% } %>
+
+  <% if (menus.length === 0) { %>
+    <p class="empty">Aucun menu publié. L'administration doit ajouter les menus.</p>
+  <% } else { %>
+    <% menus.forEach(menu => { %>
+      <div class="card">
+        <h2><%= new Date(menu.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) %></h2>
+        <p class="menu-text"><%= menu.menu %></p>
+        <form method="POST" action="/teacher/canteen" class="form form-inline">
+          <input type="hidden" name="menuId" value="<%= menu.id %>">
+          <select name="studentId" required>
+            <option value="">Élève…</option>
+            <% classLinks.forEach(cl => { cl.class.students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
+            <% }) }) %>
+          </select>
+          <select name="ate">
+            <option value="true">A mangé ✓</option>
+            <option value="false">N'a pas mangé</option>
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+        </form>
+      </div>
+    <% }) %>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

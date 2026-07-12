@@ -1,0 +1,60 @@
+<%- include('../partials/head', { title: 'Administration EduPay' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <h1>Administration site</h1>
+      <p class="page-sub">Gestion des écoles, modules et groupes scolaires</p>
+    </div>
+    <a href="/admin/organizations" class="btn btn-primary">Groupes scolaires</a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.schools %></span>
+      <span class="stat-label">Écoles</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.organizations %></span>
+      <span class="stat-label">Groupes</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.users %></span>
+      <span class="stat-label">Utilisateurs</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Écoles inscrites</h2>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Ville</th>
+          <th>Groupe</th>
+          <th>Campus</th>
+          <th>Classes</th>
+          <th>Abonnement</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% schools.forEach(function(s) { %>
+          <tr>
+            <td><strong><%= s.name %></strong><br><small><%= s.admin?.email || '—' %></small></td>
+            <td><%= s.city %></td>
+            <td><%= s.organization?.name || '—' %></td>
+            <td><%= s.campusLabel || '—' %></td>
+            <td><%= s._count.classes %></td>
+            <td><span class="badge"><%= s.subscription %></span></td>
+            <td><a href="/admin/schools/<%= s.id %>/modules" class="btn btn-sm btn-primary">Modules</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,61 @@
+<%- include('../partials/head', { title: 'Enseignant' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Bonjour <%= user.firstName %> 👩‍🏫</h1>
+    <p class="page-sub"><%= teacher.school.name %></p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value"><%= classes.length %></span>
+      <span class="stat-label">Classes assignées</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Mes classes</h2>
+      <% if (classes.length === 0) { %>
+        <p class="empty">Aucune classe assignée. Contactez l'administration.</p>
+      <% } else { %>
+        <ul class="list">
+          <% classes.forEach(c => { %>
+            <li class="list-item">
+              <strong><%= c.class.name %></strong>
+              <span><%= c.class._count.students %> élève(s)</span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <h2>Notes récentes</h2>
+      <% if (recentGrades.length === 0) { %>
+        <p class="empty">Aucune note saisie.</p>
+      <% } else { %>
+        <ul class="list">
+          <% recentGrades.forEach(g => { %>
+            <li class="list-item">
+              <strong><%= g.student.firstName %> <%= g.student.lastName %></strong>
+              <span><%= g.subject %> : <%= g.value %>/<%= g.maxValue %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <a href="/teacher/grades" class="action-card">📝 Saisir une note</a>
+    <a href="/teacher/absences" class="action-card">📋 Signaler absence</a>
+    <a href="/teacher/homeworks" class="action-card">📚 Publier devoir</a>
+    <a href="/teacher/messages" class="action-card">💬 Messages parents</a>
+    <a href="/teacher/transport" class="action-card">🚌 Transport</a>
+    <a href="/teacher/health" class="action-card">🧑‍⚕️ Santé</a>
+    <a href="/teacher/canteen" class="action-card">🍽️ Cantine</a>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

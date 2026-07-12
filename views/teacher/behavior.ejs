@@ -1,0 +1,88 @@
+<%- include('../partials/head', { title: 'Comportement' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🏅 Comportement & badges</h1>
+    <p class="page-sub">Récompenses physiques remises en classe — le parent est informé</p>
+  </div>
+  <% if (success === 'note') { %><div class="alert alert-success">Message comportement envoyé.</div><% } %>
+  <% if (success === 'badge') { %><div class="alert alert-success">Badge attribué — le parent peut féliciter l'enfant.</div><% } %>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Message aux parents</h2>
+      <form method="POST" action="/teacher/behavior/note" class="form">
+        <div class="form-group">
+          <label for="studentId">Élève</label>
+          <select name="studentId" required>
+            <option value="">— Choisir —</option>
+            <% classLinks.forEach(cl => { cl.class.students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
+            <% }) }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="type">Type</label>
+          <select name="type">
+            <option value="POSITIVE">Positif 👍</option>
+            <option value="NEGATIVE">Alerte discipline</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea name="message" rows="3" required placeholder="Ex: Très attentif en classe aujourd'hui"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+      </form>
+
+      <hr class="form-divider">
+      <h2>Attribuer un badge</h2>
+      <form method="POST" action="/teacher/behavior/badge" class="form">
+        <div class="form-group">
+          <label>Élève</label>
+          <select name="studentId" required>
+            <option value="">— Choisir —</option>
+            <% classLinks.forEach(cl => { cl.class.students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
+            <% }) }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Badge</label>
+          <select name="type" id="badgeType" onchange="document.getElementById('badgeLabel').value=this.options[this.selectedIndex].text">
+            <% badgePresets.forEach(b => { %>
+              <option value="<%= b.type %>"><%= b.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <input type="hidden" name="label" id="badgeLabel" value="<%= badgePresets[0].label %>">
+        <button type="submit" class="btn btn-success btn-lg">🏅 Remettre le badge</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Badges récents</h2>
+      <% if (badges.length === 0) { %><p class="empty">Aucun badge.</p><% } else { %>
+        <ul class="badge-list">
+          <% badges.forEach(b => { %>
+            <li class="badge-item"><span class="badge-emoji">🏅</span> <%= b.student.firstName %> — <strong><%= b.label %></strong></li>
+          <% }) %>
+        </ul>
+      <% } %>
+      <h2 style="margin-top:1.5rem">Messages récents</h2>
+      <% if (recent.length === 0) { %><p class="empty">Aucun message.</p><% } else { %>
+        <ul class="list">
+          <% recent.forEach(n => { %>
+            <li class="list-item">
+              <strong><%= n.student.firstName %></strong>
+              <span class="badge-status badge-<%= n.type === 'POSITIVE' ? 'validated' : 'pending' %>"><%= n.type %></span>
+              <span><%= n.message %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

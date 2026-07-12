@@ -1,0 +1,34 @@
+<%- include('../partials/head', { title: 'Notes en masse' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>📝 Saisie notes en masse</h1></div>
+  <% if (success) { %><div class="alert alert-success">Notes enregistrées.</div><% } %>
+
+  <% classLinks.forEach(cl => { %>
+    <div class="card">
+      <h2><%= cl.class.name %></h2>
+      <form method="POST" action="/teacher/bulk-grades" class="form">
+        <input type="hidden" name="classId" value="<%= cl.class.id %>">
+        <div class="form-row">
+          <div class="form-group"><label>Matière</label><input type="text" name="subject" required></div>
+          <div class="form-group"><label>Période</label><input type="text" name="period" required placeholder="Trimestre 1"></div>
+          <div class="form-group"><label>Sur</label><input type="number" name="maxValue" value="20"></div>
+        </div>
+        <table class="table">
+          <thead><tr><th>Élève</th><th>Note</th></tr></thead>
+          <tbody>
+            <% cl.class.students.forEach(s => { %>
+              <tr>
+                <td><%= s.firstName %> <%= s.lastName %></td>
+                <td><input type="number" name="grade_<%= s.id %>" step="0.25" min="0" style="width:80px"></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer toutes les notes</button>
+      </form>
+    </div>
+  <% }) %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

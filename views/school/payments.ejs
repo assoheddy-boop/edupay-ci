@@ -1,0 +1,57 @@
+<%- include('../partials/head', { title: 'Paiements' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Paiements</h1>
+    <p class="page-sub">Validez les preuves de paiement Wave / Orange Money</p>
+  </div>
+
+  <div class="card">
+    <% if (payments.length === 0) { %>
+      <p class="empty">Aucun paiement reçu.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Montant</th>
+            <th>Preuve</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% payments.forEach(p => { %>
+            <tr>
+              <td><%= p.student.firstName %> <%= p.student.lastName %><br><small><%= p.student.class.name %></small></td>
+              <td><strong><%= p.amount.toLocaleString('fr-FR') %> FCFA</strong></td>
+              <td>
+                <% if (p.proofUrl) { %>
+                  <a href="<%= p.proofUrl %>" target="_blank" class="btn btn-sm btn-outline">Voir capture</a>
+                <% } else { %>—<% } %>
+              </td>
+              <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+              <td>
+                <% if (p.status === 'PENDING') { %>
+                  <form method="POST" action="/school/payments/<%= p.id %>/validate" class="inline-forms">
+                    <input type="hidden" name="action" value="validate">
+                    <button type="submit" class="btn btn-sm btn-success">Valider</button>
+                  </form>
+                  <form method="POST" action="/school/payments/<%= p.id %>/validate" class="inline-forms">
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn btn-sm btn-danger">Rejeter</button>
+                  </form>
+                <% } else { %>
+                  <%= p.validatedAt ? new Date(p.validatedAt).toLocaleDateString('fr-FR') : '—' %>
+                  <% if (p.receiptUrl) { %><br><a href="<%= p.receiptUrl %>" target="_blank" class="btn btn-sm btn-success">Reçu PDF</a><% } %>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,78 @@
+<%- include('../partials/head', { title: 'Tableau de bord' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <div>
+      <h1><%= school.name %></h1>
+      <p class="page-sub">Tableau de bord école</p>
+    </div>
+    <a href="/school/settings" class="btn btn-outline">Paramètres Wave/OM</a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.classes %></span>
+      <span class="stat-label">Classes</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.students %></span>
+      <span class="stat-label">Élèves</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.teachers %></span>
+      <span class="stat-label">Enseignants</span>
+    </div>
+    <div class="stat-card stat-card-warning">
+      <span class="stat-value"><%= stats.pendingPayments %></span>
+      <span class="stat-label">Paiements en attente</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Paiements récents</h2>
+      <a href="/school/payments" class="btn btn-sm btn-primary">Voir tout</a>
+    </div>
+    <% if (recentPayments.length === 0) { %>
+      <p class="empty">Aucun paiement pour le moment.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Montant</th>
+            <th>Statut</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentPayments.forEach(p => { %>
+            <tr>
+              <td><%= p.student.firstName %> <%= p.student.lastName %></td>
+              <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
+              <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+              <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="quick-actions">
+    <a href="/school/classes" class="action-card">➕ Ajouter une classe</a>
+    <a href="/school/students" class="action-card">👨‍🎓 Ajouter un élève</a>
+    <a href="/school/payments" class="action-card">✅ Valider paiements</a>
+    <a href="/school/bulletins" class="action-card">📄 Générer bulletins</a>
+    <a href="/school/teachers" class="action-card">👩‍🏫 Enseignants</a>
+    <a href="/school/messages" class="action-card">💬 Messages</a>
+    <a href="/school/canteen" class="action-card">🍽️ Cantine</a>
+    <a href="/school/lost-items" class="action-card">🧸 Objets perdus</a>
+    <a href="/school/activities" class="action-card">🎯 Activités</a>
+    <a href="/school/stats" class="action-card">📊 Statistiques</a>
+    <a href="/school/fees" class="action-card">💰 Types de frais</a>
+    <a href="/school/pickup" class="action-card">🛡️ Sortie école</a>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

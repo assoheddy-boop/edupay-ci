@@ -1,0 +1,11 @@
+<%- include('partials/head') %>
+<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null }) %>
+<main class="container">
+<div class="error-page">
+  <h1>Oups</h1>
+  <p><%= message %></p>
+  <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+</div>
+</main>
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

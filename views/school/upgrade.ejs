@@ -1,0 +1,21 @@
+<%- include('../partials/head', { title: 'Premium' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="upgrade-page card">
+    <h1>⭐ Fonctionnalité Premium</h1>
+    <p><strong><%= feature %></strong> nécessite un abonnement EduPay CI Premium.</p>
+    <ul class="upgrade-list">
+      <li>✓ Bulletins PDF automatiques</li>
+      <li>✓ Chat école ↔ parents</li>
+      <li>✓ Statistiques & exports Excel</li>
+      <li>✓ SMS & WhatsApp alertes</li>
+    </ul>
+    <p class="page-sub">À partir de <strong>10 000 FCFA/mois</strong> — contactez EduPay CI ou passez en premium dans les paramètres (démo).</p>
+    <form method="POST" action="/school/upgrade" class="form">
+      <button type="submit" class="btn btn-success btn-lg">Activer Premium (démo)</button>
+    </form>
+    <a href="/school/dashboard" class="btn btn-outline">Retour</a>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

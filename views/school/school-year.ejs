@@ -1,0 +1,52 @@
+<%- include('../partials/head', { title: 'Année scolaire' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Année scolaire & promotion</h1>
+    <p class="page-sub">Année en cours : <strong><%= school.currentSchoolYear %></strong></p>
+  </div>
+
+  <% if (success) { %><div class="alert alert-success">Mise à jour effectuée.</div><% } %>
+  <% if (error) { %><div class="alert alert-error">Erreur lors de l'opération.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>Changer l'année scolaire</h2>
+    <form method="POST" action="/school/school-year" class="form form-inline">
+      <div class="form-group">
+        <label>Nouvelle année</label>
+        <input type="text" name="currentSchoolYear" value="<%= school.currentSchoolYear %>" required placeholder="2026-2027">
+      </div>
+      <button type="submit" class="btn btn-primary">Appliquer à l'école</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Promotion de classe</h2>
+    <p class="page-sub">Déplace tous les élèves d'une classe vers une classe de niveau supérieur.</p>
+    <form method="POST" action="/school/school-year/promote" class="form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Classe source</label>
+          <select name="classId" required>
+            <option value="">— Choisir —</option>
+            <% classes.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c._count.students %> élèves)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Classe destination</label>
+          <select name="targetClassId" required>
+            <option value="">— Choisir —</option>
+            <% classes.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success" onclick="return confirm('Promouvoir tous les élèves de cette classe ?')">Promouvoir</button>
+    </form>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

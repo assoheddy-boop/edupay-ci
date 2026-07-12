@@ -1,0 +1,45 @@
+<%- include('../partials/head', { title: 'Messages' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Messages</h1>
+    <% if (unread > 0) { %><span class="badge badge-unread"><%= unread %> non lu(s)</span><% } %>
+  </div>
+
+  <div class="chat-layout">
+    <div class="chat-sidebar card">
+      <h2>Conversations</h2>
+      <% if (partners.length === 0) { %>
+        <p class="empty">Aucun contact disponible.</p>
+      <% } else { %>
+        <ul class="chat-list">
+          <% partners.forEach(p => { %>
+            <li class="chat-list-item">
+              <a href="<%= basePath %>/messages/<%= p.user.id %>" class="chat-list-link">
+                <div class="chat-list-top">
+                  <strong><%= p.user.firstName %> <%= p.user.lastName %></strong>
+                  <% if (p.unreadCount > 0) { %><span class="chat-unread"><%= p.unreadCount %></span><% } %>
+                </div>
+                <% if (p.label) { %><small><%= p.label %></small><% } %>
+                <% if (p.students?.length) { %>
+                  <small>Enfant(s) : <%= p.students.map(s => s.firstName).join(', ') %></small>
+                <% } %>
+                <% if (p.lastMessage) { %>
+                  <p class="chat-preview">
+                    <% if (p.lastMessage.audioUrl) { %>🎤 Message vocal<% } else { %><%= p.lastMessage.content %><% } %>
+                  </p>
+                <% } %>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <div class="chat-placeholder card">
+      <p>Sélectionnez une conversation pour commencer.</p>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

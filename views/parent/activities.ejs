@@ -1,0 +1,38 @@
+<%- include('../partials/head', { title: 'Activités' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>🎯 Inscription activités</h1>
+    <p class="page-sub">Inscrivez votre enfant aux activités extrascolaires</p>
+  </div>
+  <% if (success) { %><div class="alert alert-success">Inscription confirmée.</div><% } %>
+
+  <% if (activities.length === 0) { %>
+    <p class="empty-state">Aucune activité disponible pour le moment.</p>
+  <% } else { %>
+    <div class="activities-grid">
+      <% activities.forEach(a => { %>
+        <div class="card activity-card">
+          <h2><%= a.name %></h2>
+          <p><%= a.description || '' %></p>
+          <p class="page-sub">📅 <%= a.schedule || 'Horaires à confirmer' %></p>
+          <p><small><%= a.enrollments.length %> inscrit(s)</small></p>
+          <form method="POST" action="/parent/activities/enroll" class="form form-inline">
+            <select name="studentId" required>
+              <option value="">Enfant…</option>
+              <% children.forEach(link => { %>
+                <% if (link.student.class.schoolId === a.schoolId) { %>
+                  <option value="<%= link.student.id %>"><%= link.student.firstName %></option>
+                <% } %>
+              <% }) %>
+            </select>
+            <input type="hidden" name="activityId" value="<%= a.id %>">
+            <button type="submit" class="btn btn-primary">Inscrire</button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,82 @@
+<%- include('../partials/head', { title: 'Accueil parent' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Bonjour <%= user.firstName %> 👋</h1>
+    <p class="page-sub">Suivez la scolarité de vos enfants</p>
+  </div>
+
+  <% if (error === 'ecole') { %><div class="alert alert-error">Code école invalide.</div><% } %>
+  <% if (error === 'eleve') { %><div class="alert alert-error">Aucun élève trouvé avec ce matricule dans cette école.</div><% } %>
+  <% if (error === 'deja') { %><div class="alert alert-error">Cet enfant est déjà lié à votre compte.</div><% } %>
+  <% if (success) { %><div class="alert alert-success">Enfant lié avec succès.</div><% } %>
+
+  <div class="card">
+    <h2>Ajouter un enfant</h2>
+    <p class="page-sub">Saisissez le code école et le matricule fournis par l'établissement.</p>
+    <form method="POST" action="/parent/children" class="form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="schoolCode">Code école</label>
+          <input type="text" id="schoolCode" name="schoolCode" placeholder="Ex: ecole-les-etoiles" required>
+        </div>
+        <div class="form-group">
+          <label for="matricule">Matricule de l'élève</label>
+          <input type="text" id="matricule" name="matricule" placeholder="Ex: ETOILE-001" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Lier</button>
+    </form>
+  </div>
+
+  <% if (typeof parentSchoolIds !== 'undefined' && parentSchoolIds && parentSchoolIds.length > 1) { %>
+    <div class="card">
+      <h3>École active (modules)</h3>
+      <form method="POST" action="/parent/select-school" class="form form-inline">
+        <select name="schoolId">
+          <% children.forEach(link => { %>
+            <option value="<%= link.student.class.schoolId %>" <%= selectedSchoolId === link.student.class.schoolId ? 'selected' : '' %>>
+              <%= link.student.class.school.name %>
+            </option>
+          <% }) %>
+        </select>
+        <button type="submit" class="btn btn-outline btn-sm">Choisir</button>
+      </form>
+    </div>
+  <% } %>
+
+  <% if (children.length === 0) { %>
+    <div class="empty-state">
+      <p>Aucun enfant lié. Utilisez le code école et le matricule fournis par l'établissement.</p>
+    </div>
+  <% } else { %>
+    <% children.forEach(link => { const s = link.student; %>
+      <div class="child-card">
+        <div class="child-header">
+          <h2><%= s.firstName %> <%= s.lastName %></h2>
+          <span class="badge"><%= s.class.name %> — <%= s.class.school.name %></span>
+        </div>
+        <div class="child-stats">
+          <div>
+            <h4>Dernières notes</h4>
+            <% if (s.grades.length === 0) { %><p class="empty-sm">Aucune note</p><% } %>
+            <% s.grades.forEach(g => { %>
+              <p><%= g.subject %> : <strong><%= g.value %>/<%= g.maxValue %></strong></p>
+            <% }) %>
+          </div>
+          <div>
+            <h4>Absences récentes</h4>
+            <% if (s.absences.length === 0) { %><p class="empty-sm">Aucune</p><% } %>
+            <% s.absences.forEach(a => { %>
+              <p><%= new Date(a.date).toLocaleDateString('fr-FR') %> — <%= a.type %></p>
+            <% }) %>
+          </div>
+        </div>
+        <a href="/parent/suivi" class="btn btn-outline btn-lg">Suivi complet</a>
+        <a href="/parent/notifications" class="btn btn-primary btn-lg">Notifications<% if (unreadCount > 0) { %> (<%= unreadCount %>)<% } %></a>
+      </div>
+    <% }) %>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

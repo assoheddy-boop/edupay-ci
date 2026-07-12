@@ -1,0 +1,59 @@
+<%- include('../partials/head', { title: 'Enseignants' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Enseignants</h1>
+    <p class="page-sub">Code école : <code><%= school.slug %></code> — ou invitez directement un enseignant</p>
+  </div>
+
+  <% if (success === 'invited') { %><div class="alert alert-success">Enseignant créé. Communiquez-lui ses identifiants.</div><% } %>
+  <% if (success === '1') { %><div class="alert alert-success">Classe assignée.</div><% } %>
+  <% if (error === 'email') { %><div class="alert alert-error">Cet email est déjà utilisé.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>Inviter / créer un enseignant</h2>
+    <form method="POST" action="/school/teachers/invite" class="form">
+      <div class="form-row">
+        <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
+        <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+        <div class="form-group"><label>Téléphone</label><input type="tel" name="phone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Matière</label><input type="text" name="subject" placeholder="Mathématiques"></div>
+        <div class="form-group"><label>Mot de passe temporaire (optionnel)</label><input type="text" name="password" placeholder="Généré automatiquement si vide"></div>
+      </div>
+      <button type="submit" class="btn btn-primary">Créer le compte enseignant</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <% if (teachers.length === 0) { %>
+      <p class="empty">Aucun enseignant. Invitez-en un ou partagez le code école <code><%= school.slug %></code>.</p>
+    <% } else { %>
+      <% teachers.forEach(t => { %>
+        <div class="teacher-row">
+          <div>
+            <strong><%= t.user.firstName %> <%= t.user.lastName %></strong>
+            <p class="page-sub"><%= t.user.email %> — <%= t.subject || 'Matière non définie' %></p>
+            <p>Classes : <%= t.classes.length ? t.classes.map(c => c.class.name).join(', ') : 'Aucune' %></p>
+          </div>
+          <form method="POST" action="/school/teachers/<%= t.id %>/classes" class="form form-inline">
+            <select name="classId" required>
+              <option value="">Assigner à…</option>
+              <% classes.forEach(c => { %>
+                <option value="<%= c.id %>"><%= c.name %></option>
+              <% }) %>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Assigner</button>
+          </form>
+        </div>
+        <hr class="form-divider">
+      <% }) %>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

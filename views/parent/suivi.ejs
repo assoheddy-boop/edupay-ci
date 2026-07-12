@@ -1,0 +1,84 @@
+<%- include('../partials/head', { title: 'Suivi enfant' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Suivi de vos enfants</h1>
+    <p class="page-sub">Sans écran pour l'enfant — vous recevez tout ici</p>
+  </div>
+
+  <div class="suivi-nav">
+    <a href="/parent/pickup" class="suivi-btn">🛡️ Autoriser sortie</a>
+    <a href="/parent/activities" class="suivi-btn">🎯 Activités</a>
+    <a href="/parent/homeworks" class="suivi-btn">📚 Devoirs</a>
+  </div>
+
+  <% if (children.length === 0) { %>
+    <p class="empty-state">Liez un enfant depuis l'accueil pour voir le suivi.</p>
+  <% } %>
+
+  <% children.forEach(link => { const s = link.student; %>
+    <div class="child-card">
+      <div class="child-header">
+        <h2><%= s.firstName %> <%= s.lastName %></h2>
+        <span class="badge"><%= s.class.name %></span>
+      </div>
+
+      <div class="suivi-sections">
+        <section class="suivi-block" id="transport">
+          <h3>🚌 Transport</h3>
+          <% if (s.transportLogs.length === 0) { %><p class="empty-sm">Aucun événement.</p><% } %>
+          <ul class="timeline">
+            <% s.transportLogs.forEach(l => { %>
+              <li><%= transportLabels[l.event] || l.event %> — <small><%= new Date(l.createdAt).toLocaleString('fr-FR') %></small></li>
+            <% }) %>
+          </ul>
+        </section>
+
+        <section class="suivi-block" id="canteen">
+          <h3>🍽️ Cantine</h3>
+          <% if (s.canteenRecords.length === 0) { %><p class="empty-sm">Aucun repas enregistré.</p><% } %>
+          <% s.canteenRecords.forEach(r => { %>
+            <p><%= new Date(r.menu.date).toLocaleDateString('fr-FR') %> : <%= r.menu.menu.slice(0, 60) %>…
+              — <strong><%= r.ate ? 'A mangé ✓' : 'N\'a pas mangé' %></strong></p>
+          <% }) %>
+        </section>
+
+        <section class="suivi-block" id="badges">
+          <h3>🏅 Badges</h3>
+          <% if (s.badges.length === 0) { %><p class="empty-sm">Aucun badge — félicitez l'enfant quand il en reçoit un !</p><% } %>
+          <div class="badge-grid">
+            <% s.badges.forEach(b => { %>
+              <div class="badge-card"><span>🏅</span><strong><%= b.label %></strong><small><%= new Date(b.awardedAt).toLocaleDateString('fr-FR') %></small></div>
+            <% }) %>
+          </div>
+        </section>
+
+        <section class="suivi-block" id="behavior">
+          <h3>📋 Comportement</h3>
+          <% if (s.behaviorNotes.length === 0) { %><p class="empty-sm">Aucun message.</p><% } %>
+          <% s.behaviorNotes.forEach(n => { %>
+            <p class="behavior-line behavior-<%= n.type.toLowerCase() %>"><%= n.message %> <small>(<%= new Date(n.createdAt).toLocaleDateString('fr-FR') %>)</small></p>
+          <% }) %>
+        </section>
+
+        <section class="suivi-block" id="health">
+          <h3>🧑‍⚕️ Santé</h3>
+          <% if (s.healthIncidents.length === 0) { %><p class="empty-sm">Aucun incident.</p><% } %>
+          <% s.healthIncidents.forEach(h => { %>
+            <p class="health-alert"><strong><%= h.type %></strong> — <%= h.description %> <small><%= new Date(h.createdAt).toLocaleString('fr-FR') %></small></p>
+          <% }) %>
+        </section>
+
+        <section class="suivi-block" id="lost">
+          <h3>🧸 Objets perdus</h3>
+          <% if (s.lostItems.length === 0) { %><p class="empty-sm">Rien à signaler.</p><% } %>
+          <% s.lostItems.forEach(item => { %>
+            <p class="lost-alert">📦 <%= item.description %> — <a href="/parent/messages">Contactez l'école</a></p>
+          <% }) %>
+        </section>
+      </div>
+    </div>
+  <% }) %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,20 @@
+<%- include('../partials/head', { title: 'Historique' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header"><h1>📜 Historique complet</h1></div>
+  <% if (events.length === 0) { %><p class="empty">Aucun événement.</p><% } else { %>
+    <ul class="timeline timeline-full">
+      <% events.forEach(e => { %>
+        <li class="timeline-event timeline-<%= e.type %>">
+          <time><%= new Date(e.date).toLocaleString('fr-FR') %></time>
+          <% if (e.studentId && nameMap[e.studentId]) { %>
+            <strong><%= nameMap[e.studentId].firstName %></strong>
+          <% } %>
+          <span><%= e.text %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

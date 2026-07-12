@@ -1,0 +1,39 @@
+<%- include('../partials/head', { title: 'Devoirs' }) %>
+<%- include('../partials/header', { user }) %>
+<main class="container">
+  <div class="page-header">
+    <h1>Devoirs des enfants</h1>
+    <p class="page-sub">Publiés par les enseignants — relais parent sans écran pour l'enfant</p>
+  </div>
+
+  <% if (children.length === 0) { %>
+    <p class="empty">Liez d'abord un enfant depuis l'accueil.</p>
+  <% } %>
+
+  <% children.forEach(link => { const s = link.student; %>
+    <div class="card">
+      <h2><%= s.firstName %> <%= s.lastName %> — <%= s.class.name %></h2>
+      <% if (s.homeworks.length === 0) { %>
+        <p class="empty">Aucun devoir publié.</p>
+      <% } else { %>
+        <div class="homework-list">
+          <% s.homeworks.sort((a,b) => new Date(b.homework.dueDate) - new Date(a.homework.dueDate)).forEach(sub => { const h = sub.homework; %>
+            <div class="homework-item <%= new Date(h.dueDate) < new Date() ? 'homework-late' : '' %>">
+              <div class="homework-header">
+                <strong><%= h.title %></strong>
+                <span class="badge">À rendre le <%= new Date(h.dueDate).toLocaleDateString('fr-FR') %></span>
+              </div>
+              <% if (h.description) { %><p><%= h.description %></p><% } %>
+              <small>Par <%= h.teacher.user.firstName %> <%= h.teacher.user.lastName %></small>
+              <% if (h.attachmentUrl) { %>
+                <a href="<%= h.attachmentUrl %>" target="_blank" class="btn btn-sm btn-outline">📎 Fiche PDF</a>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  <% }) %>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>
