@@ -4,6 +4,7 @@
   "description": "Gestion scolaire moderne & paiements simplifiés — Côte d'Ivoire",
   "main": "src/server.js",
   "scripts": {
+    "build": "prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --forceExit",
