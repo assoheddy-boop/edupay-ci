@@ -1,45 +1,69 @@
-<%- include('../partials/head', { title: 'Paramètres' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Paramètres école</h1>
-    <p class="page-sub">Code école (pour enseignants et parents) : <strong><code><%= school.slug %></code></strong></p>
-  </div>
-
-  <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
-  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
-
-  <div class="card">
-    <form method="POST" action="/school/settings" class="form">
-      <div class="form-group">
-        <label for="name">Nom de l'école</label>
-        <input type="text" id="name" name="name" value="<%= school.name %>" required>
-      </div>
-      <div class="form-group">
-        <label for="address">Adresse</label>
-        <input type="text" id="address" name="address" value="<%= school.address || '' %>">
-      </div>
-      <div class="form-group">
-        <label for="city">Ville</label>
-        <input type="text" id="city" name="city" value="<%= school.city || 'Abidjan' %>">
-      </div>
-      <div class="form-group">
-        <label for="logoUrl">URL logo (bulletins PDF)</label>
-        <input type="text" id="logoUrl" name="logoUrl" value="<%= school.logoUrl || '' %>" placeholder="/uploads/logo.png">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="waveNumber">Numéro Wave</label>
-          <input type="text" id="waveNumber" name="waveNumber" value="<%= school.waveNumber || '' %>" placeholder="07 XX XX XX XX">
-        </div>
-        <div class="form-group">
-          <label for="omNumber">Numéro Orange Money</label>
-          <input type="text" id="omNumber" name="omNumber" value="<%= school.omNumber || '' %>" placeholder="07 XX XX XX XX">
-        </div>
-      </div>
-      <button type="submit" class="btn btn-primary">Enregistrer</button>
-    </form>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('settings', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Paramètres' }) %>
+<% } else { %>
+<div class="page-header">
+    <h1>Paramètres école</h1>
+    <p class="page-sub">Code école (pour enseignants et parents) : <strong><code><%= school.slug %></code></strong></p>
+  </div>
+
+  <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <div class="card">
+    <form method="POST" action="/school/settings" class="form" enctype="multipart/form-data">
+      <div class="form-group logo-upload-group">
+        <label for="logo">Logo de l'école</label>
+        <p class="form-hint">Apparaît sur les bulletins, reçus de paiement, badges et fiches devoirs (JPG, PNG, WebP — max 2 Mo).</p>
+        <% if (school.logoUrl || school.logoBase64) { %>
+          <div class="logo-preview">
+            <img src="<%= school.logoBase64 || school.logoUrl %>" alt="Logo <%= school.name %>" class="school-logo-preview">
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" name="removeLogo">
+            Supprimer le logo actuel
+          </label>
+        <% } %>
+        <input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp">
+      </div>
+
+      <div class="form-group">
+        <label for="name">Nom de l'école</label>
+        <input type="text" id="name" name="name" value="<%= school.name %>" required>
+      </div>
+      <div class="form-group">
+        <label for="address">Adresse</label>
+        <input type="text" id="address" name="address" value="<%= school.address || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="city">Ville</label>
+        <input type="text" id="city" name="city" value="<%= school.city || 'Abidjan' %>">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="waveNumber">Numéro Wave</label>
+          <input type="text" id="waveNumber" name="waveNumber" value="<%= school.waveNumber || '' %>" placeholder="07 XX XX XX XX">
+        </div>
+        <div class="form-group">
+          <label for="omNumber">Numéro Orange Money</label>
+          <input type="text" id="omNumber" name="omNumber" value="<%= school.omNumber || '' %>" placeholder="07 XX XX XX XX">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <h2>Ma photo</h2>
+    <p class="form-hint">Visible dans la barre de navigation pour l'équipe et les parents.</p>
+    <div class="person-line" style="margin-bottom:1rem">
+      <%- include('../partials/_avatar', { src: user.photoUrl, firstName: user.firstName, lastName: user.lastName, size: 'lg' }) %>
+      <span><%= user.firstName %> <%= user.lastName %></span>
+    </div>
+    <form method="POST" action="/auth/photo" enctype="multipart/form-data" class="form form-inline">
+      <input type="hidden" name="redirectTo" value="/school/settings">
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+      <button type="submit" class="btn btn-outline">Mettre à jour</button>
+    </form>
+  </div>
+<% } %>

@@ -1,13 +1,22 @@
-<%- include('../partials/head', { title: 'Administration EduPay' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Super Admin — EduPay CI' }) %>
+<% } else { %>
+<div class="page-header">
     <div>
-      <h1>Administration site</h1>
-      <p class="page-sub">Gestion des écoles, modules et groupes scolaires</p>
+      <h1>Super Admin</h1>
+      <p class="page-sub">Plateforme premium — gestion centralisée des écoles et modules</p>
     </div>
-    <a href="/admin/organizations" class="btn btn-primary">Groupes scolaires</a>
+    <div class="page-header-actions">
+      <a href="/admin/modules" class="btn btn-primary">Gérer les modules</a>
+      <a href="/admin/plans" class="btn btn-outline">Plans</a>
+      <a href="/admin/organizations" class="btn btn-outline">Groupes scolaires</a>
+    </div>
   </div>
+
+  <% if (success === 'premium') { %>
+    <div class="alert alert-success">Plateforme passée en mode premium.</div>
+  <% } %>
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -22,6 +31,28 @@
       <span class="stat-value"><%= stats.users %></span>
       <span class="stat-label">Utilisateurs</span>
     </div>
+    <div class="stat-card stat-card-success">
+      <span class="stat-value">Premium</span>
+      <span class="stat-label">Toutes les écoles</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Modules — vue globale</h2>
+      <p class="page-sub">Seul le Super Admin peut activer ou désactiver les modules par école.</p>
+    </div>
+    <div class="module-stats-grid">
+      <% moduleStats.forEach(function(m) { %>
+        <div class="module-stat-item">
+          <span class="module-stat-label"><%= m.label %></span>
+          <span class="module-stat-value"><%= m.enabled %>/<%= m.total %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="card-footer">
+      <a href="/admin/modules" class="btn btn-primary">Configurer les modules par école</a>
+    </div>
   </div>
 
   <div class="card">
@@ -34,8 +65,8 @@
           <th>École</th>
           <th>Ville</th>
           <th>Groupe</th>
-          <th>Campus</th>
-          <th>Classes</th>
+          <th>Élèves</th>
+          <th>Modules actifs</th>
           <th>Abonnement</th>
           <th></th>
         </tr>
@@ -43,18 +74,23 @@
       <tbody>
         <% schools.forEach(function(s) { %>
           <tr>
-            <td><strong><%= s.name %></strong><br><small><%= s.admin?.email || '—' %></small></td>
+            <td>
+              <strong><%= s.name %></strong><br>
+              <small><%= s.admin?.email || '—' %></small>
+            </td>
             <td><%= s.city %></td>
             <td><%= s.organization?.name || '—' %></td>
-            <td><%= s.campusLabel || '—' %></td>
-            <td><%= s._count.classes %></td>
-            <td><span class="badge"><%= s.subscription %></span></td>
-            <td><a href="/admin/schools/<%= s.id %>/modules" class="btn btn-sm btn-primary">Modules</a></td>
+            <td><%= s._count.students %></td>
+            <td>
+              <span class="badge"><%= s.enabledCount %>/<%= MODULE_KEYS.length %></span>
+            </td>
+            <td><span class="badge badge-premium">Premium</span></td>
+            <td>
+              <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-primary">Modules</a>
+            </td>
           </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

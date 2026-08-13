@@ -1,9 +1,18 @@
-<%- include('../partials/head', { title: 'Enseignant' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Bonjour <%= user.firstName %> 👩‍🏫</h1>
-    <p class="page-sub"><%= teacher.school.name %></p>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Enseignant' }) %>
+<% } else { %>
+<div class="page-header">
+    <div class="person-line">
+      <%- include('../partials/_avatar', { src: user.photoUrl, firstName: user.firstName, lastName: user.lastName, size: 'md' }) %>
+      <div>
+        <h1>Bonjour <%= user.firstName %> 👩‍🏫</h1>
+        <p class="page-sub person-line">
+          <%- include('../partials/_logo', { logoUrl: teacher.school.logoUrl, logoBase64: teacher.school.logoBase64, name: teacher.school.name, size: 'sm' }) %>
+          <%= teacher.school.name %>
+        </p>
+      </div>
+    </div>
   </div>
 
   <div class="stats-grid">
@@ -37,7 +46,8 @@
       <% } else { %>
         <ul class="list">
           <% recentGrades.forEach(g => { %>
-            <li class="list-item">
+            <li class="list-item person-line">
+              <%- include('../partials/_avatar', { src: g.student.photoUrl, firstName: g.student.firstName, lastName: g.student.lastName, size: 'sm' }) %>
               <strong><%= g.student.firstName %> <%= g.student.lastName %></strong>
               <span><%= g.subject %> : <%= g.value %>/<%= g.maxValue %></span>
             </li>
@@ -56,6 +66,4 @@
     <a href="/teacher/health" class="action-card">🧑‍⚕️ Santé</a>
     <a href="/teacher/canteen" class="action-card">🍽️ Cantine</a>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

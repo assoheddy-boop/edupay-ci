@@ -1,10 +1,14 @@
-<%- include('../partials/head', { title: 'Tableau de bord' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <div>
-      <h1><%= school.name %></h1>
-      <p class="page-sub">Tableau de bord école</p>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Tableau de bord' }) %>
+<% } else { %>
+<div class="page-header">
+    <div class="person-line">
+      <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, name: school.name, size: 'md' }) %>
+      <div>
+        <h1><%= school.name %></h1>
+        <p class="page-sub">Tableau de bord école</p>
+      </div>
     </div>
     <a href="/school/settings" class="btn btn-outline">Paramètres Wave/OM</a>
   </div>
@@ -48,7 +52,10 @@
         <tbody>
           <% recentPayments.forEach(p => { %>
             <tr>
-              <td><%= p.student.firstName %> <%= p.student.lastName %></td>
+              <td class="person-cell">
+                <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
+                <%= p.student.firstName %> <%= p.student.lastName %>
+              </td>
               <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
               <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
               <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
@@ -73,6 +80,4 @@
     <a href="/school/fees" class="action-card">💰 Types de frais</a>
     <a href="/school/pickup" class="action-card">🛡️ Sortie école</a>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Paiements' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('payments', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Paiements' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>Paiements</h1>
     <p class="page-sub">Validez les preuves de paiement Wave / Orange Money</p>
   </div>
@@ -52,6 +53,4 @@
       </table>
     <% } %>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

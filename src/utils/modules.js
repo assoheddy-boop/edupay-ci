@@ -1,5 +1,6 @@
 const prisma = require('../config/database');
 const { MODULES, MODULE_KEYS } = require('../config/modules');
+const { PREMIUM_PLANS } = require('../middleware/premium');
 
 async function initSchoolModules(schoolId) {
   const existing = await prisma.schoolModule.findMany({ where: { schoolId } });
@@ -10,9 +11,24 @@ async function initSchoolModules(schoolId) {
       schoolId,
       moduleKey: key,
       enabled: MODULES[key].default,
-      locked: false,
+      locked: true,
     })),
   });
+}
+
+async function bootstrapPremiumPlatform() {
+  await prisma.school.updateMany({ data: { subscription: 'premium' } });
+
+  const schools = await prisma.school.findMany({ select: { id: true } });
+  for (const { id } of schools) {
+    await initSchoolModules(id);
+    for (const key of MODULE_KEYS) {
+      const enabled = MODULES[key].core ? true : true;
+      await setModule(id, key, { enabled, locked: true });
+    }
+  }
+
+  return schools.length;
 }
 
 async function getModuleMap(schoolId) {
@@ -24,7 +40,7 @@ async function getModuleMap(schoolId) {
     const row = rows.find((r) => r.moduleKey === key);
     map[key] = {
       enabled: row?.enabled ?? MODULES[key].default,
-      locked: row?.locked ?? false,
+      locked: row?.locked ?? true,
       ...MODULES[key],
     };
   });
@@ -39,7 +55,7 @@ function isEnabled(map, key) {
 async function setModule(schoolId, moduleKey, { enabled, locked }) {
   await prisma.schoolModule.upsert({
     where: { schoolId_moduleKey: { schoolId, moduleKey } },
-    create: { schoolId, moduleKey, enabled: enabled ?? true, locked: locked ?? false },
+    create: { schoolId, moduleKey, enabled: enabled ?? true, locked: locked ?? true },
     update: {
       ...(enabled !== undefined ? { enabled } : {}),
       ...(locked !== undefined ? { locked } : {}),
@@ -51,7 +67,6 @@ async function initFinanceDefaults(schoolId) {
   const count = await prisma.financeAccount.count({ where: { schoolId } });
   if (count > 0) return;
 
-  const school = await prisma.school.findUnique({ where: { id: schoolId } });
   await prisma.financeAccount.createMany({
     data: [
       { schoolId, name: 'Caisse Wave', type: 'WAVE', balance: 0 },
@@ -74,8 +89,10 @@ async function initFinanceDefaults(schoolId) {
 
 module.exports = {
   initSchoolModules,
+  bootstrapPremiumPlatform,
   getModuleMap,
   isEnabled,
   setModule,
   initFinanceDefaults,
+  PREMIUM_PLANS,
 };

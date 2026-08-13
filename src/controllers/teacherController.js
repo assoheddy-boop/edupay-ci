@@ -1,4 +1,5 @@
 const prisma = require('../config/database');
+const { sendNotification } = require('../../services/NotificationService');
 
 async function dashboard(req, res) {
   const teacher = req.user.teacher;
@@ -110,14 +111,11 @@ async function createAbsence(req, res) {
     });
 
     for (const link of student?.parents || []) {
-      await prisma.notification.create({
-        data: {
-          userId: link.parent.userId,
-          type: type === 'LATE' ? 'LATE' : 'ABSENCE',
-          title: type === 'LATE' ? 'Retard signalé' : 'Absence signalée',
-          body: `${student.firstName} ${student.lastName} — ${reason || 'Sans motif'}.`,
-        },
-      });
+      await sendNotification(
+        link.parent.userId,
+        'absence_reported',
+        `${student.firstName} ${student.lastName} — ${type === 'LATE' ? 'retard' : 'absence'} : ${reason || 'Sans motif'}.`,
+      );
     }
 
     res.redirect('/teacher/absences?success=1');
@@ -177,14 +175,11 @@ async function createHomework(req, res) {
 
     for (const student of students) {
       for (const ps of student.parents) {
-        await prisma.notification.create({
-          data: {
-            userId: ps.parent.userId,
-            type: 'HOMEWORK',
-            title: 'Nouveau devoir',
-            body: `${title} — à rendre le ${new Date(dueDate).toLocaleDateString('fr-FR')} (${student.firstName}).`,
-          },
-        });
+        await sendNotification(
+          ps.parent.userId,
+          'new_homework',
+          `${title} — à rendre le ${new Date(dueDate).toLocaleDateString('fr-FR')} (${student.firstName}).`,
+        );
       }
       await prisma.homeworkSubmission.create({
         data: { homeworkId: homework.id, studentId: student.id },
@@ -287,13 +282,17 @@ async function submitAttendance(req, res) {
           recordedBy: req.user.teacher.id,
         },
       });
-      const { notifyStudentParents } = require('../utils/notify');
-      await notifyStudentParents(student.id, {
-        type: 'ABSENCE',
-        title: 'Absence signalée',
-        body: `${student.firstName} absent le ${new Date(date).toLocaleDateString('fr-FR')}.`,
-        sms: true,
+      const parents = await prisma.parentStudent.findMany({
+        where: { studentId: student.id },
+        include: { parent: true },
       });
+      for (const ps of parents) {
+        await sendNotification(
+          ps.parent.userId,
+          'absence_reported',
+          `${student.firstName} absent le ${new Date(date).toLocaleDateString('fr-FR')}.`,
+        );
+      }
     }
 
     res.redirect('/teacher/attendance?success=1');

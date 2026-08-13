@@ -4,12 +4,15 @@ uploads/*
 .env
 .env.local
 .env.*.local
+.env.vercel-backup
+.neon
 generated/
 dist/
 build/
 coverage/
 .cursor/
 *.log
+logs/
 .DS_Store
 Thumbs.db
 .vscode/

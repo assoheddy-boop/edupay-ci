@@ -148,30 +148,84 @@ async function main() {
 
 
   await prisma.user.upsert({
-
     where: { email: 'groupe@demo.ci' },
-
     update: {},
-
     create: {
-
       email: 'groupe@demo.ci',
-
       password: hash,
-
       firstName: 'Admin',
-
       lastName: 'Groupe',
-
       phone: '0700000004',
-
       role: 'ORGANIZATION_ADMIN',
-
       organizationAdmin: { create: { organizationId: org.id } },
-
     },
-
   });
+
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { city: 'Abidjan', phone: '0700000004', address: 'Cocody / Yopougon' },
+  }).catch(() => {});
+
+  let yopAdmin = await prisma.user.findUnique({
+    where: { email: 'ecole.yopougon@demo.ci' },
+    include: { school: true },
+  });
+  if (!yopAdmin) {
+    yopAdmin = await prisma.user.create({
+      data: {
+        email: 'ecole.yopougon@demo.ci',
+        password: hash,
+        firstName: 'Directrice',
+        lastName: 'Yopougon',
+        phone: '0700000008',
+        role: 'SCHOOL_ADMIN',
+        school: {
+          create: {
+            name: 'École Les Étoiles',
+            slug: 'ecole-les-etoiles-yopougon',
+            address: 'Yopougon, Abidjan',
+            city: 'Abidjan',
+            campusLabel: 'Campus Yopougon',
+            organizationId: org.id,
+            subscription: 'premium',
+            currentSchoolYear: '2025-2026',
+            waveNumber: '07 00 00 00 08',
+            omNumber: '07 00 00 00 09',
+          },
+        },
+      },
+      include: { school: true },
+    });
+  } else if (yopAdmin.school && !yopAdmin.school.organizationId) {
+    await prisma.school.update({
+      where: { id: yopAdmin.school.id },
+      data: { organizationId: org.id, campusLabel: yopAdmin.school.campusLabel || 'Campus Yopougon' },
+    });
+  }
+
+  const yopSchool = yopAdmin?.school || (await prisma.school.findFirst({ where: { slug: 'ecole-les-etoiles-yopougon' } }));
+  if (yopSchool) {
+    const yopClass = await prisma.class.findFirst({ where: { schoolId: yopSchool.id, name: 'CE1 B' } })
+      || await prisma.class.create({ data: { name: 'CE1 B', level: 'CE1', schoolId: yopSchool.id } });
+    const yopStudent = await prisma.student.findFirst({ where: { matricule: 'ETOILE-YOP-001', schoolId: yopSchool.id } });
+    if (!yopStudent) {
+      await prisma.student.create({
+        data: {
+          firstName: 'Aminata',
+          lastName: 'Traoré',
+          matricule: 'ETOILE-YOP-001',
+          classId: yopClass.id,
+          schoolId: yopSchool.id,
+        },
+      });
+    }
+    const yopFee = await prisma.feeType.findFirst({ where: { schoolId: yopSchool.id } });
+    if (!yopFee) {
+      await prisma.feeType.create({
+        data: { name: 'Scolarité T1', amount: 20000, dueDay: 15, schoolId: yopSchool.id },
+      });
+    }
+  }
 
 
 
@@ -335,13 +389,16 @@ async function main() {
 
   await initSchoolModules(school.id);
 
-  await setModule(school.id, 'accounting', { enabled: true, locked: false });
+  await setModule(school.id, 'accounting', { enabled: true, locked: true });
 
-  await setModule(school.id, 'multi_campus', { enabled: true, locked: false });
+  await setModule(school.id, 'multi_campus', { enabled: true, locked: true });
 
   await initFinanceDefaults(school.id);
 
-
+  const { ensureSubscriptionPlans, findPlanBySlug, assignPlanToSchool } = require('../src/utils/plans');
+  await ensureSubscriptionPlans();
+  const groupePlan = await findPlanBySlug('groupe');
+  if (groupePlan) await assignPlanToSchool(school.id, groupePlan.id);
 
   const schoolRecord = await prisma.school.findUnique({ where: { id: school.id } });
 
@@ -352,6 +409,7 @@ async function main() {
   console.log('Admin site : admin@edupay.ci / demo1234');
 
   console.log('Groupe     : groupe@demo.ci / demo1234');
+  console.log('Campus Yop : ecole.yopougon@demo.ci / demo1234');
 
   console.log('École      : ecole@demo.ci / demo1234');
 

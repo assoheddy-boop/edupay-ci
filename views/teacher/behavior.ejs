@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Comportement' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('behavior', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Comportement' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>🏅 Comportement & badges</h1>
     <p class="page-sub">Récompenses physiques remises en classe — le parent est informé</p>
   </div>
@@ -83,6 +84,4 @@
       <% } %>
     </div>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

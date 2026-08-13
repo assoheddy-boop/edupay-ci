@@ -1,0 +1,62 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('campuses', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Campus — ' + organization.name }) %>
+<% } else { %>
+<%- include('_nav', { current: 'campuses' }) %>
+<div class="page-header">
+  <div>
+    <h1>Campus du groupe</h1>
+    <p class="page-sub"><%= campusStats.length %> établissement(s)</p>
+  </div>
+  <form method="GET" action="/group/campuses" class="inline-form">
+    <input type="search" name="q" value="<%= q %>" placeholder="Nom, ville, campus…">
+    <button type="submit" class="btn btn-outline btn-sm">Filtrer</button>
+  </form>
+</div>
+
+<% if (campusStats.length === 0) { %>
+  <div class="card"><p class="empty">Aucun campus ne correspond.</p></div>
+<% } else { %>
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Campus</th>
+          <th>Ville</th>
+          <th>Élèves</th>
+          <th>Profs</th>
+          <th>Recettes</th>
+          <th>En attente</th>
+          <th>Encaissement</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% campusStats.forEach(function(c) { %>
+          <tr>
+            <td>
+              <div class="person-line">
+                <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+                <div>
+                  <strong><%= c.school.campusLabel || c.school.name %></strong>
+                  <div class="text-muted"><%= c.school.name %></div>
+                </div>
+              </div>
+            </td>
+            <td><%= c.school.city || '—' %></td>
+            <td><%= c.students %></td>
+            <td><%= c.teachers %></td>
+            <td><%= c.revenue.toLocaleString('fr-FR') %> FCFA</td>
+            <td><%= c.pendingAmount.toLocaleString('fr-FR') %> FCFA</td>
+            <td>
+              <div class="bar-track bar-track-sm"><div class="bar-fill" style="width:<%= c.collectionRate %>%"></div></div>
+              <%= c.collectionRate %>%
+            </td>
+            <td><a href="/group/campuses/<%= c.school.id %>" class="btn btn-sm btn-primary">Détail</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+<% } %>

@@ -1,39 +1,70 @@
-<%- include('../partials/head', { title: 'Notifications' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Notifications</h1>
-    <% if (notifications.some(n => !n.readAt)) { %>
-      <form method="POST" action="/parent/notifications/read-all" style="margin-top:0.5rem">
-        <button type="submit" class="btn btn-outline btn-sm">Tout marquer comme lu</button>
-      </form>
-    <% } %>
-  </div>
-
-  <% if (success === 'all') { %><div class="alert alert-success">Toutes les notifications sont marquées comme lues.</div><% } %>
-
-  <div class="card">
-    <% if (notifications.length === 0) { %>
-      <p class="empty">Aucune notification.</p>
-    <% } else { %>
-      <ul class="list">
-        <% notifications.forEach(n => { %>
-          <li class="list-item <%= n.readAt ? '' : 'notif-unread' %>" style="<%= n.readAt ? '' : 'background:#f0f7ff' %>">
-            <div>
-              <strong><%= n.title %></strong>
-              <span><%= n.body %></span>
-              <small><%= new Date(n.createdAt).toLocaleString('fr-FR') %> — <%= n.type %></small>
-            </div>
-            <% if (!n.readAt) { %>
-              <form method="POST" action="/parent/notifications/<%= n.id %>/read">
-                <button type="submit" class="btn btn-sm btn-outline">Marquer lu</button>
-              </form>
-            <% } %>
-          </li>
-        <% }) %>
-      </ul>
-    <% } %>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('notifications', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Notifications' }) %>
+<% } else { %>
+<div class="page-header">
+
+    <h1>Notifications</h1>
+
+    <% if (notifications.some(n => !n.readAt)) { %>
+
+      <form method="POST" action="/parent/notifications/read-all" style="margin-top:0.5rem">
+
+        <button type="submit" class="btn btn-outline btn-sm">Tout marquer comme lu</button>
+
+      </form>
+
+    <% } %>
+
+  </div>
+
+
+
+  <% if (success === 'all') { %><div class="alert alert-success">Toutes les notifications sont marquées comme lues.</div><% } %>
+
+
+
+  <div class="card">
+
+    <% if (notifications.length === 0) { %>
+
+      <p class="empty">Aucune notification.</p>
+
+    <% } else { %>
+
+      <ul class="list">
+
+        <% notifications.forEach(n => { %>
+
+          <li class="list-item <%= n.readAt ? '' : 'notif-unread' %>" style="<%= n.readAt ? '' : 'background:#f0f7ff' %>">
+
+            <div>
+
+              <strong><%= n.title %></strong>
+
+              <span><%= n.body %></span>
+
+              <small><%= new Date(n.createdAt).toLocaleString('fr-FR') %> — <%= n.type %></small>
+
+            </div>
+
+            <% if (!n.readAt) { %>
+
+              <form method="POST" action="/parent/notifications/<%= n.id %>/read">
+
+                <button type="submit" class="btn btn-sm btn-outline">Marquer lu</button>
+
+              </form>
+
+            <% } %>
+
+          </li>
+
+        <% }) %>
+
+      </ul>
+
+    <% } %>
+
+  </div>
+<% } %>

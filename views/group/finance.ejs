@@ -1,0 +1,51 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('finance', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Finance groupe' }) %>
+<% } else { %>
+<%- include('_nav', { current: 'finance' }) %>
+<div class="page-header">
+  <div>
+    <h1>Finance consolidée</h1>
+    <p class="page-sub">Recettes, impayés et tendance sur 6 mois</p>
+  </div>
+  <a href="/group/export" class="btn btn-outline">Export Excel</a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card stat-card-success"><span class="stat-value"><%= totals.revenue.toLocaleString('fr-FR') %></span><span class="stat-label">Encaissé FCFA</span></div>
+  <div class="stat-card stat-card-warning"><span class="stat-value"><%= totals.pendingAmount.toLocaleString('fr-FR') %></span><span class="stat-label">En attente FCFA</span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.collectionRate %>%</span><span class="stat-label">Taux d'encaissement</span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.validatedCount %></span><span class="stat-label">Paiements validés</span></div>
+</div>
+
+<div class="card">
+  <h2>Tendance (6 mois)</h2>
+  <% months.forEach(function(m) { %>
+    <div class="group-bar-row">
+      <div class="group-bar-meta">
+        <strong><%= m.label %></strong>
+        <span><%= m.amount.toLocaleString('fr-FR') %> FCFA</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((m.amount / maxMonth) * 100) %>%"></div></div>
+    </div>
+  <% }) %>
+</div>
+
+<div class="card">
+  <h2>Par campus</h2>
+  <table class="table">
+    <thead><tr><th>Campus</th><th>Recettes</th><th>Attente</th><th>Taux</th><th>Validés</th></tr></thead>
+    <tbody>
+      <% campusStats.forEach(function(c) { %>
+        <tr>
+          <td><a href="/group/campuses/<%= c.school.id %>"><%= c.school.campusLabel || c.school.name %></a></td>
+          <td><%= c.revenue.toLocaleString('fr-FR') %> FCFA</td>
+          <td><%= c.pendingAmount.toLocaleString('fr-FR') %> FCFA</td>
+          <td><%= c.collectionRate %>%</td>
+          <td><%= c.validatedCount %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>

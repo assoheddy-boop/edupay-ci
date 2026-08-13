@@ -1,0 +1,54 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<%
+  const layoutFile = user.role === 'TEACHER' ? 'teacherLayout' : 'schoolLayout';
+  const content = include('profile', { _inLayout: true });
+%>
+<%- include('../layouts/' + layoutFile, { body: content, title: 'RH — Profil' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Profil enseignant</h1>
+  <p class="page-sub">Fiche TeacherProfile (nom, matière, date d'embauche)</p>
+</div>
+<%- include('_nav') %>
+
+<% if (success) { %><div class="alert alert-success">Profil enregistré.</div><% } %>
+<% if (error === 'teacher') { %><div class="alert alert-error">Enseignant introuvable.</div><% } %>
+
+<div class="card">
+  <form method="POST" action="/hr/profile" class="form">
+    <% if (user.role === 'SCHOOL_ADMIN') { %>
+      <div class="form-group">
+        <label for="teacherId">Enseignant</label>
+        <select id="teacherId" name="teacherId" required>
+          <% teachers.forEach(function(t) { %>
+            <option value="<%= t.id %>" <%= teacher && teacher.id === t.id ? 'selected' : '' %>>
+              <%= t.user.lastName %> <%= t.user.firstName %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+    <% } else if (teacher) { %>
+      <input type="hidden" name="teacherId" value="<%= teacher.id %>">
+    <% } %>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="name">Nom</label>
+        <input type="text" id="name" name="name" required
+          value="<%= profile?.name || (teacher ? teacher.user.firstName + ' ' + teacher.user.lastName : '') %>">
+      </div>
+      <div class="form-group">
+        <label for="subject">Matière</label>
+        <input type="text" id="subject" name="subject"
+          value="<%= profile?.subject || teacher?.subject || '' %>">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="hireDate">Date d'embauche</label>
+      <input type="date" id="hireDate" name="hireDate"
+        value="<%= profile?.hireDate ? new Date(profile.hireDate).toISOString().slice(0, 10) : '' %>">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer le profil</button>
+  </form>
+</div>
+<% } %>

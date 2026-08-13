@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Élèves' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>Mes élèves</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('students', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Élèves' }) %>
+<% } else { %>
+<div class="page-header"><h1>Mes élèves</h1></div>
 
   <% classLinks.forEach(link => { %>
     <div class="card">
@@ -14,7 +15,10 @@
           <tbody>
             <% link.class.students.forEach(s => { %>
               <tr>
-                <td><%= s.firstName %> <%= s.lastName %></td>
+                <td class="person-cell">
+                  <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'sm' }) %>
+                  <%= s.firstName %> <%= s.lastName %>
+                </td>
                 <td><code><%= s.matricule || '—' %></code></td>
               </tr>
             <% }) %>
@@ -23,6 +27,4 @@
       <% } %>
     </div>
   <% }) %>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

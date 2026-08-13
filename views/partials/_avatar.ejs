@@ -1,0 +1,15 @@
+<%
+  const _src = typeof src !== 'undefined' ? src : null;
+  const _first = typeof firstName !== 'undefined' ? firstName : '';
+  const _last = typeof lastName !== 'undefined' ? lastName : '';
+  const _ini = ((_first && _first.charAt(0)) || '') + ((_last && _last.charAt(0)) || '');
+  const _size = typeof size !== 'undefined' ? size : 'md';
+  const _alt = (_first + ' ' + _last).trim() || 'Photo';
+%>
+<span class="avatar avatar-<%= _size %>" title="<%= _alt %>">
+  <% if (_src) { %>
+    <img src="<%= _src %>" alt="<%= _alt %>">
+  <% } else { %>
+    <span class="avatar-initials"><%= (_ini || '?').toUpperCase() %></span>
+  <% } %>
+</span>

@@ -1,0 +1,41 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('attendance', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Ma présence' }) %>
+<% } else { %>
+<div class="page-header"><h1>Ma présence</h1></div>
+  <%- include('_nav') %>
+  <% if (success === 'checkin') { %><div class="alert alert-success">Entrée enregistrée.</div><% } %>
+  <% if (success === 'checkout') { %><div class="alert alert-success">Sortie enregistrée.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem;text-align:center;padding:1.5rem">
+    <h2>Aujourd'hui</h2>
+    <% if (todayRecord) { %>
+      <p>Entrée : <%= todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString('fr-FR') : '—' %></p>
+      <p>Sortie : <%= todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString('fr-FR') : '—' %></p>
+      <p>Statut : <span class="badge"><%= todayRecord.status %></span></p>
+    <% } else { %>
+      <p class="empty-sm">Pas encore pointé aujourd'hui.</p>
+    <% } %>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+      <form method="POST" action="/teacher/hr/attendance/check-in"><button type="submit" class="btn btn-primary">Pointer entrée</button></form>
+      <form method="POST" action="/teacher/hr/attendance/check-out"><button type="submit" class="btn btn-outline">Pointer sortie</button></form>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>14 derniers jours</h2>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Entrée</th><th>Sortie</th><th>Statut</th></tr></thead>
+      <tbody>
+        <% history.forEach(function(r) { %>
+          <tr>
+            <td><%= new Date(r.date).toLocaleDateString('fr-FR') %></td>
+            <td><%= r.checkIn ? new Date(r.checkIn).toLocaleTimeString('fr-FR') : '—' %></td>
+            <td><%= r.checkOut ? new Date(r.checkOut).toLocaleTimeString('fr-FR') : '—' %></td>
+            <td><%= r.status %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

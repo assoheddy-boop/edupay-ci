@@ -1,0 +1,101 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('campus', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: snap.school.name }) %>
+<% } else { %>
+<%- include('_nav', { current: 'campuses' }) %>
+<div class="page-header">
+  <div class="person-line">
+    <%- include('../partials/_logo', { logoUrl: snap.school.logoUrl, logoBase64: snap.school.logoBase64, name: snap.school.name, size: 'md' }) %>
+    <div>
+      <a href="/group/campuses" class="text-muted">← Tous les campus</a>
+      <h1><%= snap.school.campusLabel || snap.school.name %></h1>
+      <p class="page-sub"><%= snap.school.name %> · <%= snap.school.city || '—' %> · <%= snap.school.address || '' %></p>
+    </div>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><span class="stat-value"><%= snap.students %></span><span class="stat-label">Élèves</span></div>
+  <div class="stat-card"><span class="stat-value"><%= snap.teachers %></span><span class="stat-label">Enseignants</span></div>
+  <div class="stat-card"><span class="stat-value"><%= snap.classes %></span><span class="stat-label">Classes</span></div>
+  <div class="stat-card stat-card-success"><span class="stat-value"><%= snap.revenue.toLocaleString('fr-FR') %></span><span class="stat-label">Recettes</span></div>
+  <div class="stat-card stat-card-warning"><span class="stat-value"><%= snap.pendingCount %></span><span class="stat-label">Paiements attente</span></div>
+  <div class="stat-card"><span class="stat-value"><%= snap.avgGrade.toFixed(1) %></span><span class="stat-label">Moyenne /20</span></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Modules activés</h2>
+    <ul class="group-modules">
+      <% Object.keys(snap.modules).forEach(function(key) { %>
+        <li class="<%= snap.modules[key].enabled ? 'on' : 'off' %>">
+          <%= snap.modules[key].enabled ? '●' : '○' %> <%= snap.modules[key].label || key %>
+        </li>
+      <% }) %>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Congés RH en attente</h2>
+    <% if (pendingLeaves.length === 0) { %>
+      <p class="empty">Aucun congé en attente.</p>
+    <% } else { %>
+      <ul>
+        <% pendingLeaves.forEach(function(l) { %>
+          <li class="person-line">
+            <%- include('../partials/_avatar', { src: l.teacher.user.photoUrl, firstName: l.teacher.user.firstName, lastName: l.teacher.user.lastName, size: 'sm' }) %>
+            <%= l.teacher.user.lastName %> <%= l.teacher.user.firstName %> — <%= l.type %> (<%= new Date(l.startDate).toLocaleDateString('fr-FR') %>)
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Équipe pédagogique</h2>
+  <% if (teachers.length === 0) { %>
+    <p class="empty">Aucun enseignant.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Nom</th><th>Matière</th><th>Contrat</th><th>Statut</th></tr></thead>
+      <tbody>
+        <% teachers.forEach(function(t) { %>
+          <tr>
+            <td class="person-cell">
+              <%- include('../partials/_avatar', { src: t.user.photoUrl, firstName: t.user.firstName, lastName: t.user.lastName, size: 'sm' }) %>
+              <%= t.user.lastName %> <%= t.user.firstName %>
+            </td>
+            <td><%= t.subject || '—' %></td>
+            <td><%= t.staffProfile?.contractType || '—' %></td>
+            <td><%= t.staffProfile?.status || '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>Paiements récents</h2>
+  <% if (recentPayments.length === 0) { %>
+    <p class="empty">Aucun paiement.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Élève</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>
+        <% recentPayments.forEach(function(p) { %>
+          <tr>
+            <td class="person-cell">
+              <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
+              <%= p.student.firstName %> <%= p.student.lastName %>
+            </td>
+            <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
+            <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+            <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

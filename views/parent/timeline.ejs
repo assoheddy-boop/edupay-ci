@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Historique' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>📜 Historique complet</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timeline', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Historique' }) %>
+<% } else { %>
+<div class="page-header"><h1>📜 Historique complet</h1></div>
   <% if (events.length === 0) { %><p class="empty">Aucun événement.</p><% } else { %>
     <ul class="timeline timeline-full">
       <% events.forEach(e => { %>
@@ -15,6 +16,4 @@
       <% }) %>
     </ul>
   <% } %>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

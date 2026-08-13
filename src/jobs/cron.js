@@ -1,12 +1,15 @@
 const cron = require('node-cron');
 const prisma = require('../config/database');
-const { sendSms, sendWhatsApp } = require('../services/sms');
+const { sendSms } = require('../services/sms');
+const { sendNotification } = require('../../services/NotificationService');
 
-async function paymentRemindersForSchool(schoolId) {
-  const today = new Date().getDate();
+async function overduePaymentsForSchool(schoolId) {
+  const now = new Date();
+  const day = now.getDate();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
   const fees = await prisma.feeType.findMany({
-    where: { schoolId, isActive: true, dueDay: { lte: today + 3, gte: today } },
-    include: { school: true },
+    where: { schoolId, isActive: true, dueDay: { not: null, lt: day } },
   });
 
   for (const fee of fees) {
@@ -18,7 +21,7 @@ async function paymentRemindersForSchool(schoolId) {
           where: {
             feeTypeId: fee.id,
             status: 'VALIDATED',
-            createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+            createdAt: { gte: monthStart },
           },
         },
       },
@@ -26,16 +29,9 @@ async function paymentRemindersForSchool(schoolId) {
 
     for (const student of students) {
       if (student.payments.length > 0) continue;
+      const message = `Paiement en retard : ${fee.name} (${fee.amount.toLocaleString('fr-FR')} FCFA) pour ${student.firstName}. Échéance dépassée (jour ${fee.dueDay}).`;
       for (const ps of student.parents) {
-        const user = ps.parent.user;
-        const msg = `EduPay CI: Rappel — ${fee.name} (${fee.amount.toLocaleString('fr-FR')} FCFA) pour ${student.firstName}. Échéance: jour ${fee.dueDay}.`;
-        await prisma.notification.create({
-          data: { userId: user.id, type: 'PAYMENT', title: 'Rappel paiement', body: msg },
-        });
-        if (user.phone) {
-          await sendSms(user.phone, msg);
-          await sendWhatsApp(user.phone, msg);
-        }
+        await sendNotification(ps.parent.userId, 'payment_overdue', message);
       }
     }
   }
@@ -45,8 +41,8 @@ async function paymentReminders() {
   const schools = await prisma.school.findMany({ select: { id: true, name: true } });
   for (const school of schools) {
     try {
-      await paymentRemindersForSchool(school.id);
-      console.log(`[Cron] Rappels paiement — ${school.name}`);
+      await overduePaymentsForSchool(school.id);
+      console.log(`[Cron] Paiements en retard — ${school.name}`);
     } catch (err) {
       console.error(`[Cron] Erreur rappels ${school.id}:`, err.message);
     }
@@ -107,7 +103,7 @@ function startCronJobs() {
 
   cron.schedule('0 8 * * *', paymentReminders);
   cron.schedule('0 9 * * 1', weeklyParentSummary);
-  console.log('[Cron] Jobs planifiés (rappels 8h, résumé lundi 9h) — partitionnés par école');
+  console.log('[Cron] Jobs planifiés (paiements en retard 8h, résumé lundi 9h)');
 }
 
 module.exports = { startCronJobs, paymentReminders, weeklyParentSummary };

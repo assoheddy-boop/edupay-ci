@@ -1,5 +1,6 @@
 const prisma = require('../config/database');
 const { getModuleMap, isEnabled } = require('../utils/modules');
+const { getSchoolPlan, planIncludesFeature } = require('../utils/plans');
 
 async function getParentSchoolIds(parentId) {
   const links = await prisma.parentStudent.findMany({
@@ -29,6 +30,18 @@ async function resolveParentSchoolIds(user) {
   return getParentSchoolIds(user.parentProfile.id);
 }
 
+async function applyPlanMask(schoolId, map) {
+  const plan = await getSchoolPlan(schoolId);
+  if (!plan) return map;
+  const masked = { ...map };
+  for (const key of Object.keys(masked)) {
+    if (!planIncludesFeature(plan, key)) {
+      masked[key] = { ...masked[key], enabled: false };
+    }
+  }
+  return masked;
+}
+
 async function attachModules(req, res, next) {
   try {
     const schoolId = await resolveSchoolId(req.user, req);
@@ -38,7 +51,8 @@ async function attachModules(req, res, next) {
       if (schoolIds.length > 1) {
         const maps = await Promise.all(schoolIds.map((id) => getModuleMap(id)));
         const merged = {};
-        for (const map of maps) {
+        for (let i = 0; i < schoolIds.length; i += 1) {
+          const map = await applyPlanMask(schoolIds[i], maps[i]);
           for (const [key, val] of Object.entries(map)) {
             if (!merged[key]) merged[key] = { ...val };
             else merged[key].enabled = merged[key].enabled || val.enabled;
@@ -46,12 +60,12 @@ async function attachModules(req, res, next) {
         }
         res.locals.modules = merged;
       } else if (schoolId) {
-        res.locals.modules = await getModuleMap(schoolId);
+        res.locals.modules = await applyPlanMask(schoolId, await getModuleMap(schoolId));
       } else {
         res.locals.modules = {};
       }
     } else if (schoolId) {
-      res.locals.modules = await getModuleMap(schoolId);
+      res.locals.modules = await applyPlanMask(schoolId, await getModuleMap(schoolId));
     } else {
       res.locals.modules = {};
     }
@@ -64,37 +78,41 @@ async function attachModules(req, res, next) {
 }
 
 function requireModule(moduleKey) {
-  return async (req, res, next) => {
-    const schoolId = await resolveSchoolId(req.user, req);
-    if (!schoolId && req.user?.role === 'PARENT') {
-      const schoolIds = await resolveParentSchoolIds(req.user);
-      for (const sid of schoolIds) {
-        const map = await getModuleMap(sid);
-        if (isEnabled(map, moduleKey)) return next();
+  const { requirePlan } = require('./plan');
+  return [
+    requirePlan(moduleKey),
+    async (req, res, next) => {
+      const schoolId = await resolveSchoolId(req.user, req);
+      if (!schoolId && req.user?.role === 'PARENT') {
+        const schoolIds = await resolveParentSchoolIds(req.user);
+        for (const sid of schoolIds) {
+          const map = await getModuleMap(sid);
+          if (isEnabled(map, moduleKey)) return next();
+        }
+        return res.status(403).render('school/module-disabled', {
+          user: req.user,
+          moduleKey,
+          moduleLabel: moduleKey,
+          school: null,
+        });
       }
-      return res.status(403).render('school/module-disabled', {
-        user: req.user,
-        moduleKey,
-        moduleLabel: moduleKey,
-        school: null,
-      });
-    }
 
-    if (!schoolId) {
-      return res.status(403).render('error', { message: 'Module non disponible', user: req.user });
-    }
+      if (!schoolId) {
+        return res.status(403).render('error', { message: 'Module non disponible', user: req.user });
+      }
 
-    const map = await getModuleMap(schoolId);
-    if (!isEnabled(map, moduleKey)) {
-      return res.status(403).render('school/module-disabled', {
-        user: req.user,
-        moduleKey,
-        moduleLabel: map[moduleKey]?.label || moduleKey,
-        school: req.user.school || req.user.teacher?.school,
-      });
-    }
-    next();
-  };
+      const map = await getModuleMap(schoolId);
+      if (!isEnabled(map, moduleKey)) {
+        return res.status(403).render('school/module-disabled', {
+          user: req.user,
+          moduleKey,
+          moduleLabel: map[moduleKey]?.label || moduleKey,
+          school: req.user.school || req.user.teacher?.school,
+        });
+      }
+      next();
+    },
+  ];
 }
 
 module.exports = {

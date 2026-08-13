@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Absences' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>Absences & retards</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('absences', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Absences' }) %>
+<% } else { %>
+<div class="page-header"><h1>Absences & retards</h1></div>
 
   <div class="card">
     <form method="POST" action="/teacher/absences" class="form">
@@ -36,6 +37,4 @@
       <button type="submit" class="btn btn-primary btn-lg">Signaler — le parent sera notifié</button>
     </form>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

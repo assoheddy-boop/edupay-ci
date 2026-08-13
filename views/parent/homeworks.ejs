@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Devoirs' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('homeworks', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Devoirs' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>Devoirs des enfants</h1>
     <p class="page-sub">Publiés par les enseignants — relais parent sans écran pour l'enfant</p>
   </div>
@@ -34,6 +35,4 @@
       <% } %>
     </div>
   <% }) %>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

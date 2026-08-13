@@ -1,7 +1,16 @@
-<%- include('../partials/head', { title: 'Messages' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<%
+  const layoutFile = ({
+    PARENT: 'parentLayout',
+    TEACHER: 'teacherLayout',
+    SUPER_ADMIN: 'adminLayout',
+    ORGANIZATION_ADMIN: 'groupLayout',
+  })[user && user.role] || 'schoolLayout';
+  const content = include('inbox', { _inLayout: true });
+%>
+<%- include('../layouts/' + layoutFile, { body: content }) %>
+<% } else { %>
+<div class="page-header">
     <h1>Messages</h1>
     <% if (unread > 0) { %><span class="badge badge-unread"><%= unread %> non lu(s)</span><% } %>
   </div>
@@ -16,7 +25,8 @@
           <% partners.forEach(p => { %>
             <li class="chat-list-item">
               <a href="<%= basePath %>/messages/<%= p.user.id %>" class="chat-list-link">
-                <div class="chat-list-top">
+                <div class="chat-list-top person-line">
+                  <%- include('../partials/_avatar', { src: p.user.photoUrl, firstName: p.user.firstName, lastName: p.user.lastName, size: 'sm' }) %>
                   <strong><%= p.user.firstName %> <%= p.user.lastName %></strong>
                   <% if (p.unreadCount > 0) { %><span class="chat-unread"><%= p.unreadCount %></span><% } %>
                 </div>
@@ -40,6 +50,4 @@
       <p>Sélectionnez une conversation pour commencer.</p>
     </div>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

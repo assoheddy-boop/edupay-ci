@@ -1,7 +1,22 @@
 const prisma = require('../config/database');
 const { generateBulletinPdf, computeAverage } = require('./bulletinPdf');
+const { getCache, setCache } = require('../../services/cache');
+
+const BULLETIN_TTL = 60 * 60;
 
 async function generateBulletinForStudent({ studentId, period, school }) {
+  const cacheKey = `bulletin:${studentId}:${period}`;
+  const cached = await getCache(cacheKey);
+  if (cached?.pdfUrl) {
+    return {
+      success: true,
+      cached: true,
+      student: cached.student,
+      average: cached.average,
+      rank: cached.rank,
+      pdfUrl: cached.pdfUrl,
+    };
+  }
   const student = await prisma.student.findFirst({
     where: { id: studentId, schoolId: school.id },
     include: { class: true },
@@ -59,7 +74,15 @@ async function generateBulletinForStudent({ studentId, period, school }) {
     });
   }
 
-  return { success: true, student, average, rank };
+  const payload = {
+    pdfUrl,
+    average,
+    rank,
+    student: { id: student.id, firstName: student.firstName, lastName: student.lastName },
+  };
+  await setCache(cacheKey, payload, BULLETIN_TTL);
+
+  return { success: true, student, average, rank, pdfUrl };
 }
 
 async function generateBulkBulletins({ classId, period, schoolId, school }) {

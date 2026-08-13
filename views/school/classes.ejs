@@ -1,56 +1,104 @@
-<%- include('../partials/head', { title: 'Classes' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>Classes</h1></div>
-  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
-  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
-
-  <div class="grid-2">
-    <div class="card">
-      <h2>Ajouter une classe</h2>
-      <form method="POST" action="/school/classes" class="form">
-        <div class="form-group">
-          <label for="name">Nom</label>
-          <input type="text" id="name" name="name" required placeholder="Ex: CM2 A">
-        </div>
-        <div class="form-group">
-          <label for="level">Niveau</label>
-          <input type="text" id="level" name="level" required placeholder="Ex: CM2">
-        </div>
-        <div class="form-group">
-          <label for="schoolYear">Année scolaire</label>
-          <input type="text" id="schoolYear" name="schoolYear" value="<%= school.currentSchoolYear || '2025-2026' %>">
-        </div>
-        <button type="submit" class="btn btn-primary">Créer</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Liste des classes</h2>
-      <% if (classes.length === 0) { %>
-        <p class="empty">Aucune classe créée.</p>
-      <% } else { %>
-        <% classes.forEach(c => { %>
-          <details class="edit-row">
-            <summary><strong><%= c.name %></strong> — <%= c.level %> (<%= c._count.students %> élève(s))</summary>
-            <form method="POST" action="/school/classes/<%= c.id %>/update" class="form" style="margin-top:0.75rem">
-              <div class="form-row">
-                <div class="form-group"><label>Nom</label><input type="text" name="name" value="<%= c.name %>" required></div>
-                <div class="form-group"><label>Niveau</label><input type="text" name="level" value="<%= c.level %>" required></div>
-              </div>
-              <div class="form-group"><label>Année</label><input type="text" name="schoolYear" value="<%= c.schoolYear %>"></div>
-              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-            </form>
-            <% if (c._count.students === 0) { %>
-              <form method="POST" action="/school/classes/<%= c.id %>/delete" style="margin-top:0.5rem" onsubmit="return confirm('Supprimer cette classe ?')">
-                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-              </form>
-            <% } %>
-          </details>
-        <% }) %>
-      <% } %>
-    </div>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('classes', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Classes' }) %>
+<% } else { %>
+<div class="page-header"><h1>Classes</h1></div>
+
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
+
+
+
+  <div class="grid-2">
+
+    <div class="card">
+
+      <h2>Ajouter une classe</h2>
+
+      <form method="POST" action="/school/classes" class="form">
+
+        <div class="form-group">
+
+          <label for="name">Nom</label>
+
+          <input type="text" id="name" name="name" required placeholder="Ex: CM2 A">
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="level">Niveau</label>
+
+          <input type="text" id="level" name="level" required placeholder="Ex: CM2">
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="schoolYear">Année scolaire</label>
+
+          <input type="text" id="schoolYear" name="schoolYear" value="<%= school.currentSchoolYear || '2025-2026' %>">
+
+        </div>
+
+        <button type="submit" class="btn btn-primary">Créer</button>
+
+      </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <h2>Liste des classes</h2>
+
+      <% if (classes.length === 0) { %>
+
+        <p class="empty">Aucune classe créée.</p>
+
+      <% } else { %>
+
+        <% classes.forEach(c => { %>
+
+          <details class="edit-row">
+
+            <summary><strong><%= c.name %></strong> — <%= c.level %> (<%= c._count.students %> élève(s))</summary>
+
+            <form method="POST" action="/school/classes/<%= c.id %>/update" class="form" style="margin-top:0.75rem">
+
+              <div class="form-row">
+
+                <div class="form-group"><label>Nom</label><input type="text" name="name" value="<%= c.name %>" required></div>
+
+                <div class="form-group"><label>Niveau</label><input type="text" name="level" value="<%= c.level %>" required></div>
+
+              </div>
+
+              <div class="form-group"><label>Année</label><input type="text" name="schoolYear" value="<%= c.schoolYear %>"></div>
+
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+            </form>
+
+            <% if (c._count.students === 0) { %>
+
+              <form method="POST" action="/school/classes/<%= c.id %>/delete" style="margin-top:0.5rem" onsubmit="return confirm('Supprimer cette classe ?')">
+
+                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+
+              </form>
+
+            <% } %>
+
+          </details>
+
+        <% }) %>
+
+      <% } %>
+
+    </div>
+
+  </div>
+<% } %>

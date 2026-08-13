@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Sortie école' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('pickup', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Sortie école' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>🛡️ Validation sortie</h1>
     <p class="page-sub">Scannez ou saisissez le code QR du parent / tiers autorisé</p>
   </div>
@@ -42,6 +43,4 @@
       </table>
     <% } %>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

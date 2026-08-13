@@ -1,86 +1,178 @@
-<%- include('../partials/head', { title: 'Élèves' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Élèves</h1>
-    <a href="/school/students/import/template" class="btn btn-outline btn-sm">Télécharger modèle CSV</a>
-  </div>
-
-  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
-  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
-
-  <% if (importResult) { %>
-    <div class="alert <%= importResult.imported ? 'alert-success' : 'alert-error' %>">
-      Import : <%= importResult.imported %> ajouté(s), <%= importResult.skipped %> ignoré(s).
-    </div>
-  <% } %>
-
-  <div class="card" style="margin-bottom:1.5rem">
-    <h2>Import CSV</h2>
-    <% if (classes.length === 0) { %>
-      <div class="alert alert-error">Créez d'abord une classe.</div>
-    <% } else { %>
-      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline">
-        <input type="file" name="csv" accept=".csv" required>
-        <button type="submit" class="btn btn-primary">Importer</button>
-      </form>
-    <% } %>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <h2>Ajouter un élève</h2>
-      <form method="POST" action="/school/students" class="form">
-        <div class="form-row">
-          <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
-          <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
-        </div>
-        <div class="form-group"><label>Matricule</label><input type="text" name="matricule" placeholder="Pour liaison parent"></div>
-        <div class="form-group">
-          <label>Classe</label>
-          <select name="classId" required>
-            <option value="">— Choisir —</option>
-            <% classes.forEach(c => { %><option value="<%= c.id %>"><%= c.name %></option><% }) %>
-          </select>
-        </div>
-        <div class="form-group"><label>Date naissance</label><input type="date" name="birthDate"></div>
-        <button type="submit" class="btn btn-primary">Ajouter</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Liste (<%= students.length %>)</h2>
-      <% if (students.length === 0) { %>
-        <p class="empty">Aucun élève.</p>
-      <% } else { %>
-        <% students.forEach(s => { %>
-          <details class="edit-row">
-            <summary><strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %> — <code><%= s.matricule || '—' %></code></summary>
-            <form method="POST" action="/school/students/<%= s.id %>/update" class="form" style="margin-top:0.75rem">
-              <div class="form-row">
-                <div class="form-group"><label>Prénom</label><input type="text" name="firstName" value="<%= s.firstName %>" required></div>
-                <div class="form-group"><label>Nom</label><input type="text" name="lastName" value="<%= s.lastName %>" required></div>
-              </div>
-              <div class="form-group"><label>Matricule</label><input type="text" name="matricule" value="<%= s.matricule || '' %>"></div>
-              <div class="form-group">
-                <label>Classe</label>
-                <select name="classId" required>
-                  <% classes.forEach(c => { %>
-                    <option value="<%= c.id %>" <%= c.id === s.classId ? 'selected' : '' %>><%= c.name %></option>
-                  <% }) %>
-                </select>
-              </div>
-              <div class="form-group"><label>Naissance</label><input type="date" name="birthDate" value="<%= s.birthDate ? new Date(s.birthDate).toISOString().slice(0,10) : '' %>"></div>
-              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-            </form>
-            <form method="POST" action="/school/students/<%= s.id %>/delete" onsubmit="return confirm('Supprimer cet élève ?')">
-              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-            </form>
-          </details>
-        <% }) %>
-      <% } %>
-    </div>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('students', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Élèves' }) %>
+<% } else { %>
+<div class="page-header">
+
+    <h1>Élèves</h1>
+
+    <a href="/school/students/import/template" class="btn btn-outline btn-sm">Télécharger modèle CSV</a>
+
+  </div>
+
+
+
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
+
+
+
+  <% if (importResult) { %>
+
+    <div class="alert <%= importResult.imported ? 'alert-success' : 'alert-error' %>">
+
+      Import : <%= importResult.imported %> ajouté(s), <%= importResult.skipped %> ignoré(s).
+
+    </div>
+
+  <% } %>
+
+
+
+  <div class="card" style="margin-bottom:1.5rem">
+
+    <h2>Import CSV</h2>
+
+    <% if (classes.length === 0) { %>
+
+      <div class="alert alert-error">Créez d'abord une classe.</div>
+
+    <% } else { %>
+
+      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline">
+
+        <input type="file" name="csv" accept=".csv" required>
+
+        <button type="submit" class="btn btn-primary">Importer</button>
+
+      </form>
+
+    <% } %>
+
+  </div>
+
+
+
+  <div class="grid-2">
+
+    <div class="card">
+
+      <h2>Ajouter un élève</h2>
+
+      <form method="POST" action="/school/students" class="form" enctype="multipart/form-data">
+
+        <div class="form-row">
+
+          <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
+
+          <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
+
+        </div>
+
+        <div class="form-group"><label>Photo</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></div>
+
+        <div class="form-group"><label>Matricule</label><input type="text" name="matricule" placeholder="Pour liaison parent"></div>
+
+        <div class="form-group">
+
+          <label>Classe</label>
+
+          <select name="classId" required>
+
+            <option value="">— Choisir —</option>
+
+            <% classes.forEach(c => { %><option value="<%= c.id %>"><%= c.name %></option><% }) %>
+
+          </select>
+
+        </div>
+
+        <div class="form-group"><label>Date naissance</label><input type="date" name="birthDate"></div>
+
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+
+      </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <h2>Liste (<%= students.length %>)</h2>
+
+      <% if (students.length === 0) { %>
+
+        <p class="empty">Aucun élève.</p>
+
+      <% } else { %>
+
+        <% students.forEach(s => { %>
+
+          <details class="edit-row">
+
+            <summary>
+              <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'sm' }) %>
+              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %> — <code><%= s.matricule || '—' %></code>
+            </summary>
+
+            <form method="POST" action="/school/students/<%= s.id %>/update" class="form" enctype="multipart/form-data" style="margin-top:0.75rem">
+
+              <div class="form-row">
+
+                <div class="form-group"><label>Prénom</label><input type="text" name="firstName" value="<%= s.firstName %>" required></div>
+
+                <div class="form-group"><label>Nom</label><input type="text" name="lastName" value="<%= s.lastName %>" required></div>
+
+              </div>
+
+              <div class="form-group"><label>Matricule</label><input type="text" name="matricule" value="<%= s.matricule || '' %>"></div>
+
+              <div class="form-group">
+
+                <label>Classe</label>
+
+                <select name="classId" required>
+
+                  <% classes.forEach(c => { %>
+
+                    <option value="<%= c.id %>" <%= c.id === s.classId ? 'selected' : '' %>><%= c.name %></option>
+
+                  <% }) %>
+
+                </select>
+
+              </div>
+
+              <div class="form-group"><label>Naissance</label><input type="date" name="birthDate" value="<%= s.birthDate ? new Date(s.birthDate).toISOString().slice(0,10) : '' %>"></div>
+
+              <div class="form-group">
+                <label>Photo</label>
+                <% if (s.photoUrl) { %>
+                  <div class="avatar-edit"><%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'md' }) %></div>
+                  <label class="checkbox-label"><input type="checkbox" name="removePhoto"> Supprimer la photo</label>
+                <% } %>
+                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+            </form>
+
+            <form method="POST" action="/school/students/<%= s.id %>/delete" onsubmit="return confirm('Supprimer cet élève ?')">
+
+              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+
+            </form>
+
+          </details>
+
+        <% }) %>
+
+      <% } %>
+
+    </div>
+
+  </div>
+<% } %>

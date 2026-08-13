@@ -1,5 +1,7 @@
 const request = require('supertest');
 const app = require('../src/app');
+const { checkRole } = require('../src/middleware/auth');
+const { getCookieOptions } = require('../src/utils/cookies');
 
 describe('Auth flows', () => {
   test('GET /auth/login returns 200', async () => {
@@ -32,3 +34,42 @@ describe('Auth flows', () => {
     }
   });
 });
+
+describe('JWT cookie options', () => {
+  test('cookie is httpOnly with sameSite strict', () => {
+    const opts = getCookieOptions();
+    expect(opts.httpOnly).toBe(true);
+    expect(opts.sameSite).toBe('strict');
+    expect(opts.secure).toBe(process.env.NODE_ENV === 'production');
+  });
+});
+
+describe('checkRole', () => {
+  function mockRes() {
+    return {
+      statusCode: null,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      send(text) { this.body = text; return this; },
+    };
+  }
+
+  test('allows matching school admin', () => {
+    const req = { user: { role: 'SCHOOL_ADMIN' } };
+    const res = mockRes();
+    const next = jest.fn();
+    checkRole('school')(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+
+  test('returns 403 Forbidden for the wrong role', () => {
+    const req = { user: { role: 'PARENT' } };
+    const res = mockRes();
+    const next = jest.fn();
+    checkRole('school')(req, res, next);
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toBe('Forbidden');
+    expect(next).not.toHaveBeenCalled();
+  });
+});
+

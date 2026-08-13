@@ -1,19 +1,19 @@
 const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
-const { hashPassword } = require('../utils/password');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
+const { getPendingPayments } = require('../../services/PaymentService');
+const { createTeacherProfile } = require('../../services/HRService');
+const { generateBulletinPDF } = require('../../services/export');
 
 async function dashboard(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
 
-  const [classes, students, teachers, pendingPayments, recentPayments] = await Promise.all([
+  const [classes, students, teachers, pendingList, recentPayments] = await Promise.all([
     prisma.class.count({ where: { schoolId: school.id } }),
     prisma.student.count({ where: { schoolId: school.id } }),
     prisma.teacher.count({ where: { schoolId: school.id } }),
-    prisma.payment.count({
-      where: { status: 'PENDING', student: { schoolId: school.id } },
-    }),
+    getPendingPayments(school.id),
     prisma.payment.findMany({
       where: { student: { schoolId: school.id } },
       include: { student: true, feeType: true },
@@ -25,28 +25,46 @@ async function dashboard(req, res) {
   res.render('school/dashboard', {
     user: req.user,
     school,
-    stats: { classes, students, teachers, pendingPayments },
+    stats: { classes, students, teachers, pendingPayments: pendingList.length },
     recentPayments,
   });
 }
 
 async function settings(req, res) {
-  res.render('school/settings', { user: req.user, school: req.user.school, success: null, error: null });
+  const success = req.query.success === 'photo' ? 'Photo de profil mise à jour' : null;
+  res.render('school/settings', { user: req.user, school: req.user.school, success, error: null });
 }
 
 async function updateSettings(req, res) {
-  const { waveNumber, omNumber, name, address, city, logoUrl } = req.body;
+  const { waveNumber, omNumber, name, address, city, removeLogo } = req.body;
   try {
+    const data = { waveNumber, omNumber, name, address, city };
+
+    if (removeLogo === 'on') {
+      const { removeSchoolLogoFiles } = require('../utils/schoolLogo');
+      removeSchoolLogoFiles(req.user.school.id);
+      data.logoUrl = null;
+      data.logoBase64 = null;
+    }
+
+    if (req.file) {
+      const { saveSchoolLogo } = require('../utils/schoolLogo');
+      const logo = saveSchoolLogo(req.user.school.id, req.file);
+      data.logoUrl = logo.logoUrl;
+      data.logoBase64 = logo.logoBase64;
+    }
+
     const school = await prisma.school.update({
       where: { id: req.user.school.id },
-      data: { waveNumber, omNumber, name, address, city, logoUrl: logoUrl || undefined },
+      data,
     });
     req.user.school = school;
     await logAudit({ action: 'school_settings_update', entity: 'School', entityId: school.id, user: req.user, ip: req.ip });
     res.render('school/settings', { user: req.user, school, success: 'Paramètres mis à jour', error: null });
   } catch (err) {
     console.error(err);
-    res.render('school/settings', { user: req.user, school: req.user.school, success: null, error: 'Erreur de mise à jour' });
+    const message = err.message?.includes('Format') ? err.message : 'Erreur de mise à jour';
+    res.render('school/settings', { user: req.user, school: req.user.school, success: null, error: message });
   }
 }
 
@@ -219,6 +237,12 @@ async function createStudent(req, res) {
         schoolId,
         birthDate: birthDate ? new Date(birthDate) : null,
       },
+    }).then(async (created) => {
+      if (req.file) {
+        const { savePersonPhoto } = require('../utils/media');
+        const { photoUrl } = savePersonPhoto('student', created.id, req.file);
+        await prisma.student.update({ where: { id: created.id }, data: { photoUrl } });
+      }
     });
     await logAudit({ action: 'student_create', entity: 'Student', user: req.user, ip: req.ip, details: { matricule } });
     res.redirect('/school/students?success=1');
@@ -237,15 +261,26 @@ async function updateStudent(req, res) {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
     if (!cls) return res.redirect('/school/students?error=class');
 
+    const data = {
+      firstName,
+      lastName,
+      matricule: matricule || null,
+      classId,
+      birthDate: birthDate ? new Date(birthDate) : null,
+    };
+    if (req.body.removePhoto === 'on') {
+      const { removePersonPhoto } = require('../utils/media');
+      removePersonPhoto('student', id);
+      data.photoUrl = null;
+    }
+    if (req.file) {
+      const { savePersonPhoto } = require('../utils/media');
+      data.photoUrl = savePersonPhoto('student', id, req.file).photoUrl;
+    }
+
     await prisma.student.updateMany({
       where: { id, schoolId },
-      data: {
-        firstName,
-        lastName,
-        matricule: matricule || null,
-        classId,
-        birthDate: birthDate ? new Date(birthDate) : null,
-      },
+      data,
     });
     await logAudit({ action: 'student_update', entity: 'Student', entityId: id, user: req.user, ip: req.ip });
     res.redirect('/school/students?success=updated');
@@ -268,11 +303,14 @@ async function deleteStudent(req, res) {
 }
 
 async function listPayments(req, res) {
-  const payments = await prisma.payment.findMany({
-    where: { student: { schoolId: req.user.school.id } },
-    include: { student: { include: { class: true } }, feeType: true },
+  const schoolId = req.user.school.id;
+  const pending = await getPendingPayments(schoolId);
+  const others = await prisma.payment.findMany({
+    where: { student: { schoolId }, status: { not: 'PENDING' } },
+    include: { student: { include: { class: true } }, feeType: true, proofs: true },
     orderBy: { createdAt: 'desc' },
   });
+  const payments = [...pending, ...others];
   res.render('school/payments', { user: req.user, school: req.user.school, payments });
 }
 
@@ -315,18 +353,20 @@ async function validatePayment(req, res) {
   });
 
   if (status === 'VALIDATED') {
+    const { delCache } = require('../../services/cache');
+    await delCache(`stats:school:${req.user.school.id}`);
+
     const parents = await prisma.parentStudent.findMany({
       where: { studentId: payment.studentId },
       include: { parent: { include: { user: true } } },
     });
-    const { notifyUser } = require('../utils/notify');
+    const { sendNotification } = require('../../services/NotificationService');
     for (const ps of parents) {
-      await notifyUser(ps.parent.userId, {
-        type: 'PAYMENT',
-        title: 'Paiement validé',
-        body: `${payment.amount.toLocaleString('fr-FR')} FCFA confirmés. Reçu disponible.`,
-        sms: true,
-      });
+      await sendNotification(
+        ps.parent.userId,
+        'payment_validated',
+        `${payment.amount.toLocaleString('fr-FR')} FCFA confirmés pour ${payment.student.firstName}. Reçu disponible.`,
+      );
     }
 
     const { isEnabled, getModuleMap, initFinanceDefaults } = require('../utils/modules');
@@ -423,6 +463,22 @@ async function generateBulkBulletin(req, res) {
   }
 }
 
+async function exportBulletinPdf(req, res) {
+  const student = await prisma.student.findFirst({
+    where: { id: req.params.studentId, schoolId: req.user.school.id },
+  });
+  if (!student) return res.redirect('/school/bulletins?error=eleve');
+
+  try {
+    const result = await generateBulletinPDF(student.id);
+    if (!result.ok) return res.redirect(`/school/bulletins?error=${result.error}`);
+    return res.download(result.filepath, result.filename);
+  } catch (err) {
+    console.error(err);
+    res.redirect('/school/bulletins?error=generation');
+  }
+}
+
 async function listTeachers(req, res) {
   const schoolId = req.user.school.id;
   const [teachers, classes] = await Promise.all([
@@ -447,27 +503,27 @@ async function inviteTeacher(req, res) {
   const { email, firstName, lastName, phone, subject, password } = req.body;
   const schoolId = req.user.school.id;
   try {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.redirect('/school/teachers?error=email');
-
-    const tempPassword = password || `Edu${Math.random().toString(36).slice(2, 10)}`;
-    const hashed = await hashPassword(tempPassword);
-
-    await prisma.user.create({
-      data: {
-        email,
-        password: hashed,
-        firstName,
-        lastName,
-        phone,
-        role: 'TEACHER',
-        teacher: { create: { schoolId, subject } },
-      },
+    const result = await createTeacherProfile({
+      email,
+      firstName,
+      lastName,
+      phone,
+      subject,
+      password,
+      schoolId,
     });
+    if (!result.ok) return res.redirect(`/school/teachers?error=${result.error}`);
+
+    if (req.file && result.user) {
+      const { savePersonPhoto } = require('../utils/media');
+      const { photoUrl } = savePersonPhoto('user', result.user.id, req.file);
+      await prisma.user.update({ where: { id: result.user.id }, data: { photoUrl } });
+    }
 
     await logAudit({
       action: 'teacher_invite',
       entity: 'Teacher',
+      entityId: result.teacher.id,
       user: req.user,
       ip: req.ip,
       details: { email, subject },
@@ -500,6 +556,30 @@ async function assignTeacherClass(req, res) {
   } catch (err) {
     console.error(err);
     res.redirect('/school/teachers?error=1');
+  }
+}
+
+async function updateTeacherPhoto(req, res) {
+  const { teacherId } = req.params;
+  const teacher = await prisma.teacher.findFirst({
+    where: { id: teacherId, schoolId: req.user.school.id },
+  });
+  if (!teacher) return res.redirect('/school/teachers?error=1');
+
+  try {
+    if (req.body.removePhoto === 'on') {
+      const { removePersonPhoto } = require('../utils/media');
+      removePersonPhoto('user', teacher.userId);
+      await prisma.user.update({ where: { id: teacher.userId }, data: { photoUrl: null } });
+    } else if (req.file) {
+      const { savePersonPhoto } = require('../utils/media');
+      const { photoUrl } = savePersonPhoto('user', teacher.userId, req.file);
+      await prisma.user.update({ where: { id: teacher.userId }, data: { photoUrl } });
+    }
+    res.redirect('/school/teachers?success=photo');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/school/teachers?error=photo');
   }
 }
 
@@ -571,40 +651,6 @@ async function promoteClass(req, res) {
   }
 }
 
-async function upgradeSubscription(req, res) {
-  await prisma.school.update({
-    where: { id: req.user.school.id },
-    data: { subscription: 'premium' },
-  });
-  res.redirect('/school/dashboard?premium=1');
-}
-
-async function modulesPage(req, res) {
-  const { getModuleMap } = require('../utils/modules');
-  const { MODULE_KEYS } = require('../config/modules');
-  const modules = await getModuleMap(req.user.school.id);
-  res.render('school/modules', {
-    user: req.user,
-    school: req.user.school,
-    modules,
-    MODULE_KEYS,
-    success: req.query.success || null,
-  });
-}
-
-async function updateModules(req, res) {
-  const { MODULE_KEYS } = require('../config/modules');
-  const { setModule, getModuleMap } = require('../utils/modules');
-  const current = await getModuleMap(req.user.school.id);
-
-  for (const key of MODULE_KEYS) {
-    if (current[key]?.locked) continue;
-    const enabled = req.body[`mod_${key}`] === 'on';
-    await setModule(req.user.school.id, key, { enabled });
-  }
-  res.redirect('/school/modules?success=1');
-}
-
 module.exports = {
   dashboard,
   settings,
@@ -624,14 +670,13 @@ module.exports = {
   listBulletins,
   generateBulletin,
   generateBulkBulletin,
+  exportBulletinPdf,
   listTeachers,
   inviteTeacher,
   assignTeacherClass,
+  updateTeacherPhoto,
   schoolYearPage,
   updateSchoolYear,
   promoteClass,
-  upgradeSubscription,
-  modulesPage,
-  updateModules,
   LEVEL_ORDER,
 };

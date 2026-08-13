@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Premium' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="upgrade-page card">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('upgrade', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Premium' }) %>
+<% } else { %>
+<div class="upgrade-page card">
     <h1>⭐ Fonctionnalité Premium</h1>
     <p><strong><%= feature %></strong> nécessite un abonnement EduPay CI Premium.</p>
     <ul class="upgrade-list">
@@ -16,6 +17,4 @@
     </form>
     <a href="/school/dashboard" class="btn btn-outline">Retour</a>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

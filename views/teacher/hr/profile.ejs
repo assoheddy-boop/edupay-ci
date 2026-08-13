@@ -1,0 +1,45 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('profile', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Ma fiche RH' }) %>
+<% } else { %>
+<div class="page-header"><h1>Ma fiche personnelle</h1><p class="page-sub">Lecture seule — contactez l'administration pour toute modification.</p></div>
+  <%- include('_nav') %>
+  <% if (typeof success !== 'undefined' && success === 'photo') { %><div class="alert alert-success">Photo mise à jour.</div><% } %>
+
+  <% const p = teacher.staffProfile; %>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Informations</h2>
+      <div class="person-line" style="margin-bottom:1rem">
+        <%- include('../../partials/_avatar', { src: teacher.user.photoUrl, firstName: teacher.user.firstName, lastName: teacher.user.lastName, size: 'lg' }) %>
+        <div>
+          <p><strong><%= teacher.user.lastName %> <%= teacher.user.firstName %></strong></p>
+          <p class="page-sub"><%= teacher.user.email %></p>
+        </div>
+      </div>
+      <form method="POST" action="/auth/photo" enctype="multipart/form-data" class="form form-inline" style="margin-bottom:1rem">
+        <input type="hidden" name="redirectTo" value="/teacher/hr/profile">
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+        <button type="submit" class="btn btn-outline btn-sm">Changer ma photo</button>
+      </form>
+      <p><strong>Nom :</strong> <%= teacher.user.lastName %> <%= teacher.user.firstName %></p>
+      <p><strong>Email :</strong> <%= teacher.user.email %></p>
+      <p><strong>Matière :</strong> <%= teacher.subject || '—' %></p>
+      <p><strong>Contrat :</strong> <%= p?.contractType || '—' %></p>
+      <p><strong>Statut :</strong> <%= p?.status || 'ACTIVE' %></p>
+      <p><strong>Salaire base :</strong> <%= p ? p.baseSalary.toLocaleString('fr-FR') : '0' %> FCFA</p>
+      <p><strong>Embauche :</strong> <%= p?.hireDate ? new Date(p.hireDate).toLocaleDateString('fr-FR') : '—' %></p>
+      <p><strong>Banque :</strong> <%= p?.bankName || '—' %> — <%= p?.bankAccount || '' %></p>
+      <p><strong>Contact urgence :</strong> <%= p?.emergencyName || '—' %> (<%= p?.emergencyPhone || '' %>)</p>
+    </div>
+    <div class="card">
+      <h2>Documents</h2>
+      <ul class="list">
+        <% teacher.staffDocuments.forEach(function(d) { %>
+          <li class="list-item"><strong><%= d.label %></strong> <a href="<%= d.fileData || d.fileUrl %>" target="_blank">Voir</a></li>
+        <% }) %>
+        <% if (!teacher.staffDocuments.length) { %><li class="empty-sm">Aucun document.</li><% } %>
+      </ul>
+    </div>
+  </div>
+<% } %>

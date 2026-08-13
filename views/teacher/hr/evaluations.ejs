@@ -1,0 +1,22 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('evaluations', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Mes évaluations' }) %>
+<% } else { %>
+<div class="page-header"><h1>Mes évaluations</h1></div>
+  <%- include('_nav') %>
+
+  <div class="card">
+    <% if (!evaluations.length) { %>
+      <p class="empty">Aucune évaluation enregistrée.</p>
+    <% } else { %>
+      <% evaluations.forEach(function(ev) { %>
+        <div class="card" style="margin-bottom:1rem;border:1px solid #eee">
+          <h3>Période <%= ev.period %></h3>
+          <p>Ponctualité : <%= ev.punctuality || '—' %>/5 · Pédagogie : <%= ev.pedagogy || '—' %>/5 · Discipline : <%= ev.discipline || '—' %>/5 · Équipe : <%= ev.teamwork || '—' %>/5</p>
+          <% if (ev.comment) { %><p><em><%= ev.comment %></em></p><% } %>
+          <small><%= new Date(ev.createdAt).toLocaleDateString('fr-FR') %></small>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+<% } %>

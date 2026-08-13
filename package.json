@@ -12,6 +12,9 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
+    "db:seed-rich": "node prisma/seed-rich.js",
+    "db:bootstrap-premium": "node scripts/bootstrap-premium.js",
+    "db:onboard-epv": "node scripts/onboard-epv-schools.js",
     "db:studio": "prisma studio",
     "verify": "node scripts/verify-all.js"
   },
@@ -43,7 +46,9 @@
     "pdfkit": "^0.19.1",
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
-    "socket.io": "^4.8.3"
+    "redis": "^6.2.1",
+    "socket.io": "^4.8.3",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "jest": "^30.4.2",

@@ -16,6 +16,7 @@
 
     <form method="POST" action="/auth/register" class="form">
       <input type="hidden" name="role" value="<%= role === 'parent' ? 'PARENT' : role %>">
+      <input type="hidden" name="plan" value="<%= typeof plan !== 'undefined' && plan ? plan : '' %>">
 
       <div class="form-row">
         <div class="form-group">

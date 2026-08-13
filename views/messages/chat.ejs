@@ -1,130 +1,265 @@
-<%- include('../partials/head', { title: 'Conversation' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container container-chat">
-  <div class="page-header">
-    <a href="<%= basePath %>/messages" class="btn btn-outline btn-sm">← Retour</a>
-    <div>
-      <h1><%= partner.firstName %> <%= partner.lastName %></h1>
-      <% if (partnerInfo?.label) { %><p class="page-sub"><%= partnerInfo.label %></p><% } %>
-    </div>
-  </div>
-
-  <div class="chat-thread card">
-    <div class="chat-messages" id="chatMessages">
-      <% if (messages.length === 0) { %>
-        <p class="empty chat-empty" id="chatEmpty">Aucun message. Envoyez le premier !</p>
-      <% } else { %>
-        <% messages.forEach(m => { const mine = m.senderId === user.id; %>
-          <div class="chat-bubble <%= mine ? 'chat-mine' : 'chat-theirs' %>" data-id="<%= m.id %>">
-            <% if (m.student) { %><small class="chat-student">Re: <%= m.student.firstName %></small><% } %>
-            <% if (m.audioUrl) { %>
-              <audio controls src="<%= m.audioUrl %>" class="chat-audio"></audio>
-            <% } else { %>
-              <p><%= m.content %></p>
-            <% } %>
-            <time><%= new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) %></time>
-          </div>
-        <% }) %>
-      <% } %>
-    </div>
-
-    <form method="POST" action="<%= basePath %>/messages/<%= partner.id %>" enctype="multipart/form-data" class="chat-form" id="chatForm">
-      <% if (students.length > 0) { %>
-        <select name="studentId" class="chat-student-select">
-          <option value="">— Concernant un enfant (optionnel) —</option>
-          <% students.forEach(s => { %>
-            <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
-          <% }) %>
-        </select>
-      <% } %>
-      <div class="chat-input-row">
-        <textarea name="content" rows="2" placeholder="Votre message…" id="chatContent"></textarea>
-        <button type="submit" class="btn btn-primary">Envoyer</button>
-      </div>
-      <p id="typingHint" class="chat-typing"></p>
-      <div class="chat-audio-row">
-        <label class="btn btn-outline btn-sm">
-          🎤 Message vocal
-          <input type="file" name="audio" accept="audio/*" hidden>
-        </label>
-      </div>
-    </form>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
-<script>
-  const el = document.getElementById('chatMessages');
-  if (el) el.scrollTop = el.scrollHeight;
-
-  const userId = '<%= user.id %>';
-  const partnerId = '<%= partner.id %>';
-
-  function appendMessage(m) {
-    const empty = document.getElementById('chatEmpty');
-    if (empty) empty.remove();
-    if (document.querySelector(`[data-id="${m.id}"]`)) return;
-
-    const mine = m.senderId === userId;
-    const div = document.createElement('div');
-    div.className = 'chat-bubble ' + (mine ? 'chat-mine' : 'chat-theirs');
-    div.dataset.id = m.id;
-
-    let html = '';
-    if (m.audioUrl) {
-      html += `<audio controls src="${m.audioUrl}" class="chat-audio"></audio>`;
-    } else {
-      html += `<p>${(m.content || '').replace(/</g, '&lt;')}</p>`;
-    }
-    const d = new Date(m.createdAt);
-    html += `<time>${d.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</time>`;
-    div.innerHTML = html;
-    el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
-  }
-
-  <% if (typeof socketToken !== 'undefined') { %>
-  (function() {
-    const s = document.createElement('script');
-    s.src = '/socket.io/socket.io.js';
-    s.onload = function() {
-      const socket = io({ auth: { token: '<%= socketToken %>' } });
-      socket.on('new_message', (m) => {
-        if (m.senderId === partnerId || m.receiverId === partnerId || m.senderId === userId) {
-          appendMessage(m);
-        }
-      });
-      socket.on('typing', () => {
-        const hint = document.getElementById('typingHint');
-        if (hint) hint.textContent = 'En train d\'écrire…';
-        setTimeout(() => { if (hint) hint.textContent = ''; }, 2000);
-      });
-      const textarea = document.getElementById('chatContent');
-      if (textarea) textarea.addEventListener('input', () => socket.emit('typing', { partnerId }));
-
-      const form = document.getElementById('chatForm');
-      if (form) {
-        form.addEventListener('submit', async (e) => {
-          const audioInput = form.querySelector('input[type="file"]');
-          if (audioInput?.files?.length) return;
-          const content = textarea?.value?.trim();
-          if (!content) { e.preventDefault(); return; }
-          e.preventDefault();
-          const fd = new FormData(form);
-          const res = await fetch(form.action + '?ajax=1', {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            appendMessage(data.message);
-            textarea.value = '';
-          }
-        });
-      }
-    };
-    document.body.appendChild(s);
-  })();
-  <% } %>
-</script>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<%
+  const layoutFile = ({
+    PARENT: 'parentLayout',
+    TEACHER: 'teacherLayout',
+    SUPER_ADMIN: 'adminLayout',
+    ORGANIZATION_ADMIN: 'groupLayout',
+  })[user && user.role] || 'schoolLayout';
+  const content = include('chat', { _inLayout: true });
+%>
+<%- include('../layouts/' + layoutFile, { body: content }) %>
+<% } else { %>
+<div class="container-chat">
+<div class="page-header">
+
+    <a href="<%= basePath %>/messages" class="btn btn-outline btn-sm">← Retour</a>
+
+    <div class="person-line">
+      <%- include('../partials/_avatar', { src: partner.photoUrl, firstName: partner.firstName, lastName: partner.lastName, size: 'md' }) %>
+      <div>
+        <h1><%= partner.firstName %> <%= partner.lastName %></h1>
+        <% if (partnerInfo?.label) { %><p class="page-sub"><%= partnerInfo.label %></p><% } %>
+      </div>
+    </div>
+
+  </div>
+
+
+
+  <div class="chat-thread card">
+
+    <div class="chat-messages" id="chatMessages">
+
+      <% if (messages.length === 0) { %>
+
+        <p class="empty chat-empty" id="chatEmpty">Aucun message. Envoyez le premier !</p>
+
+      <% } else { %>
+
+        <% messages.forEach(m => { const mine = m.senderId === user.id; %>
+
+          <div class="chat-bubble <%= mine ? 'chat-mine' : 'chat-theirs' %>" data-id="<%= m.id %>">
+
+            <% if (m.student) { %><small class="chat-student">Re: <%= m.student.firstName %></small><% } %>
+
+            <% if (m.audioUrl) { %>
+
+              <audio controls src="<%= m.audioUrl %>" class="chat-audio"></audio>
+
+            <% } else { %>
+
+              <p><%= m.content %></p>
+
+            <% } %>
+
+            <time><%= new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) %></time>
+
+          </div>
+
+        <% }) %>
+
+      <% } %>
+
+    </div>
+
+
+
+    <form method="POST" action="<%= basePath %>/messages/<%= partner.id %>" enctype="multipart/form-data" class="chat-form" id="chatForm">
+
+      <% if (students.length > 0) { %>
+
+        <select name="studentId" class="chat-student-select">
+
+          <option value="">— Concernant un enfant (optionnel) —</option>
+
+          <% students.forEach(s => { %>
+
+            <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %></option>
+
+          <% }) %>
+
+        </select>
+
+      <% } %>
+
+      <div class="chat-input-row">
+
+        <textarea name="content" rows="2" placeholder="Votre message…" id="chatContent"></textarea>
+
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+
+      </div>
+
+      <p id="typingHint" class="chat-typing"></p>
+
+      <div class="chat-audio-row">
+
+        <label class="btn btn-outline btn-sm">
+
+          🎤 Message vocal
+
+          <input type="file" name="audio" accept="audio/*" hidden>
+
+        </label>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</main>
+
+<script>
+
+  const el = document.getElementById('chatMessages');
+
+  if (el) el.scrollTop = el.scrollHeight;
+
+
+
+  const userId = '<%= user.id %>';
+
+  const partnerId = '<%= partner.id %>';
+
+
+
+  function appendMessage(m) {
+
+    const empty = document.getElementById('chatEmpty');
+
+    if (empty) empty.remove();
+
+    if (document.querySelector(`[data-id="${m.id}"]`)) return;
+
+
+
+    const mine = m.senderId === userId;
+
+    const div = document.createElement('div');
+
+    div.className = 'chat-bubble ' + (mine ? 'chat-mine' : 'chat-theirs');
+
+    div.dataset.id = m.id;
+
+
+
+    let html = '';
+
+    if (m.audioUrl) {
+
+      html += `<audio controls src="${m.audioUrl}" class="chat-audio"></audio>`;
+
+    } else {
+
+      html += `<p>${(m.content || '').replace(/</g, '&lt;')}</p>`;
+
+    }
+
+    const d = new Date(m.createdAt);
+
+    html += `<time>${d.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</time>`;
+
+    div.innerHTML = html;
+
+    el.appendChild(div);
+
+    el.scrollTop = el.scrollHeight;
+
+  }
+
+
+
+  <% if (typeof socketToken !== 'undefined') { %>
+
+  (function() {
+
+    const s = document.createElement('script');
+
+    s.src = '/socket.io/socket.io.js';
+
+    s.onload = function() {
+
+      const socket = io({ auth: { token: '<%= socketToken %>' } });
+      socket.emit('subscribe', userId);
+
+      socket.on('new_message', (m) => {
+
+        if (m.senderId === partnerId || m.receiverId === partnerId || m.senderId === userId) {
+
+          appendMessage(m);
+
+        }
+
+      });
+
+      socket.on('typing', () => {
+
+        const hint = document.getElementById('typingHint');
+
+        if (hint) hint.textContent = 'En train d\'écrire…';
+
+        setTimeout(() => { if (hint) hint.textContent = ''; }, 2000);
+
+      });
+
+      const textarea = document.getElementById('chatContent');
+
+      if (textarea) textarea.addEventListener('input', () => socket.emit('typing', { partnerId }));
+
+
+
+      const form = document.getElementById('chatForm');
+
+      if (form) {
+
+        form.addEventListener('submit', async (e) => {
+
+          const audioInput = form.querySelector('input[type="file"]');
+
+          if (audioInput?.files?.length) return;
+
+          const content = textarea?.value?.trim();
+
+          if (!content) { e.preventDefault(); return; }
+
+          e.preventDefault();
+
+          const fd = new FormData(form);
+
+          const res = await fetch(form.action + '?ajax=1', {
+
+            method: 'POST',
+
+            body: fd,
+
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+
+          });
+
+          if (res.ok) {
+
+            const data = await res.json();
+
+            appendMessage(data.message);
+
+            textarea.value = '';
+
+          }
+
+        });
+
+      }
+
+    };
+
+    document.body.appendChild(s);
+
+  })();
+
+  <% } %>
+
+</script>
+</div>
+<% } %>

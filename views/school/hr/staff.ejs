@@ -1,0 +1,28 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('staff', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Personnel' }) %>
+<% } else { %>
+<div class="page-header"><h1>Personnel</h1></div>
+  <%- include('_nav') %>
+
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Nom</th><th>Matière</th><th>Contrat</th><th>Salaire base</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        <% teachers.forEach(function(t) { const p = t.staffProfile; %>
+          <tr>
+            <td class="person-cell">
+              <%- include('../../partials/_avatar', { src: t.user.photoUrl, firstName: t.user.firstName, lastName: t.user.lastName, size: 'sm' }) %>
+              <span><strong><%= t.user.lastName %> <%= t.user.firstName %></strong><br><small><%= t.user.email %></small></span>
+            </td>
+            <td><%= t.subject || '—' %></td>
+            <td><%= p?.contractType || '—' %></td>
+            <td><%= p ? p.baseSalary.toLocaleString('fr-FR') : '0' %> FCFA</td>
+            <td><span class="badge"><%= p?.status || 'ACTIVE' %></span></td>
+            <td><a href="/school/hr/staff/<%= t.id %>" class="btn btn-sm btn-primary">Dossier</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

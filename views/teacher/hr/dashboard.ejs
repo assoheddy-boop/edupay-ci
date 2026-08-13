@@ -1,0 +1,22 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Mon espace RH' }) %>
+<% } else { %>
+<div class="page-header"><h1>Mon espace RH</h1></div>
+  <%- include('_nav') %>
+  <% if (success) { %><div class="alert alert-success">Action enregistrée.</div><% } %>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-value"><%= profile?.contractType || '—' %></span><span class="stat-label">Contrat</span></div>
+    <div class="stat-card"><span class="stat-value"><%= profile ? profile.baseSalary.toLocaleString('fr-FR') : '0' %></span><span class="stat-label">Salaire base</span></div>
+    <div class="stat-card"><span class="stat-value"><%= todayAttendance?.status || '—' %></span><span class="stat-label">Présence aujourd'hui</span></div>
+    <div class="stat-card"><span class="stat-value"><%= lastPayslip ? lastPayslip.netPay.toLocaleString('fr-FR') : '—' %></span><span class="stat-label">Dernier bulletin</span></div>
+  </div>
+
+  <div class="quick-actions">
+    <a href="/teacher/hr/attendance" class="action-card">🕐 Pointer</a>
+    <a href="/teacher/hr/leaves" class="action-card">🏖️ Demander un congé</a>
+    <a href="/teacher/hr/payslips" class="action-card">💰 Mes bulletins</a>
+    <a href="/teacher/hr/profile" class="action-card">📋 Ma fiche</a>
+  </div>
+<% } %>

@@ -1,7 +1,8 @@
-<%- include('../../partials/head', { title: 'Comptabilité' }) %>
-<%- include('../../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'Comptabilité' }) %>
+<% } else { %>
+<div class="page-header">
     <div>
       <h1>Comptabilité</h1>
       <p class="page-sub">Trésorerie et mouvements financiers — <%= school.name %></p>
@@ -114,6 +115,4 @@
       </table>
     <% } %>
   </div>
-</main>
-<%- include('../../partials/footer') %>
-<%- include('../../partials/scripts') %>
+<% } %>

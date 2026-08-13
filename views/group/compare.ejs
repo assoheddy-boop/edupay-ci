@@ -1,0 +1,52 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('compare', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Comparatif campus' }) %>
+<% } else { %>
+<%- include('_nav', { current: 'compare' }) %>
+<div class="page-header">
+  <div>
+    <h1>Comparatif campus</h1>
+    <p class="page-sub">Sélectionnez les établissements à mettre côte à côte</p>
+  </div>
+</div>
+
+<div class="card">
+  <form method="GET" action="/group/compare" class="form">
+    <div class="group-compare-picks">
+      <% campusStats.forEach(function(c) { %>
+        <label class="attendance-check person-line">
+          <input type="checkbox" name="ids" value="<%= c.school.id %>" <%= selectedIds.includes(c.school.id) ? 'checked' : '' %>>
+          <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+          <%= c.school.campusLabel || c.school.name %>
+        </label>
+      <% }) %>
+    </div>
+    <button type="submit" class="btn btn-primary">Comparer</button>
+  </form>
+</div>
+
+<% if (selected.length < 1) { %>
+  <p class="empty">Aucun campus à comparer.</p>
+<% } else { %>
+  <div class="campus-compare">
+    <% selected.forEach(function(c) { %>
+      <div class="card">
+        <h2 class="person-line">
+          <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+          <a href="/group/campuses/<%= c.school.id %>"><%= c.school.campusLabel || c.school.name %></a>
+        </h2>
+        <p class="text-muted"><%= c.school.city || '—' %></p>
+        <ul class="group-compare-kpis">
+          <li><strong><%= c.students %></strong> élèves</li>
+          <li><strong><%= c.teachers %></strong> enseignants</li>
+          <li><strong><%= c.revenue.toLocaleString('fr-FR') %></strong> FCFA</li>
+          <li><strong><%= c.collectionRate %>%</strong> encaissement</li>
+          <li><strong><%= c.avgGrade.toFixed(1) %></strong> /20</li>
+          <li><strong><%= c.absences %></strong> absences</li>
+        </ul>
+        <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((c.revenue / maxRevenue) * 100) %>%"></div></div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+<% } %>

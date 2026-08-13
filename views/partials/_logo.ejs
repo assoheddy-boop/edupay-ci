@@ -1,0 +1,10 @@
+<%
+  const _logo = (typeof logoBase64 !== 'undefined' && logoBase64) || (typeof logoUrl !== 'undefined' && logoUrl) || null;
+  const _name = typeof name !== 'undefined' ? name : '';
+  const _size = typeof size !== 'undefined' ? size : 'md';
+%>
+<% if (_logo) { %>
+  <img src="<%= _logo %>" alt="<%= _name %>" class="brand-logo brand-logo-<%= _size %>">
+<% } else { %>
+  <span class="brand-logo-fallback brand-logo-<%= _size %>" title="<%= _name %>"><%= (_name && _name.charAt(0) || '?').toUpperCase() %></span>
+<% } %>

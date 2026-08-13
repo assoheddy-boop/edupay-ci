@@ -1,0 +1,42 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('attendance', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Présence' }) %>
+<% } else { %>
+<div class="page-header">
+    <h1>Présence personnel</h1>
+    <a href="/school/hr/export/attendance" class="btn btn-outline btn-sm">Export Excel</a>
+  </div>
+  <%- include('_nav') %>
+  <% if (success) { %><div class="alert alert-success">Présence enregistrée.</div><% } %>
+
+  <form method="GET" class="form form-inline card" style="margin-bottom:1rem;padding:1rem">
+    <label>Date</label>
+    <input type="date" name="date" value="<%= date %>">
+    <button type="submit" class="btn btn-primary btn-sm">Voir</button>
+  </form>
+
+  <div class="card">
+    <% teachers.forEach(function(t) {
+      const rec = records.find(function(r) { return r.teacherId === t.id; });
+    %>
+      <form method="POST" action="/school/hr/attendance" class="form edit-row">
+        <input type="hidden" name="teacherId" value="<%= t.id %>">
+        <input type="hidden" name="date" value="<%= date %>">
+        <strong><%= t.user.lastName %> <%= t.user.firstName %></strong>
+        <div class="form-row">
+          <div class="form-group"><label>Statut</label>
+            <select name="status">
+              <% ['PRESENT','LATE','ABSENT','HALF_DAY'].forEach(function(s) { %>
+                <option value="<%= s %>" <%= rec?.status === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group"><label>Entrée</label><input type="time" name="checkIn" value="<%= rec?.checkIn ? rec.checkIn.toISOString().slice(11,16) : '' %>"></div>
+          <div class="form-group"><label>Sortie</label><input type="time" name="checkOut" value="<%= rec?.checkOut ? rec.checkOut.toISOString().slice(11,16) : '' %>"></div>
+          <div class="form-group"><label>Note</label><input type="text" name="note" value="<%= rec?.note || '' %>"></div>
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Enregistrer</button>
+      </form>
+    <% }) %>
+  </div>
+<% } %>

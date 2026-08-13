@@ -1,52 +1,96 @@
-<%- include('../partials/head', { title: 'Autorisation sortie' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Autoriser une sortie</h1>
-    <p class="page-sub">QR code à présenter à l'école pour la récupération</p>
-  </div>
-  <% if (success) { %><div class="alert alert-success">Code généré — montrez le QR code à l'école.</div><% } %>
-
-  <div class="grid-2">
-    <div class="card">
-      <form method="POST" action="/parent/pickup" class="form">
-        <div class="form-group">
-          <label>Enfant</label>
-          <select name="studentId" required>
-            <option value="">— Choisir —</option>
-            <% children.forEach(link => { %>
-              <option value="<%= link.student.id %>"><%= link.student.firstName %> <%= link.student.lastName %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="form-group"><label>Personne autorisée</label><input type="text" name="authorizedPerson" required></div>
-        <div class="form-group"><label>Téléphone</label><input type="tel" name="authorizedPhone"></div>
-        <div class="form-group"><label>Valide jusqu'au</label><input type="date" name="validUntil" required></div>
-        <button type="submit" class="btn btn-success btn-lg btn-block">Générer le QR code</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Codes actifs</h2>
-      <% children.forEach(link => { const auths = link.student.pickupAuthorizations.filter(a => !a.usedAt && new Date(a.validUntil) >= new Date()); %>
-        <% if (auths.length > 0) { %>
-          <h3><%= link.student.firstName %></h3>
-          <% auths.forEach(a => { %>
-            <div class="qr-card">
-              <% if (a.qrDataUrl) { %>
-                <img src="<%= a.qrDataUrl %>" alt="QR <%= a.qrCode %>" class="qr-image">
-              <% } %>
-              <code class="qr-code"><%= a.qrCode %></code>
-              <p><%= a.authorizedPerson %></p>
-              <small>Valide jusqu'au <%= new Date(a.validUntil).toLocaleDateString('fr-FR') %></small>
-            </div>
-          <% }) %>
-        <% } %>
-      <% }) %>
-      <% const hasAny = children.some(l => l.student.pickupAuthorizations.some(a => !a.usedAt && new Date(a.validUntil) >= new Date())); %>
-      <% if (!hasAny) { %><p class="empty">Aucun code actif.</p><% } %>
-    </div>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('pickup', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Autorisation sortie' }) %>
+<% } else { %>
+<div class="page-header">
+
+    <h1>Autoriser une sortie</h1>
+
+    <p class="page-sub">QR code à présenter à l'école pour la récupération</p>
+
+  </div>
+
+  <% if (success) { %><div class="alert alert-success">Code généré — montrez le QR code à l'école.</div><% } %>
+
+
+
+  <div class="grid-2">
+
+    <div class="card">
+
+      <form method="POST" action="/parent/pickup" class="form">
+
+        <div class="form-group">
+
+          <label>Enfant</label>
+
+          <select name="studentId" required>
+
+            <option value="">— Choisir —</option>
+
+            <% children.forEach(link => { %>
+
+              <option value="<%= link.student.id %>"><%= link.student.firstName %> <%= link.student.lastName %></option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <div class="form-group"><label>Personne autorisée</label><input type="text" name="authorizedPerson" required></div>
+
+        <div class="form-group"><label>Téléphone</label><input type="tel" name="authorizedPhone"></div>
+
+        <div class="form-group"><label>Valide jusqu'au</label><input type="date" name="validUntil" required></div>
+
+        <button type="submit" class="btn btn-success btn-lg btn-block">Générer le QR code</button>
+
+      </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <h2>Codes actifs</h2>
+
+      <% children.forEach(link => { const auths = link.student.pickupAuthorizations.filter(a => !a.usedAt && new Date(a.validUntil) >= new Date()); %>
+
+        <% if (auths.length > 0) { %>
+
+          <h3><%= link.student.firstName %></h3>
+
+          <% auths.forEach(a => { %>
+
+            <div class="qr-card">
+
+              <% if (a.qrDataUrl) { %>
+
+                <img src="<%= a.qrDataUrl %>" alt="QR <%= a.qrCode %>" class="qr-image">
+
+              <% } %>
+
+              <code class="qr-code"><%= a.qrCode %></code>
+
+              <p><%= a.authorizedPerson %></p>
+
+              <small>Valide jusqu'au <%= new Date(a.validUntil).toLocaleDateString('fr-FR') %></small>
+
+            </div>
+
+          <% }) %>
+
+        <% } %>
+
+      <% }) %>
+
+      <% const hasAny = children.some(l => l.student.pickupAuthorizations.some(a => !a.usedAt && new Date(a.validUntil) >= new Date())); %>
+
+      <% if (!hasAny) { %><p class="empty">Aucun code actif.</p><% } %>
+
+    </div>
+
+  </div>
+<% } %>

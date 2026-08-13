@@ -1,53 +1,111 @@
-<%- include('../partials/head', { title: 'Groupe — ' + organization.name }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Groupe — ' + organization.name }) %>
+<% } else { %>
+<%- include('_nav', { current: 'dashboard' }) %>
+<div class="page-header">
+  <div class="person-line">
+    <%- include('../partials/_logo', { logoUrl: organization.logoUrl, logoBase64: organization.logoBase64, name: organization.name, size: 'md' }) %>
     <div>
       <h1><%= organization.name %></h1>
-      <p class="page-sub">Vue consolidée multi-campus</p>
+      <p class="page-sub">Pilotage multi-campus · <%= totals.campuses %> établissement(s)</p>
     </div>
   </div>
+  <a href="/group/export" class="btn btn-outline">Export Excel</a>
+</div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.campuses %></span>
-      <span class="stat-label">Campus</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.students %></span>
-      <span class="stat-label">Élèves (total)</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.absences %></span>
-      <span class="stat-label">Absences</span>
-    </div>
+<% if (success) { %><div class="alert alert-success">Enregistré.</div><% } %>
+
+<div class="stats-grid">
+  <div class="stat-card"><span class="stat-value"><%= totals.campuses %></span><span class="stat-label">Campus</span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.students %></span><span class="stat-label">Élèves</span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.teachers %></span><span class="stat-label">Enseignants</span></div>
+  <div class="stat-card stat-card-success"><span class="stat-value"><%= totals.revenue.toLocaleString('fr-FR') %></span><span class="stat-label">Recettes FCFA</span></div>
+  <div class="stat-card stat-card-warning"><span class="stat-value"><%= totals.pendingCount %></span><span class="stat-label">Paiements en attente</span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.collectionRate %>%</span><span class="stat-label">Taux d'encaissement</span></div>
+</div>
+
+<% if (alerts.length) { %>
+  <div class="card">
+    <h2>Alertes direction</h2>
+    <ul class="group-alerts">
+      <% alerts.forEach(function(a) { %>
+        <li class="group-alert group-alert-<%= a.level %>"><%= a.text %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Performance par campus</h2></div>
+    <% if (campusStats.length === 0) { %>
+      <p class="empty">Aucun campus rattaché. Demandez à l'admin plateforme d'assigner des écoles.</p>
+    <% } else { %>
+      <% campusStats.forEach(function(c) { %>
+        <div class="group-bar-row">
+          <div class="group-bar-meta">
+            <a href="/group/campuses/<%= c.school.id %>" class="person-line">
+              <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+              <strong><%= c.school.campusLabel || c.school.name %></strong>
+            </a>
+            <span><%= c.revenue.toLocaleString('fr-FR') %> FCFA · <%= c.collectionRate %>%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((c.revenue / maxRevenue) * 100) %>%"></div></div>
+        </div>
+      <% }) %>
+    <% } %>
   </div>
 
   <div class="card">
-    <div class="card-header"><h2>Par campus</h2></div>
+    <div class="card-header"><h2>Classement recettes</h2></div>
+    <% if (ranked.length === 0) { %>
+      <p class="empty">Pas encore de données.</p>
+    <% } else { %>
+      <ol class="group-rank">
+        <% ranked.forEach(function(c, i) { %>
+          <li>
+            <span class="group-rank-n"><%= i + 1 %></span>
+            <span class="person-line">
+              <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+              <%= c.school.campusLabel || c.school.name %>
+            </span>
+            <strong><%= c.revenue.toLocaleString('fr-FR') %> FCFA</strong>
+          </li>
+        <% }) %>
+      </ol>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Paiements récents (groupe)</h2>
+    <a href="/group/finance" class="btn btn-sm btn-outline">Finance consolidée</a>
+  </div>
+  <% if (recentPayments.length === 0) { %>
+    <p class="empty">Aucun paiement sur les campus.</p>
+  <% } else { %>
     <table class="table">
-      <thead>
-        <tr>
-          <th>École</th>
-          <th>Campus</th>
-          <th>Élèves</th>
-          <th>Recettes validées</th>
-          <th>Comptabilité</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Campus</th><th>Élève</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
       <tbody>
-        <% campusStats.forEach(function(c) { %>
+        <% recentPayments.forEach(function(p) { %>
           <tr>
-            <td><%= c.school.name %></td>
-            <td><%= c.school.campusLabel || '—' %></td>
-            <td><%= c.students %></td>
-            <td><%= c.revenue.toLocaleString('fr-FR') %> FCFA</td>
-            <td><%= c.modules.accounting?.enabled ? '✓' : '—' %></td>
+            <td class="person-cell">
+              <%- include('../partials/_logo', { logoUrl: p.student.school?.logoUrl, logoBase64: p.student.school?.logoBase64, name: p.student.school?.name, size: 'sm' }) %>
+              <%= p.student.school?.campusLabel || p.student.school?.name || '—' %>
+            </td>
+            <td class="person-cell">
+              <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
+              <%= p.student.firstName %> <%= p.student.lastName %>
+            </td>
+            <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
+            <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+            <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
           </tr>
         <% }) %>
       </tbody>
     </table>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+  <% } %>
+</div>
+<% } %>

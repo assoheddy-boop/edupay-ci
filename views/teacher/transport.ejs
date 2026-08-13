@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Transport' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('transport', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Transport' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>🚌 Transport scolaire</h1>
     <p class="page-sub">Les parents seront notifiés à chaque événement</p>
   </div>
@@ -49,6 +50,4 @@
       <% } %>
     </div>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

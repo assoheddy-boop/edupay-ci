@@ -1,43 +1,78 @@
-<%- include('../partials/head', { title: 'Types de frais' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>Types de frais</h1></div>
-  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
-
-  <div class="grid-2">
-    <div class="card">
-      <form method="POST" action="/school/fees" class="form">
-        <div class="form-group"><label>Nom</label><input type="text" name="name" required placeholder="Scolarité trimestre 1"></div>
-        <div class="form-group"><label>Montant (FCFA)</label><input type="number" name="amount" required min="100"></div>
-        <div class="form-group"><label>Jour échéance (1-28)</label><input type="number" name="dueDay" min="1" max="28" placeholder="Ex: 15"></div>
-        <div class="form-group"><label>Description</label><input type="text" name="description"></div>
-        <button type="submit" class="btn btn-primary">Ajouter</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Frais configurés</h2>
-      <% if (fees.length === 0) { %><p class="empty">Aucun type de frais.</p><% } else { %>
-        <% fees.forEach(f => { %>
-          <details class="edit-row">
-            <summary><strong><%= f.name %></strong> — <%= f.amount.toLocaleString('fr-FR') %> FCFA</summary>
-            <form method="POST" action="/school/fees/<%= f.id %>/update" class="form" style="margin-top:0.75rem">
-              <div class="form-group"><label>Nom</label><input type="text" name="name" value="<%= f.name %>" required></div>
-              <div class="form-group"><label>Montant</label><input type="number" name="amount" value="<%= f.amount %>" required min="100"></div>
-              <div class="form-group"><label>Échéance</label><input type="number" name="dueDay" value="<%= f.dueDay || '' %>" min="1" max="28"></div>
-              <div class="form-group"><label>Description</label><input type="text" name="description" value="<%= f.description || '' %>"></div>
-              <label><input type="checkbox" name="isActive" <%= f.isActive ? 'checked' : '' %>> Actif</label>
-              <div style="margin-top:0.75rem;display:flex;gap:0.5rem">
-                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-              </div>
-            </form>
-            <form method="POST" action="/school/fees/<%= f.id %>/delete" onsubmit="return confirm('Supprimer ce type de frais ?')">
-              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-            </form>
-          </details>
-        <% }) %>
-      <% } %>
-    </div>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('fees', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Types de frais' }) %>
+<% } else { %>
+<div class="page-header"><h1>Types de frais</h1></div>
+
+  <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
+
+
+
+  <div class="grid-2">
+
+    <div class="card">
+
+      <form method="POST" action="/school/fees" class="form">
+
+        <div class="form-group"><label>Nom</label><input type="text" name="name" required placeholder="Scolarité trimestre 1"></div>
+
+        <div class="form-group"><label>Montant (FCFA)</label><input type="number" name="amount" required min="100"></div>
+
+        <div class="form-group"><label>Jour échéance (1-28)</label><input type="number" name="dueDay" min="1" max="28" placeholder="Ex: 15"></div>
+
+        <div class="form-group"><label>Description</label><input type="text" name="description"></div>
+
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+
+      </form>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Frais configurés</h2>
+
+      <% if (fees.length === 0) { %><p class="empty">Aucun type de frais.</p><% } else { %>
+
+        <% fees.forEach(f => { %>
+
+          <details class="edit-row">
+
+            <summary><strong><%= f.name %></strong> — <%= f.amount.toLocaleString('fr-FR') %> FCFA</summary>
+
+            <form method="POST" action="/school/fees/<%= f.id %>/update" class="form" style="margin-top:0.75rem">
+
+              <div class="form-group"><label>Nom</label><input type="text" name="name" value="<%= f.name %>" required></div>
+
+              <div class="form-group"><label>Montant</label><input type="number" name="amount" value="<%= f.amount %>" required min="100"></div>
+
+              <div class="form-group"><label>Échéance</label><input type="number" name="dueDay" value="<%= f.dueDay || '' %>" min="1" max="28"></div>
+
+              <div class="form-group"><label>Description</label><input type="text" name="description" value="<%= f.description || '' %>"></div>
+
+              <label><input type="checkbox" name="isActive" <%= f.isActive ? 'checked' : '' %>> Actif</label>
+
+              <div style="margin-top:0.75rem;display:flex;gap:0.5rem">
+
+                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+              </div>
+
+            </form>
+
+            <form method="POST" action="/school/fees/<%= f.id %>/delete" onsubmit="return confirm('Supprimer ce type de frais ?')">
+
+              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+
+            </form>
+
+          </details>
+
+        <% }) %>
+
+      <% } %>
+
+    </div>
+
+  </div>
+<% } %>

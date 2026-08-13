@@ -1,84 +1,183 @@
-<%- include('../partials/head', { title: 'Bulletins' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
-    <h1>Bulletins PDF</h1>
-    <p class="page-sub">Génération automatique à partir des notes saisies</p>
-  </div>
-
-  <% if (success) { %><div class="alert alert-success">Bulletin généré et envoyé aux parents.</div><% } %>
-  <% if (error === 'notes') { %><div class="alert alert-error">Aucune note pour cette période.</div><% } %>
-  <% if (error === 'eleve') { %><div class="alert alert-error">Élève introuvable.</div><% } %>
-  <% if (error === 'generation') { %><div class="alert alert-error">Erreur lors de la génération.</div><% } %>
-  <% if (bulkResult) { %>
-    <div class="alert alert-success">
-      Génération en masse : <%= bulkResult.generated %> bulletin(s), <%= bulkResult.skipped %> ignoré(s).
-    </div>
-  <% } %>
-
-  <div class="grid-2">
-    <div class="card">
-      <h2>Générer un bulletin</h2>
-      <form method="POST" action="/school/bulletins/generate" class="form">
-        <div class="form-group">
-          <label for="studentId">Élève</label>
-          <select id="studentId" name="studentId" required>
-            <option value="">— Choisir —</option>
-            <% students.forEach(s => { %>
-              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %> (<%= s.class.name %>)</option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="period">Période</label>
-          <input type="text" id="period" name="period" required placeholder="Ex: Trimestre 1">
-        </div>
-        <button type="submit" class="btn btn-primary">Générer le PDF</button>
-      </form>
-
-      <hr class="form-divider">
-      <h2>Génération en masse (classe)</h2>
-      <form method="POST" action="/school/bulletins/bulk" class="form">
-        <div class="form-group">
-          <label>Classe</label>
-          <select name="classId" required>
-            <option value="">— Choisir —</option>
-            <% classes.forEach(c => { %>
-              <option value="<%= c.id %>"><%= c.name %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Période</label>
-          <input type="text" name="period" required placeholder="Ex: Trimestre 1">
-        </div>
-        <button type="submit" class="btn btn-success">Générer pour toute la classe</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Bulletins récents</h2>
-      <% const allBulletins = students.flatMap(s => s.bulletins.map(b => ({ ...b, student: s }))); %>
-      <% if (allBulletins.length === 0) { %>
-        <p class="empty">Aucun bulletin généré.</p>
-      <% } else { %>
-        <table class="table">
-          <thead><tr><th>Élève</th><th>Période</th><th>Moyenne</th><th>Rang</th><th>PDF</th></tr></thead>
-          <tbody>
-            <% allBulletins.sort((a,b) => new Date(b.generatedAt) - new Date(a.generatedAt)).slice(0, 20).forEach(b => { %>
-              <tr>
-                <td><%= b.student.firstName %> <%= b.student.lastName %></td>
-                <td><%= b.period %></td>
-                <td><strong><%= b.average?.toFixed(2) || '—' %></strong>/20</td>
-                <td><%= b.rank ? b.rank + 'e' : '—' %></td>
-                <td><% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" target="_blank" class="btn btn-sm btn-success">PDF</a><% } else { %>—<% } %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      <% } %>
-    </div>
-  </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('bulletins', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Bulletins' }) %>
+<% } else { %>
+<div class="page-header">
+
+    <h1>Bulletins PDF</h1>
+
+    <p class="page-sub">Génération automatique à partir des notes saisies</p>
+
+  </div>
+
+
+
+  <% if (success) { %><div class="alert alert-success">Bulletin généré et envoyé aux parents.</div><% } %>
+
+  <% if (error === 'notes') { %><div class="alert alert-error">Aucune note pour cette période.</div><% } %>
+
+  <% if (error === 'eleve') { %><div class="alert alert-error">Élève introuvable.</div><% } %>
+
+  <% if (error === 'generation') { %><div class="alert alert-error">Erreur lors de la génération.</div><% } %>
+
+  <% if (bulkResult) { %>
+
+    <div class="alert alert-success">
+
+      Génération en masse : <%= bulkResult.generated %> bulletin(s), <%= bulkResult.skipped %> ignoré(s).
+
+    </div>
+
+  <% } %>
+
+
+
+  <div class="grid-2">
+
+    <div class="card">
+
+      <h2>Générer un bulletin</h2>
+
+      <form method="POST" action="/school/bulletins/generate" class="form">
+
+        <div class="form-group">
+
+          <label for="studentId">Élève</label>
+
+          <select id="studentId" name="studentId" required>
+
+            <option value="">— Choisir —</option>
+
+            <% students.forEach(s => { %>
+
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %> (<%= s.class.name %>)</option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="period">Période</label>
+
+          <input type="text" id="period" name="period" required placeholder="Ex: Trimestre 1">
+
+        </div>
+
+        <button type="submit" class="btn btn-primary">Générer le PDF</button>
+
+      </form>
+
+      <hr class="form-divider">
+
+      <h2>Export complet (notes + absences)</h2>
+      <form method="GET" class="form" id="exportBulletinForm">
+        <div class="form-group">
+          <label for="exportStudentId">Élève</label>
+          <select id="exportStudentId" required>
+            <option value="">— Choisir —</option>
+            <% students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.firstName %> <%= s.lastName %> (<%= s.class.name %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-outline">Télécharger le PDF</button>
+      </form>
+      <script>
+        document.getElementById('exportBulletinForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const id = document.getElementById('exportStudentId').value;
+          if (id) window.location = '/school/export/bulletin/' + id;
+        });
+      </script>
+
+
+
+      <hr class="form-divider">
+
+      <h2>Génération en masse (classe)</h2>
+
+      <form method="POST" action="/school/bulletins/bulk" class="form">
+
+        <div class="form-group">
+
+          <label>Classe</label>
+
+          <select name="classId" required>
+
+            <option value="">— Choisir —</option>
+
+            <% classes.forEach(c => { %>
+
+              <option value="<%= c.id %>"><%= c.name %></option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <div class="form-group">
+
+          <label>Période</label>
+
+          <input type="text" name="period" required placeholder="Ex: Trimestre 1">
+
+        </div>
+
+        <button type="submit" class="btn btn-success">Générer pour toute la classe</button>
+
+      </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <h2>Bulletins récents</h2>
+
+      <% const allBulletins = students.flatMap(s => s.bulletins.map(b => ({ ...b, student: s }))); %>
+
+      <% if (allBulletins.length === 0) { %>
+
+        <p class="empty">Aucun bulletin généré.</p>
+
+      <% } else { %>
+
+        <table class="table">
+
+          <thead><tr><th>Élève</th><th>Période</th><th>Moyenne</th><th>Rang</th><th>PDF</th></tr></thead>
+
+          <tbody>
+
+            <% allBulletins.sort((a,b) => new Date(b.generatedAt) - new Date(a.generatedAt)).slice(0, 20).forEach(b => { %>
+
+              <tr>
+
+                <td><%= b.student.firstName %> <%= b.student.lastName %></td>
+
+                <td><%= b.period %></td>
+
+                <td><strong><%= b.average?.toFixed(2) || '—' %></strong>/20</td>
+
+                <td><%= b.rank ? b.rank + 'e' : '—' %></td>
+
+                <td><% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" target="_blank" class="btn btn-sm btn-success">PDF</a><% } else { %>—<% } %></td>
+
+              </tr>
+
+            <% }) %>
+
+          </tbody>
+
+        </table>
+
+      <% } %>
+
+    </div>
+
+  </div>
+<% } %>

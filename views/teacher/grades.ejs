@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Saisie notes' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>Saisie des notes</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('grades', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Saisie notes' }) %>
+<% } else { %>
+<div class="page-header"><h1>Saisie des notes</h1></div>
 
   <div class="card">
     <form method="POST" action="/teacher/grades" class="form">
@@ -43,6 +44,4 @@
       <button type="submit" class="btn btn-primary btn-lg">Enregistrer la note</button>
     </form>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

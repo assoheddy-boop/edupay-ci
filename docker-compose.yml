@@ -1,29 +1,80 @@
-services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: edupay_ci
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/edupay_ci?schema=public
-      JWT_SECRET: changez-moi-en-production
-      NODE_ENV: production
-      SOCKET_CORS_ORIGIN: http://localhost:3000
-    depends_on:
-      - db
-    volumes:
-      - uploads:/app/uploads
-
-volumes:
-  pgdata:
-  uploads:
+services:
+
+  db:
+
+    image: postgres:16-alpine
+
+    environment:
+
+      POSTGRES_USER: postgres
+
+      POSTGRES_PASSWORD: postgres
+
+      POSTGRES_DB: edupay_ci
+
+    ports:
+
+      - "5432:5432"
+
+    volumes:
+
+      - pgdata:/var/lib/postgresql/data
+
+
+
+  app:
+
+    build: .
+
+    ports:
+
+      - "3000:3000"
+
+    environment:
+
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/edupay_ci?schema=public
+
+      JWT_SECRET: changez-moi-en-production
+
+      NODE_ENV: production
+
+      SOCKET_CORS_ORIGIN: http://localhost:3000
+
+      REDIS_URL: redis://redis:6379
+
+    depends_on:
+
+      - db
+
+      - redis
+
+    volumes:
+
+      - uploads:/app/uploads
+
+
+
+  redis:
+
+    image: redis:7-alpine
+
+    ports:
+
+      - "6379:6379"
+
+    volumes:
+
+      - redisdata:/data
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+
+
+volumes:
+
+  pgdata:
+
+  uploads:
+
+  redisdata:
+

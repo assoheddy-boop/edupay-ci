@@ -1,0 +1,90 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('settings', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Paramètres groupe' }) %>
+<% } else { %>
+<%- include('_nav', { current: 'settings' }) %>
+<div class="page-header">
+  <div>
+    <h1>Paramètres du groupe</h1>
+    <p class="page-sub">Identité et équipe de direction</p>
+  </div>
+</div>
+
+<% if (success === 'admin') { %><div class="alert alert-success">Administrateur groupe ajouté.</div><% } else if (success === 'photo') { %><div class="alert alert-success">Photo mise à jour.</div><% } else if (success) { %><div class="alert alert-success">Paramètres enregistrés.</div><% } %>
+<% if (error === 'email') { %><div class="alert alert-error">Cet email est déjà utilisé.</div><% } %>
+<% if (error === 'name') { %><div class="alert alert-error">Le nom du groupe est obligatoire.</div><% } %>
+<% if (error === 'data') { %><div class="alert alert-error">Prénom, nom et email sont requis.</div><% } %>
+<% if (error === 'logo') { %><div class="alert alert-error">Impossible d'enregistrer le logo. Utilisez JPG, PNG ou WebP (max 2 Mo).</div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Identité</h2>
+    <form method="POST" action="/group/settings" class="form" enctype="multipart/form-data">
+      <div class="form-group logo-upload-group">
+        <label>Logo du groupe</label>
+        <p class="form-hint">JPG, PNG ou WebP — max 2 Mo. Visible sur le pilotage et les campus.</p>
+        <% if (organization.logoUrl || organization.logoBase64) { %>
+          <div class="logo-preview">
+            <%- include('../partials/_logo', { logoUrl: organization.logoUrl, logoBase64: organization.logoBase64, name: organization.name, size: 'lg' }) %>
+          </div>
+          <label class="checkbox-label"><input type="checkbox" name="removeLogo"> Supprimer le logo actuel</label>
+        <% } %>
+        <input type="file" name="logo" accept="image/jpeg,image/png,image/webp">
+      </div>
+      <div class="form-group">
+        <label>Nom du groupe</label>
+        <input type="text" name="name" value="<%= organization.name %>" required>
+      </div>
+      <div class="form-group">
+        <label>Ville</label>
+        <input type="text" name="city" value="<%= organization.city || '' %>" placeholder="Abidjan">
+      </div>
+      <div class="form-group">
+        <label>Adresse</label>
+        <input type="text" name="address" value="<%= organization.address || '' %>">
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="tel" name="phone" value="<%= organization.phone || '' %>">
+      </div>
+      <p class="text-muted">Identifiant technique : <code><%= organization.slug %></code></p>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Direction groupe</h2>
+    <% if (organization.admins.length) { %>
+      <ul class="group-admins">
+        <% organization.admins.forEach(function(a) { %>
+          <li class="person-line">
+            <%- include('../partials/_avatar', { src: a.user.photoUrl, firstName: a.user.firstName, lastName: a.user.lastName, size: 'sm' }) %>
+            <span><strong><%= a.user.firstName %> <%= a.user.lastName %></strong> — <%= a.user.email %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <h3>Ma photo</h3>
+    <div class="person-line" style="margin-bottom:0.75rem">
+      <%- include('../partials/_avatar', { src: user.photoUrl, firstName: user.firstName, lastName: user.lastName, size: 'md' }) %>
+      <span><%= user.firstName %> <%= user.lastName %></span>
+    </div>
+    <form method="POST" action="/auth/photo" enctype="multipart/form-data" class="form form-inline" style="margin-bottom:1.25rem">
+      <input type="hidden" name="redirectTo" value="/group/settings">
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+      <button type="submit" class="btn btn-outline btn-sm">Changer ma photo</button>
+    </form>
+    <h3>Inviter un admin</h3>
+    <form method="POST" action="/group/settings/admins" class="form">
+      <div class="form-row">
+        <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
+        <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+      <div class="form-group"><label>Téléphone</label><input type="tel" name="phone"></div>
+      <div class="form-group"><label>Mot de passe (optionnel)</label><input type="text" name="password" placeholder="demo1234 par défaut"></div>
+      <button type="submit" class="btn btn-outline">Ajouter</button>
+    </form>
+  </div>
+</div>
+<% } %>

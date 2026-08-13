@@ -60,6 +60,55 @@ enum FinanceTransactionType {
   EXPENSE
 }
 
+enum ContractType {
+  CDI
+  CDD
+  VACATAIRE
+  STAGE
+}
+
+enum StaffStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  UNPAID
+  MATERNITY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PayrollStatus {
+  DRAFT
+  VALIDATED
+  PAID
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  HALF_DAY
+}
+
+enum AdvanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DEDUCTED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -68,6 +117,7 @@ model User {
   firstName String
   lastName  String
   phone     String?
+  photoUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,7 +140,8 @@ model School {
   waveNumber        String?
   omNumber          String?
   logoUrl           String?
-  subscription      String   @default("free")
+  logoBase64        String?  @db.Text
+  subscription      String   @default("premium")
   currentSchoolYear String   @default("2025-2026")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -114,6 +165,25 @@ model School {
   financeTransactions  FinanceTransaction[]
   students             Student[]
   auditLogs            AuditLog[]
+  staffProfiles        StaffProfile[]
+  staffDocuments       StaffDocument[]
+  leaveRequests        LeaveRequest[]
+  staffAttendances     StaffAttendance[]
+  payrollRuns          PayrollRun[]
+  payslips             Payslip[]
+  salaryAdvances       SalaryAdvance[]
+  staffEvaluations     StaffEvaluation[]
+
+  planId Int?
+  plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
+}
+
+model SubscriptionPlan {
+  id       Int      @id @default(autoincrement())
+  name     String
+  price    Int
+  features String[]
+  schools  School[]
 }
 
 model Class {
@@ -138,6 +208,7 @@ model Student {
   lastName   String
   matricule  String?
   birthDate  DateTime?
+  photoUrl   String?
   createdAt  DateTime  @default(now())
 
   schoolId String?
@@ -147,6 +218,7 @@ model Student {
 
   parents              ParentStudent[]
   payments             Payment[]
+  paymentProofs        PaymentProof[]
   absences             Absence[]
   grades               Grade[]
   bulletins            Bulletin[]
@@ -204,6 +276,17 @@ model Teacher {
   behaviorNotes BehaviorNote[]
   badges        Badge[]
   schedules     Schedule[]
+  staffProfile  StaffProfile?
+  leaveRequests LeaveRequest[]
+  attendances   StaffAttendance[]
+  payslips      Payslip[]
+  salaryAdvances SalaryAdvance[]
+  evaluations   StaffEvaluation[]
+  staffDocuments StaffDocument[]
+  teacherProfile TeacherProfile?
+  leaves         Leave[]
+  payrolls       Payroll[]
+  hrEvaluations  Evaluation[]
 }
 
 model TeacherClass {
@@ -246,6 +329,22 @@ model Payment {
   feeTypeId String?
   feeType   FeeType? @relation(fields: [feeTypeId], references: [id])
   receiptUrl String?
+  proofs     PaymentProof[]
+}
+
+model PaymentProof {
+  id           String   @id @default(cuid())
+  hash         String   @unique
+  fileUrl      String
+  mimeType     String
+  size         Int
+  originalName String?
+  createdAt    DateTime @default(now())
+
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 }
 
 model Absence {
@@ -500,16 +599,32 @@ model Organization {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  city      String?
+  address   String?
+  phone     String?
+  logoUrl   String?
+  logoBase64 String?  @db.Text
   createdAt DateTime @default(now())
 
-  schools School[]
-  admins  OrganizationAdmin[]
+  schools   School[]
+  admins    OrganizationAdmin[]
+  circulars OrganizationCircular[]
 }
 
 model OrganizationAdmin {
   id             String @id @default(cuid())
   userId         String @unique
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model OrganizationCircular {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
@@ -563,4 +678,185 @@ model FinanceTransaction {
   categoryId  String?
   category    ExpenseCategory? @relation(fields: [categoryId], references: [id])
   paymentId   String?
+  payrollRunId String?
 }
+
+model StaffProfile {
+  id              String        @id @default(cuid())
+  contractType    ContractType  @default(CDD)
+  status          StaffStatus   @default(ACTIVE)
+  baseSalary      Int           @default(0)
+  hourlyRate      Int?
+  hireDate        DateTime?
+  endDate         DateTime?
+  nationalId      String?
+  bankName        String?
+  bankAccount     String?
+  emergencyName   String?
+  emergencyPhone  String?
+  address         String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  teacherId String @unique
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model StaffDocument {
+  id        String   @id @default(cuid())
+  label     String
+  fileUrl   String?
+  fileData  String?  @db.Text
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  type       LeaveType   @default(ANNUAL)
+  status     LeaveStatus @default(PENDING)
+  startDate  DateTime    @db.Date
+  endDate    DateTime    @db.Date
+  reason     String?
+  adminNote  String?
+  reviewedAt DateTime?
+  createdAt  DateTime    @default(now())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model StaffAttendance {
+  id        String           @id @default(cuid())
+  date      DateTime         @db.Date
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    AttendanceStatus @default(PRESENT)
+  note      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, date])
+}
+
+model PayrollRun {
+  id        String        @id @default(cuid())
+  month     Int
+  year      Int
+  status    PayrollStatus @default(DRAFT)
+  totalNet  Int           @default(0)
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  payslips Payslip[]
+
+  @@unique([schoolId, month, year])
+}
+
+model Payslip {
+  id          String   @id @default(cuid())
+  baseSalary  Int      @default(0)
+  bonuses     Int      @default(0)
+  deductions  Int      @default(0)
+  advances    Int      @default(0)
+  hoursWorked Float?
+  netPay      Int      @default(0)
+  pdfUrl      String?
+  createdAt   DateTime @default(now())
+
+  payrollRunId String
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  teacherId    String
+  teacher      Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId     String
+  school       School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([payrollRunId, teacherId])
+}
+
+model SalaryAdvance {
+  id        String        @id @default(cuid())
+  amount    Int
+  status    AdvanceStatus @default(PENDING)
+  reason    String?
+  adminNote String?
+  deductedAt DateTime?
+  createdAt DateTime      @default(now())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model StaffEvaluation {
+  id           String   @id @default(cuid())
+  period       String
+  punctuality  Int?
+  pedagogy     Int?
+  discipline   Int?
+  teamwork     Int?
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, period])
+}
+
+model TeacherProfile {
+  id        String    @id @default(cuid())
+  name      String
+  subject   String?
+  hireDate  DateTime?
+
+  teacherId String   @unique
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model Leave {
+  id        String   @id @default(cuid())
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("PENDING")
+}
+
+model Payroll {
+  id        String  @id @default(cuid())
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  month     String
+  amount    Int
+  pdfPath   String?
+}
+
+model Evaluation {
+  id        String  @id @default(cuid())
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  score     Int
+  comments  String?
+}
+

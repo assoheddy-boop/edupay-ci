@@ -1,12 +1,11 @@
-<%- include('../partials/head', { title: 'Module désactivé' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="card" style="max-width:520px;margin:2rem auto;text-align:center">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('module-disabled', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Module désactivé' }) %>
+<% } else { %>
+<div class="card" style="max-width:520px;margin:2rem auto;text-align:center">
     <h1>Module non disponible</h1>
     <p>Le module <strong><%= moduleLabel %></strong> n'est pas activé pour votre établissement.</p>
     <p class="text-muted">Contactez l'administration de l'école ou EduPay CI pour l'activer.</p>
     <a href="/school/dashboard" class="btn btn-primary">Retour au tableau de bord</a>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

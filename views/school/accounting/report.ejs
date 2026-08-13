@@ -1,7 +1,8 @@
-<%- include('../../partials/head', { title: 'Rapport comptable' }) %>
-<%- include('../../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('report', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'Rapport comptable' }) %>
+<% } else { %>
+<div class="page-header">
     <div>
       <h1>Rapport — <%= period %></h1>
       <p class="page-sub"><%= school.name %></p>
@@ -68,6 +69,4 @@
       </table>
     </div>
   </div>
-</main>
-<%- include('../../partials/footer') %>
-<%- include('../../partials/scripts') %>
+<% } %>

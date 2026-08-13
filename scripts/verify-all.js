@@ -14,8 +14,11 @@ const ACCOUNTS = [
 ];
 
 const ROUTES_BY_ROLE = {
-  Admin: ['/admin/dashboard', '/admin/organizations'],
-  Groupe: ['/group/dashboard'],
+  Admin: ['/admin/dashboard', '/admin/modules', '/admin/organizations'],
+  Groupe: [
+    '/group/dashboard', '/group/campuses', '/group/finance', '/group/hr',
+    '/group/compare', '/group/circulars', '/group/settings',
+  ],
   École: [
     '/school/classes', '/school/students', '/school/students/import/template', '/school/payments', '/school/fees',
     '/school/stats', '/school/bulletins', '/school/messages', '/school/canteen',

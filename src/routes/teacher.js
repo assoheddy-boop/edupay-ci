@@ -2,13 +2,14 @@ const express = require('express');
 const teacherController = require('../controllers/teacherController');
 const messageController = require('../controllers/messageController');
 const extras = require('../controllers/extrasController');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const teacherHrController = require('../controllers/teacherHrController');
+const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-router.use(requireAuth, requireRole('TEACHER'), attachModules);
+router.use(requireAuth, checkRole('teacher'), attachModules);
 
 router.get('/dashboard', teacherController.dashboard);
 router.get('/students', teacherController.students);
@@ -36,5 +37,16 @@ router.get('/health', requireModule('health'), extras.healthPage);
 router.post('/health', requireModule('health'), extras.createHealthIncident);
 router.get('/canteen', requireModule('canteen'), extras.canteenPage);
 router.post('/canteen', requireModule('canteen'), extras.recordCanteen);
+
+router.get('/hr', requireModule('hr'), teacherHrController.dashboard);
+router.get('/hr/profile', requireModule('hr'), teacherHrController.profile);
+router.get('/hr/leaves', requireModule('hr'), teacherHrController.leavesPage);
+router.post('/hr/leaves', requireModule('hr'), teacherHrController.requestLeave);
+router.get('/hr/payslips', requireModule('hr'), teacherHrController.payslipsPage);
+router.post('/hr/advances', requireModule('hr'), teacherHrController.requestAdvance);
+router.get('/hr/attendance', requireModule('hr'), teacherHrController.attendancePage);
+router.post('/hr/attendance/check-in', requireModule('hr'), teacherHrController.clockIn);
+router.post('/hr/attendance/check-out', requireModule('hr'), teacherHrController.clockOut);
+router.get('/hr/evaluations', requireModule('hr'), teacherHrController.evaluationsPage);
 
 module.exports = router;

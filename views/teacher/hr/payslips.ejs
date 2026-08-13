@@ -1,0 +1,35 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('payslips', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Mes bulletins' }) %>
+<% } else { %>
+<div class="page-header"><h1>Mes bulletins de paie</h1></div>
+  <%- include('_nav') %>
+  <% if (success === 'advance') { %><div class="alert alert-success">Demande d'avance envoyée.</div><% } %>
+  <% if (error) { %><div class="alert alert-error">Montant invalide.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>Demander une avance</h2>
+    <form method="POST" action="/teacher/hr/advances" class="form form-inline">
+      <input type="number" name="amount" placeholder="Montant FCFA" required min="1000">
+      <input type="text" name="reason" placeholder="Motif (optionnel)">
+      <button type="submit" class="btn btn-outline">Demander</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Période</th><th>Net</th><th>Statut paie</th><th>PDF</th></tr></thead>
+      <tbody>
+        <% payslips.forEach(function(p) { %>
+          <tr>
+            <td><%= p.payrollRun.month %>/<%= p.payrollRun.year %></td>
+            <td><strong><%= p.netPay.toLocaleString('fr-FR') %> FCFA</strong></td>
+            <td><%= p.payrollRun.status %></td>
+            <td><% if (p.pdfUrl) { %><a href="<%= p.pdfUrl %>" target="_blank" class="btn btn-sm btn-primary">Télécharger</a><% } else { %>—<% } %></td>
+          </tr>
+        <% }) %>
+        <% if (!payslips.length) { %><tr><td colspan="4" class="empty">Aucun bulletin pour le moment.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

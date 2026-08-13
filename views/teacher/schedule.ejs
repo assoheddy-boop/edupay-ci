@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Planning' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>📅 Planning des cours</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('schedule', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Planning' }) %>
+<% } else { %>
+<div class="page-header"><h1>📅 Planning des cours</h1></div>
   <% if (success) { %><div class="alert alert-success">Créneau ajouté.</div><% } %>
 
   <div class="grid-2">
@@ -47,6 +48,4 @@
       <% } %>
     </div>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

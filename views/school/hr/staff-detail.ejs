@@ -1,0 +1,90 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('staff-detail', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — ' + teacher.user.firstName }) %>
+<% } else { %>
+<div class="page-header">
+    <a href="/school/hr/staff" class="text-muted">← Personnel</a>
+    <h1 class="person-line">
+      <%- include('../../partials/_avatar', { src: teacher.user.photoUrl, firstName: teacher.user.firstName, lastName: teacher.user.lastName, size: 'lg' }) %>
+      <%= teacher.user.firstName %> <%= teacher.user.lastName %>
+    </h1>
+  </div>
+  <%- include('_nav') %>
+  <% if (success === 'profile') { %><div class="alert alert-success">Dossier mis à jour.</div><% } %>
+  <% if (success === 'doc') { %><div class="alert alert-success">Document ajouté.</div><% } %>
+  <% if (error) { %><div class="alert alert-error">Erreur lors de l'upload.</div><% } %>
+
+  <% const p = teacher.staffProfile; %>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Dossier personnel</h2>
+      <form method="POST" action="/school/hr/staff/<%= teacher.id %>" class="form" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>Photo</label>
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+          <% if (teacher.user.photoUrl) { %>
+            <label class="checkbox-label"><input type="checkbox" name="removePhoto"> Supprimer la photo</label>
+          <% } %>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Matière</label><input type="text" name="subject" value="<%= teacher.subject || '' %>"></div>
+          <div class="form-group"><label>Contrat</label>
+            <select name="contractType">
+              <% ['CDI','CDD','VACATAIRE','STAGE'].forEach(function(c) { %>
+                <option value="<%= c %>" <%= p?.contractType === c ? 'selected' : '' %>><%= c %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Statut</label>
+            <select name="status">
+              <% ['ACTIVE','ON_LEAVE','SUSPENDED','TERMINATED'].forEach(function(s) { %>
+                <option value="<%= s %>" <%= p?.status === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group"><label>Salaire base (FCFA)</label><input type="number" name="baseSalary" value="<%= p?.baseSalary || 0 %>"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Taux horaire (vacataire)</label><input type="number" name="hourlyRate" value="<%= p?.hourlyRate || '' %>"></div>
+          <div class="form-group"><label>N° CNI</label><input type="text" name="nationalId" value="<%= p?.nationalId || '' %>"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date embauche</label><input type="date" name="hireDate" value="<%= p?.hireDate ? p.hireDate.toISOString().slice(0,10) : '' %>"></div>
+          <div class="form-group"><label>Fin contrat</label><input type="date" name="endDate" value="<%= p?.endDate ? p.endDate.toISOString().slice(0,10) : '' %>"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Banque</label><input type="text" name="bankName" value="<%= p?.bankName || '' %>"></div>
+          <div class="form-group"><label>Compte</label><input type="text" name="bankAccount" value="<%= p?.bankAccount || '' %>"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Contact urgence</label><input type="text" name="emergencyName" value="<%= p?.emergencyName || '' %>"></div>
+          <div class="form-group"><label>Tél. urgence</label><input type="text" name="emergencyPhone" value="<%= p?.emergencyPhone || '' %>"></div>
+        </div>
+        <div class="form-group"><label>Adresse</label><input type="text" name="address" value="<%= p?.address || '' %>"></div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" rows="2"><%= p?.notes || '' %></textarea></div>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Documents</h2>
+      <form method="POST" action="/school/hr/staff/<%= teacher.id %>/documents" enctype="multipart/form-data" class="form">
+        <div class="form-group"><label>Libellé</label><input type="text" name="label" placeholder="Contrat, CNI, diplôme…" required></div>
+        <div class="form-group"><label>Fichier (PDF, image)</label><input type="file" name="document" accept=".pdf,image/*" required></div>
+        <button type="submit" class="btn btn-outline">Ajouter</button>
+      </form>
+      <ul class="list" style="margin-top:1rem">
+        <% teacher.staffDocuments.forEach(function(d) { %>
+          <li class="list-item">
+            <strong><%= d.label %></strong>
+            <a href="<%= d.fileData || d.fileUrl %>" target="_blank" rel="noopener">Voir</a>
+            <small><%= new Date(d.createdAt).toLocaleDateString('fr-FR') %></small>
+          </li>
+        <% }) %>
+        <% if (!teacher.staffDocuments.length) { %><li class="empty-sm">Aucun document.</li><% } %>
+      </ul>
+    </div>
+  </div>
+<% } %>

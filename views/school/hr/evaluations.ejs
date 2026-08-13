@@ -1,0 +1,34 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('evaluations', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Évaluations' }) %>
+<% } else { %>
+<div class="page-header"><h1>Évaluations du personnel</h1></div>
+  <%- include('_nav') %>
+  <% if (success) { %><div class="alert alert-success">Évaluation enregistrée.</div><% } %>
+
+  <form method="GET" class="form form-inline card" style="margin-bottom:1rem;padding:1rem">
+    <label>Période</label>
+    <input type="text" name="period" value="<%= period %>" placeholder="2025-2026">
+    <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+  </form>
+
+  <% teachers.forEach(function(t) {
+    const ev = t.evaluations[0];
+  %>
+    <div class="card" style="margin-bottom:1rem">
+      <h3><%= t.user.lastName %> <%= t.user.firstName %></h3>
+      <form method="POST" action="/school/hr/evaluations" class="form">
+        <input type="hidden" name="teacherId" value="<%= t.id %>">
+        <input type="hidden" name="period" value="<%= period %>">
+        <div class="form-row">
+          <div class="form-group"><label>Ponctualité (/5)</label><input type="number" name="punctuality" min="1" max="5" value="<%= ev?.punctuality || '' %>"></div>
+          <div class="form-group"><label>Pédagogie (/5)</label><input type="number" name="pedagogy" min="1" max="5" value="<%= ev?.pedagogy || '' %>"></div>
+          <div class="form-group"><label>Discipline (/5)</label><input type="number" name="discipline" min="1" max="5" value="<%= ev?.discipline || '' %>"></div>
+          <div class="form-group"><label>Esprit d'équipe (/5)</label><input type="number" name="teamwork" min="1" max="5" value="<%= ev?.teamwork || '' %>"></div>
+        </div>
+        <div class="form-group"><label>Commentaire</label><textarea name="comment" rows="2"><%= ev?.comment || '' %></textarea></div>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </form>
+    </div>
+  <% }) %>
+<% } %>

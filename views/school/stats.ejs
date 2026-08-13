@@ -1,12 +1,14 @@
-<%- include('../partials/head', { title: 'Statistiques' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('stats', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Statistiques' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>📊 Statistiques</h1>
     <div class="export-links">
       <a href="/school/export/students" class="btn btn-outline btn-sm">Export élèves</a>
       <a href="/school/export/payments" class="btn btn-outline btn-sm">Export paiements</a>
       <a href="/school/export/grades" class="btn btn-outline btn-sm">Export notes</a>
+      <a href="/school/export/stats" class="btn btn-outline btn-sm">Export stats Excel</a>
     </div>
   </div>
 
@@ -43,6 +45,4 @@
       </table>
     <% } %>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

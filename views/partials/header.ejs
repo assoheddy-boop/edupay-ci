@@ -1,56 +1,61 @@
-<header class="header">
-  <div class="header-inner container">
-    <a href="/" class="logo">
-      <span class="logo-icon">🎓</span>
-      <span class="logo-text">EduPay <strong>CI</strong></span>
-    </a>
-
-    <button type="button" class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-
-    <nav class="nav" id="mainNav">
-      <% if (user) { %>
-        <% if (user.role === 'SUPER_ADMIN') { %>
-          <a href="/admin/dashboard">Admin</a>
-          <a href="/admin/organizations">Groupes</a>
-        <% } else if (user.role === 'ORGANIZATION_ADMIN') { %>
-          <a href="/group/dashboard">Groupe</a>
-        <% } else if (user.role === 'SCHOOL_ADMIN') { %>
-          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
-          <% const on = (k) => m[k]?.enabled !== false; %>
-          <a href="/school/dashboard">Accueil</a>
-          <a href="/school/classes">Classes</a>
-          <a href="/school/students">Élèves</a>
-          <% if (on('stats')) { %><a href="/school/stats">Stats</a><% } %>
-          <a href="/school/fees">Frais</a>
-          <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
-          <% if (on('accounting')) { %><a href="/school/accounting">Compta</a><% } %>
-          <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
-          <a href="/school/school-year">Année</a>
-          <a href="/school/modules">Modules</a>
-        <% } else if (user.role === 'PARENT') { %>
-          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
-          <% const on = (k) => m[k]?.enabled !== false; %>
-          <a href="/parent/dashboard">Accueil</a>
-          <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
-          <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a><% } %>
-          <a href="/parent/timeline">Historique</a>
-          <a href="/parent/notifications">Notifications</a>
-          <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
-        <% } else if (user.role === 'TEACHER') { %>
-          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
-          <% const on = (k) => m[k]?.enabled !== false; %>
-          <a href="/teacher/dashboard">Accueil</a>
-          <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
-          <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
-          <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
-        <% } %>
-        <a href="/auth/logout" class="btn btn-outline btn-sm">Déconnexion</a>
-      <% } else { %>
-        <a href="/auth/login">Connexion</a>
-        <a href="/auth/register" class="btn btn-primary btn-sm">Inscription</a>
-      <% } %>
-    </nav>
-  </div>
-</header>
+<header class="header">
+  <div class="header-inner container">
+    <a href="/" class="logo">
+      <span class="logo-icon">🎓</span>
+      <span class="logo-text">EduPay <strong>CI</strong></span>
+    </a>
+
+    <button type="button" class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="nav" id="mainNav">
+      <% if (user) { %>
+        <% if (user.role === 'SUPER_ADMIN') { %>
+          <a href="/admin/dashboard">Tableau de bord</a>
+          <a href="/admin/modules">Modules</a>
+          <a href="/admin/organizations">Groupes</a>
+        <% } else if (user.role === 'ORGANIZATION_ADMIN') { %>
+          <a href="/group/dashboard">Pilotage</a>
+          <a href="/group/campuses">Campus</a>
+          <a href="/group/finance">Finance</a>
+          <a href="/group/hr">RH</a>
+        <% } else if (user.role === 'SCHOOL_ADMIN') { %>
+          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
+          <% const on = (k) => m[k]?.enabled !== false; %>
+          <a href="/school/dashboard">Accueil</a>
+          <a href="/school/classes">Classes</a>
+          <a href="/school/students">Élèves</a>
+          <% if (on('stats')) { %><a href="/school/stats">Stats</a><% } %>
+          <a href="/school/fees">Frais</a>
+          <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
+          <% if (on('accounting')) { %><a href="/school/accounting">Compta</a><% } %>
+          <% if (on('hr')) { %><a href="/school/hr">RH</a><% } %>
+          <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
+          <a href="/school/school-year">Année</a>
+        <% } else if (user.role === 'PARENT') { %>
+          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
+          <% const on = (k) => m[k]?.enabled !== false; %>
+          <a href="/parent/dashboard">Accueil</a>
+          <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
+          <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a><% } %>
+          <a href="/parent/timeline">Historique</a>
+          <a href="/parent/notifications">Notifications</a>
+          <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
+        <% } else if (user.role === 'TEACHER') { %>
+          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
+          <% const on = (k) => m[k]?.enabled !== false; %>
+          <a href="/teacher/dashboard">Accueil</a>
+          <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
+          <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
+          <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
+          <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
+        <% } %>
+        <a href="/auth/logout" class="btn btn-outline btn-sm">Déconnexion</a>
+      <% } else { %>
+        <a href="/auth/login">Connexion</a>
+        <a href="/auth/register" class="btn btn-primary btn-sm">Inscription</a>
+      <% } %>
+    </nav>
+  </div>
+</header>

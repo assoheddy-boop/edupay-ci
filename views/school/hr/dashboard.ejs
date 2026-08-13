@@ -1,0 +1,26 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Tableau de bord' }) %>
+<% } else { %>
+<div class="page-header">
+    <h1>Ressources humaines</h1>
+    <p class="page-sub"><%= school.name %></p>
+  </div>
+  <%- include('_nav') %>
+  <% if (success) { %><div class="alert alert-success">Action effectuée.</div><% } %>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-value"><%= stats.staffCount %></span><span class="stat-label">Personnel actif</span></div>
+    <div class="stat-card stat-card-warning"><span class="stat-value"><%= stats.pendingLeaves %></span><span class="stat-label">Congés en attente</span></div>
+    <div class="stat-card"><span class="stat-value"><%= (stats.totalSalary).toLocaleString('fr-FR') %></span><span class="stat-label">Masse salariale (FCFA)</span></div>
+    <div class="stat-card"><span class="stat-value"><%= stats.payrollTotal.toLocaleString('fr-FR') %></span><span class="stat-label">Paie du mois (<%= stats.payrollStatus || '—' %>)</span></div>
+  </div>
+
+  <div class="quick-actions">
+    <a href="/school/hr/staff" class="action-card">👥 Dossiers personnel</a>
+    <a href="/school/hr/leaves" class="action-card">🏖️ Valider congés</a>
+    <a href="/school/hr/attendance" class="action-card">🕐 Présence</a>
+    <a href="/school/hr/payroll" class="action-card">💰 Paie mensuelle</a>
+    <a href="/school/hr/evaluations" class="action-card">📋 Évaluations</a>
+  </div>
+<% } %>

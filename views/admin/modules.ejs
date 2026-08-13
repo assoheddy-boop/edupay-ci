@@ -1,0 +1,93 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('modules', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Modules — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+    <div>
+      <a href="/admin/dashboard" class="text-muted">← Tableau de bord</a>
+      <h1>Gestion des modules</h1>
+      <p class="page-sub">Activation et désactivation des fonctionnalités par école — réservé au Super Admin</p>
+    </div>
+  </div>
+
+  <% if (success === '1') { %>
+    <div class="alert alert-success">Modules mis à jour pour <%= selected.name %>.</div>
+  <% } else if (success === 'all-enabled') { %>
+    <div class="alert alert-success">Tous les modules ont été activés.</div>
+  <% } %>
+
+  <div class="admin-modules-layout">
+    <aside class="card admin-schools-list">
+      <div class="card-header">
+        <h2>Écoles</h2>
+      </div>
+      <ul class="school-picker">
+        <% schools.forEach(function(s) { %>
+          <li>
+            <a href="/admin/modules?school=<%= s.id %>" class="school-picker-item <%= selected && selected.id === s.id ? 'active' : '' %>">
+              <strong><%= s.name %></strong>
+              <span class="text-muted"><%= s.enabledCount %>/<%= MODULE_KEYS.length %> modules</span>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    </aside>
+
+    <% if (selected) { %>
+      <section class="card admin-modules-panel">
+        <div class="card-header">
+          <div>
+            <h2><%= selected.name %></h2>
+            <p class="page-sub"><%= selected.admin?.email || '' %> · <span class="badge badge-premium">Premium</span></p>
+          </div>
+          <form method="POST" action="/admin/schools/<%= selected.id %>/modules/enable-all">
+            <button type="submit" class="btn btn-outline btn-sm">Tout activer</button>
+          </form>
+        </div>
+
+        <form method="POST" action="/admin/schools/<%= selected.id %>/modules">
+          <input type="hidden" name="redirect" value="/admin/modules?school=<%= selected.id %>">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Description</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% MODULE_KEYS.forEach(function(key) {
+                const mod = selected.moduleMap[key];
+              %>
+                <tr>
+                  <td>
+                    <strong><%= mod.label %></strong>
+                    <% if (mod.core) { %><span class="badge">Essentiel</span><% } %>
+                  </td>
+                  <td><%= mod.description %></td>
+                  <td>
+                    <% if (mod.core) { %>
+                      <span class="badge badge-success">Toujours actif</span>
+                    <% } else { %>
+                      <label class="checkbox-label toggle-switch">
+                        <input type="checkbox" name="mod_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
+                        <span><%= mod.enabled ? 'Activé' : 'Désactivé' %></span>
+                      </label>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Enregistrer les modules</button>
+          </div>
+        </form>
+      </section>
+    <% } else { %>
+      <section class="card admin-modules-panel">
+        <p class="empty">Aucune école inscrite.</p>
+      </section>
+    <% } %>
+  </div>
+<% } %>

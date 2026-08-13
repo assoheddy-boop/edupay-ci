@@ -1,0 +1,46 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('circulars', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Circulaires' }) %>
+<% } else { %>
+<%- include('_nav', { current: 'circulars' }) %>
+<div class="page-header">
+  <div>
+    <h1>Circulaires groupe</h1>
+    <p class="page-sub">Informez d’un coup tous les directeurs de campus</p>
+  </div>
+</div>
+
+<% if (success) { %><div class="alert alert-success">Circulaire envoyée aux directeurs.</div><% } %>
+<% if (error === 'data') { %><div class="alert alert-error">Titre et message obligatoires.</div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouvelle circulaire</h2>
+    <form method="POST" action="/group/circulars" class="form">
+      <div class="form-group">
+        <label for="title">Titre</label>
+        <input type="text" id="title" name="title" required placeholder="Ex. Rentrée, conseil de direction…">
+      </div>
+      <div class="form-group">
+        <label for="body">Message</label>
+        <textarea id="body" name="body" rows="5" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Envoyer aux campus</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Historique</h2>
+    <% if (circulars.length === 0) { %>
+      <p class="empty">Aucune circulaire pour le moment.</p>
+    <% } else { %>
+      <% circulars.forEach(function(c) { %>
+        <article class="group-circular">
+          <h3><%= c.title %></h3>
+          <time class="text-muted"><%= new Date(c.createdAt).toLocaleString('fr-FR') %></time>
+          <p><%= c.body %></p>
+        </article>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+<% } %>

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const { drawDocumentHeader } = require('../utils/schoolLogo');
 
 const bulletinsDir = path.join(__dirname, '../../uploads/bulletins');
 
@@ -39,26 +40,9 @@ function generateBulletinPdf({ student, school, grades, period, average, rank, c
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    const logoPath = school.logoUrl?.startsWith('/uploads/')
-      ? path.join(__dirname, '../..', school.logoUrl)
-      : null;
-
-    if (logoPath && fs.existsSync(logoPath)) {
-      try {
-        doc.image(logoPath, 50, 45, { width: 60 });
-      } catch {
-        doc.fontSize(20).fillColor('#0052CC').text('EduPay CI', 50, 50);
-      }
-    } else {
-      doc.fontSize(20).fillColor('#0052CC').text('EduPay CI', 50, 50);
-    }
-
-    doc.fontSize(14).fillColor('#333').text('Bulletin scolaire', { align: 'center' });
-    doc.moveDown();
+    drawDocumentHeader(doc, school, { title: 'Bulletin scolaire' });
 
     doc.fontSize(11).fillColor('#333');
-    doc.text(`École : ${school.name}`);
-    doc.text(`Adresse : ${school.address || '—'} — ${school.city}`);
     doc.text(`Année scolaire : ${student.class?.schoolYear || school.currentSchoolYear || '2025-2026'}`);
     doc.moveDown();
 

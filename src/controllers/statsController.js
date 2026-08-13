@@ -2,9 +2,15 @@ const prisma = require('../config/database');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { computeAverage } = require('../services/bulletinPdf');
 const { logAudit } = require('../utils/audit');
+const { generateStatsExcel } = require('../../services/export');
+const { getCache, setCache } = require('../../services/cache');
 
-async function statsPage(req, res) {
-  const schoolId = req.user.school.id;
+const STATS_TTL = 5 * 60;
+
+async function loadSchoolStats(schoolId) {
+  const cacheKey = `stats:school:${schoolId}`;
+  const cached = await getCache(cacheKey);
+  if (cached?.stats && cached?.byClass) return cached;
 
   const [students, payments, absences, grades, classes] = await Promise.all([
     prisma.student.count({ where: { schoolId } }),
@@ -45,15 +51,7 @@ async function statsPage(req, res) {
     }),
   );
 
-  const auditLogs = await prisma.auditLog.findMany({
-    where: { schoolId },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
-
-  res.render('school/stats', {
-    user: req.user,
-    school: req.user.school,
+  const payload = {
     stats: {
       students,
       validatedAmount: validated?._sum.amount || 0,
@@ -63,6 +61,26 @@ async function statsPage(req, res) {
       absences,
       avgGrade,
     },
+    byClass,
+  };
+  await setCache(cacheKey, payload, STATS_TTL);
+  return payload;
+}
+
+async function statsPage(req, res) {
+  const schoolId = req.user.school.id;
+  const { stats, byClass } = await loadSchoolStats(schoolId);
+
+  const auditLogs = await prisma.auditLog.findMany({
+    where: { schoolId },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  });
+
+  res.render('school/stats', {
+    user: req.user,
+    school: req.user.school,
+    stats,
     byClass,
     auditLogs,
   });
@@ -150,6 +168,12 @@ async function exportGrades(req, res) {
   await sendExcel(res, 'notes-edupay.xlsx', wb);
 }
 
+async function exportStats(req, res) {
+  const result = await generateStatsExcel(req.user.school.id);
+  if (!result.ok) return res.redirect('/school/stats');
+  await sendExcel(res, result.filename, result.workbook);
+}
+
 async function feesPage(req, res) {
   const fees = await prisma.feeType.findMany({
     where: { schoolId: req.user.school.id },
@@ -208,6 +232,7 @@ module.exports = {
   exportStudents,
   exportPayments,
   exportGrades,
+  exportStats,
   feesPage,
   createFee,
   updateFee,

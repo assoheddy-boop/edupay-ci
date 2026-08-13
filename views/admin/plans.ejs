@@ -1,0 +1,87 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('plans', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Plans d\'adhésion' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <a href="/admin/dashboard" class="text-muted">← Tableau de bord</a>
+    <h1>Plans d'adhésion</h1>
+    <p class="page-sub">Essentiel, Premium, Pro, Groupe — activez les modules d'un plan pour chaque école</p>
+  </div>
+</div>
+
+<% if (success === 'activated') { %>
+  <div class="alert alert-success">Modules du plan activés pour l'école.</div>
+<% } %>
+<% if (error === 'missing') { %>
+  <div class="alert alert-error">Choisissez une école et un plan.</div>
+<% } else if (error === 'plan') { %>
+  <div class="alert alert-error">Plan introuvable.</div>
+<% } %>
+
+<div class="pricing-grid admin-plans-grid">
+  <% plans.forEach(function(plan) { %>
+    <article class="pricing-card">
+      <h3><%= plan.name %></h3>
+      <div class="pricing-price">
+        <span class="pricing-amount"><%= plan.price === 0 ? 'Gratuit' : plan.price.toLocaleString('fr-FR') %></span>
+        <% if (plan.price > 0) { %><span class="pricing-period">FCFA / mois</span><% } %>
+      </div>
+      <ul class="pricing-modules">
+        <% (plan.features || []).forEach(function(key) { %>
+          <li><span class="check">✓</span> <%= MODULES[key] ? MODULES[key].label : key %></li>
+        <% }) %>
+      </ul>
+      <p class="page-sub"><%= plan.schools ? plan.schools.length : 0 %> école(s)</p>
+    </article>
+  <% }) %>
+</div>
+
+<div class="card" style="margin-top:2rem">
+  <div class="card-header">
+    <h2>Activer les modules d'un plan</h2>
+    <p class="page-sub">Assigne le plan à l'école et bascule les modules (features) selon l'offre.</p>
+  </div>
+  <% if (schools.length === 0) { %>
+    <p class="empty" style="padding:1.25rem">Aucune école inscrite.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Plan actuel</th>
+          <th>Activer modules</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% schools.forEach(function(s) { %>
+          <tr>
+            <td>
+              <strong><%= s.name %></strong><br>
+              <small><%= s.admin?.email || '—' %></small>
+            </td>
+            <td>
+              <% if (s.plan) { %>
+                <span class="badge badge-premium"><%= s.plan.name %></span>
+              <% } else { %>
+                <span class="text-muted">Aucun</span>
+              <% } %>
+            </td>
+            <td>
+              <form method="POST" action="/admin/plans/activate" class="form form-inline">
+                <input type="hidden" name="schoolId" value="<%= s.id %>">
+                <select name="planId" required>
+                  <% plans.forEach(function(plan) { %>
+                    <option value="<%= plan.id %>" <%= s.planId === plan.id ? 'selected' : '' %>><%= plan.name %></option>
+                  <% }) %>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Activer modules</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

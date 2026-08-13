@@ -1,0 +1,47 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('leaves', { _inLayout: true }); %>
+<%- include('../../layouts/teacherLayout', { body: content, title: 'Mes congés' }) %>
+<% } else { %>
+<div class="page-header"><h1>Mes congés</h1></div>
+  <%- include('_nav') %>
+  <% if (success === 'requested') { %><div class="alert alert-success">Demande envoyée.</div><% } %>
+  <% if (error) { %><div class="alert alert-error">Veuillez renseigner les dates.</div><% } %>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h2>Nouvelle demande</h2>
+    <form method="POST" action="/teacher/hr/leaves" class="form">
+      <div class="form-row">
+        <div class="form-group"><label>Type</label>
+          <select name="type">
+            <option value="ANNUAL">Congé annuel</option>
+            <option value="SICK">Maladie</option>
+            <option value="UNPAID">Sans solde</option>
+            <option value="MATERNITY">Maternité</option>
+            <option value="OTHER">Autre</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Du</label><input type="date" name="startDate" required></div>
+        <div class="form-group"><label>Au</label><input type="date" name="endDate" required></div>
+      </div>
+      <div class="form-group"><label>Motif</label><textarea name="reason" rows="2"></textarea></div>
+      <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Historique</h2>
+    <table class="table">
+      <thead><tr><th>Type</th><th>Période</th><th>Statut</th><th>Motif</th></tr></thead>
+      <tbody>
+        <% leaves.forEach(function(l) { %>
+          <tr>
+            <td><%= l.type %></td>
+            <td><%= new Date(l.startDate).toLocaleDateString('fr-FR') %> → <%= new Date(l.endDate).toLocaleDateString('fr-FR') %></td>
+            <td><span class="badge"><%= l.status %></span></td>
+            <td><%= l.reason || '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

@@ -1,0 +1,101 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('payroll', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Paie' }) %>
+<% } else { %>
+<div class="page-header">
+    <h1>Paie — <%= monthLabel %></h1>
+    <a href="/school/hr/export/payroll?month=<%= month %>&year=<%= year %>" class="btn btn-outline btn-sm">Export Excel</a>
+  </div>
+  <%- include('_nav') %>
+  <% if (success === 'generated') { %><div class="alert alert-success">Paie générée.</div><% } %>
+  <% if (success === 'paid') { %><div class="alert alert-success">Paie marquée comme payée et enregistrée en comptabilité.</div><% } %>
+  <% if (success === 'advance') { %><div class="alert alert-success">Avance traitée.</div><% } %>
+  <% if (error) { %><div class="alert alert-error">Erreur : <%= error %></div><% } %>
+
+  <form method="GET" class="form form-inline card" style="margin-bottom:1rem;padding:1rem">
+    <input type="number" name="month" min="1" max="12" value="<%= month %>" style="width:80px">
+    <input type="number" name="year" value="<%= year %>" style="width:100px">
+    <button type="submit" class="btn btn-primary btn-sm">Changer période</button>
+  </form>
+
+  <% if (!payrollRun || payrollRun.status === 'DRAFT') { %>
+    <form method="POST" action="/school/hr/payroll/generate" class="card" style="padding:1rem;margin-bottom:1rem">
+      <input type="hidden" name="month" value="<%= month %>">
+      <input type="hidden" name="year" value="<%= year %>">
+      <p>Générer les bulletins pour <%= teachers.length %> enseignant(s) actif(s).</p>
+      <button type="submit" class="btn btn-primary">Générer la paie</button>
+    </form>
+  <% } %>
+
+  <% if (payrollRun) { %>
+    <div class="card" style="margin-bottom:1rem;padding:1rem">
+      <p><strong>Statut :</strong> <%= payrollRun.status %> — <strong>Total net :</strong> <%= payrollRun.totalNet.toLocaleString('fr-FR') %> FCFA</p>
+      <% if (payrollRun.status === 'VALIDATED') { %>
+        <form method="POST" action="/school/hr/payroll/pay" class="inline-form">
+          <input type="hidden" name="payrollRunId" value="<%= payrollRun.id %>">
+          <input type="hidden" name="month" value="<%= month %>">
+          <input type="hidden" name="year" value="<%= year %>">
+          <select name="accountId" required>
+            <option value="">Compte de paiement</option>
+            <% accounts.forEach(function(a) { %><option value="<%= a.id %>"><%= a.name %> (<%= a.balance.toLocaleString('fr-FR') %>)</option><% }) %>
+          </select>
+          <button type="submit" class="btn btn-success">Marquer comme payée</button>
+        </form>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead><tr><th>Enseignant</th><th>Base</th><th>Primes</th><th>Retenues</th><th>Avances</th><th>Net</th><th>PDF</th></tr></thead>
+        <tbody>
+          <% payrollRun.payslips.forEach(function(p) { %>
+            <tr>
+              <td><%= p.teacher.user.lastName %> <%= p.teacher.user.firstName %></td>
+              <td><%= p.baseSalary.toLocaleString('fr-FR') %></td>
+              <td>
+                <% if (payrollRun.status !== 'PAID') { %>
+                  <form method="POST" action="/school/hr/payroll/payslips/<%= p.id %>" class="inline-form">
+                    <input type="hidden" name="month" value="<%= month %>">
+                    <input type="hidden" name="year" value="<%= year %>">
+                    <input type="number" name="bonuses" value="<%= p.bonuses %>" style="width:80px">
+                    <input type="number" name="deductions" value="<%= p.deductions %>" style="width:80px">
+                    <button type="submit" class="btn btn-sm btn-outline">OK</button>
+                  </form>
+                <% } else { %><%= p.bonuses %> / <%= p.deductions %><% } %>
+              </td>
+              <td><%= p.deductions.toLocaleString('fr-FR') %></td>
+              <td><%= p.advances.toLocaleString('fr-FR') %></td>
+              <td><strong><%= p.netPay.toLocaleString('fr-FR') %></strong></td>
+              <td>
+                <a href="/school/hr/export/payslip/<%= p.teacherId %>?month=<%= month %>&amp;year=<%= year %>" target="_blank">PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (pendingAdvances.length) { %>
+    <div class="card" style="margin-top:1.5rem">
+      <h2>Avances en attente</h2>
+      <% pendingAdvances.forEach(function(a) { %>
+        <div class="teacher-row">
+          <div><strong><%= a.teacher.user.lastName %> <%= a.teacher.user.firstName %></strong> — <%= a.amount.toLocaleString('fr-FR') %> FCFA<br><small><%= a.reason || '' %></small></div>
+          <form method="POST" action="/school/hr/advances/<%= a.id %>/review" class="inline-form">
+            <input type="hidden" name="action" value="approve">
+            <input type="hidden" name="month" value="<%= month %>">
+            <input type="hidden" name="year" value="<%= year %>">
+            <button type="submit" class="btn btn-sm btn-primary">Approuver</button>
+          </form>
+          <form method="POST" action="/school/hr/advances/<%= a.id %>/review" class="inline-form">
+            <input type="hidden" name="action" value="reject">
+            <input type="hidden" name="month" value="<%= month %>">
+            <input type="hidden" name="year" value="<%= year %>">
+            <button type="submit" class="btn btn-sm btn-outline">Refuser</button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+<% } %>

@@ -12,7 +12,12 @@ const { startCronJobs } = require('./jobs/cron');
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-initSocket(server);
+const io = initSocket(server);
+
+io.on('connection', (socket) => {
+  socket.on('subscribe', (userId) => socket.join(userId));
+});
+
 startCronJobs();
 
 server.listen(PORT, () => {

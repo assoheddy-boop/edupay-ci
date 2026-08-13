@@ -41,5 +41,28 @@ const csvUpload = multer({
   },
 });
 
+const logoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = /jpeg|jpg|png|webp/i.test(path.extname(file.originalname))
+      || /^image\/(jpeg|png|webp)$/i.test(file.mimetype);
+    cb(null, ok);
+  },
+});
+
+const hrDocUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = /jpeg|jpg|png|webp|pdf/i.test(path.extname(file.originalname))
+      || file.mimetype.startsWith('image/')
+      || file.mimetype === 'application/pdf';
+    cb(null, ok);
+  },
+});
+
 module.exports = upload;
 module.exports.csvUpload = csvUpload;
+module.exports.logoUpload = logoUpload;
+module.exports.hrDocUpload = hrDocUpload;

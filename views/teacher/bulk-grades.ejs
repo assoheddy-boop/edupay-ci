@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Notes en masse' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>📝 Saisie notes en masse</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('bulk-grades', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Notes en masse' }) %>
+<% } else { %>
+<div class="page-header"><h1>📝 Saisie notes en masse</h1></div>
   <% if (success) { %><div class="alert alert-success">Notes enregistrées.</div><% } %>
 
   <% classLinks.forEach(cl => { %>
@@ -29,6 +30,4 @@
       </form>
     </div>
   <% }) %>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

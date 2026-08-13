@@ -34,6 +34,12 @@ function initSocket(httpServer) {
   });
 
   io.on('connection', (socket) => {
+    socket.on('subscribe', (userId) => {
+      if (!userId) return;
+      if (socket.userId && String(userId) !== String(socket.userId)) return;
+      socket.join(String(userId));
+    });
+
     socket.on('typing', ({ partnerId }) => {
       io.to(`user:${partnerId}`).emit('typing', { from: socket.userId });
     });

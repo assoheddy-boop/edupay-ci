@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const { drawDocumentHeader, drawSchoolLogo } = require('../utils/schoolLogo');
 
 const receiptsDir = path.join(__dirname, '../../uploads/receipts');
 
@@ -18,10 +19,9 @@ function generateReceiptPdf({ payment, student, school, feeType }) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    doc.fontSize(18).fillColor('#0052CC').text('EduPay CI — Reçu de paiement', { align: 'center' });
-    doc.moveDown();
+    drawDocumentHeader(doc, school, { title: 'Reçu de paiement' });
+
     doc.fontSize(11).fillColor('#333');
-    doc.text(`École : ${school.name}`);
     doc.text(`Élève : ${student.firstName} ${student.lastName}`);
     doc.text(`Classe : ${student.class?.name || '—'}`);
     doc.moveDown();
@@ -32,7 +32,7 @@ function generateReceiptPdf({ payment, student, school, feeType }) {
     doc.text(`Statut : ${payment.status}`);
     doc.text(`Date validation : ${payment.validatedAt ? new Date(payment.validatedAt).toLocaleDateString('fr-FR') : '—'}`);
     doc.moveDown(2);
-    doc.fontSize(9).fillColor('#999').text('Document officiel EduPay CI', { align: 'center' });
+    doc.fontSize(9).fillColor('#999').text(`Document officiel — ${school.name}`, { align: 'center' });
 
     doc.end();
     stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));
@@ -50,7 +50,8 @@ function generateBadgePdf({ student, badge, school }) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    doc.fontSize(14).fillColor('#0052CC').text(school.name, { align: 'center' });
+    drawSchoolLogo(doc, school, { x: 110, y: 15, width: 40 });
+    doc.fontSize(12).fillColor('#0052CC').text(school.name, { align: 'center' });
     doc.fontSize(28).text('🏅', { align: 'center' });
     doc.fontSize(16).fillColor('#333').text(badge.label, { align: 'center' });
     doc.fontSize(11).text(`${student.firstName} ${student.lastName}`, { align: 'center' });
@@ -72,16 +73,15 @@ function generateHomeworkPdf({ homework, studentClass, school }) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    doc.fontSize(16).fillColor('#0052CC').text('Devoir — ' + school.name);
-    doc.fontSize(14).text(homework.title);
-    doc.moveDown();
+    drawDocumentHeader(doc, school, { title: `Devoir — ${homework.title}` });
+
     doc.fontSize(11).fillColor('#333');
     doc.text(`Classe : ${studentClass}`);
     doc.text(`À rendre le : ${new Date(homework.dueDate).toLocaleDateString('fr-FR')}`);
     doc.moveDown();
     if (homework.description) doc.text(homework.description);
     doc.moveDown();
-    doc.fontSize(9).text('EduPay CI — Fiche pour accompagnement à la maison (sans écran)');
+    doc.fontSize(9).fillColor('#999').text(`Fiche pour accompagnement à la maison — ${school.name}`, { align: 'center' });
 
     doc.end();
     stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));

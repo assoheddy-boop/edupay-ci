@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Activités' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header">
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('activities', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Activités' }) %>
+<% } else { %>
+<div class="page-header">
     <h1>🎯 Inscription activités</h1>
     <p class="page-sub">Inscrivez votre enfant aux activités extrascolaires</p>
   </div>
@@ -33,6 +34,4 @@
       <% }) %>
     </div>
   <% } %>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

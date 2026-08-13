@@ -12,6 +12,8 @@ const adminRoutes = require('./routes/admin');
 const groupRoutes = require('./routes/group');
 const apiV1Routes = require('./routes/api/v1');
 const { apiLimiter } = require('./middleware/rateLimit');
+const { getPlansForLanding } = require('./config/plans');
+const hrRoutes = require('../modules/hr/routes/hrRoutes');
 
 const app = express();
 
@@ -35,7 +37,8 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (_req, res) => {
-  res.render('index', { user: null });
+  const { plans, moduleList } = getPlansForLanding();
+  res.render('index', { user: null, plans, moduleList });
 });
 
 app.get('/api/health', apiLimiter, (_req, res) => {
@@ -50,6 +53,7 @@ app.use('/group', groupRoutes);
 app.use('/school', schoolRoutes);
 app.use('/parent', parentRoutes);
 app.use('/teacher', teacherRoutes);
+app.use('/hr', hrRoutes);
 
 app.use((_req, res) => {
   res.status(404).render('error', { message: 'Page introuvable', user: null });

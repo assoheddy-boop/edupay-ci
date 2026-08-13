@@ -1,7 +1,8 @@
-<%- include('../partials/head', { title: 'Objets perdus' }) %>
-<%- include('../partials/header', { user }) %>
-<main class="container">
-  <div class="page-header"><h1>🧸 Objets perdus</h1></div>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('lost-items', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Objets perdus' }) %>
+<% } else { %>
+<div class="page-header"><h1>🧸 Objets perdus</h1></div>
   <% if (success) { %><div class="alert alert-success"><%= success === 'claimed' ? 'Objet récupéré.' : 'Objet enregistré — parent notifié si élève identifié.' %></div><% } %>
 
   <div class="grid-2">
@@ -45,6 +46,4 @@
       <% } %>
     </div>
   </div>
-</main>
-<%- include('../partials/footer') %>
-<%- include('../partials/scripts') %>
+<% } %>

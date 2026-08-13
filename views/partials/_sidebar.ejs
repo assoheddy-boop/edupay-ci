@@ -1,0 +1,66 @@
+<% const currentUser = typeof user !== 'undefined' ? user : null; %>
+<% const m = typeof modules !== 'undefined' ? modules : {}; %>
+<% const on = (k) => m[k]?.enabled !== false; %>
+<% const brandSchool = currentUser && (currentUser.school || (currentUser.teacher && currentUser.teacher.school)); %>
+<% const brandOrg = currentUser && currentUser.organizationAdmin && currentUser.organizationAdmin.organization; %>
+<aside class="app-sidebar" id="appSidebar">
+  <% if (brandOrg) { %>
+    <div class="sidebar-brand">
+      <%- include('_logo', { logoUrl: brandOrg.logoUrl, logoBase64: brandOrg.logoBase64, name: brandOrg.name, size: 'sm' }) %>
+      <span><%= brandOrg.name %></span>
+    </div>
+  <% } else if (brandSchool) { %>
+    <div class="sidebar-brand">
+      <%- include('_logo', { logoUrl: brandSchool.logoUrl, logoBase64: brandSchool.logoBase64, name: brandSchool.name, size: 'sm' }) %>
+      <span><%= brandSchool.name %></span>
+    </div>
+  <% } %>
+  <nav class="app-sidebar-nav">
+    <% if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
+      <a href="/admin/dashboard">Tableau de bord</a>
+      <a href="/admin/plans">Plans</a>
+      <a href="/admin/modules">Modules</a>
+      <a href="/admin/organizations">Groupes</a>
+    <% } else if (currentUser && currentUser.role === 'ORGANIZATION_ADMIN') { %>
+      <a href="/group/dashboard">Pilotage</a>
+      <a href="/group/campuses">Campus</a>
+      <a href="/group/finance">Finance</a>
+      <a href="/group/hr">RH groupe</a>
+      <a href="/group/compare">Comparatif</a>
+      <a href="/group/circulars">Circulaires</a>
+      <a href="/group/settings">Paramètres</a>
+    <% } else if (currentUser && currentUser.role === 'SCHOOL_ADMIN') { %>
+      <a href="/school/dashboard">Accueil</a>
+      <a href="/school/classes">Classes</a>
+      <a href="/school/students">Élèves</a>
+      <a href="/school/teachers">Enseignants</a>
+      <a href="/school/fees">Frais</a>
+      <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
+      <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
+      <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
+      <% if (on('accounting')) { %><a href="/school/accounting">Comptabilité</a><% } %>
+      <% if (on('hr')) { %><a href="/school/hr">RH</a><% } %>
+      <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
+      <a href="/school/school-year">Année scolaire</a>
+      <a href="/school/settings">Paramètres</a>
+    <% } else if (currentUser && currentUser.role === 'PARENT') { %>
+      <a href="/parent/dashboard">Accueil</a>
+      <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
+      <% if (on('grades')) { %><a href="/parent/grades">Notes</a><% } %>
+      <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a><% } %>
+      <% if (on('homeworks')) { %><a href="/parent/homeworks">Devoirs</a><% } %>
+      <a href="/parent/timeline">Historique</a>
+      <a href="/parent/notifications">Notifications</a>
+      <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
+    <% } else if (currentUser && currentUser.role === 'TEACHER') { %>
+      <a href="/teacher/dashboard">Accueil</a>
+      <a href="/teacher/students">Élèves</a>
+      <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
+      <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
+      <% if (on('homeworks')) { %><a href="/teacher/homeworks">Devoirs</a><% } %>
+      <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
+      <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
+    <% } %>
+  </nav>
+</aside>
+<div class="app-sidebar-overlay" id="sidebarOverlay" hidden></div>
