@@ -32,10 +32,10 @@
 
 <div class="card" style="margin-bottom:1.5rem">
   <div class="card-header"><h2>Filtres</h2></div>
-  <form method="GET" action="/timetable" class="form grid-3" style="padding:1rem">
+  <form method="GET" action="/timetable" id="timetableFilters" class="form grid-3" style="padding:1rem">
     <label>
       Vue
-      <select name="view" onchange="this.form.submit()">
+      <select name="view" id="filterView">
         <option value="class" <%= viewMode === 'class' ? 'selected' : '' %>>Par classe</option>
         <option value="teacher" <%= viewMode === 'teacher' ? 'selected' : '' %>>Par enseignant</option>
       </select>
@@ -44,7 +44,7 @@
     <% if (viewMode === 'class') { %>
       <label>
         Classe
-        <select name="classId" onchange="this.form.submit()">
+        <select name="classId" id="filterClassId">
           <option value="">— Choisir —</option>
           <% classes.forEach(c => { %>
             <option value="<%= c.id %>" <%= filterClassId === c.id ? 'selected' : '' %>><%= c.level %> — <%= c.name %></option>
@@ -54,7 +54,7 @@
     <% } else { %>
       <label>
         Enseignant
-        <select name="teacherId" onchange="this.form.submit()">
+        <select name="teacherId" id="filterTeacherId">
           <option value="">— Choisir —</option>
           <% teachers.forEach(t => { %>
             <option value="<%= t.id %>" <%= filterTeacherId === t.id ? 'selected' : '' %>>
@@ -67,7 +67,7 @@
 
     <label>
       Matière
-      <select name="subjectId" onchange="this.form.submit()">
+      <select name="subjectId" id="filterSubjectId">
         <option value="">Toutes</option>
         <% subjects.forEach(s => { %>
           <option value="<%= s.id %>" <%= filterSubjectId === s.id ? 'selected' : '' %>><%= s.name %></option>
@@ -81,7 +81,7 @@
       <% if (filterClassId) { %>
         <form method="POST" action="/timetable/notify-class" onsubmit="return confirm('Envoyer l\'emploi du temps à tous les parents de cette classe ?');">
           <input type="hidden" name="classId" value="<%= filterClassId %>">
-          <button type="submit" class="btn btn-primary">Envoyer aux parents (classe)</button>
+          <button type="submit" class="btn btn-primary">Envoyer emploi du temps aux parents</button>
         </form>
       <% } %>
       <% if (filterClassId && students.length) {
@@ -108,53 +108,18 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Grille hebdomadaire</h2></div>
-    <div class="table-responsive">
-      <table class="table timetable-grid">
-        <thead>
-          <tr>
-            <th>Heure</th>
-            <% days.forEach(day => { %><th><%= day %></th><% }) %>
-          </tr>
-        </thead>
-        <tbody>
-          <% gridHours.forEach(hour => { %>
-            <tr>
-              <td><strong><%= hour %></strong></td>
-              <% days.forEach(day => { %>
-                <td class="timetable-cell">
-                  <% (grid[day][hour] || []).forEach(entry => { %>
-                    <div class="timetable-slot" title="<%= entry.subject?.name %> — <%= entry.startTime %>–<%= entry.endTime %>">
-                      <strong><%= entry.subject?.name || '—' %></strong><br>
-                      <small><%= entry.startTime %>–<%= entry.endTime %></small><br>
-                      <% if (viewMode === 'class') { %>
-                        <small><%= entry.teacher?.user ? entry.teacher.user.lastName : '' %></small>
-                      <% } else { %>
-                        <small><%= entry.class?.name || '' %></small>
-                      <% } %>
-                      <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
-                        <details style="margin-top:.25rem">
-                          <summary>Déplacer</summary>
-                          <form method="POST" action="/timetable/update/<%= entry.id %>" class="form" style="margin-top:.35rem">
-                            <select name="dayOfWeek" required>
-                              <% days.forEach(d => { %>
-                                <option value="<%= d %>" <%= entry.dayOfWeek === d ? 'selected' : '' %>><%= d %></option>
-                              <% }) %>
-                            </select>
-                            <input type="time" name="startTime" value="<%= entry.startTime %>" required>
-                            <input type="time" name="endTime" value="<%= entry.endTime %>" required>
-                            <button type="submit" class="btn btn-sm btn-outline">Enregistrer</button>
-                          </form>
-                        </details>
-                      <% } %>
-                    </div>
-                  <% }) %>
-                </td>
-              <% }) %>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+      <h2 style="margin:0">Calendrier</h2>
+      <div id="calendarViewToggle" class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline" data-view="timeGridWeek">Semaine</button>
+        <button type="button" class="btn btn-sm btn-outline" data-view="timeGridDay">Jour</button>
+      </div>
+    </div>
+    <div style="padding:1rem">
+      <div id="calendar"></div>
+      <p id="calendarEmpty" class="text-muted" style="display:none;margin-top:1rem">
+        Sélectionnez une classe ou un enseignant pour afficher l'emploi du temps.
+      </p>
     </div>
   </div>
 
@@ -189,6 +154,9 @@
       <label>Nouvelle matière (si absente)
         <input type="text" name="subjectName" placeholder="Ex: Mathématiques">
       </label>
+      <label>Salle
+        <input type="text" name="room" placeholder="Ex: Salle A12">
+      </label>
       <label>Jour *
         <select name="dayOfWeek" required>
           <% days.forEach(d => { %><option value="<%= d %>"><%= d %></option><% }) %>
@@ -208,16 +176,178 @@
   <% } %>
 </div>
 
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/fr.global.min.js"></script>
+
 <style>
-.timetable-grid td { vertical-align: top; min-width: 110px; }
-.timetable-cell { background: #fafafa; }
-.timetable-slot {
-  background: #e8f0fe;
-  border-left: 3px solid #0052CC;
-  padding: .35rem .5rem;
-  margin-bottom: .35rem;
-  border-radius: 4px;
-  font-size: .85rem;
-}
+#calendar { min-height: 620px; }
+.fc-event { cursor: pointer; font-size: .85rem; }
+.fc .fc-toolbar-title { font-size: 1.1rem; }
+.fc-timegrid-slot { height: 2.5em; }
 </style>
+
+<script>
+(function () {
+  const viewMode = '<%= viewMode %>';
+  const filterClassId = '<%= filterClassId || '' %>';
+  const filterTeacherId = '<%= filterTeacherId || '' %>';
+  const filterSubjectId = '<%= filterSubjectId || '' %>';
+  const canEdit = <%= (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') ? 'true' : 'false' %>;
+  const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+  const calendarEl = document.getElementById('calendar');
+  const emptyEl = document.getElementById('calendarEmpty');
+  const hasFilter = (viewMode === 'class' && filterClassId) || (viewMode === 'teacher' && filterTeacherId);
+
+  if (!hasFilter) {
+    emptyEl.style.display = 'block';
+    calendarEl.style.display = 'none';
+    return;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function formatTime(date) {
+    return pad(date.getHours()) + ':' + pad(date.getMinutes());
+  }
+
+  function buildEventsUrl() {
+    const params = new URLSearchParams();
+    if (viewMode === 'class' && filterClassId) params.set('classId', filterClassId);
+    if (viewMode === 'teacher' && filterTeacherId) params.set('teacherId', filterTeacherId);
+    if (filterSubjectId) params.set('subjectId', filterSubjectId);
+    return '/timetable/events?' + params.toString();
+  }
+
+  async function persistEventChange(info) {
+    const start = info.event.start;
+    const end = info.event.end;
+    if (!start || !end) {
+      info.revert();
+      return;
+    }
+
+    const body = {
+      dayOfWeek: dayNames[start.getDay()],
+      startTime: formatTime(start),
+      endTime: formatTime(end),
+    };
+
+    try {
+      const res = await fetch('/timetable/update/' + info.event.id, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        info.revert();
+        alert(data.message || 'Conflit d\'horaire — modification annulée.');
+        return;
+      }
+      calendar.refetchEvents();
+    } catch (err) {
+      info.revert();
+      alert('Erreur réseau lors de la mise à jour.');
+    }
+  }
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    locale: 'fr',
+    firstDay: 1,
+    initialView: 'timeGridWeek',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: '',
+    },
+    slotMinTime: '07:00:00',
+    slotMaxTime: '18:00:00',
+    allDaySlot: false,
+    height: 'auto',
+    editable: canEdit,
+    eventDurationEditable: canEdit,
+    eventStartEditable: canEdit,
+    nowIndicator: true,
+    hiddenDays: [0],
+    events: function (fetchInfo, successCallback, failureCallback) {
+      fetch(buildEventsUrl(), { headers: { Accept: 'application/json' } })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok) {
+            failureCallback(new Error(data.message || data.error || 'Erreur'));
+            return;
+          }
+          successCallback(data.events || []);
+        })
+        .catch(function (err) { failureCallback(err); });
+    },
+    eventDidMount: function (info) {
+      const p = info.event.extendedProps;
+      const lines = [
+        p.subject || info.event.title,
+        'Prof : ' + (p.teacher || '—'),
+        'Salle : ' + (p.room || '—'),
+      ];
+      if (viewMode === 'teacher' && p.className) {
+        lines.push('Classe : ' + p.className);
+      }
+      if (p.conflict && p.conflictMessage) {
+        lines.push('⚠ ' + p.conflictMessage);
+      }
+      info.el.title = lines.join('\n');
+    },
+    eventDrop: persistEventChange,
+    eventResize: persistEventChange,
+    eventClick: function (info) {
+      if (!canEdit) return;
+      const p = info.event.extendedProps;
+      const msg = [
+        p.subject || info.event.title,
+        'Prof : ' + (p.teacher || '—'),
+        'Salle : ' + (p.room || '—'),
+        p.conflict ? ('Conflit : ' + (p.conflictMessage || 'oui')) : '',
+        '',
+        'Supprimer ce créneau ?',
+      ].filter(Boolean).join('\n');
+      if (!confirm(msg)) return;
+
+      fetch('/timetable/' + info.event.id, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok) {
+            alert(data.message || 'Suppression impossible.');
+            return;
+          }
+          info.event.remove();
+        })
+        .catch(function () { alert('Erreur réseau lors de la suppression.'); });
+    },
+  });
+
+  calendar.render();
+
+  document.querySelectorAll('#calendarViewToggle [data-view]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      calendar.changeView(btn.getAttribute('data-view'));
+    });
+  });
+
+  const filterForm = document.getElementById('timetableFilters');
+  if (filterForm) {
+    filterForm.querySelectorAll('select').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        filterForm.submit();
+      });
+    });
+  }
+})();
+</script>
 <% } %>

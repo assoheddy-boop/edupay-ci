@@ -694,6 +694,7 @@ model Timetable {
   dayOfWeek String
   startTime String
   endTime   String
+  room      String?
   createdAt DateTime @default(now())
 
   classId   String

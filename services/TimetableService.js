@@ -5,6 +5,15 @@ const { generateTimetablePDF } = require('./export');
 
 const VALID_DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
+const DAY_TO_FC = {
+  Lundi: 1,
+  Mardi: 2,
+  Mercredi: 3,
+  Jeudi: 4,
+  Vendredi: 5,
+  Samedi: 6,
+};
+
 const TIMETABLE_INCLUDE = {
   class: true,
   teacher: { include: { user: true } },
@@ -19,6 +28,12 @@ function parseTime(value) {
   const minutes = parseInt(match[2], 10);
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
   return hours * 60 + minutes;
+}
+
+function formatTimeFromMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
 function validateDayOfWeek(dayOfWeek) {
@@ -44,11 +59,19 @@ function slotsOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
 
-async function findConflicts({ classId, teacherId, dayOfWeek, start, end, excludeId }) {
-  const whereBase = { dayOfWeek };
+async function findConflicts({
+  classId,
+  teacherId,
+  dayOfWeek,
+  start,
+  end,
+  excludeId,
+  room,
+  schoolId,
+}) {
   const existing = await prisma.timetable.findMany({
     where: {
-      ...whereBase,
+      dayOfWeek,
       OR: [{ classId }, { teacherId }],
       ...(excludeId ? { NOT: { id: excludeId } } : {}),
     },
@@ -82,7 +105,88 @@ async function findConflicts({ classId, teacherId, dayOfWeek, start, end, exclud
     }
   }
 
+  if (room && schoolId) {
+    const roomEntries = await prisma.timetable.findMany({
+      where: {
+        dayOfWeek,
+        room,
+        schoolId,
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
+      include: TIMETABLE_INCLUDE,
+    });
+
+    for (const entry of roomEntries) {
+      const eStart = parseTime(entry.startTime);
+      const eEnd = parseTime(entry.endTime);
+      if (eStart == null || eEnd == null) continue;
+      if (!slotsOverlap(start, end, eStart, eEnd)) continue;
+      return {
+        ok: false,
+        error: 'conflict',
+        message: `Conflit de salle « ${room} » le ${dayOfWeek} (${entry.startTime}–${entry.endTime}) : ${entry.subject?.name || 'cours'}.`,
+        conflict: entry,
+      };
+    }
+  }
+
   return { ok: true };
+}
+
+async function checkEntryConflictFlag(entry) {
+  const timeCheck = validateTimes(entry.startTime, entry.endTime);
+  if (!timeCheck.ok) return { hasConflict: false };
+
+  const conflict = await findConflicts({
+    classId: entry.classId,
+    teacherId: entry.teacherId,
+    dayOfWeek: entry.dayOfWeek,
+    start: timeCheck.start,
+    end: timeCheck.end,
+    excludeId: entry.id,
+    room: entry.room || null,
+    schoolId: entry.schoolId,
+  });
+
+  return {
+    hasConflict: !conflict.ok,
+    conflictMessage: conflict.ok ? null : conflict.message,
+  };
+}
+
+async function enrichEntriesWithConflicts(entries) {
+  const enriched = [];
+  for (const entry of entries) {
+    const flags = await checkEntryConflictFlag(entry);
+    enriched.push({ ...entry, ...flags });
+  }
+  return enriched;
+}
+
+function entryToFcEvent(entry) {
+  const dayIndex = DAY_TO_FC[entry.dayOfWeek];
+  const teacherName = entry.teacher?.user
+    ? `${entry.teacher.user.lastName} ${entry.teacher.user.firstName}`
+    : '';
+
+  return {
+    id: entry.id,
+    title: entry.subject?.name || '—',
+    daysOfWeek: dayIndex != null ? [dayIndex] : undefined,
+    startTime: entry.startTime?.slice(0, 5),
+    endTime: entry.endTime?.slice(0, 5),
+    backgroundColor: entry.hasConflict ? '#e74c3c' : '#0052CC',
+    borderColor: entry.hasConflict ? '#c0392b' : '#0041a8',
+    extendedProps: {
+      subject: entry.subject?.name || '',
+      teacher: teacherName,
+      room: entry.room || '',
+      className: entry.class?.name || '',
+      classId: entry.classId,
+      conflict: !!entry.hasConflict,
+      conflictMessage: entry.conflictMessage || '',
+    },
+  };
 }
 
 async function resolveSchoolId(classId) {
@@ -90,7 +194,64 @@ async function resolveSchoolId(classId) {
   return cls?.schoolId || null;
 }
 
-async function createTimetableEntry({ classId, teacherId, subjectId, dayOfWeek, startTime, endTime }) {
+async function notifyClassTimetableChanged(classId) {
+  if (!classId) return { ok: false, error: 'class', message: 'Classe requise.' };
+
+  const students = await prisma.student.findMany({
+    where: { classId },
+    include: {
+      class: true,
+      parents: {
+        include: {
+          parent: { include: { user: true } },
+        },
+      },
+    },
+  });
+
+  const parentUserIds = new Set();
+  for (const student of students) {
+    for (const link of student.parents) {
+      if (link.parent?.user?.id) parentUserIds.add(link.parent.user.id);
+    }
+  }
+
+  const classLabel = students[0]?.class?.name || '—';
+  let pdfUrl = null;
+  try {
+    const pdf = await generateTimetablePDF(classId, { mode: 'class' });
+    if (pdf.ok) pdfUrl = pdf.url || pdf.pdfUrl;
+  } catch (err) {
+    logger.warn('Timetable PDF generation failed for class notify', { classId, err: err?.message });
+  }
+
+  const message = `L'emploi du temps de la classe ${classLabel} a été mis à jour.${
+    pdfUrl ? ` PDF : ${pdfUrl}` : ''
+  }`;
+
+  let notified = 0;
+  for (const userId of parentUserIds) {
+    try {
+      const result = await sendNotification(userId, 'timetable_updated', message);
+      if (result.ok) notified += 1;
+    } catch (err) {
+      logger.warn('Class timetable notification failed', { userId, classId, err: err?.message });
+    }
+  }
+
+  return { ok: true, notified, parents: parentUserIds.size };
+}
+
+async function createTimetableEntry({
+  classId,
+  teacherId,
+  subjectId,
+  dayOfWeek,
+  startTime,
+  endTime,
+  room,
+  notifyParents = true,
+}) {
   if (!classId || !teacherId || !subjectId) {
     return { ok: false, error: 'data', message: 'Classe, enseignant et matière requis.' };
   }
@@ -114,12 +275,16 @@ async function createTimetableEntry({ classId, teacherId, subjectId, dayOfWeek, 
     return { ok: false, error: 'school', message: 'Classe, enseignant et matière doivent appartenir à la même école.' };
   }
 
+  const trimmedRoom = room?.trim() || null;
+
   const conflict = await findConflicts({
     classId,
     teacherId,
     dayOfWeek,
     start: timeCheck.start,
     end: timeCheck.end,
+    room: trimmedRoom,
+    schoolId: cls.schoolId,
   });
   if (!conflict.ok) return conflict;
 
@@ -131,16 +296,35 @@ async function createTimetableEntry({ classId, teacherId, subjectId, dayOfWeek, 
       dayOfWeek,
       startTime,
       endTime,
+      room: trimmedRoom,
       schoolId: cls.schoolId,
     },
     include: TIMETABLE_INCLUDE,
   });
 
   logger.info('Timetable entry created', { id: entry.id, classId, teacherId });
+
+  if (notifyParents) {
+    try {
+      await notifyClassTimetableChanged(classId);
+    } catch (err) {
+      logger.warn('Post-create class notification failed', { classId, err: err?.message });
+    }
+  }
+
   return { ok: true, entry };
 }
 
-async function updateTimetableEntry(id, { classId, teacherId, subjectId, dayOfWeek, startTime, endTime }) {
+async function updateTimetableEntry(id, {
+  classId,
+  teacherId,
+  subjectId,
+  dayOfWeek,
+  startTime,
+  endTime,
+  room,
+  notifyParents = true,
+}) {
   if (!id) return { ok: false, error: 'id', message: 'Identifiant requis.' };
 
   const existing = await prisma.timetable.findUnique({ where: { id } });
@@ -153,6 +337,7 @@ async function updateTimetableEntry(id, { classId, teacherId, subjectId, dayOfWe
     dayOfWeek: dayOfWeek || existing.dayOfWeek,
     startTime: startTime || existing.startTime,
     endTime: endTime || existing.endTime,
+    room: room !== undefined ? (room?.trim() || null) : existing.room,
   };
 
   const dayCheck = validateDayOfWeek(next.dayOfWeek);
@@ -161,6 +346,8 @@ async function updateTimetableEntry(id, { classId, teacherId, subjectId, dayOfWe
   const timeCheck = validateTimes(next.startTime, next.endTime);
   if (!timeCheck.ok) return timeCheck;
 
+  const schoolId = await resolveSchoolId(next.classId);
+
   const conflict = await findConflicts({
     classId: next.classId,
     teacherId: next.teacherId,
@@ -168,17 +355,48 @@ async function updateTimetableEntry(id, { classId, teacherId, subjectId, dayOfWe
     start: timeCheck.start,
     end: timeCheck.end,
     excludeId: id,
+    room: next.room,
+    schoolId,
   });
   if (!conflict.ok) return conflict;
 
-  const schoolId = await resolveSchoolId(next.classId);
   const entry = await prisma.timetable.update({
     where: { id },
     data: { ...next, schoolId },
     include: TIMETABLE_INCLUDE,
   });
 
+  if (notifyParents) {
+    try {
+      await notifyClassTimetableChanged(entry.classId);
+    } catch (err) {
+      logger.warn('Post-update class notification failed', { classId: entry.classId, err: err?.message });
+    }
+  }
+
   return { ok: true, entry };
+}
+
+async function deleteTimetableEntry(id, { notifyParents = true } = {}) {
+  if (!id) return { ok: false, error: 'id', message: 'Identifiant requis.' };
+
+  const existing = await prisma.timetable.findUnique({ where: { id } });
+  if (!existing) return { ok: false, error: 'not_found', message: 'Créneau introuvable.' };
+
+  const classId = existing.classId;
+  await prisma.timetable.delete({ where: { id } });
+
+  logger.info('Timetable entry deleted', { id, classId });
+
+  if (notifyParents) {
+    try {
+      await notifyClassTimetableChanged(classId);
+    } catch (err) {
+      logger.warn('Post-delete class notification failed', { classId, err: err?.message });
+    }
+  }
+
+  return { ok: true, classId };
 }
 
 async function getClassTimetable(classId) {
@@ -216,6 +434,29 @@ async function getStudentTimetable(studentId) {
 
   const result = await getClassTimetable(student.classId);
   return { ...result, student, classId: student.classId };
+}
+
+async function getTimetableEvents({ classId, teacherId, subjectId }) {
+  let entries = [];
+
+  if (teacherId) {
+    const result = await getTeacherTimetable(teacherId);
+    entries = result.entries || [];
+  } else if (classId) {
+    const result = await getClassTimetable(classId);
+    entries = result.entries || [];
+  } else {
+    return { ok: false, error: 'filter', events: [], message: 'classId ou teacherId requis.' };
+  }
+
+  if (subjectId) {
+    entries = entries.filter((e) => e.subjectId === subjectId);
+  }
+
+  const enriched = await enrichEntriesWithConflicts(entries);
+  const events = enriched.map(entryToFcEvent);
+
+  return { ok: true, events, entries: enriched };
 }
 
 async function notifyParentsTimetable(studentId) {
@@ -275,22 +516,7 @@ async function notifyParentsTimetable(studentId) {
 }
 
 async function notifyClassParents(classId) {
-  if (!classId) return { ok: false, error: 'class', message: 'Classe requise.' };
-
-  const students = await prisma.student.findMany({
-    where: { classId },
-    select: { id: true },
-  });
-
-  let totalNotified = 0;
-  const results = [];
-  for (const s of students) {
-    const r = await notifyParentsTimetable(s.id);
-    results.push({ studentId: s.id, ...r });
-    if (r.ok) totalNotified += r.notified || 0;
-  }
-
-  return { ok: true, students: students.length, totalNotified, results };
+  return notifyClassTimetableChanged(classId);
 }
 
 async function listSubjectsForSchool(schoolId) {
@@ -313,16 +539,23 @@ async function ensureSubject(schoolId, name) {
 
 module.exports = {
   VALID_DAYS,
+  DAY_TO_FC,
   parseTime,
+  formatTimeFromMinutes,
   validateDayOfWeek,
   validateTimes,
+  findConflicts,
+  entryToFcEvent,
   createTimetableEntry,
   updateTimetableEntry,
+  deleteTimetableEntry,
   getClassTimetable,
   getTeacherTimetable,
   getStudentTimetable,
+  getTimetableEvents,
   notifyParentsTimetable,
   notifyClassParents,
+  notifyClassTimetableChanged,
   listSubjectsForSchool,
   ensureSubject,
 };

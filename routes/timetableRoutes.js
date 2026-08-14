@@ -6,9 +6,11 @@ const {
   VALID_DAYS,
   createTimetableEntry,
   updateTimetableEntry,
+  deleteTimetableEntry,
   getClassTimetable,
   getTeacherTimetable,
   getStudentTimetable,
+  getTimetableEvents,
   notifyParentsTimetable,
   notifyClassParents,
   listSubjectsForSchool,
@@ -76,6 +78,18 @@ async function assertStudentAccess(user, studentId) {
   }
 
   return { ok: false, status: 403, error: 'Accès refusé.' };
+}
+
+async function assertTimetableEntryAccess(user, entryId) {
+  const entry = await prisma.timetable.findUnique({
+    where: { id: entryId },
+    include: { class: true },
+  });
+  if (!entry) return { ok: false, status: 404, error: 'Créneau introuvable.' };
+  if (!(await assertSchoolOwnership(user, entry.class?.schoolId || entry.schoolId))) {
+    return { ok: false, status: 403, error: 'Accès refusé.' };
+  }
+  return { ok: true, entry };
 }
 
 function deny(req, res, status, message) {
@@ -165,6 +179,26 @@ function buildGrid(entries, days, gridHours) {
   return grid;
 }
 
+async function handleUpdate(req, res) {
+  const { id } = req.params;
+  const access = await assertTimetableEntryAccess(req.user, id);
+  if (!access.ok) return deny(req, res, access.status, access.error);
+
+  try {
+    const result = await updateTimetableEntry(id, req.body);
+    if (req.accepts('html') && !req.xhr && !req.is('application/json')) {
+      if (!result.ok) {
+        return res.redirect(`/timetable?error=${encodeURIComponent(result.message || 'Erreur')}&conflict=1&classId=${access.entry.classId}`);
+      }
+      return res.redirect(`/timetable?success=1&classId=${access.entry.classId}`);
+    }
+    return res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    console.error(err);
+    return deny(req, res, 500, 'Erreur lors de la mise à jour.');
+  }
+}
+
 router.get('/', requireAuth, attachModules, async (req, res) => {
   const role = req.user?.role;
   if (!['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN'].includes(role)) {
@@ -191,12 +225,39 @@ router.get('/', requireAuth, attachModules, async (req, res) => {
   }
 });
 
+router.get('/events', requireAuth, async (req, res) => {
+  const role = req.user?.role;
+  if (!['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN'].includes(role)) {
+    return deny(req, res, 403, 'Accès refusé.');
+  }
+
+  const { classId, teacherId, subjectId } = req.query;
+
+  if (classId) {
+    const access = await assertClassAccess(req.user, classId);
+    if (!access.ok) return deny(req, res, access.status, access.error);
+  } else if (teacherId) {
+    const access = await assertTeacherAccess(req.user, teacherId);
+    if (!access.ok) return deny(req, res, access.status, access.error);
+  } else {
+    return res.json({ ok: false, error: 'classId ou teacherId requis.', events: [] });
+  }
+
+  try {
+    const result = await getTimetableEvents({ classId, teacherId, subjectId });
+    return res.json(result);
+  } catch (err) {
+    console.error(err);
+    return deny(req, res, 500, 'Erreur lors du chargement des événements.');
+  }
+});
+
 router.post('/create', requireAuth, async (req, res) => {
   if (!['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(req.user?.role)) {
     return deny(req, res, 403, 'Accès refusé.');
   }
 
-  const { classId, teacherId, subjectId, subjectName, dayOfWeek, startTime, endTime } = req.body;
+  const { classId, teacherId, subjectId, subjectName, dayOfWeek, startTime, endTime, room } = req.body;
 
   try {
     let resolvedSubjectId = subjectId;
@@ -215,6 +276,7 @@ router.post('/create', requireAuth, async (req, res) => {
       dayOfWeek,
       startTime,
       endTime,
+      room,
     });
 
     if (req.accepts('html') && !req.xhr) {
@@ -232,35 +294,8 @@ router.post('/create', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/update/:id', requireAuth, async (req, res) => {
-  if (!['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(req.user?.role)) {
-    return deny(req, res, 403, 'Accès refusé.');
-  }
-
-  const { id } = req.params;
-  const entry = await prisma.timetable.findUnique({
-    where: { id },
-    include: { class: true },
-  });
-  if (!entry) return deny(req, res, 404, 'Créneau introuvable.');
-  if (!(await assertSchoolOwnership(req.user, entry.class?.schoolId || entry.schoolId))) {
-    return deny(req, res, 403, 'Accès refusé.');
-  }
-
-  try {
-    const result = await updateTimetableEntry(id, req.body);
-    if (req.accepts('html') && !req.xhr) {
-      if (!result.ok) {
-        return res.redirect(`/timetable?error=${encodeURIComponent(result.message || 'Erreur')}&conflict=1&classId=${entry.classId}`);
-      }
-      return res.redirect(`/timetable?success=1&classId=${entry.classId}`);
-    }
-    return res.status(result.ok ? 200 : 400).json(result);
-  } catch (err) {
-    console.error(err);
-    return deny(req, res, 500, 'Erreur lors de la mise à jour.');
-  }
-});
+router.put('/update/:id', requireAuth, handleUpdate);
+router.post('/update/:id', requireAuth, handleUpdate);
 
 router.get('/class/:id', requireAuth, async (req, res) => {
   const access = await assertClassAccess(req.user, req.params.id);
@@ -349,6 +384,30 @@ router.get('/export/class/:id.xlsx', requireAuth, async (req, res) => {
   const xlsx = await generateTimetableExcel(req.params.id);
   if (!xlsx.ok) return res.status(404).json(xlsx);
   return res.redirect(xlsx.url);
+});
+
+router.delete('/:id', requireAuth, async (req, res) => {
+  if (!['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(req.user?.role)) {
+    return deny(req, res, 403, 'Accès refusé.');
+  }
+
+  const { id } = req.params;
+  const access = await assertTimetableEntryAccess(req.user, id);
+  if (!access.ok) return deny(req, res, access.status, access.error);
+
+  try {
+    const result = await deleteTimetableEntry(id);
+    if (req.accepts('html') && !req.xhr && !req.is('application/json')) {
+      if (!result.ok) {
+        return res.redirect(`/timetable?error=${encodeURIComponent(result.message || 'Erreur')}&classId=${access.entry.classId}`);
+      }
+      return res.redirect(`/timetable?success=1&classId=${access.entry.classId}`);
+    }
+    return res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    console.error(err);
+    return deny(req, res, 500, 'Erreur lors de la suppression.');
+  }
 });
 
 module.exports = router;
