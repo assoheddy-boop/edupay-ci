@@ -1,14 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.card, .feature-card, .stat-card').forEach((el, i) => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(12px)';
-    el.style.transition = `opacity 0.4s ease ${i * 0.05}s, transform 0.4s ease ${i * 0.05}s`;
-    requestAnimationFrame(() => {
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(0)';
-    });
-  });
-
   const toggle = document.getElementById('navToggle');
   const nav = document.getElementById('mainNav');
   if (toggle && nav) {

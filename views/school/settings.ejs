@@ -17,7 +17,7 @@
         <p class="form-hint">Apparaît sur les bulletins, reçus de paiement, badges et fiches devoirs (JPG, PNG, WebP — max 2 Mo).</p>
         <% if (school.logoUrl || school.logoBase64) { %>
           <div class="logo-preview">
-            <img src="<%= school.logoBase64 || school.logoUrl %>" alt="Logo <%= school.name %>" class="school-logo-preview">
+            <img src="<%= typeof logoSrcFor === 'function' ? (logoSrcFor(school) || school.logoUrl || school.logoBase64) : (school.logoUrl && school.logoUrl.indexOf('/uploads/') !== 0 ? school.logoUrl : school.logoBase64) %>" alt="Logo <%= school.name %>" class="school-logo-preview">
           </div>
           <label class="checkbox-label">
             <input type="checkbox" name="removeLogo">

@@ -13,6 +13,34 @@ function ensureLogoDir() {
   return dir;
 }
 
+function publicPathFromLogoFile(logoFile) {
+  if (!logoFile) return null;
+  const normalized = String(logoFile).replace(/\\/g, '/');
+  if (normalized.startsWith('public/')) return `/${normalized.slice('public/'.length)}`;
+  return null;
+}
+
+function logoSrcFor(school) {
+  if (!school) return null;
+  const url = school.logoUrl || '';
+  if (url.startsWith('/img/') || url.startsWith('http://') || url.startsWith('https://')) return url;
+
+  try {
+    const { EPV_SCHOOLS } = require('../config/epvSchools');
+    const catalog = EPV_SCHOOLS.find((s) => s.slug && s.slug === school.slug);
+    const fromCatalog = publicPathFromLogoFile(catalog?.logoFile);
+    if (fromCatalog) return fromCatalog;
+  } catch {
+    // ignore
+  }
+
+  if (url && !url.startsWith('/uploads/')) return url;
+
+  const b64 = school.logoBase64 || '';
+  if (b64.startsWith('data:') && b64.length < 120000) return b64;
+  return null;
+}
+
 function resolveLogoBuffer(school) {
   if (!school) return null;
 
@@ -123,6 +151,8 @@ module.exports = {
   drawSchoolLogo,
   drawDocumentHeader,
   resolveLogoBuffer,
+  logoSrcFor,
+  publicPathFromLogoFile,
   saveSchoolLogo,
   removeSchoolLogoFiles,
   saveOrgLogo,

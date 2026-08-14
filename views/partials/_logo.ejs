@@ -1,7 +1,16 @@
 <%
-  const _logo = (typeof logoBase64 !== 'undefined' && logoBase64) || (typeof logoUrl !== 'undefined' && logoUrl) || null;
   const _name = typeof name !== 'undefined' ? name : '';
   const _size = typeof size !== 'undefined' ? size : 'md';
+  const _entity = {
+    logoUrl: typeof logoUrl !== 'undefined' ? logoUrl : null,
+    logoBase64: typeof logoBase64 !== 'undefined' ? logoBase64 : null,
+    slug: typeof slug !== 'undefined' ? slug : '',
+    name: _name,
+  };
+  const _logo = (typeof logoSrcFor === 'function' ? logoSrcFor(_entity) : null)
+    || (_entity.logoUrl && String(_entity.logoUrl).startsWith('/img/') ? _entity.logoUrl : null)
+    || (_entity.logoBase64 && String(_entity.logoBase64).length < 120000 ? _entity.logoBase64 : null)
+    || null;
 %>
 <% if (_logo) { %>
   <img src="<%= _logo %>" alt="<%= _name %>" class="brand-logo brand-logo-<%= _size %>">

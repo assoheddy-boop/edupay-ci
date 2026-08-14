@@ -3,11 +3,25 @@
 <%- include('../layouts/schoolLayout', { body: content, title: 'Tableau de bord' }) %>
 <% } else { %>
 <div class="page-header">
-    <div class="person-line">
-      <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, name: school.name, size: 'md' }) %>
+    <div class="school-identity">
+      <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'lg' }) %>
       <div>
         <h1><%= school.name %></h1>
         <p class="page-sub">Tableau de bord école</p>
+        <ul class="school-meta">
+          <% if (school.address || school.city) { %>
+            <li><%= [school.address, school.city].filter(Boolean).join(' — ') %></li>
+          <% } %>
+          <% if (school.campusLabel) { %>
+            <li><%= school.campusLabel %></li>
+          <% } %>
+          <% if (user.phone) { %>
+            <li><%= user.phone %></li>
+          <% } %>
+          <% if (school.slug) { %>
+            <li>Code école : <code><%= school.slug %></code></li>
+          <% } %>
+        </ul>
       </div>
     </div>
     <a href="/school/settings" class="btn btn-outline">Paramètres Wave/OM</a>

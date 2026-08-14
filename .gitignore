@@ -6,6 +6,8 @@ uploads/*
 .env.*.local
 .env.vercel-backup
 .neon
+.neon-url.tmp
+.neon-url.err
 generated/
 dist/
 build/

@@ -6,12 +6,12 @@
 <aside class="app-sidebar" id="appSidebar">
   <% if (brandOrg) { %>
     <div class="sidebar-brand">
-      <%- include('_logo', { logoUrl: brandOrg.logoUrl, logoBase64: brandOrg.logoBase64, name: brandOrg.name, size: 'sm' }) %>
+      <%- include('_logo', { logoUrl: brandOrg.logoUrl, logoBase64: brandOrg.logoBase64, slug: brandOrg.slug, name: brandOrg.name, size: 'sm' }) %>
       <span><%= brandOrg.name %></span>
     </div>
   <% } else if (brandSchool) { %>
     <div class="sidebar-brand">
-      <%- include('_logo', { logoUrl: brandSchool.logoUrl, logoBase64: brandSchool.logoBase64, name: brandSchool.name, size: 'sm' }) %>
+      <%- include('_logo', { logoUrl: brandSchool.logoUrl, logoBase64: brandSchool.logoBase64, slug: brandSchool.slug, name: brandSchool.name, size: 'sm' }) %>
       <span><%= brandSchool.name %></span>
     </div>
   <% } %>

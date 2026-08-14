@@ -7,11 +7,17 @@
       <span class="logo-icon">🎓</span>
       <span class="logo-text">EduPay <strong>CI</strong></span>
     </a>
+    <% if (typeof user !== 'undefined' && user && user.school) { %>
+      <span class="navbar-school">
+        <%- include('_logo', { logoUrl: user.school.logoUrl, logoBase64: user.school.logoBase64, slug: user.school.slug, name: user.school.name, size: 'sm' }) %>
+        <span class="navbar-school-name"><%= user.school.name %></span>
+      </span>
+    <% } %>
     <div class="app-navbar-end">
       <% if (typeof user !== 'undefined' && user) { %>
         <span class="app-navbar-user">
           <%- include('_avatar', { src: user.photoUrl, firstName: user.firstName, lastName: user.lastName, size: 'sm' }) %>
-          <%= user.firstName %> <%= user.lastName %>
+          <span class="app-navbar-user-name"><%= user.firstName %> <%= user.lastName %></span>
         </span>
         <a href="/auth/logout" class="btn btn-outline btn-sm">Déconnexion</a>
       <% } else { %>

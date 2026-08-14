@@ -3,6 +3,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/((?!css/|js/|img/|icons/|uploads/|manifest.json|sw.js).*)", "destination": "/api" }
   ]
 }

@@ -1294,3 +1294,58 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.school-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1;
+}
+.school-identity h1 { word-break: break-word; }
+.school-meta {
+  list-style: none;
+  margin-top: 0.5rem;
+  color: var(--gray);
+  font-size: 0.92rem;
+}
+.school-meta li { margin: 0.15rem 0; }
+.school-meta code {
+  background: #e8eef7;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.navbar-school {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--gray);
+}
+.navbar-school-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 34vw;
+}
+
+@media (max-width: 900px) {
+  .app-navbar-user-name { display: none; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-header h1 { font-size: 1.3rem; }
+  .school-identity { align-items: center; }
+  .brand-logo-lg { width: 96px; height: 96px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stat-value { font-size: 1.5rem; color: var(--blue); }
+  .stat-label { color: var(--gray); }
+  .app-content { padding-top: 1.25rem; }
+  .logo-text { display: none; }
+}
+
+@media (max-width: 600px) {
+  .navbar-school-name { max-width: 42vw; }
+}

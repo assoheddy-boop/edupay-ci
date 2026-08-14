@@ -1,4 +1,13 @@
-require('dotenv/config');
+const path = require('path');
+
+const envFile = process.env.ENV_FILE
+  || process.argv.find((arg) => arg.startsWith('--env-file='))?.slice('--env-file='.length);
+if (envFile) {
+  require('dotenv').config({ path: path.resolve(envFile), override: true });
+} else {
+  require('dotenv/config');
+}
+
 const prisma = require('../src/config/database');
 const { EPV_SCHOOLS, validateEpvCatalog } = require('../src/config/epvSchools');
 const { onboardSchools } = require('../src/utils/onboardSchools');

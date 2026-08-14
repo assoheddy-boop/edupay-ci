@@ -5,7 +5,7 @@ const { hashPassword } = require('./password');
 const { initSchoolModules, initFinanceDefaults } = require('./modules');
 const { ensureSubscriptionPlans, findPlanBySlug, assignPlanToSchool } = require('./plans');
 const { generateTempPassword, pickSchoolFields } = require('../config/epvSchools');
-const { saveSchoolLogo } = require('./schoolLogo');
+const { saveSchoolLogo, publicPathFromLogoFile } = require('./schoolLogo');
 
 function applyCatalogLogo(schoolId, logoFile) {
   if (!logoFile) return null;
@@ -22,10 +22,10 @@ function applyCatalogLogo(schoolId, logoFile) {
 async function attachLogoAndPhone(school, def) {
   const data = {};
   const logo = applyCatalogLogo(school.id, def.logoFile);
-  if (logo) {
-    data.logoUrl = logo.logoUrl;
-    data.logoBase64 = logo.logoBase64;
-  }
+  const publicUrl = publicPathFromLogoFile(def.logoFile);
+  if (publicUrl) data.logoUrl = publicUrl;
+  else if (logo) data.logoUrl = logo.logoUrl;
+  if (logo) data.logoBase64 = logo.logoBase64;
 
   if (Object.keys(data).length) {
     await prisma.school.update({ where: { id: school.id }, data });
@@ -72,6 +72,17 @@ async function onboardSchool(def, { plan, password } = {}) {
     });
     await provisionSchoolServices(school.id, plan);
     await attachLogoAndPhone(school, def);
+
+    let shownPassword = null;
+    const resetPassword = password || process.env.ONBOARD_TEMP_PASSWORD;
+    if (resetPassword && school.admin?.id) {
+      await prisma.user.update({
+        where: { id: school.admin.id },
+        data: { password: await hashPassword(resetPassword) },
+      });
+      shownPassword = resetPassword;
+    }
+
     return {
       status: 'updated',
       name: school.name,
@@ -79,7 +90,7 @@ async function onboardSchool(def, { plan, password } = {}) {
       city: school.city,
       address: school.address,
       email: school.admin?.email || def.admin.email,
-      password: null,
+      password: shownPassword,
     };
   }
 

@@ -33,6 +33,7 @@ app.use(cookieParser());
 
 app.use((req, res, next) => {
   res.locals.appName = 'EduPay CI';
+  res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
   next();
 });
 
