@@ -8,7 +8,8 @@
       <p class="page-sub">Plateforme premium — gestion centralisée des écoles et modules</p>
     </div>
     <div class="page-header-actions">
-      <a href="/transfer/dashboard" class="btn btn-primary">Transferts</a>
+      <a href="/admin/reporting" class="btn btn-primary">Graphiques d'analyse</a>
+      <a href="/transfer/dashboard" class="btn btn-outline">Transferts</a>
       <a href="/admin/modules" class="btn btn-outline">Gérer les modules</a>
       <a href="/admin/plans" class="btn btn-outline">Plans</a>
       <a href="/admin/organizations" class="btn btn-outline">Groupes scolaires</a>
@@ -44,6 +45,89 @@
     </div>
   </div>
 
+  <div class="card" style="border:2px solid var(--primary,#2563eb);background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(37,99,235,0.02))">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <h2>Graphiques d'analyse</h2>
+        <p class="page-sub">Comparatif filles/garçons par école — visible dès la connexion Super Admin.</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <a href="/admin/reporting" class="btn btn-primary">Ouvrir l'analyse complète</a>
+        <a href="/admin/group/redoublement" class="btn btn-outline">Redoublement groupe</a>
+      </div>
+    </div>
+    <% if (!genderBySchool || !genderBySchool.length) { %>
+      <p class="empty">Aucun élève inscrit — les graphiques apparaîtront dès qu'il y aura des données.</p>
+    <% } else { %>
+      <% const dashGenderLabels = genderBySchool.map(function(row) { return row.schoolName; }); %>
+      <% const dashGenderBoys = genderBySchool.map(function(row) { return row.boys; }); %>
+      <% const dashGenderGirls = genderBySchool.map(function(row) { return row.girls; }); %>
+      <% const dashAbsenceBoys = genderBySchool.map(function(row) { return row.absences ? row.absences.boys : 0; }); %>
+      <% const dashAbsenceGirls = genderBySchool.map(function(row) { return row.absences ? row.absences.girls : 0; }); %>
+      <div class="grid-2" style="margin-bottom:1rem">
+        <div style="max-width:960px;margin:0 auto">
+          <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école</h3>
+          <canvas id="dashSchoolGenderChart" height="220"></canvas>
+        </div>
+        <div style="max-width:960px;margin:0 auto">
+          <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles</h3>
+          <canvas id="dashAbsenceGenderChart" height="220"></canvas>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="/admin/reporting" class="btn btn-primary">Voir tous les graphiques (réussite, exports PDF/Excel)</a>
+      </div>
+      <script src="/js/chart.umd.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script>
+        (function () {
+          if (typeof Chart === 'undefined') return;
+          const boysColor = '#3498db';
+          const girlsColor = '#e74c3c';
+          const labels = <%= JSON.stringify(dashGenderLabels) %>;
+          const chartDefaults = {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+              x: { stacked: false },
+              y: { beginAtZero: true, ticks: { precision: 0 } },
+            },
+          };
+
+          const schoolGenderCtx = document.getElementById('dashSchoolGenderChart');
+          if (schoolGenderCtx) {
+            new Chart(schoolGenderCtx, {
+              type: 'bar',
+              data: {
+                labels,
+                datasets: [
+                  { label: 'Garçons', data: <%= JSON.stringify(dashGenderBoys) %>, backgroundColor: boysColor },
+                  { label: 'Filles', data: <%= JSON.stringify(dashGenderGirls) %>, backgroundColor: girlsColor },
+                ],
+              },
+              options: chartDefaults,
+            });
+          }
+
+          const absenceGenderCtx = document.getElementById('dashAbsenceGenderChart');
+          if (absenceGenderCtx) {
+            new Chart(absenceGenderCtx, {
+              type: 'bar',
+              data: {
+                labels,
+                datasets: [
+                  { label: 'Garçons', data: <%= JSON.stringify(dashAbsenceBoys) %>, backgroundColor: boysColor },
+                  { label: 'Filles', data: <%= JSON.stringify(dashAbsenceGirls) %>, backgroundColor: girlsColor },
+                ],
+              },
+              options: chartDefaults,
+            });
+          }
+        })();
+      </script>
+    <% } %>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <h2>Espace Super Admin</h2>
@@ -75,10 +159,10 @@
         <h3>Comptabilité</h3>
         <p>Écritures comptables et suivi des opérations.</p>
       </a>
-      <a href="/admin/reporting" class="feature-card admin-hub-card">
+      <a href="/admin/reporting" class="feature-card admin-hub-card" style="border:2px solid var(--primary,#2563eb)">
         <span class="feature-icon">📊</span>
-        <h3>Reporting</h3>
-        <p>Statistiques, exports Excel et PDF.</p>
+        <h3>Graphiques d'analyse</h3>
+        <p>Filles/garçons, absences, réussite — graphiques interactifs.</p>
       </a>
       <a href="/admin/audit" class="feature-card admin-hub-card">
         <span class="feature-icon">🔍</span>

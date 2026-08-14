@@ -10,6 +10,7 @@ const { hashPassword } = require('../utils/password');
 const { logAudit } = require('../utils/audit');
 const { ensureSubscriptionPlans, assignPlanToSchool, updatePlanFeatures } = require('../utils/plans');
 const { ensureGroupForOrganization } = require('../utils/group');
+const { getGenderStatsBySchool } = require('../../services/ClassService');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -38,7 +39,7 @@ async function loadSchoolsWithModules() {
 }
 
 async function dashboard(req, res) {
-  const [schools, organizations, users, moduleRows, students, pendingTransfers] = await Promise.all([
+  const [schools, organizations, users, moduleRows, students, pendingTransfers, genderStats] = await Promise.all([
     loadSchoolsWithModules(),
     prisma.organization.findMany({
       include: { _count: { select: { schools: true, admins: true } } },
@@ -47,6 +48,7 @@ async function dashboard(req, res) {
     prisma.schoolModule.findMany({ select: { moduleKey: true, enabled: true } }),
     prisma.student.count(),
     prisma.transferRequest.count({ where: { status: 'PENDING' } }),
+    getGenderStatsBySchool(),
   ]);
 
   const moduleStats = MODULE_KEYS.map((key) => ({
@@ -67,6 +69,7 @@ async function dashboard(req, res) {
       students,
       pendingTransfers,
     },
+    genderBySchool: genderStats.schools || [],
     moduleStats,
     MODULES,
     MODULE_KEYS,
