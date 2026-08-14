@@ -493,6 +493,29 @@ async function enrollActivity(req, res) {
   }
 }
 
+async function parentPremiumPage(viewName, req, res, extra = {}) {
+  const parent = req.user.parentProfile;
+  const children = parent ? await getParentChildren(parent.id) : [];
+  res.render(`parent/${viewName}`, {
+    user: req.user,
+    children,
+    transportLabels: TRANSPORT_LABELS,
+    ...extra,
+  });
+}
+
+async function parentTransportPage(req, res) {
+  return parentPremiumPage('transport', req, res);
+}
+
+async function parentCanteenPage(req, res) {
+  return parentPremiumPage('canteen', req, res);
+}
+
+async function parentHealthPage(req, res) {
+  return parentPremiumPage('health', req, res);
+}
+
 module.exports = {
   transportPage,
   createTransportLog,
@@ -517,4 +540,7 @@ module.exports = {
   createPickupAuth,
   parentActivitiesPage,
   enrollActivity,
+  parentTransportPage,
+  parentCanteenPage,
+  parentHealthPage,
 };

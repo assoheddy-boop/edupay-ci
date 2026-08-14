@@ -1,0 +1,73 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('transfer', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Transfert d\'école' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Transfert d'école</h1>
+  <p class="page-sub">Demandez le transfert d'un enfant vers un autre établissement EduPay</p>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === '1') { %><div class="alert alert-success">Demande envoyée. L'école d'accueil et EduPay ont été notifiés.</div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouvelle demande</h2>
+    <% if (!children.length) { %>
+      <p class="empty">Liez d'abord un enfant depuis l'accueil parent.</p>
+    <% } else { %>
+      <form method="POST" action="/transfer/request" class="form">
+        <div class="form-group">
+          <label for="studentId">Enfant</label>
+          <select id="studentId" name="studentId" required>
+            <option value="">— Choisir —</option>
+            <% children.forEach(function(link) { %>
+              <option value="<%= link.student.id %>">
+                <%= link.student.firstName %> <%= link.student.lastName %>
+                — <%= link.student.school ? link.student.school.name : 'Sans école' %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="toSchoolId">École d'accueil</label>
+          <select id="toSchoolId" name="toSchoolId" required>
+            <option value="">— Choisir —</option>
+            <% schools.forEach(function(school) { %>
+              <option value="<%= school.id %>"><%= school.name %> (<%= school.city %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reason">Motif (optionnel)</label>
+          <textarea id="reason" name="reason" rows="3" maxlength="500" placeholder="Déménagement, rapprochement familial…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Envoyer la demande</button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Mes demandes</h2>
+    <% if (!transfers.length) { %>
+      <p class="empty">Aucune demande pour le moment.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Élève</th><th>De</th><th>Vers</th><th>Statut</th></tr>
+        </thead>
+        <tbody>
+          <% transfers.forEach(function(t) { %>
+            <tr>
+              <td><%= t.student.firstName %> <%= t.student.lastName %></td>
+              <td><%= t.fromSchool.name %></td>
+              <td><%= t.toSchool.name %></td>
+              <td><span class="badge"><%= t.status %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+<% } %>

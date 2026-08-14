@@ -1,0 +1,125 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('classDashboard', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: classItem.name + ' — Genre' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1><%= classItem.name %></h1>
+    <p class="page-sub">Répartition filles / garçons — <%= classItem.level %></p>
+  </div>
+  <div>
+    <a href="/school/classes" class="btn btn-outline">Classes</a>
+    <a href="/class/<%= classItem.id %>/export.xlsx" class="btn btn-outline">Export Excel</a>
+    <a href="/class/<%= classItem.id %>/export.pdf" class="btn btn-outline">Export PDF</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.total %></span>
+    <span class="stat-label">Total élèves : <%= stats.total %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.boys %></span>
+    <span class="stat-label">Garçons : <%= stats.boys %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.girls %></span>
+    <span class="stat-label">Filles : <%= stats.girls %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.unknown || 0 %></span>
+    <span class="stat-label">Genre non renseigné</span>
+  </div>
+</div>
+
+<p>Total élèves : <%= stats.total %></p>
+<p>Garçons : <%= stats.boys %></p>
+<p>Filles : <%= stats.girls %></p>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Répartition</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="genderChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Absences et réussite par genre</h2></div>
+    <div style="max-width:480px;margin:0 auto 1rem">
+      <canvas id="absenceSuccessGenderChart"></canvas>
+    </div>
+    <table class="table">
+      <thead>
+        <tr><th></th><th>Garçons</th><th>Filles</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Absences / retards</td>
+          <td><%= stats.absences ? stats.absences.boys : 0 %></td>
+          <td><%= stats.absences ? stats.absences.girls : 0 %></td>
+        </tr>
+        <tr>
+          <td>Taux de réussite</td>
+          <td><%= Math.round(((stats.success && stats.success.boys && stats.success.boys.successRate) || 0) * 100) %>%</td>
+          <td><%= Math.round(((stats.success && stats.success.girls && stats.success.girls.successRate) || 0) * 100) %>%</td>
+        </tr>
+        <tr>
+          <td>Moyenne /20</td>
+          <td><%= ((stats.success && stats.success.boys && stats.success.boys.averageOn20) || 0).toLocaleString('fr-FR') %></td>
+          <td><%= ((stats.success && stats.success.girls && stats.success.girls.averageOn20) || 0).toLocaleString('fr-FR') %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const boysColor = '#3498db';
+  const girlsColor = '#e74c3c';
+  const absenceBoys = <%= stats.absences ? stats.absences.boys : 0 %>;
+  const absenceGirls = <%= stats.absences ? stats.absences.girls : 0 %>;
+  const avgBoys = <%= ((stats.success && stats.success.boys && stats.success.boys.averageOn20) || 0) %>;
+  const avgGirls = <%= ((stats.success && stats.success.girls && stats.success.girls.averageOn20) || 0) %>;
+
+  new Chart(document.getElementById('genderChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Garçons', 'Filles'],
+      datasets: [{
+        data: [<%= stats.boys %>, <%= stats.girls %>],
+        backgroundColor: [boysColor, girlsColor]
+      }]
+    }
+  });
+
+  new Chart(document.getElementById('absenceSuccessGenderChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Absences / retards', 'Moyenne /20'],
+      datasets: [
+        {
+          label: 'Garçons',
+          data: [absenceBoys, avgBoys],
+          backgroundColor: boysColor,
+        },
+        {
+          label: 'Filles',
+          data: [absenceGirls, avgGirls],
+          backgroundColor: girlsColor,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true },
+      },
+    },
+  });
+</script>
+<% } %>

@@ -7,6 +7,10 @@ async function overduePaymentsForSchool(schoolId) {
   const now = new Date();
   const day = now.getDate();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const school = await prisma.school.findUnique({
+    where: { id: schoolId },
+    select: { adminId: true, name: true },
+  });
 
   const fees = await prisma.feeType.findMany({
     where: { schoolId, isActive: true, dueDay: { not: null, lt: day } },
@@ -32,6 +36,9 @@ async function overduePaymentsForSchool(schoolId) {
       const message = `Paiement en retard : ${fee.name} (${fee.amount.toLocaleString('fr-FR')} FCFA) pour ${student.firstName}. Échéance dépassée (jour ${fee.dueDay}).`;
       for (const ps of student.parents) {
         await sendNotification(ps.parent.userId, 'payment_overdue', message);
+      }
+      if (school?.adminId) {
+        await sendNotification(school.adminId, 'payment_overdue', `${student.firstName} ${student.lastName} — ${fee.name} en retard.`);
       }
     }
   }
@@ -98,12 +105,22 @@ async function weeklyParentSummary() {
   }
 }
 
+async function dailyBackup() {
+  const { dailyDatabaseBackup } = require('../../services/BackupService');
+  try {
+    await dailyDatabaseBackup();
+  } catch (err) {
+    console.error('[Cron] Sauvegarde échouée:', err.message);
+  }
+}
+
 function startCronJobs() {
   if (process.env.DISABLE_CRON === 'true') return;
 
-  cron.schedule('0 8 * * *', paymentReminders);
-  cron.schedule('0 9 * * 1', weeklyParentSummary);
-  console.log('[Cron] Jobs planifiés (paiements en retard 8h, résumé lundi 9h)');
+  cron.schedule('0 8 * * *', paymentReminders, { timezone: 'Africa/Abidjan' });
+  cron.schedule('0 9 * * 1', weeklyParentSummary, { timezone: 'Africa/Abidjan' });
+  cron.schedule('0 2 * * *', dailyBackup, { timezone: 'Africa/Abidjan' });
+  console.log('[Cron] Jobs planifiés (paiements 8h, résumé lundi 9h, sauvegarde 2h Abidjan)');
 }
 
-module.exports = { startCronJobs, paymentReminders, weeklyParentSummary };
+module.exports = { startCronJobs, paymentReminders, weeklyParentSummary, dailyBackup };

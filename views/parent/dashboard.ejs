@@ -109,6 +109,21 @@
 
   <% } else { %>
 
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value"><%= summary.pendingPayments %></span>
+        <span class="stat-label">Paiements en attente</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= summary.gradeCount %></span>
+        <span class="stat-label">Notes</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= summary.absenceCount %></span>
+        <span class="stat-label">Absences</span>
+      </div>
+    </div>
+
     <% children.forEach(link => { const s = link.student; %>
 
       <div class="child-card">
@@ -125,6 +140,18 @@
         </div>
 
         <div class="child-stats">
+
+          <div>
+            <h4>Paiements récents</h4>
+            <% if (!s.payments || s.payments.length === 0) { %><p class="empty-sm">Aucun</p><% } %>
+            <% (s.payments || []).forEach(p => { %>
+              <p>
+                <%= p.feeType ? p.feeType.name : 'Paiement' %> :
+                <strong><%= p.amount.toLocaleString('fr-FR') %> FCFA</strong>
+                — <%= p.status %>
+              </p>
+            <% }) %>
+          </div>
 
           <div>
 

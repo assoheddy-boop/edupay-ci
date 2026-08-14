@@ -311,6 +311,15 @@ async function generatePayrollAction(req, res) {
   if (teacherId) {
     const result = await generateTeacherPayroll(teacherId, period);
     if (!result.ok) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=${result.error}`);
+    await logAudit({
+      action: 'payroll_generate',
+      entity: 'Payslip',
+      entityId: teacherId,
+      user: req.user,
+      schoolId,
+      ip: req.ip,
+      details: { month, year, teacherId },
+    });
     return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&success=generated`);
   }
 
@@ -321,6 +330,14 @@ async function generatePayrollAction(req, res) {
     year,
   });
   if (result.error) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=${result.error}`);
+  await logAudit({
+    action: 'payroll_generate',
+    entity: 'PayrollRun',
+    user: req.user,
+    schoolId,
+    ip: req.ip,
+    details: { month, year },
+  });
   res.redirect(`/school/hr/payroll?month=${month}&year=${year}&success=generated`);
 }
 
@@ -329,6 +346,14 @@ async function payPayrollAction(req, res) {
   const { payrollRunId, accountId, month, year } = req.body;
   const result = await markPayrollPaid({ schoolId, payrollRunId, accountId });
   if (result.error) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=${result.error}`);
+  await logAudit({
+    action: 'payroll_pay',
+    entity: 'PayrollRun',
+    entityId: payrollRunId,
+    user: req.user,
+    schoolId,
+    ip: req.ip,
+  });
   res.redirect(`/school/hr/payroll?month=${month}&year=${year}&success=paid`);
 }
 

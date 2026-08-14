@@ -15,6 +15,7 @@ coverage/
 .cursor/
 *.log
 logs/
+backups/
 .DS_Store
 Thumbs.db
 .vscode/

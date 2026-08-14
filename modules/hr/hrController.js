@@ -1,5 +1,5 @@
 const prisma = require('../../src/config/database');
-const { recordLeave, generatePayroll } = require('../../services/HRService');
+const { recordLeave, generatePayroll, evaluateTeacher } = require('../../services/HRService');
 const { todayDateOnly } = require('../../src/utils/hr');
 
 function resolveTeacherId(req) {
@@ -208,18 +208,8 @@ async function createEvaluation(req, res) {
   const teacher = await assertTeacherInSchool(teacherId, schoolId);
   if (!teacher) return res.redirect('/hr/evaluation?error=teacher');
 
-  const value = parseInt(score, 10);
-  if (Number.isNaN(value) || value < 0 || value > 20) {
-    return res.redirect('/hr/evaluation?error=score');
-  }
-
-  await prisma.evaluation.create({
-    data: {
-      teacherId,
-      score: value,
-      comments: comments || null,
-    },
-  });
+  const result = await evaluateTeacher(teacherId, score, comments);
+  if (!result.ok) return res.redirect(`/hr/evaluation?error=${result.error}`);
 
   res.redirect('/hr/evaluation?success=1');
 }

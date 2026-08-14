@@ -14,7 +14,7 @@ async function dashboard(req, res) {
               class: { include: { school: true } },
               grades: { orderBy: { createdAt: 'desc' }, take: 5 },
               absences: { orderBy: { date: 'desc' }, take: 5 },
-              payments: { orderBy: { createdAt: 'desc' }, take: 5 },
+              payments: { include: { feeType: true }, orderBy: { createdAt: 'desc' }, take: 5 },
             },
           },
         },
@@ -31,11 +31,21 @@ async function dashboard(req, res) {
     where: { userId: req.user.id, readAt: null },
   });
 
+  const studentIds = children.map((link) => link.student.id);
+  const [pendingPayments, absenceCount, gradeCount] = studentIds.length
+    ? await Promise.all([
+      prisma.payment.count({ where: { studentId: { in: studentIds }, status: 'PENDING' } }),
+      prisma.absence.count({ where: { studentId: { in: studentIds } } }),
+      prisma.grade.count({ where: { studentId: { in: studentIds } } }),
+    ])
+    : [0, 0, 0];
+
   res.render('parent/dashboard', {
     user: req.user,
     children,
     notifications,
     unreadCount,
+    summary: { pendingPayments, absenceCount, gradeCount },
     error: req.query.error,
     success: req.query.success,
   });
@@ -299,6 +309,32 @@ async function timeline(req, res) {
   res.render('parent/timeline', { user: req.user, events, nameMap });
 }
 
+async function privacyPage(req, res) {
+  const { listConsents, CONSENT_LABELS, CONSENT_HINTS } = require('../../services/ConsentService');
+  const consents = await listConsents(req.user.id);
+  res.render('parent/privacy', {
+    user: req.user,
+    consents,
+    labels: CONSENT_LABELS,
+    hints: CONSENT_HINTS,
+    error: req.query.error || null,
+    success: req.query.success || null,
+  });
+}
+
+async function updateConsent(req, res) {
+  const { upsertConsent } = require('../../services/ConsentService');
+  const { type, action } = req.body;
+  try {
+    const result = await upsertConsent(req.user.id, type, action);
+    if (!result.ok) return res.redirect('/parent/privacy?error=1');
+    return res.redirect('/parent/privacy?success=1');
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/parent/privacy?error=1');
+  }
+}
+
 module.exports = {
   dashboard,
   payments,
@@ -311,4 +347,6 @@ module.exports = {
   markAllNotificationsRead,
   homeworks,
   timeline,
+  privacyPage,
+  updateConsent,
 };

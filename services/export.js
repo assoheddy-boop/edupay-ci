@@ -384,6 +384,7 @@ async function generateStatsExcel(schoolId) {
       firstName: s.firstName,
       className: s.class?.name || '—',
       matricule: s.matricule || '',
+      gender: s.gender === 'M' ? 'Garçon' : s.gender === 'F' ? 'Fille' : '',
       gradesCount: s.grades.length,
       average: avg,
       absences: s.absences.length,
@@ -401,6 +402,8 @@ async function generateStatsExcel(schoolId) {
       name: c.name,
       level: c.level,
       students: c._count.students,
+      boys: members.filter((r) => r.gender === 'Garçon').length,
+      girls: members.filter((r) => r.gender === 'Fille').length,
       average: avg,
       absences: members.reduce((sum, r) => sum + r.absences, 0),
       paidAmount: members.reduce((sum, r) => sum + r.paidAmount, 0),
@@ -417,6 +420,7 @@ async function generateStatsExcel(schoolId) {
     { header: 'Prénom', key: 'firstName', width: 16 },
     { header: 'Classe', key: 'className', width: 14 },
     { header: 'Matricule', key: 'matricule', width: 14 },
+    { header: 'Genre', key: 'gender', width: 12 },
     { header: 'Notes', key: 'gradesCount', width: 10 },
     { header: 'Moyenne /20', key: 'average', width: 14 },
     { header: 'Absences', key: 'absences', width: 12 },
@@ -431,6 +435,8 @@ async function generateStatsExcel(schoolId) {
     { header: 'Classe', key: 'name', width: 16 },
     { header: 'Niveau', key: 'level', width: 12 },
     { header: 'Élèves', key: 'students', width: 12 },
+    { header: 'Garçons', key: 'boys', width: 12 },
+    { header: 'Filles', key: 'girls', width: 12 },
     { header: 'Moyenne /20', key: 'average', width: 14 },
     { header: 'Absences', key: 'absences', width: 12 },
     { header: 'Encaissé FCFA', key: 'paidAmount', width: 16 },
@@ -470,9 +476,597 @@ async function generateStatsExcel(schoolId) {
   };
 }
 
+function genderExportRows(rows, nameKey) {
+  return rows.map((row) => ({
+    name: row[nameKey],
+    boys: row.boys,
+    girls: row.girls,
+    total: row.total,
+    absBoys: row.absences?.boys || 0,
+    absGirls: row.absences?.girls || 0,
+    succBoys: Math.round((row.success?.boys?.successRate || 0) * 100),
+    succGirls: Math.round((row.success?.girls?.successRate || 0) * 100),
+  }));
+}
+
+const GENDER_COLUMNS = [
+  { header: 'Nom', key: 'name', width: 28 },
+  { header: 'Garçons', key: 'boys', width: 12 },
+  { header: 'Filles', key: 'girls', width: 12 },
+  { header: 'Total', key: 'total', width: 12 },
+  { header: 'Absences G', key: 'absBoys', width: 14 },
+  { header: 'Absences F', key: 'absGirls', width: 14 },
+  { header: 'Réussite G %', key: 'succBoys', width: 16 },
+  { header: 'Réussite F %', key: 'succGirls', width: 16 },
+];
+
+const SCHOOL_GENDER_CLASS_COLUMNS = [
+  { header: 'Classe', key: 'classe', width: 24 },
+  { header: 'Garçons', key: 'garcons', width: 12 },
+  { header: 'Filles', key: 'filles', width: 12 },
+  { header: 'Total', key: 'total', width: 12 },
+];
+
+async function fetchSchoolClassGenderRows(schoolId) {
+  if (!schoolId) return { ok: false, error: 'school' };
+
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+
+  const { listClassGenderStats } = require('./ClassService');
+  const stats = await listClassGenderStats({ schoolId });
+  if (!stats.ok) return stats;
+
+  const rows = (stats.classes || []).map((row) => ({
+    classe: row.className,
+    garcons: row.boys,
+    filles: row.girls,
+    total: row.total,
+  }));
+
+  return { ok: true, school, rows };
+}
+
+/**
+ * Stats filles/garçons par classe pour une école (Excel).
+ */
+async function generateGenderStatsExcel(schoolId) {
+  const data = await fetchSchoolClassGenderRows(schoolId);
+  if (!data.ok) return data;
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EduPay CI';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('Par classe');
+  ws.columns = SCHOOL_GENDER_CLASS_COLUMNS;
+  data.rows.forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `genre-${schoolId.slice(0, 8)}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
+/**
+ * Stats filles/garçons par classe pour une école (PDF).
+ */
+async function generateGenderStatsPDF(schoolId) {
+  const data = await fetchSchoolClassGenderRows(schoolId);
+  if (!data.ok) return data;
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `genre-${schoolId.slice(0, 8)}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, data.school, { title: 'Répartition filles / garçons par classe' });
+
+    doc.fontSize(10).fillColor('#666');
+    const tableTop = doc.y;
+    doc.text('Classe', 50, tableTop);
+    doc.text('Garçons', 250, tableTop);
+    doc.text('Filles', 330, tableTop);
+    doc.text('Total', 410, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    if (!data.rows.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucune classe.', 50, y);
+      y += 20;
+    } else {
+      data.rows.forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.classe || '—', 50, y, { width: 190 });
+        doc.text(String(row.garcons || 0), 250, y);
+        doc.text(String(row.filles || 0), 330, y);
+        doc.text(String(row.total || 0), 410, y);
+        y += 20;
+      });
+    }
+
+    doc.y = y + 12;
+    drawFooter(doc, data.school);
+  });
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+  };
+}
+
+/**
+ * Stats filles/garçons en Excel (export détaillé classe / multi-écoles).
+ */
+async function generateClassGenderStatsExcel({ schoolId, classId } = {}) {
+  const {
+    getClassGenderStats,
+    getGenderStatsBySchool,
+    listClassGenderStats,
+  } = require('./ClassService');
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EduPay CI';
+  workbook.created = new Date();
+
+  if (classId) {
+    const stats = await getClassGenderStats(classId);
+    const ws = workbook.addWorksheet('Classe');
+    ws.columns = GENDER_COLUMNS;
+    ws.addRow({
+      name: 'Classe',
+      boys: stats.boys,
+      girls: stats.girls,
+      total: stats.total,
+      absBoys: stats.absences?.boys || 0,
+      absGirls: stats.absences?.girls || 0,
+      succBoys: Math.round((stats.success?.boys?.successRate || 0) * 100),
+      succGirls: Math.round((stats.success?.girls?.successRate || 0) * 100),
+    });
+    ws.getRow(1).font = { bold: true };
+  } else {
+    const [bySchool, byClass] = await Promise.all([
+      getGenderStatsBySchool(schoolId),
+      listClassGenderStats({ schoolId }),
+    ]);
+
+    const wsSchools = workbook.addWorksheet('Par école');
+    wsSchools.columns = GENDER_COLUMNS;
+    genderExportRows(bySchool.schools || [], 'schoolName').forEach((row) => wsSchools.addRow(row));
+    wsSchools.getRow(1).font = { bold: true };
+
+    const wsClasses = workbook.addWorksheet('Par classe');
+    wsClasses.columns = GENDER_COLUMNS;
+    genderExportRows(byClass.classes || [], 'className').forEach((row) => wsClasses.addRow(row));
+    wsClasses.getRow(1).font = { bold: true };
+  }
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `genre-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
+/**
+ * Stats filles/garçons en PDF (export détaillé classe / multi-écoles).
+ */
+async function generateClassGenderStatsPdf({ schoolId, classId } = {}) {
+  const {
+    getClassGenderStats,
+    getGenderStatsBySchool,
+  } = require('./ClassService');
+
+  let title = 'Répartition filles / garçons';
+  let rows = [];
+
+  if (classId) {
+    const stats = await getClassGenderStats(classId);
+    title = 'Répartition filles / garçons — classe';
+    rows = [{ name: 'Classe', ...stats }];
+  } else {
+    const bySchool = await getGenderStatsBySchool(schoolId);
+    rows = (bySchool.schools || []).map((s) => ({ name: s.schoolName, ...s }));
+  }
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `genre-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    doc.fontSize(18).fillColor('#0052CC').text(title, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(10).fillColor('#666');
+    const tableTop = doc.y;
+    doc.text('Nom', 50, tableTop);
+    doc.text('Garçons', 250, tableTop);
+    doc.text('Filles', 330, tableTop);
+    doc.text('Total', 410, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    rows.forEach((row) => {
+      if (y > 720) {
+        doc.addPage();
+        y = 50;
+      }
+      doc.fontSize(10).fillColor('#333');
+      doc.text(row.name || '—', 50, y, { width: 190 });
+      doc.text(String(row.boys || 0), 250, y);
+      doc.text(String(row.girls || 0), 330, y);
+      doc.text(String(row.total || 0), 410, y);
+      y += 20;
+    });
+    doc.y = y + 12;
+    drawFooter(doc, { name: 'EduPay CI' });
+  });
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+  };
+}
+
+const REINSCRIPTION_COLUMNS = [
+  { header: 'Élève', key: 'student', width: 28 },
+  { header: 'Classe', key: 'className', width: 22 },
+  { header: 'Statut', key: 'statusLabel', width: 16 },
+];
+
+function reinscriptionExportRows(records) {
+  return records.map((r) => ({
+    student: `${r.student?.lastName || ''} ${r.student?.firstName || ''}`.trim(),
+    className: r.class ? `${r.class.level} — ${r.class.name}` : '—',
+    statusLabel: r.repeatYear ? 'Redoublant' : 'Promu',
+  }));
+}
+
+/**
+ * Export réinscriptions PDF (promus / redoublants).
+ */
+async function generateReinscriptionPDF(schoolId, schoolYear) {
+  if (!schoolId || !schoolYear) return { ok: false, error: 'school' };
+
+  const { listRecordsForExport } = require('./ReinscriptionService');
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+
+  const records = await listRecordsForExport(schoolId, schoolYear);
+  ensureDir(EXPORTS_DIR);
+  const filename = `reinscription-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, school, { title: 'Réinscriptions' });
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`Année scolaire : ${schoolYear}`);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Élève', 50, tableTop);
+    doc.text('Classe', 220, tableTop);
+    doc.text('Statut', 400, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    if (!records.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucune réinscription enregistrée.', 50, y);
+    } else {
+      records.forEach((r) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        const row = reinscriptionExportRows([r])[0];
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.student, 50, y, { width: 160 });
+        doc.text(row.className, 220, y, { width: 170 });
+        doc.text(row.statusLabel, 400, y);
+        y += 20;
+      });
+    }
+    doc.y = y + 12;
+    drawFooter(doc, school);
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
+/**
+ * Export réinscriptions Excel.
+ */
+async function generateReinscriptionExcel(schoolId, schoolYear) {
+  if (!schoolId || !schoolYear) return { ok: false, error: 'school' };
+
+  const { listRecordsForExport } = require('./ReinscriptionService');
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+
+  const records = await listRecordsForExport(schoolId, schoolYear);
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Réinscriptions');
+  ws.columns = REINSCRIPTION_COLUMNS;
+  reinscriptionExportRows(records).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `reinscription-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
+const CAUSES_COLUMNS = [
+  { header: 'Élève', key: 'student', width: 28 },
+  { header: 'Classe', key: 'className', width: 22 },
+  { header: 'Redoublant', key: 'repeatLabel', width: 14 },
+  { header: 'Absences', key: 'absences', width: 12 },
+  { header: 'Moyenne', key: 'avgGrade', width: 12 },
+  { header: 'Cause probable', key: 'cause', width: 22 },
+];
+
+function causesExportRows(causes) {
+  return causes.map((c) => ({
+    student: `${c.lastName || ''} ${c.firstName || ''}`.trim(),
+    className: c.classLevel ? `${c.classLevel} — ${c.className}` : c.className || '—',
+    repeatLabel: 'Oui',
+    absences: c.absences,
+    avgGrade: c.avgGrade,
+    cause: c.cause,
+  }));
+}
+
+/**
+ * Export causes de redoublement PDF.
+ */
+async function generateRedoublementCausesPDF(schoolId, schoolYear) {
+  if (!schoolId || !schoolYear) return { ok: false, error: 'school' };
+
+  const { analyzeRedoublementCauses, ABSENCE_THRESHOLD, GRADE_THRESHOLD } = require('./ReinscriptionService');
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+
+  const causes = await analyzeRedoublementCauses(schoolYear, schoolId);
+  ensureDir(EXPORTS_DIR);
+  const filename = `causes-redoublement-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, school, { title: 'Causes probables de redoublement' });
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`Année scolaire : ${schoolYear}`);
+    doc.text(`Seuils : absences > ${ABSENCE_THRESHOLD} jours, moyenne < ${GRADE_THRESHOLD}/20`);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Élève', 50, tableTop);
+    doc.text('Classe', 170, tableTop);
+    doc.text('Abs.', 310, tableTop);
+    doc.text('Moy.', 350, tableTop);
+    doc.text('Cause', 400, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    if (!causes.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucun redoublant pour cette année.', 50, y);
+    } else {
+      causesExportRows(causes).forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.student, 50, y, { width: 115 });
+        doc.text(row.className, 170, y, { width: 135 });
+        doc.text(String(row.absences), 310, y);
+        doc.text(String(row.avgGrade), 350, y);
+        doc.text(row.cause, 400, y, { width: 140 });
+        y += 20;
+      });
+    }
+    doc.y = y + 12;
+    drawFooter(doc, school);
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
+/**
+ * Export causes de redoublement Excel.
+ */
+async function generateRedoublementCausesExcel(schoolId, schoolYear) {
+  if (!schoolId || !schoolYear) return { ok: false, error: 'school' };
+
+  const { analyzeRedoublementCauses } = require('./ReinscriptionService');
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+
+  const causes = await analyzeRedoublementCauses(schoolYear, schoolId);
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Causes redoublement');
+  ws.columns = CAUSES_COLUMNS;
+  causesExportRows(causes).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `causes-redoublement-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
+const GROUP_CAUSES_COLUMNS = [
+  { header: 'École', key: 'schoolName', width: 28 },
+  { header: 'Total redoublants', key: 'totalRedoublants', width: 18 },
+  { header: 'Absences moyennes', key: 'absencesAvg', width: 18 },
+  { header: 'Notes moyennes', key: 'notesAvg', width: 16 },
+  { header: 'Cause principale', key: 'primaryCause', width: 22 },
+  { header: 'Taux redoublement', key: 'repeatRatePct', width: 18 },
+  { header: 'À risque', key: 'atRiskLabel', width: 12 },
+];
+
+function groupCausesExportRows(stats) {
+  return (stats.schools || []).map((s) => ({
+    schoolName: s.schoolName,
+    totalRedoublants: s.totalRedoublants,
+    absencesAvg: s.absencesAvg,
+    notesAvg: s.notesAvg,
+    primaryCause: s.primaryCause,
+    repeatRatePct: `${Math.round((s.repeatRate || 0) * 100)}%`,
+    atRiskLabel: s.atRisk ? 'Oui' : 'Non',
+  }));
+}
+
+/**
+ * Export comparatif causes de redoublement par école (groupe) — PDF.
+ */
+async function generateGroupRedoublementCausesPDF(groupId, schoolYear) {
+  if (!groupId || !schoolYear) return { ok: false, error: 'group' };
+
+  const { getGroupRedoublementCauses, ABSENCE_THRESHOLD, GRADE_THRESHOLD, AT_RISK_REPEAT_RATE } = require('./ReinscriptionService');
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) return { ok: false, error: 'group' };
+
+  const stats = await getGroupRedoublementCauses(groupId, schoolYear);
+  if (!stats.ok) return { ok: false, error: stats.error || 'stats' };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `causes-redoublement-groupe-${groupId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    doc.fontSize(16).fillColor('#222').text('Comparatif redoublement par école', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`Groupe : ${stats.groupName || group.name}`);
+    doc.text(`Année scolaire : ${schoolYear}`);
+    doc.text(`Seuils : absences > ${ABSENCE_THRESHOLD} jours, moyenne < ${GRADE_THRESHOLD}/20`);
+    doc.text(`École à risque si taux de redoublement > ${Math.round(AT_RISK_REPEAT_RATE * 100)}%`);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('École', 50, tableTop);
+    doc.text('Redoubl.', 180, tableTop);
+    doc.text('Abs. moy.', 240, tableTop);
+    doc.text('Notes moy.', 310, tableTop);
+    doc.text('Cause', 390, tableTop);
+    doc.text('Risque', 500, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    const rows = groupCausesExportRows(stats);
+    if (!rows.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucune école dans ce groupe.', 50, y);
+    } else {
+      rows.forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.schoolName, 50, y, { width: 125 });
+        doc.text(String(row.totalRedoublants), 180, y);
+        doc.text(`${row.absencesAvg} j`, 240, y);
+        doc.text(String(row.notesAvg), 310, y);
+        doc.text(row.primaryCause, 390, y, { width: 100 });
+        doc.text(row.atRiskLabel, 500, y);
+        y += 20;
+      });
+    }
+    doc.y = y + 12;
+    doc.fontSize(9).fillColor('#999').text('EduPay CI — export groupe', 50, doc.page.height - 40, { align: 'left' });
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
+/**
+ * Export comparatif causes de redoublement par école (groupe) — Excel.
+ */
+async function generateGroupRedoublementCausesExcel(groupId, schoolYear) {
+  if (!groupId || !schoolYear) return { ok: false, error: 'group' };
+
+  const { getGroupRedoublementCauses } = require('./ReinscriptionService');
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) return { ok: false, error: 'group' };
+
+  const stats = await getGroupRedoublementCauses(groupId, schoolYear);
+  if (!stats.ok) return { ok: false, error: stats.error || 'stats' };
+
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Comparatif redoublement');
+  ws.columns = GROUP_CAUSES_COLUMNS;
+  groupCausesExportRows(stats).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `causes-redoublement-groupe-${groupId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
 module.exports = {
   generateBulletinPDF,
   generatePayrollPDF,
   generateStatsExcel,
+  generateGenderStatsExcel,
+  generateGenderStatsPDF,
+  generateClassGenderStatsExcel,
+  generateClassGenderStatsPdf,
+  generateReinscriptionPDF,
+  generateReinscriptionExcel,
+  generateRedoublementCausesPDF,
+  generateRedoublementCausesExcel,
+  generateGroupRedoublementCausesPDF,
+  generateGroupRedoublementCausesExcel,
   parseMonth,
 };

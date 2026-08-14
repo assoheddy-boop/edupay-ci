@@ -82,6 +82,8 @@
 
             </form>
 
+            <p style="margin-top:0.5rem"><a href="/school/classes/<%= c.id %>/dashboard" class="btn btn-outline btn-sm">Stats filles/garçons</a></p>
+
             <% if (c._count.students === 0) { %>
 
               <form method="POST" action="/school/classes/<%= c.id %>/delete" style="margin-top:0.5rem" onsubmit="return confirm('Supprimer cette classe ?')">

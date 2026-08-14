@@ -1,0 +1,324 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('reportingDashboard', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Reporting pédagogique' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Reporting pédagogique</h1>
+    <p class="page-sub">Absences, taux de réussite et santé — par classe et par matière</p>
+  </div>
+  <div>
+    <a href="/admin/audit" class="btn btn-outline">Journal d'audit</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Filtrer</h2>
+  <form method="GET" action="/admin/reporting" class="form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>École</label>
+        <select name="schoolId">
+          <option value="">Toutes</option>
+          <% schools.forEach(function(s) { %>
+            <option value="<%= s.id %>" <%= filters.schoolId === s.id ? 'selected' : '' %>><%= s.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Classe</label>
+        <select name="classId">
+          <option value="">Toutes</option>
+          <% classes.forEach(function(c) { %>
+            <option value="<%= c.id %>" <%= filters.classId === c.id ? 'selected' : '' %>>
+              <%= c.name %><%= !filters.schoolId && c.school ? ' — ' + c.school.name : '' %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Matière</label>
+        <input type="text" name="subject" value="<%= filters.subject || '' %>" placeholder="Ex. Maths">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Du</label>
+        <input type="date" name="from" value="<%= filters.from %>">
+      </div>
+      <div class="form-group">
+        <label>Au</label>
+        <input type="date" name="to" value="<%= filters.to %>">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Appliquer</button>
+  </form>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= absences.total %></span>
+    <span class="stat-label">Absences / retards</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= Math.round((success.successRate || 0) * 100) %>%</span>
+    <span class="stat-label">Taux de réussite</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= (success.averageOn20 || 0).toLocaleString('fr-FR') %>/20</span>
+    <span class="stat-label">Moyenne générale</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= health.total %></span>
+    <span class="stat-label">Incidents santé</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Absences par classe</h2></div>
+    <% if (!absences.byClass.length) { %>
+      <p class="empty">Aucune absence sur la période.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Classe</th><th>Absences</th><th>Retards</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          <% absences.byClass.forEach(function(row) { %>
+            <tr>
+              <td><strong><%= row.className %></strong></td>
+              <td><%= row.absences %></td>
+              <td><%= row.lates %></td>
+              <td><%= row.total %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Santé par classe</h2></div>
+    <% if (!health.byClass.length) { %>
+      <p class="empty">Aucun incident santé.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Classe</th><th>Incidents</th></tr>
+        </thead>
+        <tbody>
+          <% health.byClass.forEach(function(row) { %>
+            <tr>
+              <td><strong><%= row.className %></strong></td>
+              <td><%= row.total %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Réussite par classe</h2></div>
+    <% if (!success.byClass.length) { %>
+      <p class="empty">Aucune note.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Classe</th><th>Moyenne /20</th><th>Réussite</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <% success.byClass.forEach(function(row) { %>
+            <tr>
+              <td><strong><%= row.className %></strong></td>
+              <td><%= row.averageOn20.toLocaleString('fr-FR') %></td>
+              <td><%= Math.round(row.successRate * 100) %>%</td>
+              <td><%= row.count %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Réussite par matière</h2></div>
+    <% if (!success.bySubject.length) { %>
+      <p class="empty">Aucune note.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Matière</th><th>Moyenne /20</th><th>Réussite</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <% success.bySubject.forEach(function(row) { %>
+            <tr>
+              <td><strong><%= row.subject %></strong></td>
+              <td><%= row.averageOn20.toLocaleString('fr-FR') %></td>
+              <td><%= Math.round(row.successRate * 100) %>%</td>
+              <td><%= row.count %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <h2>Répartition filles/garçons par école</h2>
+    <% if (filters.schoolId) { %>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <a href="/admin/reporting/export/gender.pdf?schoolId=<%= filters.schoolId %>" class="btn btn-outline">Exporter PDF</a>
+        <a href="/admin/reporting/export/gender.xlsx?schoolId=<%= filters.schoolId %>" class="btn btn-outline">Exporter Excel</a>
+      </div>
+    <% } %>
+  </div>
+  <% if (!genderBySchool || !genderBySchool.length) { %>
+    <p class="empty">Aucun élève pour cette sélection.</p>
+  <% } else { %>
+    <% const schoolGenderLabels = genderBySchool.map(function(row) { return row.schoolName; }); %>
+    <% const schoolGenderBoys = genderBySchool.map(function(row) { return row.boys; }); %>
+    <% const schoolGenderGirls = genderBySchool.map(function(row) { return row.girls; }); %>
+    <% const schoolAbsenceBoys = genderBySchool.map(function(row) { return row.absences ? row.absences.boys : 0; }); %>
+    <% const schoolAbsenceGirls = genderBySchool.map(function(row) { return row.absences ? row.absences.girls : 0; }); %>
+    <% const schoolSuccessBoys = genderBySchool.map(function(row) { return Math.round(((row.success && row.success.boys && row.success.boys.averageOn20) || 0) * 100) / 100; }); %>
+    <% const schoolSuccessGirls = genderBySchool.map(function(row) { return Math.round(((row.success && row.success.girls && row.success.girls.averageOn20) || 0) * 100) / 100; }); %>
+    <div class="grid-2" style="margin-bottom:1.5rem">
+      <div style="max-width:960px;margin:0 auto">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école</h3>
+        <canvas id="schoolGenderChart"></canvas>
+      </div>
+      <div style="max-width:960px;margin:0 auto">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles</h3>
+        <canvas id="absenceGenderChart"></canvas>
+      </div>
+    </div>
+    <div style="max-width:960px;margin:0 auto 1.5rem">
+      <h3 style="margin:0 0 0.75rem;font-size:1rem">Moyenne des notes garçons vs filles (/20)</h3>
+      <canvas id="successGenderChart"></canvas>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Garçons</th>
+          <th>Filles</th>
+          <th>Total</th>
+          <th>Absences G</th>
+          <th>Absences F</th>
+          <th>Réussite G</th>
+          <th>Réussite F</th>
+          <th>Export</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% genderBySchool.forEach(function(row) { %>
+          <tr>
+            <td><strong><%= row.schoolName %></strong></td>
+            <td><%= row.boys %></td>
+            <td><%= row.girls %></td>
+            <td><%= row.total %></td>
+            <td><%= row.absences ? row.absences.boys : 0 %></td>
+            <td><%= row.absences ? row.absences.girls : 0 %></td>
+            <td><%= Math.round(((row.success && row.success.boys && row.success.boys.successRate) || 0) * 100) %>%</td>
+            <td><%= Math.round(((row.success && row.success.girls && row.success.girls.successRate) || 0) * 100) %>%</td>
+            <td>
+              <a href="/admin/reporting/export/gender.pdf?schoolId=<%= row.schoolId %>" class="btn btn-outline btn-sm">PDF</a>
+              <a href="/admin/reporting/export/gender.xlsx?schoolId=<%= row.schoolId %>" class="btn btn-outline btn-sm">Excel</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <script src="/js/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      (function () {
+        if (typeof Chart === 'undefined') return;
+        const boysColor = '#3498db';
+        const girlsColor = '#e74c3c';
+        const labels = <%= JSON.stringify(schoolGenderLabels) %>;
+        const chartDefaults = {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            x: { stacked: false },
+            y: { beginAtZero: true },
+          },
+        };
+
+        const schoolGenderCtx = document.getElementById('schoolGenderChart');
+        if (schoolGenderCtx) {
+          new Chart(schoolGenderCtx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Garçons', data: <%= JSON.stringify(schoolGenderBoys) %>, backgroundColor: boysColor },
+                { label: 'Filles', data: <%= JSON.stringify(schoolGenderGirls) %>, backgroundColor: girlsColor },
+              ],
+            },
+            options: {
+              ...chartDefaults,
+              scales: { ...chartDefaults.scales, y: { beginAtZero: true, ticks: { precision: 0 } } },
+            },
+          });
+        }
+
+        const absenceGenderCtx = document.getElementById('absenceGenderChart');
+        if (absenceGenderCtx) {
+          new Chart(absenceGenderCtx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Garçons', data: <%= JSON.stringify(schoolAbsenceBoys) %>, backgroundColor: boysColor },
+                { label: 'Filles', data: <%= JSON.stringify(schoolAbsenceGirls) %>, backgroundColor: girlsColor },
+              ],
+            },
+            options: {
+              ...chartDefaults,
+              scales: { ...chartDefaults.scales, y: { beginAtZero: true, ticks: { precision: 0 } } },
+            },
+          });
+        }
+
+        const successGenderCtx = document.getElementById('successGenderChart');
+        if (successGenderCtx) {
+          new Chart(successGenderCtx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Garçons', data: <%= JSON.stringify(schoolSuccessBoys) %>, backgroundColor: boysColor },
+                { label: 'Filles', data: <%= JSON.stringify(schoolSuccessGirls) %>, backgroundColor: girlsColor },
+              ],
+            },
+            options: chartDefaults,
+          });
+        }
+      })();
+    </script>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Export BI (JSON / CSV)</h2></div>
+  <p class="page-sub">Jeux de données REST pour Metabase ou Power BI — authentification cookie ou Bearer, comme l'API v1.</p>
+  <p>
+    <a class="btn btn-outline" href="/api/v1/reporting/absences">Absences JSON</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/absences?format=csv">Absences CSV</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/success-rate">Réussite JSON</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/success-rate?format=csv">Réussite CSV</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/health">Santé JSON</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/health?format=csv">Santé CSV</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/payments">Paiements JSON</a>
+    <a class="btn btn-outline" href="/api/v1/reporting/payments?format=csv">Paiements CSV</a>
+  </p>
+</div>
+<% } %>

@@ -173,6 +173,14 @@ main.container { flex: 1; padding-top: 2rem; padding-bottom: 3rem; }
 .feature-icon { font-size: 2rem; display: block; margin-bottom: 0.75rem; }
 .feature-card h3 { color: var(--blue); margin-bottom: 0.5rem; }
 
+a.admin-hub-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.admin-hub-grid { padding: 0 1.5rem 1.5rem; }
+
 /* Modules */
 .modules { padding: 2rem 0 4rem; }
 .modules h2 { text-align: center; color: var(--blue); margin-bottom: 2rem; }
@@ -775,6 +783,15 @@ code {
 .chat-student { display: block; font-size: 0.75rem; opacity: 0.85; margin-bottom: 0.25rem; }
 
 .chat-audio { width: 100%; max-width: 260px; height: 36px; }
+.chat-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  background: rgba(0, 82, 204, 0.08);
+  border-radius: 8px;
+  font-weight: 600;
+}
 
 .chat-form textarea {
   flex: 1;
@@ -1067,9 +1084,16 @@ code {
 
 .admin-plans-grid { margin-bottom: 0.5rem; }
 .admin-plans-grid .pricing-modules {
-  max-height: 220px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
+.checkbox-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+.checkbox-line input { margin-top: 0.2rem; }
 
 @media (max-width: 900px) {
   .admin-modules-layout { grid-template-columns: 1fr; }

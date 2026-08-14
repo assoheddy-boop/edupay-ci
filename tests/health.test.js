@@ -12,4 +12,10 @@ describe('EduPay CI API', () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
   });
+
+  test('GET /metrics exposes prometheus text', async () => {
+    const res = await request(app).get('/metrics');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/process_cpu|nodejs_|edupay_/);
+  });
 });

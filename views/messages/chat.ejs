@@ -44,13 +44,15 @@
             <% if (m.student) { %><small class="chat-student">Re: <%= m.student.firstName %></small><% } %>
 
             <% if (m.audioUrl) { %>
-
               <audio controls src="<%= m.audioUrl %>" class="chat-audio"></audio>
-
-            <% } else { %>
-
+            <% } %>
+            <% if (m.fileUrl) { %>
+              <a class="chat-file" href="<%= m.fileUrl %>" target="_blank" rel="noopener">
+                📎 <%= m.fileName || 'Fichier' %>
+              </a>
+            <% } %>
+            <% if (m.content) { %>
               <p><%= m.content %></p>
-
             <% } %>
 
             <time><%= new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) %></time>
@@ -94,15 +96,14 @@
       <p id="typingHint" class="chat-typing"></p>
 
       <div class="chat-audio-row">
-
         <label class="btn btn-outline btn-sm">
-
-          🎤 Message vocal
-
+          🎤 Vocal
           <input type="file" name="audio" accept="audio/*" hidden>
-
         </label>
-
+        <label class="btn btn-outline btn-sm">
+          📎 Fichier (devoir, PDF, image)
+          <input type="file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,image/*" hidden>
+        </label>
       </div>
 
     </form>
@@ -146,16 +147,13 @@
 
 
     let html = '';
-
-    if (m.audioUrl) {
-
-      html += `<audio controls src="${m.audioUrl}" class="chat-audio"></audio>`;
-
-    } else {
-
-      html += `<p>${(m.content || '').replace(/</g, '&lt;')}</p>`;
-
+    if (m.student) html += `<small class="chat-student">Re: ${m.student.firstName}</small>`;
+    if (m.audioUrl) html += `<audio controls src="${m.audioUrl}" class="chat-audio"></audio>`;
+    if (m.fileUrl) {
+      const name = (m.fileName || 'Fichier').replace(/</g, '&lt;');
+      html += `<a class="chat-file" href="${m.fileUrl}" target="_blank" rel="noopener">📎 ${name}</a>`;
     }
+    if (m.content) html += `<p>${String(m.content).replace(/</g, '&lt;')}</p>`;
 
     const d = new Date(m.createdAt);
 
@@ -216,9 +214,9 @@
 
         form.addEventListener('submit', async (e) => {
 
-          const audioInput = form.querySelector('input[type="file"]');
-
-          if (audioInput?.files?.length) return;
+          const audioInput = form.querySelector('input[name="audio"]');
+          const fileInput = form.querySelector('input[name="attachment"]');
+          if (audioInput?.files?.length || fileInput?.files?.length) return;
 
           const content = textarea?.value?.trim();
 

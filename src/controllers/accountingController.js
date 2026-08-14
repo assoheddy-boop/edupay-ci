@@ -72,6 +72,19 @@ async function addTransaction(req, res) {
     });
   });
 
+  try {
+    const { addEntry } = require('../../services/AccountingService');
+    await addEntry({
+      schoolId,
+      type,
+      amount: amt,
+      description: description || reference || 'Écriture école',
+      date: new Date(),
+    });
+  } catch (err) {
+    console.error('AccountingEntry dual-write failed', err.message);
+  }
+
   res.redirect('/school/accounting?success=1');
 }
 

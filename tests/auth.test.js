@@ -33,6 +33,13 @@ describe('Auth flows', () => {
       expect(res.headers.location).toMatch(/parent/);
     }
   });
+
+  test('POST /auth/refresh without token is rejected', async () => {
+    const res = await request(app)
+      .post('/auth/refresh')
+      .set('Accept', 'application/json');
+    expect(res.status).toBe(401);
+  });
 });
 
 describe('JWT cookie options', () => {

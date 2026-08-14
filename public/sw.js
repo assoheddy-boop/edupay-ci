@@ -1,4 +1,4 @@
-const CACHE = 'edupay-v3';
+const CACHE = 'edupay-v4';
 const ASSETS = [
   '/',
   '/auth/login',

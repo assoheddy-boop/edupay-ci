@@ -212,9 +212,40 @@ async function generatePayroll(teacherId, month) {
   return { ok: true, payslip: updatedPayslip, pdfUrl, netPay, payrollRunId: payrollRun.id };
 }
 
+async function evaluateTeacher(teacherId, score, comments) {
+  if (!teacherId) {
+    logger.warn('Évaluation : enseignant manquant');
+    return { ok: false, error: 'teacher' };
+  }
+
+  const value = parseInt(score, 10);
+  if (Number.isNaN(value) || value < 0 || value > 20) {
+    logger.warn('Évaluation : score invalide', { teacherId, score });
+    return { ok: false, error: 'score' };
+  }
+
+  const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+  if (!teacher) {
+    logger.warn('Évaluation : enseignant introuvable', { teacherId });
+    return { ok: false, error: 'teacher' };
+  }
+
+  const evaluation = await prisma.evaluation.create({
+    data: {
+      teacherId,
+      score: value,
+      comments: comments || null,
+    },
+  });
+
+  logger.info('Évaluation enseignant enregistrée', { teacherId, score: value });
+  return { ok: true, evaluation };
+}
+
 module.exports = {
   createTeacherProfile,
   recordLeave,
   generatePayroll,
+  evaluateTeacher,
   parseMonth,
 };

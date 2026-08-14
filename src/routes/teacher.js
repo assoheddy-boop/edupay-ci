@@ -27,7 +27,10 @@ router.get('/bulk-grades', requireModule('grades'), teacherController.bulkGrades
 router.post('/bulk-grades', requireModule('grades'), teacherController.submitBulkGrades);
 router.get('/messages', requireModule('chat'), messageController.inbox);
 router.get('/messages/:partnerId', requireModule('chat'), messageController.chat);
-router.post('/messages/:partnerId', requireModule('chat'), upload.single('audio'), messageController.send);
+router.post('/messages/:partnerId', requireModule('chat'), upload.chatUpload.fields([
+  { name: 'audio', maxCount: 1 },
+  { name: 'attachment', maxCount: 1 },
+]), messageController.send);
 router.get('/transport', requireModule('transport'), extras.transportPage);
 router.post('/transport', requireModule('transport'), extras.createTransportLog);
 router.get('/behavior', requireModule('behavior'), extras.behaviorPage);

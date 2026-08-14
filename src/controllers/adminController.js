@@ -8,7 +8,8 @@ const {
 } = require('../utils/modules');
 const { hashPassword } = require('../utils/password');
 const { logAudit } = require('../utils/audit');
-const { ensureSubscriptionPlans, assignPlanToSchool } = require('../utils/plans');
+const { ensureSubscriptionPlans, assignPlanToSchool, updatePlanFeatures } = require('../utils/plans');
+const { ensureGroupForOrganization } = require('../utils/group');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -37,13 +38,15 @@ async function loadSchoolsWithModules() {
 }
 
 async function dashboard(req, res) {
-  const [schools, organizations, users, moduleRows] = await Promise.all([
+  const [schools, organizations, users, moduleRows, students, pendingTransfers] = await Promise.all([
     loadSchoolsWithModules(),
     prisma.organization.findMany({
       include: { _count: { select: { schools: true, admins: true } } },
     }),
     prisma.user.count(),
     prisma.schoolModule.findMany({ select: { moduleKey: true, enabled: true } }),
+    prisma.student.count(),
+    prisma.transferRequest.count({ where: { status: 'PENDING' } }),
   ]);
 
   const moduleStats = MODULE_KEYS.map((key) => ({
@@ -57,7 +60,13 @@ async function dashboard(req, res) {
     user: req.user,
     schools,
     organizations,
-    stats: { schools: schools.length, organizations: organizations.length, users },
+    stats: {
+      schools: schools.length,
+      organizations: organizations.length,
+      users,
+      students,
+      pendingTransfers,
+    },
     moduleStats,
     MODULES,
     MODULE_KEYS,
@@ -74,6 +83,7 @@ async function modulesHub(req, res) {
     user: req.user,
     schools,
     selected,
+    MODULES,
     MODULE_KEYS,
     success: req.query.success || null,
   });
@@ -145,6 +155,32 @@ async function enableAllModules(req, res) {
   res.redirect('/admin/modules?success=all-enabled');
 }
 
+async function updateModulesMatrix(req, res) {
+  const schools = await prisma.school.findMany({ select: { id: true } });
+  for (const school of schools) {
+    const changes = [];
+    for (const key of MODULE_KEYS) {
+      const enabled = MODULES[key].core ? true : req.body[`mod_${school.id}_${key}`] === 'on';
+      await setModule(school.id, key, { enabled, locked: true });
+      changes.push({ key, enabled });
+    }
+    await prisma.school.update({
+      where: { id: school.id },
+      data: { subscription: 'premium' },
+    });
+    await logAudit({
+      action: 'school_modules_update',
+      entity: 'SchoolModule',
+      entityId: school.id,
+      user: req.user,
+      schoolId: school.id,
+      details: { changes, matrix: true },
+      ip: req.ip,
+    });
+  }
+  res.redirect('/admin/modules?success=matrix');
+}
+
 async function organizations(req, res) {
   const organizations = await prisma.organization.findMany({
     include: {
@@ -163,8 +199,13 @@ async function organizations(req, res) {
 async function createOrganization(req, res) {
   const { name, slug } = req.body;
   try {
+    const group = await prisma.group.create({ data: { name } });
     await prisma.organization.create({
-      data: { name, slug: slug || name.toLowerCase().replace(/\s+/g, '-') },
+      data: {
+        name,
+        slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+        groupId: group.id,
+      },
     });
     res.redirect('/admin/organizations?success=1');
   } catch (err) {
@@ -212,10 +253,19 @@ async function createOrgAdmin(req, res) {
 
 async function assignSchoolToOrg(req, res) {
   const { schoolId, organizationId, campusLabel } = req.body;
+  let groupId = null;
+  if (organizationId) {
+    const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+    if (org) {
+      const synced = await ensureGroupForOrganization(org);
+      groupId = synced.groupId;
+    }
+  }
   await prisma.school.update({
     where: { id: schoolId },
     data: {
       organizationId: organizationId || null,
+      groupId,
       campusLabel: campusLabel || null,
       subscription: 'premium',
     },
@@ -243,9 +293,28 @@ async function plansPage(req, res) {
     plans,
     schools,
     MODULES,
+    MODULE_KEYS,
     success: req.query.success || null,
     error: req.query.error || null,
   });
+}
+
+async function updatePlanModules(req, res) {
+  const planId = parseInt(req.params.id, 10);
+  const selected = [].concat(req.body.features || []).filter(Boolean);
+  const result = await updatePlanFeatures(planId, selected);
+  if (!result.ok) return res.redirect('/admin/plans?error=plan');
+
+  await logAudit({
+    action: 'plan_modules_update',
+    entity: 'SubscriptionPlan',
+    entityId: String(planId),
+    user: req.user,
+    details: { features: result.plan.features },
+    ip: req.ip,
+  });
+
+  res.redirect('/admin/plans?success=modules');
 }
 
 async function activatePlanModules(req, res) {
@@ -274,6 +343,7 @@ module.exports = {
   schoolModules,
   updateSchoolModules,
   enableAllModules,
+  updateModulesMatrix,
   bootstrapPremiumPlatform,
   organizations,
   createOrganization,
@@ -281,4 +351,5 @@ module.exports = {
   assignSchoolToOrg,
   plansPage,
   activatePlanModules,
+  updatePlanModules,
 };

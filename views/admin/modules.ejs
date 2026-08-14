@@ -2,92 +2,145 @@
 <% const content = include('modules', { _inLayout: true }); %>
 <%- include('../layouts/adminLayout', { body: content, title: 'Modules — Super Admin' }) %>
 <% } else { %>
+<% const tx = typeof t === 'function' ? t : function(k) { return k; }; %>
 <div class="page-header">
-    <div>
-      <a href="/admin/dashboard" class="text-muted">← Tableau de bord</a>
-      <h1>Gestion des modules</h1>
-      <p class="page-sub">Activation et désactivation des fonctionnalités par école — réservé au Super Admin</p>
-    </div>
+  <div>
+    <a href="/admin/dashboard" class="text-muted">← <%= tx('nav.dashboard') %></a>
+    <h1><%= tx('modules.title') %></h1>
+    <p class="page-sub"><%= tx('modules.subtitle') %></p>
   </div>
+</div>
 
-  <% if (success === '1') { %>
-    <div class="alert alert-success">Modules mis à jour pour <%= selected.name %>.</div>
-  <% } else if (success === 'all-enabled') { %>
-    <div class="alert alert-success">Tous les modules ont été activés.</div>
-  <% } %>
+<% if (success === '1') { %>
+  <div class="alert alert-success"><%= tx('modules.updated') %> <%= selected ? selected.name : '' %>.</div>
+<% } else if (success === 'all-enabled') { %>
+  <div class="alert alert-success"><%= tx('modules.enableAll') %>.</div>
+<% } else if (success === 'matrix') { %>
+  <div class="alert alert-success"><%= tx('modules.updated') %></div>
+<% } %>
 
-  <div class="admin-modules-layout">
-    <aside class="card admin-schools-list">
-      <div class="card-header">
-        <h2>Écoles</h2>
-      </div>
-      <ul class="school-picker">
-        <% schools.forEach(function(s) { %>
-          <li>
-            <a href="/admin/modules?school=<%= s.id %>" class="school-picker-item <%= selected && selected.id === s.id ? 'active' : '' %>">
-              <strong><%= s.name %></strong>
-              <span class="text-muted"><%= s.enabledCount %>/<%= MODULE_KEYS.length %> modules</span>
-            </a>
-          </li>
-        <% }) %>
-      </ul>
-    </aside>
-
-    <% if (selected) { %>
-      <section class="card admin-modules-panel">
-        <div class="card-header">
-          <div>
-            <h2><%= selected.name %></h2>
-            <p class="page-sub"><%= selected.admin?.email || '' %> · <span class="badge badge-premium">Premium</span></p>
-          </div>
-          <form method="POST" action="/admin/schools/<%= selected.id %>/modules/enable-all">
-            <button type="submit" class="btn btn-outline btn-sm">Tout activer</button>
-          </form>
-        </div>
-
-        <form method="POST" action="/admin/schools/<%= selected.id %>/modules">
-          <input type="hidden" name="redirect" value="/admin/modules?school=<%= selected.id %>">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Module</th>
-                <th>Description</th>
-                <th>Statut</th>
-              </tr>
-            </thead>
-            <tbody>
+<% if (schools.length) { %>
+<div class="card modules-matrix-card">
+  <div class="card-header">
+    <h2><%= tx('modules.matrix') %></h2>
+  </div>
+  <form method="POST" action="/admin/modules/matrix">
+    <div class="table-scroll">
+      <table class="table modules-matrix">
+        <thead>
+          <tr>
+            <th><%= tx('modules.schools') %></th>
+            <% MODULE_KEYS.forEach(function(key) { %>
+              <th title="<%= MODULES[key].description %>"><%= MODULES[key].label %></th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% schools.forEach(function(s) { %>
+            <tr>
+              <td>
+                <a href="/admin/modules?school=<%= s.id %>"><strong><%= s.name %></strong></a>
+                <div class="text-muted"><%= s.enabledCount %>/<%= MODULE_KEYS.length %></div>
+              </td>
               <% MODULE_KEYS.forEach(function(key) {
-                const mod = selected.moduleMap[key];
+                const mod = s.moduleMap[key];
               %>
-                <tr>
-                  <td>
-                    <strong><%= mod.label %></strong>
-                    <% if (mod.core) { %><span class="badge">Essentiel</span><% } %>
-                  </td>
-                  <td><%= mod.description %></td>
-                  <td>
-                    <% if (mod.core) { %>
-                      <span class="badge badge-success">Toujours actif</span>
-                    <% } else { %>
-                      <label class="checkbox-label toggle-switch">
-                        <input type="checkbox" name="mod_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
-                        <span><%= mod.enabled ? 'Activé' : 'Désactivé' %></span>
-                      </label>
-                    <% } %>
-                  </td>
-                </tr>
+                <td class="matrix-cell">
+                  <% if (mod.core) { %>
+                    <span class="badge badge-success">●</span>
+                  <% } else { %>
+                    <label class="toggle-switch" title="<%= mod.label %>">
+                      <input type="checkbox" name="mod_<%= s.id %>_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
+                      <span class="toggle-slider"></span>
+                    </label>
+                  <% } %>
+                </td>
               <% }) %>
-            </tbody>
-          </table>
-          <div class="card-footer">
-            <button type="submit" class="btn btn-primary">Enregistrer les modules</button>
-          </div>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary"><%= tx('modules.saveMatrix') %></button>
+    </div>
+  </form>
+</div>
+<% } %>
+
+<div class="admin-modules-layout">
+  <aside class="card admin-schools-list">
+    <div class="card-header">
+      <h2><%= tx('modules.schools') %></h2>
+    </div>
+    <ul class="school-picker">
+      <% schools.forEach(function(s) { %>
+        <li>
+          <a href="/admin/modules?school=<%= s.id %>" class="school-picker-item <%= selected && selected.id === s.id ? 'active' : '' %>">
+            <strong><%= s.name %></strong>
+            <span class="text-muted"><%= s.enabledCount %>/<%= MODULE_KEYS.length %> modules</span>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  </aside>
+
+  <% if (selected) { %>
+    <section class="card admin-modules-panel">
+      <div class="card-header">
+        <div>
+          <h2><%= selected.name %></h2>
+          <p class="page-sub"><%= selected.admin?.email || '' %> · <span class="badge badge-premium">Premium</span></p>
+        </div>
+        <form method="POST" action="/admin/schools/<%= selected.id %>/modules/enable-all">
+          <button type="submit" class="btn btn-outline btn-sm"><%= tx('modules.enableAll') %></button>
         </form>
-      </section>
-    <% } else { %>
-      <section class="card admin-modules-panel">
-        <p class="empty">Aucune école inscrite.</p>
-      </section>
-    <% } %>
-  </div>
+      </div>
+
+      <form method="POST" action="/admin/schools/<%= selected.id %>/modules">
+        <input type="hidden" name="redirect" value="/admin/modules?school=<%= selected.id %>">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Description</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% MODULE_KEYS.forEach(function(key) {
+              const mod = selected.moduleMap[key];
+            %>
+              <tr>
+                <td>
+                  <strong><%= mod.label %></strong>
+                  <% if (mod.core) { %><span class="badge">Essentiel</span><% } %>
+                </td>
+                <td><%= mod.description %></td>
+                <td>
+                  <% if (mod.core) { %>
+                    <span class="badge badge-success"><%= tx('modules.alwaysOn') %></span>
+                  <% } else { %>
+                    <label class="checkbox-label toggle-switch">
+                      <input type="checkbox" name="mod_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
+                      <span class="toggle-slider"></span>
+                      <span><%= mod.enabled ? tx('modules.enabled') : tx('modules.disabled') %></span>
+                    </label>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary"><%= tx('modules.save') %></button>
+        </div>
+      </form>
+    </section>
+  <% } else { %>
+    <section class="card admin-modules-panel">
+      <p class="empty">Aucune école inscrite.</p>
+    </section>
+  <% } %>
+</div>
 <% } %>

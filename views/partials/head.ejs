@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'fr' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -12,4 +12,4 @@
   <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>EduPay CI</title>
   <link rel="stylesheet" href="/css/main.css?v=3">
 </head>
-<body>
+<body<% if (typeof user !== 'undefined' && user) { %> data-user-id="<%= user.id %>"<% } %>>

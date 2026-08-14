@@ -8,16 +8,37 @@ function collectionRate(revenue, pendingAmount) {
   return Math.round(((revenue || 0) / total) * 100);
 }
 
+async function ensureGroupForOrganization(org) {
+  if (!org) return org;
+  let groupId = org.groupId;
+  if (!groupId) {
+    const group = await prisma.group.create({ data: { name: org.name } });
+    groupId = group.id;
+    await prisma.organization.update({ where: { id: org.id }, data: { groupId } });
+    org.groupId = groupId;
+    org.group = group;
+  }
+  await prisma.school.updateMany({
+    where: { organizationId: org.id, OR: [{ groupId: null }, { groupId: { not: groupId } }] },
+    data: { groupId },
+  });
+  return org;
+}
+
 async function loadOrganization(req) {
   const orgId = req.user?.organizationAdmin?.organizationId;
   if (!orgId) return null;
-  return prisma.organization.findUnique({
+  const organization = await prisma.organization.findUnique({
     where: { id: orgId },
     include: {
+      group: true,
       schools: { orderBy: { name: 'asc' } },
       admins: { include: { user: true } },
     },
   });
+  if (!organization) return null;
+  await ensureGroupForOrganization(organization);
+  return organization;
 }
 
 function schoolInOrg(organization, schoolId) {
@@ -123,6 +144,7 @@ function consolidate(snapshots) {
 module.exports = {
   collectionRate,
   loadOrganization,
+  ensureGroupForOrganization,
   schoolInOrg,
   snapshotCampus,
   snapshotAllCampuses,

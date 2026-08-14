@@ -1,7 +1,8 @@
 const prisma = require('../config/database');
 const { hashPassword, comparePassword } = require('../utils/password');
-const { signToken } = require('../utils/jwt');
-const { setAuthCookie, clearAuthCookie } = require('../middleware/auth');
+const { verifyToken } = require('../utils/jwt');
+const { issueAuthSession, destroyAuthSession, tryRefreshSession, clearAuthCookie } = require('../middleware/auth');
+const { REFRESH_COOKIE } = require('../utils/cookies');
 const { generateUniqueSchoolSlug, findSchoolByCode } = require('../utils/schoolCode');
 const { logAudit } = require('../utils/audit');
 const { createTeacherProfile } = require('../../services/HRService');
@@ -20,13 +21,16 @@ function dashboardRedirect(role) {
 async function showLogin(req, res) {
   if (req.cookies?.token) {
     try {
-      const { verifyToken } = require('../utils/jwt');
       const decoded = verifyToken(req.cookies.token);
       const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
       if (user) return res.redirect(dashboardRedirect(user.role));
     } catch {
-      clearAuthCookie(res);
+      /* access token expired or invalid — try refresh below */
     }
+  }
+  if (req.cookies?.[REFRESH_COOKIE]) {
+    const rotated = await tryRefreshSession(req, res);
+    if (rotated?.user) return res.redirect(dashboardRedirect(rotated.user.role));
   }
   res.render('auth/login', { error: null, role: req.query.role || 'parent' });
 }
@@ -48,8 +52,15 @@ async function login(req, res) {
       return res.render('auth/login', { error: 'Email ou mot de passe incorrect', role: req.body.role || 'parent' });
     }
 
-    const token = signToken({ userId: user.id, role: user.role });
-    setAuthCookie(res, token);
+    await issueAuthSession(res, user);
+    await logAudit({
+      action: 'login',
+      entity: 'User',
+      entityId: user.id,
+      user,
+      ip: req.ip,
+      sensitive: true,
+    });
     res.redirect(dashboardRedirect(user.role));
   } catch (err) {
     console.error(err);
@@ -105,8 +116,7 @@ async function register(req, res) {
       await initSchoolModules(user.school.id);
       if (selectedPlan) await assignPlanToSchool(user.school.id, selectedPlan.id);
 
-      const token = signToken({ userId: user.id, role: user.role });
-      setAuthCookie(res, token);
+      await issueAuthSession(res, user);
       return res.redirect('/school/dashboard');
     }
 
@@ -123,8 +133,7 @@ async function register(req, res) {
         },
       });
 
-      const token = signToken({ userId: user.id, role: user.role });
-      setAuthCookie(res, token);
+      await issueAuthSession(res, user);
       return res.redirect('/parent/dashboard');
     }
 
@@ -148,8 +157,7 @@ async function register(req, res) {
         return res.render('auth/register', { error: message, role });
       }
 
-      const token = signToken({ userId: result.user.id, role: result.user.role });
-      setAuthCookie(res, token);
+      await issueAuthSession(res, result.user);
       return res.redirect('/teacher/dashboard');
     }
 
@@ -160,9 +168,35 @@ async function register(req, res) {
   }
 }
 
-function logout(req, res) {
-  clearAuthCookie(res);
+async function logout(req, res) {
+  await destroyAuthSession(req, res);
   res.redirect('/');
+}
+
+async function refresh(req, res) {
+  const raw = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
+  if (!raw) {
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.status(401).json({ error: 'Refresh token manquant' });
+    }
+    clearAuthCookie(res);
+    return res.redirect('/auth/login');
+  }
+
+  req.cookies = { ...req.cookies, [REFRESH_COOKIE]: raw };
+  const rotated = await tryRefreshSession(req, res);
+  if (!rotated) {
+    clearAuthCookie(res);
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.status(401).json({ error: 'Refresh token invalide' });
+    }
+    return res.redirect('/auth/login');
+  }
+
+  if (req.xhr || req.headers.accept?.includes('application/json') || req.originalUrl.startsWith('/api/')) {
+    return res.json({ ok: true, token: rotated.accessToken });
+  }
+  return res.redirect(dashboardRedirect(rotated.user.role));
 }
 
 async function uploadPhoto(req, res) {
@@ -186,4 +220,4 @@ async function uploadPhoto(req, res) {
   }
 }
 
-module.exports = { showLogin, showRegister, login, register, logout, uploadPhoto };
+module.exports = { showLogin, showRegister, login, register, logout, refresh, uploadPhoto };

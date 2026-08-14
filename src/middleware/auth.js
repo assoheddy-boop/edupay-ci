@@ -1,5 +1,18 @@
-const { verifyToken } = require('../utils/jwt');
-const { getCookieOptions } = require('../utils/cookies');
+const { applyI18n } = require('./i18n');
+const { applyCurrency } = require('./currency');
+const { verifyToken, signToken } = require('../utils/jwt');
+const {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  getCookieOptions,
+  getRefreshCookieOptions,
+} = require('../utils/cookies');
+const {
+  createRefreshToken,
+  rotateRefreshToken,
+  revokeRefreshToken,
+  revokeUserRefreshTokens,
+} = require('../utils/refreshToken');
 const prisma = require('../config/database');
 
 const ROLE_ALIASES = {
@@ -15,48 +28,123 @@ function isApiRequest(req) {
 }
 
 function setAuthCookie(res, token) {
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: '/',
-  });
+  res.cookie(ACCESS_COOKIE, token, getCookieOptions());
+}
+
+function setRefreshCookie(res, raw) {
+  res.cookie(REFRESH_COOKIE, raw, getRefreshCookieOptions());
 }
 
 function clearAuthCookie(res) {
-  res.clearCookie('token', getCookieOptions());
+  res.clearCookie(ACCESS_COOKIE, getCookieOptions());
+  res.clearCookie(REFRESH_COOKIE, getRefreshCookieOptions());
+}
+
+async function issueAuthSession(res, user) {
+  const token = signToken({ userId: user.id, role: user.role });
+  setAuthCookie(res, token);
+  try {
+    const refresh = await createRefreshToken(user.id);
+    setRefreshCookie(res, refresh.raw);
+  } catch (err) {
+    console.error('[auth] refresh token not issued:', err?.message || err);
+  }
+  return token;
+}
+
+async function tryRefreshSession(req, res) {
+  const raw = req.cookies?.[REFRESH_COOKIE];
+  if (!raw) return null;
+  try {
+    const rotated = await rotateRefreshToken(raw);
+    if (!rotated) return null;
+    const user = await prisma.user.findUnique({ where: { id: rotated.userId } });
+    if (!user) return null;
+    const accessToken = signToken({ userId: user.id, role: user.role });
+    setAuthCookie(res, accessToken);
+    setRefreshCookie(res, rotated.raw);
+    return { user, accessToken };
+  } catch (err) {
+    console.error('[auth] refresh failed:', err?.message || err);
+    return null;
+  }
+}
+
+async function destroyAuthSession(req, res) {
+  const raw = req.cookies?.[REFRESH_COOKIE];
+  try {
+    if (raw) await revokeRefreshToken(raw);
+    const token = req.cookies?.[ACCESS_COOKIE];
+    if (token) {
+      try {
+        const decoded = verifyToken(token, { ignoreExpiration: true });
+        if (decoded?.userId) await revokeUserRefreshTokens(decoded.userId);
+      } catch { /* ignore invalid access token */ }
+    }
+  } catch (err) {
+    console.error('[auth] revoke refresh failed:', err?.message || err);
+  }
+  clearAuthCookie(res);
+}
+
+async function loadUser(userId) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      school: true,
+      teacher: { include: { school: true } },
+      parentProfile: true,
+      organizationAdmin: { include: { organization: true } },
+    },
+  });
+}
+
+function unauthenticated(req, res) {
+  if (isApiRequest(req)) return res.status(401).json({ error: 'Non authentifié' });
+  if (req.accepts('html')) return res.redirect('/auth/login');
+  return res.status(401).json({ error: 'Non authentifié' });
 }
 
 async function requireAuth(req, res, next) {
-  const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
+  let token = req.cookies?.[ACCESS_COOKIE] || req.headers.authorization?.replace(/^Bearer\s+/i, '');
 
-  if (!token) {
-    if (isApiRequest(req)) return res.status(401).json({ error: 'Non authentifié' });
-    if (req.accepts('html')) return res.redirect('/auth/login');
-    return res.status(401).json({ error: 'Non authentifié' });
+  if (!token && req.cookies?.[REFRESH_COOKIE]) {
+    const rotated = await tryRefreshSession(req, res);
+    if (rotated) token = rotated.accessToken;
   }
 
+  if (!token) return unauthenticated(req, res);
+
   try {
-    const decoded = verifyToken(token);
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      include: {
-        school: true,
-        teacher: { include: { school: true } },
-        parentProfile: true,
-        organizationAdmin: { include: { organization: true } },
-      },
-    });
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (err) {
+      if (err?.name === 'TokenExpiredError' && req.cookies?.[REFRESH_COOKIE]) {
+        const rotated = await tryRefreshSession(req, res);
+        if (!rotated) {
+          clearAuthCookie(res);
+          if (isApiRequest(req)) return res.status(401).json({ error: 'Session expirée' });
+          if (req.accepts('html')) return res.redirect('/auth/login');
+          return res.status(401).json({ error: 'Session expirée' });
+        }
+        decoded = verifyToken(rotated.accessToken);
+      } else {
+        throw err;
+      }
+    }
+
+    const user = await loadUser(decoded.userId);
 
     if (!user) {
       clearAuthCookie(res);
-      if (isApiRequest(req)) return res.status(401).json({ error: 'Non authentifié' });
-      return res.redirect('/auth/login');
+      return unauthenticated(req, res);
     }
 
     req.user = user;
     res.locals.user = user;
+    applyI18n(req, res);
+    applyCurrency(req, res);
     next();
   } catch (err) {
     if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
@@ -103,6 +191,10 @@ module.exports = {
   requireRole,
   checkRole,
   setAuthCookie,
+  setRefreshCookie,
   clearAuthCookie,
+  issueAuthSession,
+  tryRefreshSession,
+  destroyAuthSession,
   ROLE_ALIASES,
 };

@@ -77,6 +77,34 @@ async function assignPlanToSchool(schoolId, planId) {
   return { ok: true, plan };
 }
 
+async function updatePlanFeatures(planId, selectedKeys = []) {
+  const id = parseInt(planId, 10);
+  if (!Number.isFinite(id)) return { ok: false, error: 'plan' };
+
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id } });
+  if (!plan) return { ok: false, error: 'plan' };
+
+  const allowed = new Set(MODULE_KEYS);
+  const features = [];
+  MODULE_KEYS.forEach((key) => {
+    if (MODULES[key].core || selectedKeys.includes(key)) {
+      if (allowed.has(key) && !features.includes(key)) features.push(key);
+    }
+  });
+
+  const updated = await prisma.subscriptionPlan.update({
+    where: { id },
+    data: { features },
+  });
+
+  const schools = await prisma.school.findMany({ where: { planId: id }, select: { id: true } });
+  for (const school of schools) {
+    await syncSchoolModulesToPlan(school.id, updated);
+  }
+
+  return { ok: true, plan: updated };
+}
+
 module.exports = {
   planIncludesFeature,
   ensureSubscriptionPlans,
@@ -84,4 +112,5 @@ module.exports = {
   getSchoolPlan,
   syncSchoolModulesToPlan,
   assignPlanToSchool,
+  updatePlanFeatures,
 };

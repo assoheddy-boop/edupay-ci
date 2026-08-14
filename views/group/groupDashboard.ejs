@@ -1,0 +1,123 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('groupDashboard', { _inLayout: true }); %>
+<%- include('../layouts/groupLayout', { body: content, title: 'Groupe — ' + organization.name }) %>
+<% } else { %>
+<%- include('_nav', { current: 'dashboard' }) %>
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const tx = typeof t === 'function' ? t : function(k) { return k; }; %>
+<div class="page-header">
+  <div class="person-line">
+    <%- include('../partials/_logo', { logoUrl: organization.logoUrl, logoBase64: organization.logoBase64, name: organization.name, size: 'md' }) %>
+    <div>
+      <h1><%= organization.name %></h1>
+      <p class="page-sub"><%= tx('group.title') %> · <%= totals.campuses %> <%= tx('group.campuses').toLowerCase() %></p>
+    </div>
+  </div>
+  <a href="/group/export" class="btn btn-outline"><%= tx('group.export') %></a>
+</div>
+
+<% if (success) { %><div class="alert alert-success"><%= tx('group.saved') %></div><% } %>
+
+<div class="stats-grid">
+  <div class="stat-card"><span class="stat-value"><%= totals.campuses %></span><span class="stat-label"><%= tx('group.campuses') %></span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.students %></span><span class="stat-label"><%= tx('group.students') %></span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.teachers %></span><span class="stat-label"><%= tx('group.teachers') %></span></div>
+  <div class="stat-card stat-card-success"><span class="stat-value"><%= money(totals.revenue) %></span><span class="stat-label"><%= tx('group.revenue') %></span></div>
+  <div class="stat-card stat-card-warning"><span class="stat-value"><%= totals.pendingCount %></span><span class="stat-label"><%= tx('group.pending') %></span></div>
+  <div class="stat-card"><span class="stat-value"><%= totals.collectionRate %>%</span><span class="stat-label"><%= tx('group.collection') %></span></div>
+</div>
+
+<% if (organization.groupId) { %>
+<div class="card">
+  <div class="card-header">
+    <h2>Comparatif redoublement</h2>
+    <a href="/reinscription/group/<%= organization.groupId %>/dashboard" class="btn btn-sm btn-outline">Voir le comparatif par école</a>
+  </div>
+  <p class="page-sub" style="padding:0 1rem">Analyse des causes de redoublement et comparaison entre campus.</p>
+</div>
+<% } %>
+
+<% if (alerts.length) { %>
+  <div class="card">
+    <h2><%= tx('group.alerts') %></h2>
+    <ul class="group-alerts">
+      <% alerts.forEach(function(a) { %>
+        <li class="group-alert group-alert-<%= a.level %>"><%= a.text %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2><%= tx('group.performance') %></h2></div>
+    <% if (campusStats.length === 0) { %>
+      <p class="empty"><%= tx('group.noCampus') %></p>
+    <% } else { %>
+      <% campusStats.forEach(function(c) { %>
+        <div class="group-bar-row">
+          <div class="group-bar-meta">
+            <a href="/group/campuses/<%= c.school.id %>" class="person-line">
+              <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+              <strong><%= c.school.campusLabel || c.school.name %></strong>
+            </a>
+            <span><%= money(c.revenue) %> · <%= c.collectionRate %>%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((c.revenue / maxRevenue) * 100) %>%"></div></div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2><%= tx('group.ranking') %></h2></div>
+    <% if (ranked.length === 0) { %>
+      <p class="empty"><%= tx('group.noData') %></p>
+    <% } else { %>
+      <ol class="group-rank">
+        <% ranked.forEach(function(c, i) { %>
+          <li>
+            <span class="group-rank-n"><%= i + 1 %></span>
+            <span class="person-line">
+              <%- include('../partials/_logo', { logoUrl: c.school.logoUrl, logoBase64: c.school.logoBase64, name: c.school.name, size: 'sm' }) %>
+              <%= c.school.campusLabel || c.school.name %>
+            </span>
+            <strong><%= money(c.revenue) %></strong>
+          </li>
+        <% }) %>
+      </ol>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2><%= tx('group.recentPayments') %></h2>
+    <a href="/group/finance" class="btn btn-sm btn-outline"><%= tx('nav.finance') %></a>
+  </div>
+  <% if (recentPayments.length === 0) { %>
+    <p class="empty"><%= tx('group.noPayments') %></p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th><%= tx('nav.campuses') %></th><th><%= tx('nav.students') %></th><th><%= tx('group.revenue') %></th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>
+        <% recentPayments.forEach(function(p) { %>
+          <tr>
+            <td class="person-cell">
+              <%- include('../partials/_logo', { logoUrl: p.student.school?.logoUrl, logoBase64: p.student.school?.logoBase64, name: p.student.school?.name, size: 'sm' }) %>
+              <%= p.student.school?.campusLabel || p.student.school?.name || '—' %>
+            </td>
+            <td class="person-cell">
+              <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
+              <%= p.student.firstName %> <%= p.student.lastName %>
+            </td>
+            <td><%= money(p.amount) %></td>
+            <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+            <td><%= new Date(p.createdAt).toLocaleDateString(typeof locale !== 'undefined' && locale === 'en' ? 'en-GB' : 'fr-FR') %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

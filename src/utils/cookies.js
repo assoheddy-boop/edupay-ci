@@ -1,12 +1,56 @@
-function getCookieOptions() {
+const ACCESS_COOKIE = 'token';
+const REFRESH_COOKIE = 'refreshToken';
+const ACCESS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const REFRESH_MAX_AGE_MS = Number(process.env.JWT_REFRESH_TTL_MS) || ACCESS_MAX_AGE_MS;
+
+function cookieBase() {
   const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
     secure: isProd,
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
   };
 }
 
-module.exports = { getCookieOptions };
+function getCookieOptions() {
+  return { ...cookieBase(), maxAge: ACCESS_MAX_AGE_MS };
+}
+
+function getRefreshCookieOptions() {
+  return { ...cookieBase(), maxAge: REFRESH_MAX_AGE_MS };
+}
+
+function getPrefsCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 365 * 24 * 60 * 60 * 1000,
+    path: '/',
+  };
+}
+
+function safeBack(req) {
+  const fallback = '/';
+  const referer = req.get('referer');
+  if (!referer) return fallback;
+  try {
+    const url = new URL(referer);
+    const host = req.hostname;
+    if (url.hostname !== host) return fallback;
+    return `${url.pathname}${url.search}` || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+module.exports = {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  getCookieOptions,
+  getRefreshCookieOptions,
+  getPrefsCookieOptions,
+  safeBack,
+};

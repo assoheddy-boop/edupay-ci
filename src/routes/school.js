@@ -5,6 +5,7 @@ const statsController = require('../controllers/statsController');
 const accountingController = require('../controllers/accountingController');
 const extras = require('../controllers/extrasController');
 const hrController = require('../controllers/hrController');
+const classController = require('../controllers/classController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
@@ -30,6 +31,10 @@ router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('scho
 
 router.get('/classes', schoolController.listClasses);
 router.post('/classes', classRules, handleValidationErrors, auditMiddleware('class_create', 'Class'), schoolController.createClass);
+router.get('/classes/:id/dashboard', classController.dashboard);
+router.get('/classes/:id/export/gender.xlsx', classController.exportExcel);
+router.get('/classes/:id/export/gender.pdf', classController.exportPdf);
+router.get('/classes/:id', classController.dashboard);
 router.post('/classes/:id/update', classRules, handleValidationErrors, schoolController.updateClass);
 router.post('/classes/:id/delete', schoolController.deleteClass);
 
@@ -63,7 +68,10 @@ router.post('/bulletins/bulk', requireModule('bulletins'), requirePremium('Bulle
 
 router.get('/messages', requireModule('chat'), requirePremium('Chat'), messageController.inbox);
 router.get('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), messageController.chat);
-router.post('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), uploadLimiter, upload.single('audio'), messageController.send);
+router.post('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), uploadLimiter, upload.chatUpload.fields([
+  { name: 'audio', maxCount: 1 },
+  { name: 'attachment', maxCount: 1 },
+]), messageController.send);
 
 router.get('/stats', requireModule('stats'), requirePremium('Statistiques'), statsController.statsPage);
 router.get('/export/students', requireModule('stats'), requirePremium('Export Excel'), statsController.exportStudents);

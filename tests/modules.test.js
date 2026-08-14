@@ -29,6 +29,12 @@ describe('Protected routes', () => {
     expect(res.status).toBe(200);
   });
 
+  test('GET /transfer redirects unauthenticated visitors', async () => {
+    const res = await request(app).get('/transfer');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toMatch(/login/);
+  });
+
   test('POST /parent/children rejects missing school code', async () => {
     const agent = await loginAgent('parent@demo.ci');
     const res = await agent

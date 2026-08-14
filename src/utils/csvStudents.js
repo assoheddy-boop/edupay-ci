@@ -15,6 +15,9 @@ const HEADER_ALIASES = {
   birthdate: 'birthDate',
   birth_date: 'birthDate',
   naissance: 'birthDate',
+  genre: 'gender',
+  gender: 'gender',
+  sexe: 'gender',
 };
 
 function normalizeHeader(raw) {
@@ -142,7 +145,15 @@ function prepareStudentRows(rows, classes, existingMatricules = new Set()) {
       return;
     }
 
-    valid.push({ firstName, lastName, matricule, classId, birthDate, lineNumber: line });
+    valid.push({
+      firstName,
+      lastName,
+      matricule,
+      classId,
+      birthDate,
+      gender: row.gender || '',
+      lineNumber: line,
+    });
   });
 
   return { valid, errors };

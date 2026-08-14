@@ -34,6 +34,7 @@ enum NotificationType {
   BEHAVIOR
   TRANSPORT
   GENERAL
+  TRANSFER
 }
 
 enum BehaviorType {
@@ -109,6 +110,33 @@ enum AdvanceStatus {
   DEDUCTED
 }
 
+enum ScholarshipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ConsentType {
+  DATA_PROCESSING
+  PHOTOS
+  HEALTH
+  MARKETING
+}
+
+enum ConsentStatus {
+  PENDING
+  GRANTED
+  REVOKED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -128,6 +156,10 @@ model User {
   sentMessages Message[]      @relation("SentMessages")
   receivedMessages Message[]  @relation("ReceivedMessages")
   notifications Notification[]
+  requestedTransfers TransferRequest[]
+  auditTrails        AuditTrail[]
+  consents           Consent[]
+  refreshTokens      RefreshToken[]
 }
 
 model School {
@@ -152,6 +184,9 @@ model School {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
   classes              Class[]
   teachers             Teacher[]
   feeTypes             FeeType[]
@@ -173,9 +208,15 @@ model School {
   payslips             Payslip[]
   salaryAdvances       SalaryAdvance[]
   staffEvaluations     StaffEvaluation[]
+  transfersFrom        TransferRequest[] @relation("TransferFromSchool")
+  transfersTo          TransferRequest[] @relation("TransferToSchool")
+  accountingEntries    AccountingEntry[]
+  studentYearRecords   StudentYearRecord[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
+
+  @@index([groupId])
 }
 
 model SubscriptionPlan {
@@ -200,6 +241,8 @@ model Class {
   teachers  TeacherClass[]
   homeworks Homework[]
   schedules Schedule[]
+  incomingTransfers TransferRequest[]
+  yearRecords StudentYearRecord[]
 }
 
 model Student {
@@ -208,6 +251,7 @@ model Student {
   lastName   String
   matricule  String?
   birthDate  DateTime?
+  gender     String?
   photoUrl   String?
   createdAt  DateTime  @default(now())
 
@@ -232,8 +276,29 @@ model Student {
   extracurricularEnrolls ExtracurricularEnrollment[]
   pickupAuthorizations PickupAuthorization[]
   lostItems            LostItem[]
+  transferRequests     TransferRequest[]
+  scholarships         Scholarship[]
+  yearRecords          StudentYearRecord[]
 
   @@unique([schoolId, matricule])
+}
+
+model StudentYearRecord {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolYear String
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  schoolId   String?
+  school     School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  repeatYear Boolean  @default(false)
+  status     String
+  createdAt  DateTime @default(now())
+  gender     String?
+
+  @@index([schoolYear, studentId])
+  @@unique([studentId, schoolYear])
 }
 
 model ParentProfile {
@@ -391,6 +456,8 @@ model Message {
   id        String   @id @default(cuid())
   content   String?
   audioUrl  String?
+  fileUrl   String?
+  fileName  String?
   readAt    DateTime?
   createdAt DateTime @default(now())
 
@@ -581,6 +648,17 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
+model AuditTrail {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  timestamp DateTime @default(now())
+
+  @@index([userId, timestamp])
+  @@index([action, timestamp])
+}
+
 model Schedule {
   id        String @id @default(cuid())
   dayOfWeek Int
@@ -595,6 +673,16 @@ model Schedule {
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 }
 
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schools      School[]
+  organization Organization?
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -605,6 +693,9 @@ model Organization {
   logoUrl   String?
   logoBase64 String?  @db.Text
   createdAt DateTime @default(now())
+
+  groupId String? @unique
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   schools   School[]
   admins    OrganizationAdmin[]
@@ -858,5 +949,91 @@ model Evaluation {
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   score     Int
   comments  String?
+}
+
+model TransferRequest {
+  id        String         @id @default(cuid())
+  status    TransferStatus @default(PENDING)
+  reason    String?
+  note      String?
+  gender    String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  reviewedAt  DateTime?
+  completedAt DateTime?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  fromSchoolId String
+  fromSchool   School @relation("TransferFromSchool", fields: [fromSchoolId], references: [id], onDelete: Cascade)
+
+  toSchoolId String
+  toSchool   School @relation("TransferToSchool", fields: [toSchoolId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+
+  targetClassId String?
+  targetClass   Class? @relation(fields: [targetClassId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, status])
+  @@index([toSchoolId, status])
+  @@index([fromSchoolId, status])
+}
+
+model AccountingEntry {
+  id          String                   @id @default(cuid())
+  type        FinanceTransactionType
+  amount      Int
+  description String
+  date        DateTime                 @default(now())
+  createdAt   DateTime                 @default(now())
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, date])
+  @@index([schoolId, type])
+}
+
+model Scholarship {
+  id        String            @id @default(cuid())
+  type      String
+  amount    Int
+  status    ScholarshipStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, status])
+}
+
+model Consent {
+  id        String         @id @default(cuid())
+  parentId  String
+  parent    User           @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  type      ConsentType
+  status    ConsentStatus  @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([parentId, type])
+  @@index([parentId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 

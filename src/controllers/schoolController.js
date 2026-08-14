@@ -4,6 +4,7 @@ const { generateBulletinForStudent, generateBulkBulletins } = require('../servic
 const { getPendingPayments } = require('../../services/PaymentService');
 const { createTeacherProfile } = require('../../services/HRService');
 const { generateBulletinPDF } = require('../../services/export');
+const { parseGender } = require('../../services/ClassService');
 
 async function dashboard(req, res) {
   const school = req.user.school;
@@ -201,6 +202,7 @@ async function importStudents(req, res) {
             classId: row.classId,
             schoolId,
             birthDate: row.birthDate,
+            gender: parseGender(row.gender),
           },
         })),
       );
@@ -222,7 +224,7 @@ async function importStudents(req, res) {
 }
 
 async function createStudent(req, res) {
-  const { firstName, lastName, matricule, classId, birthDate } = req.body;
+  const { firstName, lastName, matricule, classId, birthDate, gender } = req.body;
   const schoolId = req.user.school.id;
   try {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
@@ -236,6 +238,7 @@ async function createStudent(req, res) {
         classId,
         schoolId,
         birthDate: birthDate ? new Date(birthDate) : null,
+        gender: parseGender(gender),
       },
     }).then(async (created) => {
       if (req.file) {
@@ -255,7 +258,7 @@ async function createStudent(req, res) {
 
 async function updateStudent(req, res) {
   const { id } = req.params;
-  const { firstName, lastName, matricule, classId, birthDate } = req.body;
+  const { firstName, lastName, matricule, classId, birthDate, gender } = req.body;
   const schoolId = req.user.school.id;
   try {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
@@ -267,6 +270,7 @@ async function updateStudent(req, res) {
       matricule: matricule || null,
       classId,
       birthDate: birthDate ? new Date(birthDate) : null,
+      gender: parseGender(gender),
     };
     if (req.body.removePhoto === 'on') {
       const { removePersonPhoto } = require('../utils/media');

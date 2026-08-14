@@ -1,0 +1,117 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('accounting', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Journal comptable' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Journal & bilan</h1>
+    <p class="page-sub">Écritures consolidées EduPay — recettes et dépenses par école</p>
+  </div>
+  <a href="/admin/finance" class="btn btn-outline">Tableau finance</a>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === '1') { %><div class="alert alert-success">Écriture enregistrée.</div><% } %>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= totals.income.toLocaleString('fr-FR') %></span>
+    <span class="stat-label">Recettes (FCFA)</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= totals.expense.toLocaleString('fr-FR') %></span>
+    <span class="stat-label">Dépenses (FCFA)</span>
+  </div>
+  <div class="stat-card <%= totals.balance >= 0 ? 'stat-card-success' : 'stat-card-warning' %>">
+    <span class="stat-value"><%= totals.balance.toLocaleString('fr-FR') %></span>
+    <span class="stat-label">Solde</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouvelle écriture</h2>
+    <form method="POST" action="/admin/accounting/entries" class="form">
+      <div class="form-group">
+        <label>École</label>
+        <select name="schoolId" required>
+          <option value="">— Choisir —</option>
+          <% schools.forEach(function(s) { %>
+            <option value="<%= s.id %>" <%= schoolId === s.id ? 'selected' : '' %>><%= s.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select name="type" required>
+          <option value="INCOME">Recette</option>
+          <option value="EXPENSE">Dépense</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Montant (FCFA)</label>
+        <input type="number" name="amount" min="1" required>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" name="date">
+      </div>
+      <div class="form-group">
+        <label>Libellé</label>
+        <input type="text" name="description" required maxlength="500">
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Filtrer</h2>
+    <form method="GET" action="/admin/accounting" class="form">
+      <div class="form-group">
+        <label>École</label>
+        <select name="schoolId">
+          <option value="">Toutes</option>
+          <% schools.forEach(function(s) { %>
+            <option value="<%= s.id %>" <%= schoolId === s.id ? 'selected' : '' %>><%= s.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Du</label>
+          <input type="date" name="from" value="<%= from %>">
+        </div>
+        <div class="form-group">
+          <label>Au</label>
+          <input type="date" name="to" value="<%= to %>">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-outline">Appliquer</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Journal</h2></div>
+  <% if (!entries.length) { %>
+    <p class="empty">Aucune écriture.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr><th>Date</th><th>École</th><th>Libellé</th><th>Type</th><th>Montant</th></tr>
+      </thead>
+      <tbody>
+        <% entries.forEach(function(e) { %>
+          <tr>
+            <td><%= new Date(e.date).toLocaleDateString('fr-FR') %></td>
+            <td><%= e.school.name %></td>
+            <td><%= e.description %></td>
+            <td><span class="badge"><%= e.type === 'INCOME' ? 'Recette' : 'Dépense' %></span></td>
+            <td><%= e.amount.toLocaleString('fr-FR') %> FCFA</td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

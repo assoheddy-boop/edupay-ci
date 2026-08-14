@@ -90,6 +90,15 @@
 
         <div class="form-group"><label>Date naissance</label><input type="date" name="birthDate"></div>
 
+        <div class="form-group">
+          <label>Genre</label>
+          <select name="gender">
+            <option value="">— Non renseigné —</option>
+            <option value="M">Garçon (M)</option>
+            <option value="F">Fille (F)</option>
+          </select>
+        </div>
+
         <button type="submit" class="btn btn-primary">Ajouter</button>
 
       </form>
@@ -146,6 +155,15 @@
               </div>
 
               <div class="form-group"><label>Naissance</label><input type="date" name="birthDate" value="<%= s.birthDate ? new Date(s.birthDate).toISOString().slice(0,10) : '' %>"></div>
+
+              <div class="form-group">
+                <label>Genre</label>
+                <select name="gender">
+                  <option value="" <%= !s.gender ? 'selected' : '' %>>— Non renseigné —</option>
+                  <option value="M" <%= s.gender === 'M' ? 'selected' : '' %>>Garçon (M)</option>
+                  <option value="F" <%= s.gender === 'F' ? 'selected' : '' %>>Fille (F)</option>
+                </select>
+              </div>
 
               <div class="form-group">
                 <label>Photo</label>

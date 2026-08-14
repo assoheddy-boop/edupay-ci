@@ -84,7 +84,7 @@ async function chat(req, res) {
     partnerInfo,
     messages,
     students,
-    socketToken: signToken({ userId: req.user.id }),
+    socketToken: signToken({ userId: req.user.id }, { expiresIn: '12h' }),
     error: null,
   });
 }
@@ -93,13 +93,28 @@ async function send(req, res) {
   const { partnerId } = req.params;
   const basePath = basePathForRole(req.user.role);
   const { content, studentId } = req.body;
-  const audioUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const uploaded = req.files?.attachment?.[0] || req.files?.audio?.[0] || req.file || null;
+
+  let audioUrl = null;
+  let fileUrl = null;
+  let fileName = null;
+  if (uploaded) {
+    const url = `/uploads/${uploaded.filename}`;
+    const isAudio = (uploaded.mimetype || '').startsWith('audio/')
+      || /\.(mp3|wav|m4a|ogg)$/i.test(uploaded.originalname || '');
+    if (isAudio) {
+      audioUrl = url;
+    } else {
+      fileUrl = url;
+      fileName = uploaded.originalname || 'fichier';
+    }
+  }
 
   if (!(await canMessage(req.user, partnerId))) {
     return res.status(403).render('error', { message: 'Conversation non autorisée', user: req.user });
   }
 
-  if (!content && !audioUrl) {
+  if (!content && !audioUrl && !fileUrl) {
     return res.redirect(`${basePath}/messages/${partnerId}?error=empty`);
   }
 
@@ -109,6 +124,8 @@ async function send(req, res) {
       receiverId: partnerId,
       content: content || null,
       audioUrl,
+      fileUrl,
+      fileName,
       studentId: studentId || null,
     },
     include: {
@@ -117,13 +134,15 @@ async function send(req, res) {
     },
   });
 
-  const { notifyUser } = require('../utils/notify');
-  await notifyUser(partnerId, {
-    type: 'GENERAL',
-    title: 'Nouveau message',
-    body: content
-      ? `${req.user.firstName} : ${content.slice(0, 80)}${content.length > 80 ? '…' : ''}`
-      : `${req.user.firstName} vous a envoyé un message vocal.`,
+  const { sendNotification } = require('../../services/NotificationService');
+  const preview = content
+    ? `${req.user.firstName} : ${content.slice(0, 80)}${content.length > 80 ? '…' : ''}`
+    : audioUrl
+      ? `${req.user.firstName} vous a envoyé un message vocal.`
+      : `${req.user.firstName} vous a envoyé un fichier${fileName ? ` (${fileName})` : ''}.`;
+  await sendNotification(partnerId, 'new_message', preview).catch(async () => {
+    const { notifyUser } = require('../utils/notify');
+    await notifyUser(partnerId, { type: 'GENERAL', title: 'Nouveau message', body: preview });
   });
 
   try {

@@ -13,6 +13,7 @@ const { attachModules, requireModule } = require('../middleware/modules');
 const { addChildRules, handleValidationErrors } = require('../middleware/validators');
 
 const upload = require('../middleware/upload');
+const { chatUpload } = upload;
 
 
 
@@ -50,7 +51,10 @@ router.get('/messages', requireModule('chat'), messageController.inbox);
 
 router.get('/messages/:partnerId', requireModule('chat'), messageController.chat);
 
-router.post('/messages/:partnerId', requireModule('chat'), upload.single('audio'), messageController.send);
+router.post('/messages/:partnerId', requireModule('chat'), chatUpload.fields([
+  { name: 'audio', maxCount: 1 },
+  { name: 'attachment', maxCount: 1 },
+]), messageController.send);
 
 router.get('/suivi', requireModule('absences'), extras.parentSuiviPage);
 
@@ -62,7 +66,15 @@ router.get('/activities', requireModule('activities'), extras.parentActivitiesPa
 
 router.post('/activities/enroll', requireModule('activities'), extras.enrollActivity);
 
+router.get('/transport', requireModule('transport'), extras.parentTransportPage);
 
+router.get('/canteen', requireModule('canteen'), extras.parentCanteenPage);
+
+router.get('/health', requireModule('health'), extras.parentHealthPage);
+
+router.get('/privacy', parentController.privacyPage);
+
+router.post('/privacy', parentController.updateConsent);
 
 module.exports = router;
 

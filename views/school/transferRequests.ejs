@@ -1,0 +1,109 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('transferRequests', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Demandes de transfert' }) %>
+<% } else { %>
+<%
+function transferGender(t) {
+  var g = t.gender != null ? t.gender : (t.student && t.student.gender);
+  if (g === 'M') return 'Garçon';
+  if (g === 'F') return 'Fille';
+  return '—';
+}
+function transferClass(t) {
+  if (!t.student || !t.student.class) return '—';
+  return t.student.class.level + ' — ' + t.student.class.name;
+}
+%>
+<div class="page-header">
+  <h1>Demandes de transfert</h1>
+  <p class="page-sub">Accueillir un élève ou suivre un départ vers un autre établissement</p>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === 'approved') { %><div class="alert alert-success">Demande approuvée. Le Super Admin peut finaliser l'inscription.</div><% } %>
+<% if (success === 'rejected') { %><div class="alert alert-success">Demande refusée. Le parent a été notifié.</div><% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Statistiques transferts</h2>
+  </div>
+  <p>Garçons transférés : <%= stats.boysTransferred %></p>
+  <p>Filles transférées : <%= stats.girlsTransferred %></p>
+  <p>Total : <%= stats.totalTransferred %></p>
+</div>
+
+<% const incoming = transfers.filter(function(t) { return t.toSchoolId === schoolId; }); %>
+<% const outgoing = transfers.filter(function(t) { return t.fromSchoolId === schoolId && t.toSchoolId !== schoolId; }); %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Élèves à accueillir</h2>
+  </div>
+  <% if (!incoming.length) { %>
+    <p class="empty">Aucune demande vers votre école.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Genre</th>
+          <th>Classe</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% incoming.forEach(function(t) { %>
+          <tr>
+            <td><strong><%= t.student.firstName %> <%= t.student.lastName %></strong></td>
+            <td><%= transferGender(t) %></td>
+            <td><%= transferClass(t) %></td>
+            <td><span class="badge"><%= t.status %></span></td>
+            <td>
+              <% if (t.status === 'PENDING') { %>
+                <form method="POST" action="/transfer/approve/<%= t.id %>" class="inline-form">
+                  <select name="classId">
+                    <option value="">Classe d'accueil</option>
+                    <% classes.forEach(function(c) { %>
+                      <option value="<%= c.id %>"><%= c.level %> — <%= c.name %></option>
+                    <% }) %>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary">Approuver</button>
+                </form>
+                <form method="POST" action="/transfer/reject/<%= t.id %>" class="inline-form">
+                  <button type="submit" class="btn btn-sm btn-outline">Refuser</button>
+                </form>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Départs demandés</h2>
+  </div>
+  <% if (!outgoing.length) { %>
+    <p class="empty">Aucun élève de votre école en cours de transfert.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr><th>Élève</th><th>Genre</th><th>Classe</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        <% outgoing.forEach(function(t) { %>
+          <tr>
+            <td><%= t.student.firstName %> <%= t.student.lastName %></td>
+            <td><%= transferGender(t) %></td>
+            <td><%= transferClass(t) %></td>
+            <td><span class="badge"><%= t.status %></span></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

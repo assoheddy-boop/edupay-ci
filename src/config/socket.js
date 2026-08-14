@@ -9,6 +9,13 @@ function getAllowedOrigins() {
   return env.split(',').map((o) => o.trim()).filter(Boolean);
 }
 
+function tokenFromCookie(cookieHeader) {
+  if (!cookieHeader) return null;
+  const part = String(cookieHeader).split(';').map((s) => s.trim()).find((s) => s.startsWith('token='));
+  if (!part) return null;
+  return decodeURIComponent(part.slice('token='.length));
+}
+
 function initSocket(httpServer) {
   const origins = getAllowedOrigins();
   io = new Server(httpServer, {
@@ -19,7 +26,9 @@ function initSocket(httpServer) {
   });
 
   io.use(async (socket, next) => {
-    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    const token = socket.handshake.auth?.token
+      || socket.handshake.query?.token
+      || tokenFromCookie(socket.handshake.headers?.cookie);
     if (!token) return next(new Error('Non authentifié'));
     try {
       const decoded = verifyToken(token);
@@ -52,8 +61,14 @@ function emitNewMessage(receiverId, message) {
   if (io) io.to(`user:${receiverId}`).emit('new_message', message);
 }
 
+function emitToUser(userId, event, payload) {
+  if (!io || !userId) return;
+  io.to(String(userId)).emit(event, payload);
+  io.to(`user:${userId}`).emit(event, payload);
+}
+
 function getIo() {
   return io;
 }
 
-module.exports = { initSocket, emitNewMessage, getIo };
+module.exports = { initSocket, emitNewMessage, emitToUser, getIo, tokenFromCookie };

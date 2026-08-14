@@ -39,6 +39,8 @@ router.get('/logout', authController.logout);
 
 router.post('/logout', authController.logout);
 
+router.post('/refresh', authLimiter, authController.refresh);
+
 router.post('/photo', requireAuth, upload.logoUpload.single('photo'), authController.uploadPhoto);
 
 

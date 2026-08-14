@@ -1,0 +1,125 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('transferDashboard', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Suivi des transferts' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Suivi des transferts</h1>
+    <p class="page-sub">Demandes parents · validation école d'accueil · finalisation EduPay</p>
+  </div>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === 'completed') { %><div class="alert alert-success">Transfert terminé. L'élève est inscrit dans l'école d'accueil.</div><% } %>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.pending %></span>
+    <span class="stat-label">En attente</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.approved %></span>
+    <span class="stat-label">Approuvés</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.completed %></span>
+    <span class="stat-label">Terminés</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.rejected %></span>
+    <span class="stat-label">Refusés</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Transferts par genre</h2></div>
+    <p>Garçons transférés : <%= stats.boysTransferred %></p>
+    <p>Filles transférées : <%= stats.girlsTransferred %></p>
+    <p>Total : <%= stats.totalTransferred %></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Répartition</h2></div>
+    <canvas id="transferGenderChart" height="220"></canvas>
+  </div>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function () {
+    if (typeof Chart === 'undefined') return;
+    const ctx = document.getElementById('transferGenderChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Garçons transférés', 'Filles transférées'],
+        datasets: [{
+          data: [<%= stats.boysTransferred %>, <%= stats.girlsTransferred %>],
+          backgroundColor: ['#3498db', '#e74c3c'],
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+      },
+    });
+  })();
+</script>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Toutes les demandes</h2>
+  </div>
+  <% if (!transfers.length) { %>
+    <p class="empty">Aucune demande de transfert.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>De</th>
+          <th>Vers</th>
+          <th>Parent</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% transfers.forEach(function(t) { %>
+          <tr>
+            <td>
+              <strong><%= t.student.firstName %> <%= t.student.lastName %></strong>
+              <% if (t.reason) { %><br><small><%= t.reason %></small><% } %>
+            </td>
+            <td><%= t.fromSchool.name %></td>
+            <td>
+              <%= t.toSchool.name %>
+              <% if (t.targetClass) { %><br><small><%= t.targetClass.level %> — <%= t.targetClass.name %></small><% } %>
+            </td>
+            <td><%= t.requestedBy.firstName %> <%= t.requestedBy.lastName %></td>
+            <td><span class="badge"><%= t.status %></span></td>
+            <td>
+              <% if (t.status === 'APPROVED') { %>
+                <form method="POST" action="/transfer/complete/<%= t.id %>" class="inline-form">
+                  <% const destClasses = classesBySchool[t.toSchoolId] || []; %>
+                  <select name="classId" <%= t.targetClassId ? '' : 'required' %>>
+                    <option value="">Classe</option>
+                    <% destClasses.forEach(function(c) { %>
+                      <option value="<%= c.id %>" <%= t.targetClassId === c.id ? 'selected' : '' %>>
+                        <%= c.level %> — <%= c.name %>
+                      </option>
+                    <% }) %>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary">Finaliser</button>
+                </form>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

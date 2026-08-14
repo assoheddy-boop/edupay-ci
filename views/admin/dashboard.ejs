@@ -8,9 +8,12 @@
       <p class="page-sub">Plateforme premium — gestion centralisée des écoles et modules</p>
     </div>
     <div class="page-header-actions">
-      <a href="/admin/modules" class="btn btn-primary">Gérer les modules</a>
+      <a href="/transfer/dashboard" class="btn btn-primary">Transferts</a>
+      <a href="/admin/modules" class="btn btn-outline">Gérer les modules</a>
       <a href="/admin/plans" class="btn btn-outline">Plans</a>
       <a href="/admin/organizations" class="btn btn-outline">Groupes scolaires</a>
+      <a href="/admin/finance" class="btn btn-outline">Finance</a>
+      <a href="/admin/accounting" class="btn btn-outline">Comptabilité</a>
     </div>
   </div>
 
@@ -31,9 +34,67 @@
       <span class="stat-value"><%= stats.users %></span>
       <span class="stat-label">Utilisateurs</span>
     </div>
-    <div class="stat-card stat-card-success">
-      <span class="stat-value">Premium</span>
-      <span class="stat-label">Toutes les écoles</span>
+    <div class="stat-card">
+      <span class="stat-value"><%= stats.students %></span>
+      <span class="stat-label">Élèves</span>
+    </div>
+    <div class="stat-card<%= stats.pendingTransfers > 0 ? ' stat-card-warning' : '' %>">
+      <span class="stat-value"><%= stats.pendingTransfers %></span>
+      <span class="stat-label">Transferts en attente</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Espace Super Admin</h2>
+      <p class="page-sub">Accès rapide à toutes les fonctionnalités de la plateforme.</p>
+    </div>
+    <div class="hero-features admin-hub-grid">
+      <a href="/admin/plans" class="feature-card admin-hub-card">
+        <span class="feature-icon">📋</span>
+        <h3>Plans</h3>
+        <p>Abonnements et activation des modules par plan.</p>
+      </a>
+      <a href="/admin/modules" class="feature-card admin-hub-card">
+        <span class="feature-icon">🧩</span>
+        <h3>Modules</h3>
+        <p>Activer ou désactiver les modules par école.</p>
+      </a>
+      <a href="/admin/organizations" class="feature-card admin-hub-card">
+        <span class="feature-icon">🏫</span>
+        <h3>Groupes</h3>
+        <p>Groupes scolaires, campus et administrateurs.</p>
+      </a>
+      <a href="/admin/finance" class="feature-card admin-hub-card">
+        <span class="feature-icon">💰</span>
+        <h3>Finance</h3>
+        <p>Bourses, revenus et pilotage financier global.</p>
+      </a>
+      <a href="/admin/accounting" class="feature-card admin-hub-card">
+        <span class="feature-icon">📒</span>
+        <h3>Comptabilité</h3>
+        <p>Écritures comptables et suivi des opérations.</p>
+      </a>
+      <a href="/admin/reporting" class="feature-card admin-hub-card">
+        <span class="feature-icon">📊</span>
+        <h3>Reporting</h3>
+        <p>Statistiques, exports Excel et PDF.</p>
+      </a>
+      <a href="/admin/audit" class="feature-card admin-hub-card">
+        <span class="feature-icon">🔍</span>
+        <h3>Audit</h3>
+        <p>Journal des actions et traçabilité.</p>
+      </a>
+      <a href="/transfer/dashboard" class="feature-card admin-hub-card">
+        <span class="feature-icon">🔄</span>
+        <h3>Transferts</h3>
+        <p>Demandes de changement d'école des élèves.</p>
+      </a>
+      <a href="/admin/group/redoublement" class="feature-card admin-hub-card">
+        <span class="feature-icon">📈</span>
+        <h3>Redoublement groupe</h3>
+        <p>Comparatif des causes de redoublement par école.</p>
+      </a>
     </div>
   </div>
 

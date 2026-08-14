@@ -6,12 +6,15 @@
   <div>
     <a href="/admin/dashboard" class="text-muted">← Tableau de bord</a>
     <h1>Plans d'adhésion</h1>
-    <p class="page-sub">Essentiel, Premium, Pro, Groupe — activez les modules d'un plan pour chaque école</p>
+    <p class="page-sub">Activez ou désactivez les modules de chaque plan, puis assignez le plan à une école</p>
   </div>
 </div>
 
 <% if (success === 'activated') { %>
   <div class="alert alert-success">Modules du plan activés pour l'école.</div>
+<% } %>
+<% if (success === 'modules') { %>
+  <div class="alert alert-success">Modules du plan mis à jour. Les écoles déjà sur ce plan ont été synchronisées.</div>
 <% } %>
 <% if (error === 'missing') { %>
   <div class="alert alert-error">Choisissez une école et un plan.</div>
@@ -27,20 +30,38 @@
         <span class="pricing-amount"><%= plan.price === 0 ? 'Gratuit' : plan.price.toLocaleString('fr-FR') %></span>
         <% if (plan.price > 0) { %><span class="pricing-period">FCFA / mois</span><% } %>
       </div>
-      <ul class="pricing-modules">
-        <% (plan.features || []).forEach(function(key) { %>
-          <li><span class="check">✓</span> <%= MODULES[key] ? MODULES[key].label : key %></li>
-        <% }) %>
-      </ul>
       <p class="page-sub"><%= plan.schools ? plan.schools.length : 0 %> école(s)</p>
+      <form method="POST" action="/admin/plans/<%= plan.id %>/modules" class="form">
+        <ul class="pricing-modules">
+          <% MODULE_KEYS.forEach(function(key) { %>
+            <% const included = (plan.features || []).includes(key) || MODULES[key].core; %>
+            <li>
+              <label class="checkbox-line">
+                <input
+                  type="checkbox"
+                  name="features"
+                  value="<%= key %>"
+                  <%= included ? 'checked' : '' %>
+                  <%= MODULES[key].core ? 'disabled' : '' %>
+                >
+                <span><%= MODULES[key].label %><% if (MODULES[key].core) { %> <small>(base)</small><% } %></span>
+              </label>
+              <% if (MODULES[key].core) { %>
+                <input type="hidden" name="features" value="<%= key %>">
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+        <button type="submit" class="btn btn-primary btn-sm btn-block">Enregistrer les modules</button>
+      </form>
     </article>
   <% }) %>
 </div>
 
 <div class="card" style="margin-top:2rem">
   <div class="card-header">
-    <h2>Activer les modules d'un plan</h2>
-    <p class="page-sub">Assigne le plan à l'école et bascule les modules (features) selon l'offre.</p>
+    <h2>Assigner un plan à une école</h2>
+    <p class="page-sub">L'école reçoit les modules actifs du plan choisi.</p>
   </div>
   <% if (schools.length === 0) { %>
     <p class="empty" style="padding:1.25rem">Aucune école inscrite.</p>

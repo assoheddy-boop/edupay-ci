@@ -66,7 +66,22 @@ const hrDocUpload = multer({
   },
 });
 
+const chatUpload = multer({
+  storage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExt = /\.(jpe?g|png|webp|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|mp3|wav|m4a|ogg)$/i;
+    const mimeOk = /^(image|audio)\//.test(file.mimetype)
+      || file.mimetype === 'application/pdf'
+      || file.mimetype === 'text/plain'
+      || /officedocument|msword|ms-excel|ms-powerpoint/.test(file.mimetype);
+    cb(null, allowedExt.test(ext) || mimeOk);
+  },
+});
+
 module.exports = upload;
 module.exports.csvUpload = csvUpload;
 module.exports.logoUpload = logoUpload;
 module.exports.hrDocUpload = hrDocUpload;
+module.exports.chatUpload = chatUpload;

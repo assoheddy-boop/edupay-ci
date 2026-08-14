@@ -7,6 +7,7 @@ jest.mock('../src/config/database', () => ({
   payslip: { upsert: jest.fn(), update: jest.fn(), aggregate: jest.fn() },
   salaryAdvance: { findMany: jest.fn() },
   leaveRequest: { create: jest.fn() },
+  evaluation: { create: jest.fn() },
 }));
 
 jest.mock('../src/utils/password', () => ({
@@ -42,6 +43,7 @@ const {
   createTeacherProfile,
   recordLeave,
   generatePayroll,
+  evaluateTeacher,
   parseMonth,
 } = require('../services/HRService');
 
@@ -196,5 +198,32 @@ describe('HRService.generatePayroll', () => {
       }),
     );
     expect(generatePayrollPDF).toHaveBeenCalledWith('teacher-1', { month: 8, year: 2026 });
+  });
+});
+
+describe('HRService.evaluateTeacher', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('records a score and comments', async () => {
+    prisma.teacher.findUnique.mockResolvedValue({ id: 'teacher-1', schoolId: 'school-1' });
+    prisma.evaluation.create.mockResolvedValue({
+      id: 'eval-1',
+      teacherId: 'teacher-1',
+      score: 16,
+      comments: 'Très bon trimestre',
+    });
+
+    const result = await evaluateTeacher('teacher-1', 16, 'Très bon trimestre');
+    expect(result.ok).toBe(true);
+    expect(result.evaluation.score).toBe(16);
+    expect(prisma.evaluation.create).toHaveBeenCalledWith({
+      data: { teacherId: 'teacher-1', score: 16, comments: 'Très bon trimestre' },
+    });
+  });
+
+  test('rejects an invalid score', async () => {
+    await expect(evaluateTeacher('teacher-1', 25, 'trop')).resolves.toEqual({ ok: false, error: 'score' });
   });
 });

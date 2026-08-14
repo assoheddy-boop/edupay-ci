@@ -6,7 +6,12 @@ const NOTIFICATION_TYPES = {
   payment_validated: { prisma: 'PAYMENT', title: 'Paiement validé', sms: true },
   absence_reported: { prisma: 'ABSENCE', title: 'Absence signalée', sms: true },
   new_homework: { prisma: 'HOMEWORK', title: 'Nouveau devoir', sms: false },
+  new_message: { prisma: 'GENERAL', title: 'Nouveau message', sms: false },
   payment_overdue: { prisma: 'PAYMENT', title: 'Paiement en retard', sms: true },
+  transfer_requested: { prisma: 'TRANSFER', title: 'Demande de transfert', sms: false },
+  transfer_approved: { prisma: 'TRANSFER', title: 'Transfert approuvé', sms: false },
+  transfer_rejected: { prisma: 'TRANSFER', title: 'Transfert refusé', sms: false },
+  transfer_completed: { prisma: 'TRANSFER', title: 'Transfert terminé', sms: false },
 };
 
 function assertType(type) {

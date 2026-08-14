@@ -1,0 +1,285 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('groupDashboard', { _inLayout: true }); %>
+<% const layoutName = (typeof groups !== 'undefined' && groups) ? '../layouts/adminLayout' : '../layouts/groupLayout'; %>
+<%- include(layoutName, { body: content, title: 'Comparatif redoublement — Groupe' }) %>
+<% } else { %>
+<% const schoolRows = (stats && stats.schools) ? stats.schools : []; %>
+<% const groupTotals = (stats && stats.groupTotals) ? stats.groupTotals : { totalRedoublants: 0, causeStats: {}, atRiskCount: 0 }; %>
+<% const thresholds = (stats && stats.thresholds) ? stats.thresholds : { absences: 30, grade: 10, atRiskRate: 0.2 }; %>
+<% const adminBase = groups ? '/admin/group/redoublement' : '/reinscription/group/' + groupId + '/dashboard'; %>
+<% const selectedSchool = schoolRows.find(function(s) { return s.schoolId === selectedSchoolId; }) || schoolRows[0] || null; %>
+
+<div class="page-header">
+  <div>
+    <h1>Comparatif redoublement par école</h1>
+    <p class="page-sub">
+      <% if (group) { %>
+        Groupe : <strong><%= group.name %></strong> — année <%= schoolYear %>
+      <% } else { %>
+        Sélectionnez un groupe scolaire
+      <% } %>
+    </p>
+  </div>
+  <% if (groupId) { %>
+  <div>
+    <a href="/reinscription/group/causes/export/<%= groupId %>.pdf?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Exporter PDF</a>
+    <a href="/reinscription/group/causes/export/<%= groupId %>.xlsx?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Exporter Excel</a>
+  </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Filtrer</h2></div>
+  <form method="GET" action="<%= adminBase %>" class="form inline-form">
+    <% if (groups) { %>
+    <div class="form-group">
+      <label>Groupe scolaire</label>
+      <select name="groupId" onchange="this.form.submit()">
+        <% groups.forEach(function(g) { %>
+          <option value="<%= g.id %>" <%= groupId === g.id ? 'selected' : '' %>><%= g.name %> (<%= g._count.schools %> école<%= g._count.schools > 1 ? 's' : '' %>)</option>
+        <% }) %>
+      </select>
+    </div>
+    <% } %>
+    <div class="form-group">
+      <label>Année scolaire</label>
+      <input type="text" name="schoolYear" value="<%= schoolYear %>" placeholder="2025-2026">
+    </div>
+    <% if (schoolRows.length) { %>
+    <div class="form-group">
+      <label>École (graphique causes)</label>
+      <select name="schoolId">
+        <% schoolRows.forEach(function(s) { %>
+          <option value="<%= s.schoolId %>" <%= selectedSchoolId === s.schoolId ? 'selected' : '' %>><%= s.schoolName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% } %>
+    <button type="submit" class="btn btn-primary">Appliquer</button>
+  </form>
+</div>
+
+<% if (groupId && stats && stats.ok) { %>
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= schoolRows.length %></span>
+    <span class="stat-label">Écoles</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= groupTotals.totalRedoublants || 0 %></span>
+    <span class="stat-label">Redoublants (groupe)</span>
+  </div>
+  <div class="stat-card<%= groupTotals.atRiskCount > 0 ? ' stat-card-warning' : '' %>">
+    <span class="stat-value"><%= groupTotals.atRiskCount || 0 %></span>
+    <span class="stat-label">Écoles à risque (&gt; <%= Math.round((thresholds.atRiskRate || 0.2) * 100) %>%)</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Comparatif redoublement par école</h2></div>
+  <p class="page-sub" style="padding:0 1rem 0.5rem">
+    Seuils : absences &gt; <%= thresholds.absences %> jours, moyenne &lt; <%= thresholds.grade %>/20.
+    École à risque si taux de redoublement &gt; <%= Math.round((thresholds.atRiskRate || 0.2) * 100) %>%.
+  </p>
+  <% if (!schoolRows.length) { %>
+    <p class="empty">Aucune école rattachée à ce groupe.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Total redoublants</th>
+          <th>Absences moyennes</th>
+          <th>Notes moyennes</th>
+          <th>Causes principales</th>
+          <th>Taux</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% schoolRows.forEach(function(s) { %>
+          <tr class="<%= s.atRisk ? 'row-warning' : '' %>">
+            <td>
+              <strong><%= s.schoolName %></strong>
+              <% if (s.atRisk) { %><span class="badge badge-warning">À risque</span><% } %>
+            </td>
+            <td><%= s.totalRedoublants %></td>
+            <td><%= s.absencesAvg %> jours</td>
+            <td><%= s.notesAvg %></td>
+            <td><%= s.primaryCause %></td>
+            <td><%= Math.round((s.repeatRate || 0) * 100) %>%</td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<% if (schoolRows.length) { %>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Redoublants par école</h2></div>
+    <div style="max-width:520px;margin:0 auto">
+      <canvas id="groupRepeatersBarChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Causes — groupe (total)</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="groupCausesPieChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Causes par école (empilé)</h2></div>
+    <div style="max-width:640px;margin:0 auto">
+      <canvas id="groupCausesStackedBarChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Absences vs notes moyennes</h2></div>
+    <div style="max-width:640px;margin:0 auto">
+      <canvas id="groupMetricsGroupedBarChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<% if (selectedSchool) { %>
+<div class="card">
+  <div class="card-header"><h2>Causes — <%= selectedSchool.schoolName %></h2></div>
+  <div style="max-width:360px;margin:0 auto">
+    <canvas id="groupSchoolCausesPieChart"></canvas>
+  </div>
+  <% if (selectedSchool.genderSplit && selectedSchool.genderSplit.total) { %>
+  <p class="page-sub" style="text-align:center;padding-top:0.5rem">
+    Genre redoublants : <%= Math.round((selectedSchool.genderSplit.girlsPct || 0) * 100) %>% filles /
+    <%= Math.round((selectedSchool.genderSplit.boysPct || 0) * 100) %>% garçons
+  </p>
+  <% } %>
+</div>
+<% } %>
+
+<script src="/js/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const schoolRows = <%- JSON.stringify(schoolRows) %>;
+  const groupCauseStats = <%- JSON.stringify(groupTotals.causeStats || {}) %>;
+  const selectedSchool = <%- JSON.stringify(selectedSchool) %>;
+  const absencesColor = '#e67e22';
+  const notesColor = '#3498db';
+  const mixteColor = '#9b59b6';
+  const autreColor = '#95a5a6';
+  const repeatedColor = '#e74c3c';
+
+  new Chart(document.getElementById('groupRepeatersBarChart'), {
+    type: 'bar',
+    data: {
+      labels: schoolRows.map(function(s) { return s.schoolName; }),
+      datasets: [{
+        label: 'Redoublants',
+        data: schoolRows.map(function(s) { return s.totalRedoublants; }),
+        backgroundColor: schoolRows.map(function(s) { return s.atRisk ? '#c0392b' : repeatedColor; }),
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    },
+  });
+
+  new Chart(document.getElementById('groupCausesPieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Absences élevées', 'Notes faibles', 'Mixte', 'Autre'],
+      datasets: [{
+        data: [
+          groupCauseStats.absences || 0,
+          groupCauseStats.notes || 0,
+          groupCauseStats.mixte || 0,
+          groupCauseStats.autre || 0,
+        ],
+        backgroundColor: [absencesColor, notesColor, mixteColor, autreColor],
+      }],
+    },
+  });
+
+  new Chart(document.getElementById('groupCausesStackedBarChart'), {
+    type: 'bar',
+    data: {
+      labels: schoolRows.map(function(s) { return s.schoolName; }),
+      datasets: [
+        {
+          label: 'Absences élevées',
+          data: schoolRows.map(function(s) { return s.causeStats.absences; }),
+          backgroundColor: absencesColor,
+        },
+        {
+          label: 'Notes faibles',
+          data: schoolRows.map(function(s) { return s.causeStats.notes; }),
+          backgroundColor: notesColor,
+        },
+        {
+          label: 'Mixte',
+          data: schoolRows.map(function(s) { return s.causeStats.mixte; }),
+          backgroundColor: mixteColor,
+        },
+        {
+          label: 'Autre',
+          data: schoolRows.map(function(s) { return s.causeStats.autre; }),
+          backgroundColor: autreColor,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+      },
+    },
+  });
+
+  new Chart(document.getElementById('groupMetricsGroupedBarChart'), {
+    type: 'bar',
+    data: {
+      labels: schoolRows.map(function(s) { return s.schoolName; }),
+      datasets: [
+        {
+          label: 'Absences moyennes (jours)',
+          data: schoolRows.map(function(s) { return s.absencesAvg; }),
+          backgroundColor: absencesColor,
+        },
+        {
+          label: 'Notes moyennes (/20)',
+          data: schoolRows.map(function(s) { return s.notesAvg; }),
+          backgroundColor: notesColor,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+
+  if (selectedSchool && document.getElementById('groupSchoolCausesPieChart')) {
+    const cs = selectedSchool.causeStats || {};
+    new Chart(document.getElementById('groupSchoolCausesPieChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Absences élevées', 'Notes faibles', 'Mixte', 'Autre'],
+        datasets: [{
+          data: [cs.absences || 0, cs.notes || 0, cs.mixte || 0, cs.autre || 0],
+          backgroundColor: [absencesColor, notesColor, mixteColor, autreColor],
+        }],
+      },
+    });
+  }
+</script>
+<% } %>
+<% } else if (groupId && stats && !stats.ok) { %>
+  <div class="alert alert-error">Impossible de charger les statistiques du groupe.</div>
+<% } %>
+<% } %>

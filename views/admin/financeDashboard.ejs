@@ -1,0 +1,137 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('financeDashboard', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Finance consolidée' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Finance consolidée</h1>
+    <p class="page-sub">Paiements, comptabilité et bourses — toutes les écoles</p>
+  </div>
+  <a href="/admin/accounting" class="btn btn-primary">Journal comptable</a>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === 'scholarship') { %><div class="alert alert-success">Bourse enregistrée.</div><% } %>
+<% if (success === 'status') { %><div class="alert alert-success">Statut de bourse mis à jour.</div><% } %>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.schools %></span>
+    <span class="stat-label">Écoles</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.students %></span>
+    <span class="stat-label">Élèves</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.paymentsTotal.toLocaleString('fr-FR') %></span>
+    <span class="stat-label">Paiements validés (FCFA)</span>
+  </div>
+  <div class="stat-card <%= stats.balance >= 0 ? 'stat-card-success' : 'stat-card-warning' %>">
+    <span class="stat-value"><%= stats.balance.toLocaleString('fr-FR') %></span>
+    <span class="stat-label">Solde comptable</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Par école</h2></div>
+  <table class="table">
+    <thead>
+      <tr><th>École</th><th>Élèves</th><th>Paiements</th><th>Recettes</th><th>Dépenses</th><th>Solde</th></tr>
+    </thead>
+    <tbody>
+      <% schools.forEach(function(s) { %>
+        <tr>
+          <td><strong><%= s.name %></strong></td>
+          <td><%= s._count.students %></td>
+          <td><%= s.payments.toLocaleString('fr-FR') %></td>
+          <td><%= s.income.toLocaleString('fr-FR') %></td>
+          <td><%= s.expense.toLocaleString('fr-FR') %></td>
+          <td><strong><%= s.balance.toLocaleString('fr-FR') %></strong></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouvelle bourse</h2>
+    <form method="POST" action="/admin/scholarships" class="form">
+      <div class="form-group">
+        <label>Élève</label>
+        <select name="studentId" required>
+          <option value="">— Choisir —</option>
+          <% students.forEach(function(st) { %>
+            <option value="<%= st.id %>">
+              <%= st.lastName %> <%= st.firstName %>
+              — <%= st.school ? st.school.name : st.class.name %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select name="type" required>
+          <option value="MERITE">Mérite</option>
+          <option value="SOCIAL">Sociale</option>
+          <option value="SPORT">Sport</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Montant (FCFA)</label>
+        <input type="number" name="amount" min="1" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Créer</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Bourses</h2>
+    <p class="page-sub">
+      <%= scholarshipStats.pending %> en attente ·
+      <%= scholarshipStats.approved %> approuvées ·
+      <%= scholarshipStats.paid %> versées ·
+      <%= scholarshipStats.amount.toLocaleString('fr-FR') %> FCFA
+    </p>
+    <% if (!scholarships.length) { %>
+      <p class="empty">Aucune bourse.</p>
+    <% } else { %>
+      <table class="table">
+        <thead><tr><th>Élève</th><th>Type</th><th>Montant</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          <% scholarships.forEach(function(b) { %>
+            <tr>
+              <td>
+                <strong><%= b.student.lastName %> <%= b.student.firstName %></strong><br>
+                <small><%= b.student.school ? b.student.school.name : '—' %></small>
+              </td>
+              <td><%= b.type %></td>
+              <td><%= b.amount.toLocaleString('fr-FR') %></td>
+              <td><span class="badge"><%= b.status %></span></td>
+              <td>
+                <% if (b.status === 'PENDING') { %>
+                  <form method="POST" action="/admin/scholarships/<%= b.id %>/status" class="inline-form">
+                    <input type="hidden" name="status" value="APPROVED">
+                    <button class="btn btn-sm btn-primary" type="submit">Approuver</button>
+                  </form>
+                  <form method="POST" action="/admin/scholarships/<%= b.id %>/status" class="inline-form">
+                    <input type="hidden" name="status" value="REJECTED">
+                    <button class="btn btn-sm btn-outline" type="submit">Refuser</button>
+                  </form>
+                <% } else if (b.status === 'APPROVED') { %>
+                  <form method="POST" action="/admin/scholarships/<%= b.id %>/status" class="inline-form">
+                    <input type="hidden" name="status" value="PAID">
+                    <button class="btn btn-sm btn-primary" type="submit">Marquer versée</button>
+                  </form>
+                <% } else { %>—<% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+<% } %>

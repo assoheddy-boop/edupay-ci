@@ -1,0 +1,48 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('privacy', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Confidentialité' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Confidentialité</h1>
+  <p class="page-sub">Gérez les consentements liés à vos données et à celles de vos enfants</p>
+</div>
+
+<% if (error) { %><div class="alert alert-error">Impossible d'enregistrer ce consentement. Réessayez.</div><% } %>
+<% if (success) { %><div class="alert alert-success">Votre choix a été enregistré.</div><% } %>
+
+<% consents.forEach(function(c) { %>
+  <div class="card">
+    <h2><%= labels[c.type] || c.type %></h2>
+    <p class="page-sub"><%= hints[c.type] || '' %></p>
+    <p>
+      Statut :
+      <% if (c.status === 'GRANTED') { %>
+        <strong>Accordé</strong>
+      <% } else if (c.status === 'REVOKED') { %>
+        <strong>Révoqué</strong>
+      <% } else { %>
+        <strong>En attente</strong>
+      <% } %>
+      <% if (c.updatedAt) { %>
+        <small>— mis à jour le <%= new Date(c.updatedAt).toLocaleString('fr-FR') %></small>
+      <% } %>
+    </p>
+    <div class="form-row">
+      <% if (c.status !== 'GRANTED') { %>
+        <form method="POST" action="/parent/privacy" class="form form-inline">
+          <input type="hidden" name="type" value="<%= c.type %>">
+          <input type="hidden" name="action" value="grant">
+          <button type="submit" class="btn btn-primary btn-sm">Accorder</button>
+        </form>
+      <% } %>
+      <% if (c.status !== 'REVOKED') { %>
+        <form method="POST" action="/parent/privacy" class="form form-inline">
+          <input type="hidden" name="type" value="<%= c.type %>">
+          <input type="hidden" name="action" value="revoke">
+          <button type="submit" class="btn btn-outline btn-sm">Révoquer</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+<% }) %>
+<% } %>

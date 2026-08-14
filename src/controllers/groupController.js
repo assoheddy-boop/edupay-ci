@@ -72,7 +72,7 @@ async function dashboard(req, res) {
 
   const maxRevenue = Math.max(1, ...snapshots.map((s) => s.revenue));
 
-  res.render('group/dashboard', {
+  res.render('group/groupDashboard', {
     user: req.user,
     organization,
     totals,

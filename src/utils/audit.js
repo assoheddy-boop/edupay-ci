@@ -1,6 +1,38 @@
 const prisma = require('../config/database');
 
-async function logAudit({ action, entity, entityId, user, details, ip, schoolId }) {
+const SENSITIVE_PREFIXES = [
+  'login',
+  'school_modules',
+  'plan_modules',
+  'school_plan',
+  'scholarship',
+  'accounting',
+  'transfer',
+  'payroll',
+];
+
+function isSensitiveAction(action) {
+  if (!action) return false;
+  const value = String(action).toLowerCase();
+  return SENSITIVE_PREFIXES.some((prefix) => value === prefix || value.startsWith(`${prefix}_`) || value.startsWith(prefix));
+}
+
+async function writeAuditTrail({ userId, action, timestamp } = {}) {
+  if (!action) return;
+  try {
+    await prisma.auditTrail.create({
+      data: {
+        userId: userId || null,
+        action: String(action).slice(0, 120),
+        timestamp: timestamp || new Date(),
+      },
+    });
+  } catch (err) {
+    console.error('[AuditTrail]', err.message);
+  }
+}
+
+async function logAudit({ action, entity, entityId, user, details, ip, schoolId, sensitive } = {}) {
   try {
     let resolvedSchoolId = schoolId;
     if (!resolvedSchoolId && user?.school?.id) resolvedSchoolId = user.school.id;
@@ -20,6 +52,10 @@ async function logAudit({ action, entity, entityId, user, details, ip, schoolId 
     });
   } catch (err) {
     console.error('[AuditLog]', err.message);
+  }
+
+  if (sensitive === true || isSensitiveAction(action)) {
+    await writeAuditTrail({ userId: user?.id, action });
   }
 }
 
@@ -47,4 +83,34 @@ function auditMiddleware(action, entity) {
   };
 }
 
-module.exports = { logAudit, auditMiddleware };
+async function listAuditTrail({ userId, action, from, to, take = 500 } = {}) {
+  const timestamp = {};
+  if (from) {
+    const start = new Date(from);
+    if (!Number.isNaN(start.getTime())) timestamp.gte = start;
+  }
+  if (to) {
+    const end = new Date(to);
+    if (!Number.isNaN(end.getTime())) {
+      end.setHours(23, 59, 59, 999);
+      timestamp.lte = end;
+    }
+  }
+
+  const where = {
+    ...(userId ? { userId } : {}),
+    ...(action ? { action } : {}),
+    ...(Object.keys(timestamp).length ? { timestamp } : {}),
+  };
+
+  return prisma.auditTrail.findMany({
+    where,
+    include: {
+      user: { select: { id: true, email: true, firstName: true, lastName: true, role: true } },
+    },
+    orderBy: { timestamp: 'desc' },
+    take,
+  });
+}
+
+module.exports = { logAudit, auditMiddleware, writeAuditTrail, listAuditTrail, isSensitiveAction };

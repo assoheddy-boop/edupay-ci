@@ -1,0 +1,22 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('health', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Santé' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Santé</h1>
+  <p class="page-sub">Signalements de l'école</p>
+</div>
+<% if (!children.length) { %><p class="empty">Aucun enfant lié.</p><% } %>
+<% children.forEach(function(link) { const s = link.student; %>
+  <div class="card">
+    <h2><%= s.firstName %> <%= s.lastName %></h2>
+    <% if (!s.healthIncidents.length) { %><p class="empty">Aucun incident.</p><% } %>
+    <% s.healthIncidents.forEach(function(h) { %>
+      <p class="health-alert">
+        <strong><%= h.type %></strong> — <%= h.description %>
+        <small><%= new Date(h.createdAt).toLocaleString('fr-FR') %></small>
+      </p>
+    <% }) %>
+  </div>
+<% }) %>
+<% } %>

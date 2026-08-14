@@ -1,0 +1,381 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('reinscriptionDashboard', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Réinscriptions' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Réinscriptions</h1>
+    <p class="page-sub">Promotions et redoublements — année <%= schoolYear %></p>
+  </div>
+  <div>
+    <a href="/reinscription/export/<%= schoolId %>.pdf?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Exporter PDF</a>
+    <a href="/reinscription/export/<%= schoolId %>.xlsx?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Exporter Excel</a>
+    <a href="/reinscription/causes/export/<%= schoolId %>.pdf?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Causes PDF</a>
+    <a href="/reinscription/causes/export/<%= schoolId %>.xlsx?schoolYear=<%= encodeURIComponent(schoolYear) %>" class="btn btn-outline">Causes Excel</a>
+  </div>
+</div>
+
+<% if (error && errors[error]) { %><div class="alert alert-error"><%= errors[error] %></div><% } %>
+<% if (success === '1') { %><div class="alert alert-success">Réinscription enregistrée.</div><% } %>
+
+<div class="card">
+  <div class="card-header"><h2>Filtrer</h2></div>
+  <form method="GET" action="/reinscription/dashboard" class="form inline-form">
+    <div class="form-group">
+      <label>Année scolaire</label>
+      <input type="text" name="schoolYear" value="<%= schoolYear %>" placeholder="2025-2026">
+    </div>
+    <% if (user.role === 'SUPER_ADMIN') { %>
+      <input type="hidden" name="schoolId" value="<%= schoolId %>">
+    <% } %>
+    <button type="submit" class="btn btn-primary">Appliquer</button>
+  </form>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.total || 0 %></span>
+    <span class="stat-label">Total inscrits</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.promoted || 0 %></span>
+    <span class="stat-label">Promus</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= stats.repeated || 0 %></span>
+    <span class="stat-label">Redoublants</span>
+  </div>
+  <% if (stats.repeatGender && stats.repeatGender.total) { %>
+  <div class="stat-card">
+    <span class="stat-value"><%= Math.round((stats.repeatGender.girlsPct || 0) * 100) %>% / <%= Math.round((stats.repeatGender.boysPct || 0) * 100) %>%</span>
+    <span class="stat-label">Filles / Garçons redoublants</span>
+  </div>
+  <% } %>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Promus vs redoublants</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="promotionChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Redoublants par classe</h2></div>
+    <div style="max-width:480px;margin:0 auto">
+      <canvas id="repeatersByClassChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<% if (stats.historicalRepeatRate && stats.historicalRepeatRate.length > 1) { %>
+<div class="card">
+  <div class="card-header"><h2>Taux de redoublement par année</h2></div>
+  <div style="max-width:640px;margin:0 auto">
+    <canvas id="historicalChart"></canvas>
+  </div>
+</div>
+<% } %>
+
+<% const causes = (causeStats && causeStats.causes) ? causeStats.causes : []; %>
+<% const causeCounts = (causeStats && causeStats.causeCounts) ? causeStats.causeCounts : {}; %>
+<% const absCmp = (causeStats && causeStats.absencesComparison) ? causeStats.absencesComparison : {}; %>
+
+<% if (causes.length) { %>
+<div class="card">
+  <div class="card-header"><h2>Analyse des causes de redoublement</h2></div>
+  <p class="page-sub" style="padding:0 1rem 0.5rem">
+    Seuils : absences &gt; <%= (causeStats.thresholds && causeStats.thresholds.absences) || 30 %> jours,
+    moyenne &lt; <%= (causeStats.thresholds && causeStats.thresholds.grade) || 10 %>/20
+  </p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Élève</th>
+        <th>Classe</th>
+        <th>Redoublant</th>
+        <th>Absences</th>
+        <th>Moyenne</th>
+        <th>Cause probable</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% causes.forEach(function(c) { %>
+        <tr>
+          <td><strong><%= c.firstName %> <%= c.lastName %></strong></td>
+          <td><%= c.classLevel ? c.classLevel + ' — ' + c.className : c.className %></td>
+          <td>Oui</td>
+          <td><%= c.absences %></td>
+          <td><%= c.avgGrade %></td>
+          <td><%= c.cause %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Répartition des causes (%)</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="causesPieChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Absences moyennes : redoublants vs autres</h2></div>
+    <div style="max-width:480px;margin:0 auto">
+      <canvas id="absencesCompareChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<% if (causeStats.genderByCause && Object.keys(causeStats.genderByCause).length) { %>
+<div class="card">
+  <div class="card-header"><h2>Redoublements par cause et genre</h2></div>
+  <div style="max-width:640px;margin:0 auto">
+    <canvas id="genderCauseChart"></canvas>
+  </div>
+</div>
+<% } %>
+
+<% if (causeStats.historicalCauses && causeStats.historicalCauses.length > 1) { %>
+<div class="card">
+  <div class="card-header"><h2>Causes historiques par année</h2></div>
+  <div style="max-width:720px;margin:0 auto">
+    <canvas id="historicalCausesChart"></canvas>
+  </div>
+</div>
+<% } %>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h2>Élèves</h2></div>
+  <% if (!rows.length) { %>
+    <p class="empty">Aucun élève dans cette école.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Classe actuelle</th>
+          <th>Nouvelle classe</th>
+          <th>Redoublant</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(row) { %>
+          <tr>
+            <td><strong><%= row.student.firstName %> <%= row.student.lastName %></strong></td>
+            <td><%= row.currentClass ? row.currentClass.level + ' — ' + row.currentClass.name : '—' %></td>
+            <td>
+              <% if (row.enrolled && row.newClass) { %>
+                <%= row.newClass.level %> — <%= row.newClass.name %>
+              <% } else { %>
+                —
+              <% } %>
+            </td>
+            <td>
+              <% if (row.enrolled) { %>
+                <%= row.repeatYear ? 'Oui' : 'Non' %>
+              <% } else { %>
+                —
+              <% } %>
+            </td>
+            <td>
+              <% if (!row.enrolled) { %>
+                <form method="POST" action="/reinscription/<%= row.student.id %>" class="inline-form">
+                  <input type="hidden" name="schoolYear" value="<%= schoolYear %>">
+                  <select name="nextClassId" required>
+                    <option value="">Classe suivante</option>
+                    <% classes.forEach(function(c) { %>
+                      <option value="<%= c.id %>" <%= c.id === row.currentClass.id ? 'selected' : '' %>>
+                        <%= c.level %> — <%= c.name %>
+                      </option>
+                    <% }) %>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary">Réinscrire</button>
+                </form>
+              <% } else { %>
+                <span class="badge">Inscrit</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const promotedColor = '#27ae60';
+  const repeatedColor = '#e74c3c';
+  const boysColor = '#3498db';
+  const girlsColor = '#e74c3c';
+
+  new Chart(document.getElementById('promotionChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Promus', 'Redoublants'],
+      datasets: [{
+        data: [<%= stats.promoted || 0 %>, <%= stats.repeated || 0 %>],
+        backgroundColor: [promotedColor, repeatedColor],
+      }],
+    },
+  });
+
+  const repeatersByClass = <%- JSON.stringify(stats.repeatersByClass || []) %>;
+  new Chart(document.getElementById('repeatersByClassChart'), {
+    type: 'bar',
+    data: {
+      labels: repeatersByClass.map(function(c) { return c.level + ' — ' + c.className; }),
+      datasets: [{
+        label: 'Redoublants',
+        data: repeatersByClass.map(function(c) { return c.count; }),
+        backgroundColor: repeatedColor,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    },
+  });
+
+  <% if (stats.historicalRepeatRate && stats.historicalRepeatRate.length > 1) { %>
+  const historical = <%- JSON.stringify(stats.historicalRepeatRate) %>;
+  new Chart(document.getElementById('historicalChart'), {
+    type: 'line',
+    data: {
+      labels: historical.map(function(h) { return h.schoolYear; }),
+      datasets: [{
+        label: 'Taux de redoublement',
+        data: historical.map(function(h) { return Math.round(h.rate * 100); }),
+        borderColor: boysColor,
+        backgroundColor: 'rgba(52, 152, 219, 0.15)',
+        fill: true,
+        tension: 0.2,
+      }],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { callback: function(v) { return v + '%'; } },
+        },
+      },
+    },
+  });
+  <% } %>
+
+  <% if (causes.length) { %>
+  const causeCounts = <%- JSON.stringify(causeCounts) %>;
+  const causeLabels = Object.keys(causeCounts).filter(function(k) { return causeCounts[k] > 0; });
+  const causeData = causeLabels.map(function(k) { return causeCounts[k]; });
+  const causeColors = {
+    'Absences élevées': '#e67e22',
+    'Notes faibles': '#e74c3c',
+    'Mixte': '#9b59b6',
+    'Autre': '#95a5a6',
+  };
+
+  if (document.getElementById('causesPieChart')) {
+    new Chart(document.getElementById('causesPieChart'), {
+      type: 'pie',
+      data: {
+        labels: causeLabels,
+        datasets: [{
+          data: causeData,
+          backgroundColor: causeLabels.map(function(l) { return causeColors[l] || '#bdc3c7'; }),
+        }],
+      },
+      options: {
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const total = causeData.reduce(function(a, b) { return a + b; }, 0);
+                const pct = total ? Math.round((ctx.raw / total) * 100) : 0;
+                return ctx.label + ' : ' + ctx.raw + ' (' + pct + '%)';
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  const absCmp = <%- JSON.stringify(absCmp) %>;
+  if (document.getElementById('absencesCompareChart')) {
+    new Chart(document.getElementById('absencesCompareChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Redoublants', 'Non-redoublants'],
+        datasets: [{
+          label: 'Absences moyennes',
+          data: [absCmp.repeatersAvg || 0, absCmp.nonRepeatersAvg || 0],
+          backgroundColor: [repeatedColor, promotedColor],
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  }
+
+  <% if (causeStats.genderByCause && Object.keys(causeStats.genderByCause).length) { %>
+  const genderByCause = <%- JSON.stringify(causeStats.genderByCause) %>;
+  const genderCauseLabels = Object.keys(genderByCause);
+  if (document.getElementById('genderCauseChart')) {
+    new Chart(document.getElementById('genderCauseChart'), {
+      type: 'bar',
+      data: {
+        labels: genderCauseLabels,
+        datasets: [
+          { label: 'Garçons', data: genderCauseLabels.map(function(k) { return genderByCause[k].M || 0; }), backgroundColor: boysColor },
+          { label: 'Filles', data: genderCauseLabels.map(function(k) { return genderByCause[k].F || 0; }), backgroundColor: girlsColor },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      },
+    });
+  }
+  <% } %>
+
+  <% if (causeStats.historicalCauses && causeStats.historicalCauses.length > 1) { %>
+  const historicalCauses = <%- JSON.stringify(causeStats.historicalCauses) %>;
+  const histCauseKeys = ['Absences élevées', 'Notes faibles', 'Mixte', 'Autre'];
+  if (document.getElementById('historicalCausesChart')) {
+    new Chart(document.getElementById('historicalCausesChart'), {
+      type: 'bar',
+      data: {
+        labels: historicalCauses.map(function(h) { return h.schoolYear; }),
+        datasets: histCauseKeys.map(function(key) {
+          return {
+            label: key,
+            data: historicalCauses.map(function(h) { return h[key] || 0; }),
+            backgroundColor: causeColors[key] || '#bdc3c7',
+          };
+        }),
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+        },
+      },
+    });
+  }
+  <% } %>
+  <% } %>
+</script>
+<% } %>
