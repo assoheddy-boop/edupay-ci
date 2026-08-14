@@ -31,7 +31,7 @@ const PLANS = {
     modules: [
       'payments', 'grades', 'absences', 'homeworks', 'chat', 'bulletins',
       'transport', 'canteen', 'behavior', 'health', 'pickup', 'activities',
-      'lost_items', 'stats',
+      'lost_items', 'stats', 'redoublementAnalysis',
     ],
   },
   pro: {

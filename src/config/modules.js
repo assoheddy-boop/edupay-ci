@@ -13,6 +13,7 @@ const MODULES = {
   activities: { label: 'Activités extrascolaires', description: 'Inscriptions activités', default: true },
   lost_items: { label: 'Objets perdus', description: 'Objets trouvés à l\'école', default: true },
   stats: { label: 'Statistiques & exports', description: 'Tableaux de bord et Excel', default: true },
+  redoublementAnalysis: { label: 'Analyse redoublement par plan', description: 'Comparatif des causes de redoublement par formule d\'abonnement', default: false },
   accounting: { label: 'Comptabilité avancée', description: 'Trésorerie, dépenses, rapports financiers', default: true },
   multi_campus: { label: 'Multi-campus', description: 'Vue groupe et campus multiples', default: true },
   hr: { label: 'Ressources humaines', description: 'Dossiers personnel, paie, congés, présence et évaluations', default: true },

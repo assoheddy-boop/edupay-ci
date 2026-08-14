@@ -43,7 +43,7 @@
   </div>
   <div class="stat-card">
     <span class="stat-value"><%= stats.repeated || 0 %></span>
-    <span class="stat-label">Redoublants</span>
+    <span class="stat-label">Redoublants<%- include('../partials/_hint', { text: 'Élèves ayant redoublé leur année scolaire.', label: 'Redoublants' }) %></span>
   </div>
   <% if (stats.repeatGender && stats.repeatGender.total) { %>
   <div class="stat-card">
@@ -55,7 +55,7 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Promus vs redoublants</h2></div>
+    <div class="card-header"><h2>Promus vs redoublants<%- include('../partials/_hint', { text: 'Répartition des élèves promus en classe supérieure vs redoublants.', label: 'Promus vs redoublants' }) %></h2></div>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="promotionChart"></canvas>
     </div>
@@ -83,7 +83,7 @@
 
 <% if (causes.length) { %>
 <div class="card">
-  <div class="card-header"><h2>Analyse des causes de redoublement</h2></div>
+  <div class="card-header"><h2>Analyse des causes de redoublement<%- include('../partials/_hint', { text: 'Causes probables identifiées selon les seuils d\'absences et de notes.', label: 'Causes de redoublement' }) %></h2></div>
   <p class="page-sub" style="padding:0 1rem 0.5rem">
     Seuils : absences &gt; <%= (causeStats.thresholds && causeStats.thresholds.absences) || 30 %> jours,
     moyenne &lt; <%= (causeStats.thresholds && causeStats.thresholds.grade) || 10 %>/20
@@ -116,7 +116,7 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Répartition des causes (%)</h2></div>
+    <div class="card-header"><h2>Répartition des causes (%)<%- include('../partials/_hint', { text: 'Part de chaque cause : absences élevées, notes faibles, mixte ou autre.', label: 'Répartition des causes' }) %></h2></div>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="causesPieChart"></canvas>
     </div>

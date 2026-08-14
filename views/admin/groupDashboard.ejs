@@ -71,12 +71,12 @@
   </div>
   <div class="stat-card<%= groupTotals.atRiskCount > 0 ? ' stat-card-warning' : '' %>">
     <span class="stat-value"><%= groupTotals.atRiskCount || 0 %></span>
-    <span class="stat-label">Écoles à risque (&gt; <%= Math.round((thresholds.atRiskRate || 0.2) * 100) %>%)</span>
+    <span class="stat-label">Écoles à risque (&gt; <%= Math.round((thresholds.atRiskRate || 0.2) * 100) %>%)<%- include('../partials/_hint', { text: 'Taux de redoublement supérieur à 20 %.', label: 'École à risque' }) %></span>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-header"><h2>Comparatif redoublement par école</h2></div>
+  <div class="card-header"><h2>Comparatif redoublement par école<%- include('../partials/_hint', { text: 'Compare le taux et les causes de redoublement entre les écoles du groupe.', label: 'Comparatif redoublement' }) %></h2></div>
   <p class="page-sub" style="padding:0 1rem 0.5rem">
     Seuils : absences &gt; <%= thresholds.absences %> jours, moyenne &lt; <%= thresholds.grade %>/20.
     École à risque si taux de redoublement &gt; <%= Math.round((thresholds.atRiskRate || 0.2) * 100) %>%.
@@ -117,13 +117,13 @@
 <% if (schoolRows.length) { %>
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Redoublants par école</h2></div>
+    <div class="card-header"><h2>Redoublants par école<%- include('../partials/_hint', { text: 'Nombre total de redoublants par établissement (rouge si à risque).', label: 'Redoublants par école' }) %></h2></div>
     <div style="max-width:520px;margin:0 auto">
       <canvas id="groupRepeatersBarChart"></canvas>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><h2>Causes — groupe (total)</h2></div>
+    <div class="card-header"><h2>Causes — groupe (total)<%- include('../partials/_hint', { text: 'Répartition globale des causes de redoublement sur tout le groupe.', label: 'Causes groupe' }) %></h2></div>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="groupCausesPieChart"></canvas>
     </div>

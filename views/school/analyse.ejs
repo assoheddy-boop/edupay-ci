@@ -45,14 +45,14 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Effectifs filles / garçons</h2></div>
+    <div class="card-header"><h2>Effectifs filles / garçons<%- include('../partials/_hint', { text: 'Répartition des élèves par genre (M/F) pour cette école.', label: 'Effectifs filles/garçons' }) %></h2></div>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="genderChart"></canvas>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h2>Absences et moyennes par genre</h2></div>
+    <div class="card-header"><h2>Absences et moyennes par genre<%- include('../partials/_hint', { text: 'Comparatif des absences et moyennes de notes entre garçons et filles.', label: 'Absences et moyennes' }) %></h2></div>
     <div style="max-width:480px;margin:0 auto 1rem">
       <canvas id="absenceSuccessGenderChart"></canvas>
     </div>
@@ -84,7 +84,7 @@
 <% const causeCounts = (causeStats && causeStats.causeCounts) ? causeStats.causeCounts : {}; %>
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h2>Réinscription — promus vs redoublants</h2></div>
+    <div class="card-header"><h2>Réinscription — promus vs redoublants<%- include('../partials/_hint', { text: 'Nombre d\'élèves promus en classe supérieure vs redoublants pour l\'année.', label: 'Promus vs redoublants' }) %></h2></div>
     <p class="page-sub" style="padding:0 1rem">Année <%= schoolYear %></p>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="promotionChart"></canvas>
@@ -103,21 +103,21 @@
 
   <% if (Object.keys(causeCounts).some(function(k) { return causeCounts[k] > 0; })) { %>
   <div class="card">
-    <div class="card-header"><h2>Causes de redoublement</h2></div>
+    <div class="card-header"><h2>Causes de redoublement<%- include('../partials/_hint', { text: 'Répartition des causes probables : absences élevées, notes faibles ou mixte.', label: 'Causes de redoublement' }) %></h2></div>
     <div style="max-width:360px;margin:0 auto">
       <canvas id="causesPieChart"></canvas>
     </div>
   </div>
   <% } else { %>
   <div class="card">
-    <div class="card-header"><h2>Causes de redoublement</h2></div>
+    <div class="card-header"><h2>Causes de redoublement<%- include('../partials/_hint', { text: 'Répartition des causes probables : absences élevées, notes faibles ou mixte.', label: 'Causes de redoublement' }) %></h2></div>
     <p class="empty">Aucune cause identifiée pour <%= schoolYear %>.</p>
   </div>
   <% } %>
 </div>
 
 <div class="card">
-  <div class="card-header"><h2>Effectifs par classe</h2></div>
+  <div class="card-header"><h2>Effectifs par classe<%- include('../partials/_hint', { text: 'Détail par classe : effectifs, absences et taux de réussite par genre.', label: 'Effectifs par classe' }) %></h2></div>
   <% if (!classStats.length) { %>
     <p class="empty">Aucune classe.</p>
   <% } else { %>

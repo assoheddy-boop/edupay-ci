@@ -1,7 +1,8 @@
 const prisma = require('../config/database');
 const { getAbsenceStats, getSuccessRate, getHealthStats, getAbsenceStatsByGender, getSuccessRateByGender } = require('../../services/StatsService');
 const { getGenderStatsBySchool } = require('../../services/ClassService');
-const { generateGenderStatsExcel, generateGenderStatsPDF } = require('../../services/export');
+const { generateGenderStatsExcel, generateGenderStatsPDF, generateRedoublementByPlanPDF, generateRedoublementByPlanExcel } = require('../../services/export');
+const { getRedoublementCausesByPlan } = require('../../services/RedoublementService');
 const { sendExcel } = require('../services/exportExcel');
 const { listAuditTrail } = require('../utils/audit');
 
@@ -36,6 +37,7 @@ function filtersFromQuery(query = {}) {
 
 async function reportingPage(req, res) {
   const filters = filtersFromQuery(req.query);
+  const schoolYear = req.query.schoolYear || '2025-2026';
   const statsFilter = {
     schoolId: filters.schoolId || undefined,
     classId: filters.classId || undefined,
@@ -50,7 +52,7 @@ async function reportingPage(req, res) {
     classId: filters.classId || undefined,
   };
 
-  const [schools, classes, absences, success, health, gender, absenceByGender, successByGender] = await Promise.all([
+  const [schools, classes, absences, success, health, gender, absenceByGender, successByGender, redoublementByPlan] = await Promise.all([
     prisma.school.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true, city: true } }),
     prisma.class.findMany({
       where: filters.schoolId ? { schoolId: filters.schoolId } : {},
@@ -63,6 +65,7 @@ async function reportingPage(req, res) {
     getGenderStatsBySchool(filters.schoolId || undefined),
     getAbsenceStatsByGender(genderScope),
     getSuccessRateByGender(genderScope),
+    getRedoublementCausesByPlan(schoolYear),
   ]);
 
   res.render('admin/reportingDashboard', {
@@ -76,6 +79,8 @@ async function reportingPage(req, res) {
     genderBySchool: gender.schools || [],
     absenceByGender,
     successByGender,
+    schoolYear,
+    redoublementByPlan: redoublementByPlan.ok ? redoublementByPlan : { plans: [], schoolYear },
   });
 }
 
@@ -130,4 +135,26 @@ async function exportGenderPdf(req, res) {
   res.download(result.filepath, result.filename);
 }
 
-module.exports = { reportingPage, auditPage, exportGenderExcel, exportGenderPdf, ACTION_LABELS };
+async function exportRedoublementPlanExcel(req, res) {
+  const schoolYear = req.query.schoolYear || '2025-2026';
+  const result = await generateRedoublementByPlanExcel(schoolYear);
+  if (!result.ok) return res.redirect(`/admin/reporting?schoolYear=${encodeURIComponent(schoolYear)}`);
+  await sendExcel(res, result.filename, result.workbook);
+}
+
+async function exportRedoublementPlanPdf(req, res) {
+  const schoolYear = req.query.schoolYear || '2025-2026';
+  const result = await generateRedoublementByPlanPDF(schoolYear);
+  if (!result.ok) return res.redirect(`/admin/reporting?schoolYear=${encodeURIComponent(schoolYear)}`);
+  res.download(result.filepath, result.filename);
+}
+
+module.exports = {
+  reportingPage,
+  auditPage,
+  exportGenderExcel,
+  exportGenderPdf,
+  exportRedoublementPlanExcel,
+  exportRedoublementPlanPdf,
+  ACTION_LABELS,
+};

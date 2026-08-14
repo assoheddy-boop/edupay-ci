@@ -50,6 +50,10 @@
         <label>Au</label>
         <input type="date" name="to" value="<%= filters.to %>">
       </div>
+      <div class="form-group">
+        <label>Année scolaire</label>
+        <input type="text" name="schoolYear" value="<%= schoolYear || '2025-2026' %>" placeholder="2025-2026">
+      </div>
     </div>
     <button type="submit" class="btn btn-primary">Appliquer</button>
   </form>
@@ -62,7 +66,7 @@
   </div>
   <div class="stat-card">
     <span class="stat-value"><%= Math.round((success.successRate || 0) * 100) %>%</span>
-    <span class="stat-label">Taux de réussite</span>
+    <span class="stat-label">Taux de réussite<%- include('../partials/_hint', { text: 'Part des notes au-dessus du seuil de réussite sur la période.', label: 'Taux de réussite' }) %></span>
   </div>
   <div class="stat-card">
     <span class="stat-value"><%= (success.averageOn20 || 0).toLocaleString('fr-FR') %>/20</span>
@@ -170,7 +174,7 @@
 
 <div class="card">
   <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-    <h2>Répartition filles/garçons par école</h2>
+    <h2>Répartition filles/garçons par école<%- include('../partials/_hint', { text: 'Répartition des élèves par genre (M/F) pour cette école ou toutes les écoles.', label: 'Répartition filles/garçons' }) %></h2>
     <% if (filters.schoolId) { %>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
         <a href="/admin/reporting/export/gender.pdf?schoolId=<%= filters.schoolId %>" class="btn btn-outline">Exporter PDF</a>
@@ -190,16 +194,16 @@
     <% const schoolSuccessGirls = genderBySchool.map(function(row) { return Math.round(((row.success && row.success.girls && row.success.girls.averageOn20) || 0) * 100) / 100; }); %>
     <div class="grid-2" style="margin-bottom:1.5rem">
       <div style="max-width:960px;margin:0 auto">
-        <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école</h3>
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école<%- include('../partials/_hint', { text: 'Répartition des élèves par genre (M/F) pour chaque école.', label: 'Effectifs par école' }) %></h3>
         <canvas id="schoolGenderChart"></canvas>
       </div>
       <div style="max-width:960px;margin:0 auto">
-        <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles</h3>
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles<%- include('../partials/_hint', { text: 'Nombre d\'absences et retards cumulés, comparés par genre.', label: 'Absences garçons vs filles' }) %></h3>
         <canvas id="absenceGenderChart"></canvas>
       </div>
     </div>
     <div style="max-width:960px;margin:0 auto 1.5rem">
-      <h3 style="margin:0 0 0.75rem;font-size:1rem">Moyenne des notes garçons vs filles (/20)</h3>
+      <h3 style="margin:0 0 0.75rem;font-size:1rem">Moyenne des notes garçons vs filles (/20)<%- include('../partials/_hint', { text: 'Moyenne générale des notes, comparée par genre.', label: 'Moyenne notes par genre' }) %></h3>
       <canvas id="successGenderChart"></canvas>
     </div>
     <table class="table">
@@ -300,6 +304,112 @@
               ],
             },
             options: chartDefaults,
+          });
+        }
+      })();
+    </script>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <h2>Redoublement par formule d'abonnement<%- include('../partials/_hint', { text: 'Compare les causes de redoublement (absences, notes) selon le plan de l\'école.', label: 'Redoublement par plan' }) %></h2>
+      <p class="page-sub">Comparatif des taux et causes probables — année <%= schoolYear || '2025-2026' %></p>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <a href="/admin/reporting/export/redoublement-plan.pdf?schoolYear=<%= encodeURIComponent(schoolYear || '2025-2026') %>" class="btn btn-outline">Exporter PDF</a>
+      <a href="/admin/reporting/export/redoublement-plan.xlsx?schoolYear=<%= encodeURIComponent(schoolYear || '2025-2026') %>" class="btn btn-outline">Exporter Excel</a>
+    </div>
+  </div>
+  <% const planRows = (redoublementByPlan && redoublementByPlan.plans) ? redoublementByPlan.plans : []; %>
+  <% if (!planRows.length) { %>
+    <p class="empty">Aucune donnée de redoublement pour cette année.</p>
+  <% } else { %>
+    <% const planLabels = planRows.map(function(p) { return p.planName; }); %>
+    <% const planRates = planRows.map(function(p) { return Math.round((p.avgRedoublementRate || 0) * 1000) / 10; }); %>
+    <% const planAbsPct = planRows.map(function(p) { return Math.round((p.absencesRate || 0) * 100); }); %>
+    <% const planNotesPct = planRows.map(function(p) { return Math.round((p.notesRate || 0) * 100); }); %>
+    <% const planMixtePct = planRows.map(function(p) { return Math.round((p.mixteRate || 0) * 100); }); %>
+    <div class="grid-2" style="margin-bottom:1.5rem">
+      <div style="max-width:960px;margin:0 auto">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Taux moyen de redoublement par plan (%)<%- include('../partials/_hint', { text: 'Taux moyen de redoublement calculé pour chaque formule d\'abonnement.', label: 'Taux redoublement par plan' }) %></h3>
+        <canvas id="planRepeatRateChart"></canvas>
+      </div>
+      <div style="max-width:960px;margin:0 auto">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Répartition des causes par plan (%)<%- include('../partials/_hint', { text: 'Part estimée des causes : absences élevées, notes faibles ou mixte.', label: 'Causes par plan' }) %></h3>
+        <canvas id="planCausesChart"></canvas>
+      </div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Écoles</th>
+          <th>Taux moyen redoublement</th>
+          <th>% absences</th>
+          <th>% notes</th>
+          <th>% mixte</th>
+          <th>Efficace<%- include('../partials/_hint', { text: 'Un plan est marqué efficace si le taux moyen de redoublement est inférieur à 10 %.', label: 'Plan efficace' }) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% planRows.forEach(function(row) { %>
+          <tr>
+            <td><strong><%= row.planName %></strong></td>
+            <td><%= row.schoolCount %></td>
+            <td><%= Math.round((row.avgRedoublementRate || 0) * 100) %>%</td>
+            <td><%= Math.round((row.absencesRate || 0) * 100) %>%</td>
+            <td><%= Math.round((row.notesRate || 0) * 100) %>%</td>
+            <td><%= Math.round((row.mixteRate || 0) * 100) %>%</td>
+            <td><%= row.efficient ? '✓ Oui' : '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <script>
+      (function () {
+        if (typeof Chart === 'undefined') return;
+        const planLabels = <%= JSON.stringify(planLabels) %>;
+        const planRepeatCtx = document.getElementById('planRepeatRateChart');
+        if (planRepeatCtx) {
+          new Chart(planRepeatCtx, {
+            type: 'bar',
+            data: {
+              labels: planLabels,
+              datasets: [{
+                label: 'Taux moyen (%)',
+                data: <%= JSON.stringify(planRates) %>,
+                backgroundColor: '#8e44ad',
+              }],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, max: 100 } },
+            },
+          });
+        }
+        const planCausesCtx = document.getElementById('planCausesChart');
+        if (planCausesCtx) {
+          new Chart(planCausesCtx, {
+            type: 'bar',
+            data: {
+              labels: planLabels,
+              datasets: [
+                { label: 'Absences', data: <%= JSON.stringify(planAbsPct) %>, backgroundColor: '#e74c3c' },
+                { label: 'Notes', data: <%= JSON.stringify(planNotesPct) %>, backgroundColor: '#3498db' },
+                { label: 'Mixte', data: <%= JSON.stringify(planMixtePct) %>, backgroundColor: '#f39c12' },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { position: 'top' } },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, max: 100 },
+              },
+            },
           });
         }
       })();

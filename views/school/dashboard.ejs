@@ -49,10 +49,13 @@
   <div class="card" style="border:2px solid #3498db;background:linear-gradient(135deg,#f8fbff 0%,#fff 100%)">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <div>
-        <h2>📊 Analyse pédagogique</h2>
+        <h2>📊 Analyse pédagogique<%- include('../partials/_hint', { text: 'Effectifs, absences, réussite et réinscriptions — aperçu graphique de votre école.', label: 'Analyse pédagogique' }) %></h2>
         <p class="page-sub" style="margin:0">Effectifs, absences, réussite et réinscriptions — <%= analyse.schoolYear %></p>
       </div>
-      <a href="/school/analyse" class="btn btn-primary">Voir les graphiques d'analyse</a>
+      <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap">
+        <a href="/school/analyse" class="btn btn-primary">Voir les graphiques d'analyse</a>
+        <%- include('../partials/_hint', { text: 'Ouvre la page complète avec tous les graphiques d\'analyse pédagogique.', label: 'Graphiques d\'analyse' }) %>
+      </div>
     </div>
     <div class="grid-2" style="padding:0 1rem 1rem">
       <div style="max-width:280px;margin:0 auto">

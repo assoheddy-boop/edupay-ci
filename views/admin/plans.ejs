@@ -25,7 +25,7 @@
 <div class="pricing-grid admin-plans-grid">
   <% plans.forEach(function(plan) { %>
     <article class="pricing-card">
-      <h3><%= plan.name %></h3>
+      <h3><%= plan.name %><%- include('../partials/_hint', { text: plan.tagline + ' — ' + plan.limits, label: plan.name }) %></h3>
       <div class="pricing-price">
         <span class="pricing-amount"><%= plan.price === 0 ? 'Gratuit' : plan.price.toLocaleString('fr-FR') %></span>
         <% if (plan.price > 0) { %><span class="pricing-period">FCFA / mois</span><% } %>
@@ -44,7 +44,7 @@
                   <%= included ? 'checked' : '' %>
                   <%= MODULES[key].core ? 'disabled' : '' %>
                 >
-                <span><%= MODULES[key].label %><% if (MODULES[key].core) { %> <small>(base)</small><% } %></span>
+                <span><%= MODULES[key].label %><%- include('../partials/_hint', { text: MODULES[key].description, label: MODULES[key].label }) %><% if (MODULES[key].core) { %> <small>(base)</small><% } %></span>
               </label>
               <% if (MODULES[key].core) { %>
                 <input type="hidden" name="features" value="<%= key %>">

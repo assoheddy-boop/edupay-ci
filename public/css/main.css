@@ -1373,3 +1373,83 @@ code {
 @media (max-width: 600px) {
   .navbar-school-name { max-width: 42vw; }
 }
+
+/* Contextual help tooltips */
+.hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  cursor: help;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.hint-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--gray-light, #666);
+  background: #e8ecf0;
+  border: 1px solid #d0d7de;
+  transition: background var(--transition), color var(--transition);
+}
+
+.hint:hover .hint-icon,
+.hint:focus .hint-icon {
+  background: var(--blue, #0052CC);
+  color: var(--white, #fff);
+  border-color: var(--blue, #0052CC);
+}
+
+.hint-tip {
+  position: absolute;
+  z-index: 200;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  max-width: 240px;
+  width: max-content;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  color: #f5f5f5;
+  background: #1e293b;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.hint-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1e293b;
+}
+
+.hint:hover .hint-tip,
+.hint:focus .hint-tip,
+.hint:focus-within .hint-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+h1 .hint, h2 .hint, h3 .hint, .stat-label .hint {
+  vertical-align: text-top;
+}

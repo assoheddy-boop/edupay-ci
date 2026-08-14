@@ -3,9 +3,19 @@
 <%- include('../layouts/schoolLayout', { body: content, title: 'Module désactivé' }) %>
 <% } else { %>
 <div class="card" style="max-width:520px;margin:2rem auto;text-align:center">
+    <% if (typeof upgrade !== 'undefined' && upgrade) { %>
+    <h1>Fonctionnalité premium</h1>
+    <p><%= typeof upgradeMessage !== 'undefined' ? upgradeMessage : 'Disponible en plan supérieur' %></p>
+    <p class="text-muted">Passez à une formule Premium, Pro ou Groupe pour accéder à l'analyse de redoublement par plan.</p>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
+      <a href="/school/upgrade" class="btn btn-primary">Voir les formules</a>
+      <a href="/school/dashboard" class="btn btn-outline">Retour au tableau de bord</a>
+    </div>
+    <% } else { %>
     <h1>Module non disponible</h1>
     <p>Le module <strong><%= moduleLabel %></strong> n'est pas activé pour votre établissement.</p>
     <p class="text-muted">Contactez l'administration de l'école ou EduPay CI pour l'activer.</p>
     <a href="/school/dashboard" class="btn btn-primary">Retour au tableau de bord</a>
+    <% } %>
   </div>
 <% } %>

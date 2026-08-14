@@ -31,7 +31,7 @@
           <tr>
             <th><%= tx('modules.schools') %></th>
             <% MODULE_KEYS.forEach(function(key) { %>
-              <th title="<%= MODULES[key].description %>"><%= MODULES[key].label %></th>
+              <th><%= MODULES[key].label %><%- include('../partials/_hint', { text: MODULES[key].description, label: MODULES[key].label }) %></th>
             <% }) %>
           </tr>
         </thead>
@@ -113,7 +113,7 @@
             %>
               <tr>
                 <td>
-                  <strong><%= mod.label %></strong>
+                  <strong><%= mod.label %></strong><%- include('../partials/_hint', { text: mod.description, label: mod.label }) %>
                   <% if (mod.core) { %><span class="badge">Essentiel</span><% } %>
                 </td>
                 <td><%= mod.description %></td>

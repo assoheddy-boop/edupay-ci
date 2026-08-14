@@ -48,7 +48,7 @@
   <div class="card" style="border:2px solid var(--primary,#2563eb);background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(37,99,235,0.02))">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <div>
-        <h2>Graphiques d'analyse</h2>
+        <h2>Graphiques d'analyse<%- include('../partials/_hint', { text: 'Filles/garçons, absences et réussite — comparatif par école.', label: 'Graphiques d\'analyse' }) %></h2>
         <p class="page-sub">Comparatif filles/garçons par école — visible dès la connexion Super Admin.</p>
       </div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -66,11 +66,11 @@
       <% const dashAbsenceGirls = genderBySchool.map(function(row) { return row.absences ? row.absences.girls : 0; }); %>
       <div class="grid-2" style="margin-bottom:1rem">
         <div style="max-width:960px;margin:0 auto">
-          <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école</h3>
+          <h3 style="margin:0 0 0.75rem;font-size:1rem">Effectifs par école<%- include('../partials/_hint', { text: 'Répartition des élèves par genre (M/F) pour chaque école.', label: 'Effectifs par école' }) %></h3>
           <canvas id="dashSchoolGenderChart" height="220"></canvas>
         </div>
         <div style="max-width:960px;margin:0 auto">
-          <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles</h3>
+          <h3 style="margin:0 0 0.75rem;font-size:1rem">Absences garçons vs filles<%- include('../partials/_hint', { text: 'Nombre d\'absences et retards cumulés, comparés par genre.', label: 'Absences garçons vs filles' }) %></h3>
           <canvas id="dashAbsenceGenderChart" height="220"></canvas>
         </div>
       </div>
@@ -136,47 +136,47 @@
     <div class="hero-features admin-hub-grid">
       <a href="/admin/plans" class="feature-card admin-hub-card">
         <span class="feature-icon">📋</span>
-        <h3>Plans</h3>
+        <h3>Plans<%- include('../partials/_hint', { text: 'Abonnements et activation des modules par formule.', label: 'Plans' }) %></h3>
         <p>Abonnements et activation des modules par plan.</p>
       </a>
       <a href="/admin/modules" class="feature-card admin-hub-card">
         <span class="feature-icon">🧩</span>
-        <h3>Modules</h3>
+        <h3>Modules<%- include('../partials/_hint', { text: 'Activer ou désactiver les fonctionnalités par école.', label: 'Modules' }) %></h3>
         <p>Activer ou désactiver les modules par école.</p>
       </a>
       <a href="/admin/organizations" class="feature-card admin-hub-card">
         <span class="feature-icon">🏫</span>
-        <h3>Groupes</h3>
+        <h3>Groupes<%- include('../partials/_hint', { text: 'Groupes scolaires, campus multiples et administrateurs.', label: 'Groupes' }) %></h3>
         <p>Groupes scolaires, campus et administrateurs.</p>
       </a>
       <a href="/admin/finance" class="feature-card admin-hub-card">
         <span class="feature-icon">💰</span>
-        <h3>Finance</h3>
+        <h3>Finance<%- include('../partials/_hint', { text: 'Bourses, revenus et pilotage financier global de la plateforme.', label: 'Finance' }) %></h3>
         <p>Bourses, revenus et pilotage financier global.</p>
       </a>
       <a href="/admin/accounting" class="feature-card admin-hub-card">
         <span class="feature-icon">📒</span>
-        <h3>Comptabilité</h3>
+        <h3>Comptabilité<%- include('../partials/_hint', { text: 'Écritures comptables et suivi des opérations financières.', label: 'Comptabilité' }) %></h3>
         <p>Écritures comptables et suivi des opérations.</p>
       </a>
       <a href="/admin/reporting" class="feature-card admin-hub-card" style="border:2px solid var(--primary,#2563eb)">
         <span class="feature-icon">📊</span>
-        <h3>Graphiques d'analyse</h3>
+        <h3>Graphiques d'analyse<%- include('../partials/_hint', { text: 'Filles/garçons, absences, réussite — graphiques interactifs.', label: 'Graphiques d\'analyse' }) %></h3>
         <p>Filles/garçons, absences, réussite — graphiques interactifs.</p>
       </a>
       <a href="/admin/audit" class="feature-card admin-hub-card">
         <span class="feature-icon">🔍</span>
-        <h3>Audit</h3>
+        <h3>Audit<%- include('../partials/_hint', { text: 'Journal des actions et traçabilité des opérations.', label: 'Audit' }) %></h3>
         <p>Journal des actions et traçabilité.</p>
       </a>
       <a href="/transfer/dashboard" class="feature-card admin-hub-card">
         <span class="feature-icon">🔄</span>
-        <h3>Transferts</h3>
+        <h3>Transferts<%- include('../partials/_hint', { text: 'Demandes de changement d\'école des élèves.', label: 'Transferts' }) %></h3>
         <p>Demandes de changement d'école des élèves.</p>
       </a>
       <a href="/admin/group/redoublement" class="feature-card admin-hub-card">
         <span class="feature-icon">📈</span>
-        <h3>Redoublement groupe</h3>
+        <h3>Redoublement groupe<%- include('../partials/_hint', { text: 'Compare les causes de redoublement (absences, notes) par école du groupe.', label: 'Redoublement groupe' }) %></h3>
         <p>Comparatif des causes de redoublement par école.</p>
       </a>
     </div>
@@ -184,13 +184,13 @@
 
   <div class="card">
     <div class="card-header">
-      <h2>Modules — vue globale</h2>
+      <h2>Modules — vue globale<%- include('../partials/_hint', { text: 'Nombre d\'écoles ayant activé chaque module.', label: 'Modules — vue globale' }) %></h2>
       <p class="page-sub">Seul le Super Admin peut activer ou désactiver les modules par école.</p>
     </div>
     <div class="module-stats-grid">
       <% moduleStats.forEach(function(m) { %>
         <div class="module-stat-item">
-          <span class="module-stat-label"><%= m.label %></span>
+          <span class="module-stat-label"><%= m.label %><%- include('../partials/_hint', { text: MODULES[m.key].description, label: m.label }) %></span>
           <span class="module-stat-value"><%= m.enabled %>/<%= m.total %></span>
         </div>
       <% }) %>

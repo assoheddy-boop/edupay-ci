@@ -1054,6 +1054,118 @@ async function generateGroupRedoublementCausesExcel(groupId, schoolYear) {
   };
 }
 
+const PLAN_REDOUBLEMENT_COLUMNS = [
+  { header: 'Plan', key: 'planName', width: 22 },
+  { header: 'Écoles', key: 'schoolCount', width: 10 },
+  { header: 'Taux moyen redoublement', key: 'avgRedoublementRatePct', width: 24 },
+  { header: '% absences', key: 'absencesRatePct', width: 14 },
+  { header: '% notes', key: 'notesRatePct', width: 12 },
+  { header: '% mixte', key: 'mixteRatePct', width: 12 },
+  { header: 'Efficace (<10%)', key: 'efficientLabel', width: 16 },
+];
+
+function planRedoublementExportRows(stats) {
+  return (stats.plans || []).map((p) => ({
+    planName: p.planName,
+    schoolCount: p.schoolCount,
+    avgRedoublementRatePct: `${Math.round((p.avgRedoublementRate || 0) * 100)}%`,
+    absencesRatePct: `${Math.round((p.absencesRate || 0) * 100)}%`,
+    notesRatePct: `${Math.round((p.notesRate || 0) * 100)}%`,
+    mixteRatePct: `${Math.round((p.mixteRate || 0) * 100)}%`,
+    efficientLabel: p.efficient ? 'Oui' : 'Non',
+  }));
+}
+
+/**
+ * Export comparatif redoublement par plan — PDF (super admin).
+ */
+async function generateRedoublementByPlanPDF(schoolYear) {
+  if (!schoolYear) return { ok: false, error: 'year' };
+
+  const { getRedoublementCausesByPlan } = require('./RedoublementService');
+  const { ABSENCE_THRESHOLD, GRADE_THRESHOLD } = require('./ReinscriptionService');
+  const stats = await getRedoublementCausesByPlan(schoolYear);
+  if (!stats.ok) return { ok: false, error: stats.error || 'stats' };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `redoublement-par-plan-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    doc.fontSize(16).fillColor('#222').text('Redoublement par formule d\'abonnement', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`Année scolaire : ${schoolYear}`);
+    doc.text(`Seuils causes : absences > ${ABSENCE_THRESHOLD} jours, moyenne < ${GRADE_THRESHOLD}/20`);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Plan', 50, tableTop);
+    doc.text('Taux moy.', 160, tableTop);
+    doc.text('% abs.', 230, tableTop);
+    doc.text('% notes', 290, tableTop);
+    doc.text('% mixte', 360, tableTop);
+    doc.text('Efficace', 430, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    const rows = planRedoublementExportRows(stats);
+    if (!rows.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucune donnée pour cette année.', 50, y);
+    } else {
+      rows.forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.planName, 50, y, { width: 100 });
+        doc.text(row.avgRedoublementRatePct, 160, y);
+        doc.text(row.absencesRatePct, 230, y);
+        doc.text(row.notesRatePct, 290, y);
+        doc.text(row.mixteRatePct, 360, y);
+        doc.text(row.efficientLabel, 430, y);
+        y += 20;
+      });
+    }
+    doc.y = y + 12;
+    doc.fontSize(9).fillColor('#999').text('EduPay CI — analyse redoublement par plan', 50, doc.page.height - 40, { align: 'left' });
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
+/**
+ * Export comparatif redoublement par plan — Excel (super admin).
+ */
+async function generateRedoublementByPlanExcel(schoolYear) {
+  if (!schoolYear) return { ok: false, error: 'year' };
+
+  const { getRedoublementCausesByPlan } = require('./RedoublementService');
+  const stats = await getRedoublementCausesByPlan(schoolYear);
+  if (!stats.ok) return { ok: false, error: stats.error || 'stats' };
+
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Redoublement par plan');
+  ws.columns = PLAN_REDOUBLEMENT_COLUMNS;
+  planRedoublementExportRows(stats).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `redoublement-par-plan-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
 module.exports = {
   generateBulletinPDF,
   generatePayrollPDF,
@@ -1068,5 +1180,7 @@ module.exports = {
   generateRedoublementCausesExcel,
   generateGroupRedoublementCausesPDF,
   generateGroupRedoublementCausesExcel,
+  generateRedoublementByPlanPDF,
+  generateRedoublementByPlanExcel,
   parseMonth,
 };

@@ -34,6 +34,8 @@ const reinscriptionController = require('../controllers/reinscriptionController'
 router.get('/reporting', reporting.reportingPage);
 router.get('/reporting/export/gender.xlsx', reporting.exportGenderExcel);
 router.get('/reporting/export/gender.pdf', reporting.exportGenderPdf);
+router.get('/reporting/export/redoublement-plan.pdf', reporting.exportRedoublementPlanPdf);
+router.get('/reporting/export/redoublement-plan.xlsx', reporting.exportRedoublementPlanExcel);
 router.get('/audit', reporting.auditPage);
 
 router.get('/group/redoublement', reinscriptionController.adminGroupDashboard);

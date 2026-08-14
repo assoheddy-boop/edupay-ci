@@ -3,11 +3,14 @@ const { resolveSchoolId, resolveParentSchoolIds } = require('./modules');
 const { getSchoolPlan, planIncludesFeature } = require('../utils/plans');
 
 function denyModule(req, res, moduleKey, school) {
+  const isUpgrade = moduleKey === 'redoublementAnalysis';
   return res.status(403).render('school/module-disabled', {
     user: req.user,
     moduleKey,
     moduleLabel: MODULES[moduleKey]?.label || moduleKey,
     school: school || req.user?.school || req.user?.teacher?.school || null,
+    upgrade: isUpgrade,
+    upgradeMessage: isUpgrade ? 'Disponible en plan supérieur' : undefined,
   });
 }
 
