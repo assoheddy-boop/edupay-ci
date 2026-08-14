@@ -4,10 +4,7 @@ const winston = require('winston');
 
 const logsDir = path.join(__dirname, '../logs');
 const isTest = process.env.NODE_ENV === 'test';
-
-if (!isTest && !fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -33,9 +30,14 @@ const logger = winston.createLogger({
   ],
 });
 
-if (!isTest) {
-  logger.add(new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }));
-  logger.add(new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }));
+if (!isTest && !isServerless) {
+  try {
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    logger.add(new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }));
+    logger.add(new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }));
+  } catch (err) {
+    logger.warn('file logs disabled', { error: err.message });
+  }
 }
 
 module.exports = logger;

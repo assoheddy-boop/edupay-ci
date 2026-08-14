@@ -19,7 +19,7 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
-app.set('trust proxy', 1);
+app.set('trust proxy', process.env.VERCEL ? 2 : 1);
 
 app.use(helmet({
   contentSecurityPolicy: false,
