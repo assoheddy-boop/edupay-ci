@@ -212,6 +212,8 @@ model School {
   transfersTo          TransferRequest[] @relation("TransferToSchool")
   accountingEntries    AccountingEntry[]
   studentYearRecords   StudentYearRecord[]
+  subjects             Subject[]
+  timetables           Timetable[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -243,6 +245,7 @@ model Class {
   schedules Schedule[]
   incomingTransfers TransferRequest[]
   yearRecords StudentYearRecord[]
+  timetables    Timetable[]
 }
 
 model Student {
@@ -352,6 +355,7 @@ model Teacher {
   leaves         Leave[]
   payrolls       Payroll[]
   hrEvaluations  Evaluation[]
+  timetables     Timetable[]
 }
 
 model TeacherClass {
@@ -671,6 +675,38 @@ model Schedule {
   class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
   teacherId String
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  schoolId   String
+  school     School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  timetables Timetable[]
+
+  @@unique([schoolId, name])
+}
+
+model Timetable {
+  id        String   @id @default(cuid())
+  dayOfWeek String
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  schoolId  String?
+  school    School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  @@index([classId, dayOfWeek])
+  @@index([teacherId, dayOfWeek])
 }
 
 model Group {

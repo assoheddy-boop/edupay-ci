@@ -12,6 +12,7 @@ const NOTIFICATION_TYPES = {
   transfer_approved: { prisma: 'TRANSFER', title: 'Transfert approuvé', sms: false },
   transfer_rejected: { prisma: 'TRANSFER', title: 'Transfert refusé', sms: false },
   transfer_completed: { prisma: 'TRANSFER', title: 'Transfert terminé', sms: false },
+  timetable_updated: { prisma: 'GENERAL', title: 'Emploi du temps', sms: true },
 };
 
 function assertType(type) {

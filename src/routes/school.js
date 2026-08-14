@@ -56,6 +56,8 @@ router.get('/school-year', schoolController.schoolYearPage);
 router.post('/school-year', schoolController.updateSchoolYear);
 router.post('/school-year/promote', schoolController.promoteClass);
 
+router.get('/timetable', (_req, res) => res.redirect('/timetable'));
+
 router.get('/fees', statsController.feesPage);
 router.post('/fees', feeRules, handleValidationErrors, statsController.createFee);
 router.post('/fees/:id/update', feeRules, handleValidationErrors, statsController.updateFee);

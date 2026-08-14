@@ -1,0 +1,223 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timetableDashboard', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Emploi du temps', user, modules }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Emploi du temps</h1>
+    <p class="page-sub">Planification hebdomadaire — Lundi à Samedi</p>
+  </div>
+  <div class="btn-group">
+    <% if (filterClassId) { %>
+      <a href="/timetable/export/class/<%= filterClassId %>.pdf" class="btn btn-outline">Export PDF</a>
+      <a href="/timetable/export/class/<%= filterClassId %>.xlsx" class="btn btn-outline">Export Excel</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (success === '1') { %>
+  <div class="alert alert-success">Créneau enregistré avec succès.</div>
+<% } else if (success === 'notified') { %>
+  <div class="alert alert-success">Emploi du temps envoyé aux parents.</div>
+<% } else if (success === 'class-notified') { %>
+  <div class="alert alert-success">Emploi du temps envoyé à tous les parents de la classe.</div>
+<% } %>
+
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+<% if (conflict) { %>
+  <div class="alert alert-warning">⚠ Conflit d'horaire : <%= conflict %></div>
+<% } %>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header"><h2>Filtres</h2></div>
+  <form method="GET" action="/timetable" class="form grid-3" style="padding:1rem">
+    <label>
+      Vue
+      <select name="view" onchange="this.form.submit()">
+        <option value="class" <%= viewMode === 'class' ? 'selected' : '' %>>Par classe</option>
+        <option value="teacher" <%= viewMode === 'teacher' ? 'selected' : '' %>>Par enseignant</option>
+      </select>
+    </label>
+
+    <% if (viewMode === 'class') { %>
+      <label>
+        Classe
+        <select name="classId" onchange="this.form.submit()">
+          <option value="">— Choisir —</option>
+          <% classes.forEach(c => { %>
+            <option value="<%= c.id %>" <%= filterClassId === c.id ? 'selected' : '' %>><%= c.level %> — <%= c.name %></option>
+          <% }) %>
+        </select>
+      </label>
+    <% } else { %>
+      <label>
+        Enseignant
+        <select name="teacherId" onchange="this.form.submit()">
+          <option value="">— Choisir —</option>
+          <% teachers.forEach(t => { %>
+            <option value="<%= t.id %>" <%= filterTeacherId === t.id ? 'selected' : '' %>>
+              <%= t.user.lastName %> <%= t.user.firstName %>
+            </option>
+          <% }) %>
+        </select>
+      </label>
+    <% } %>
+
+    <label>
+      Matière
+      <select name="subjectId" onchange="this.form.submit()">
+        <option value="">Toutes</option>
+        <% subjects.forEach(s => { %>
+          <option value="<%= s.id %>" <%= filterSubjectId === s.id ? 'selected' : '' %>><%= s.name %></option>
+        <% }) %>
+      </select>
+    </label>
+  </form>
+
+  <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
+    <div style="padding:0 1rem 1rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <% if (filterClassId) { %>
+        <form method="POST" action="/timetable/notify-class" onsubmit="return confirm('Envoyer l\'emploi du temps à tous les parents de cette classe ?');">
+          <input type="hidden" name="classId" value="<%= filterClassId %>">
+          <button type="submit" class="btn btn-primary">Envoyer aux parents (classe)</button>
+        </form>
+      <% } %>
+      <% if (filterClassId && students.length) {
+        const classStudents = students.filter(s => s.classId === filterClassId);
+        const firstStudent = classStudents[0];
+      %>
+        <% if (firstStudent) { %>
+        <form method="GET" id="notifyStudentForm" action="/timetable/notify/<%= firstStudent.id %>" style="display:flex;gap:.5rem;align-items:flex-end">
+          <label style="margin:0">
+            Élève
+            <select id="notifyStudentSelect" onchange="document.getElementById('notifyStudentForm').action='/timetable/notify/'+this.value">
+              <% classStudents.forEach(s => { %>
+                <option value="<%= s.id %>"><%= s.lastName %> <%= s.firstName %></option>
+              <% }) %>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-outline">Envoyer aux parents</button>
+        </form>
+        <% } %>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Grille hebdomadaire</h2></div>
+    <div class="table-responsive">
+      <table class="table timetable-grid">
+        <thead>
+          <tr>
+            <th>Heure</th>
+            <% days.forEach(day => { %><th><%= day %></th><% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% gridHours.forEach(hour => { %>
+            <tr>
+              <td><strong><%= hour %></strong></td>
+              <% days.forEach(day => { %>
+                <td class="timetable-cell">
+                  <% (grid[day][hour] || []).forEach(entry => { %>
+                    <div class="timetable-slot" title="<%= entry.subject?.name %> — <%= entry.startTime %>–<%= entry.endTime %>">
+                      <strong><%= entry.subject?.name || '—' %></strong><br>
+                      <small><%= entry.startTime %>–<%= entry.endTime %></small><br>
+                      <% if (viewMode === 'class') { %>
+                        <small><%= entry.teacher?.user ? entry.teacher.user.lastName : '' %></small>
+                      <% } else { %>
+                        <small><%= entry.class?.name || '' %></small>
+                      <% } %>
+                      <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
+                        <details style="margin-top:.25rem">
+                          <summary>Déplacer</summary>
+                          <form method="POST" action="/timetable/update/<%= entry.id %>" class="form" style="margin-top:.35rem">
+                            <select name="dayOfWeek" required>
+                              <% days.forEach(d => { %>
+                                <option value="<%= d %>" <%= entry.dayOfWeek === d ? 'selected' : '' %>><%= d %></option>
+                              <% }) %>
+                            </select>
+                            <input type="time" name="startTime" value="<%= entry.startTime %>" required>
+                            <input type="time" name="endTime" value="<%= entry.endTime %>" required>
+                            <button type="submit" class="btn btn-sm btn-outline">Enregistrer</button>
+                          </form>
+                        </details>
+                      <% } %>
+                    </div>
+                  <% }) %>
+                </td>
+              <% }) %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
+  <div class="card">
+    <div class="card-header"><h2>Ajouter un créneau</h2></div>
+    <form method="POST" action="/timetable/create" class="form" style="padding:1rem">
+      <label>Classe *
+        <select name="classId" required>
+          <option value="">— Choisir —</option>
+          <% classes.forEach(c => { %>
+            <option value="<%= c.id %>" <%= filterClassId === c.id ? 'selected' : '' %>><%= c.level %> — <%= c.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Enseignant *
+        <select name="teacherId" required>
+          <option value="">— Choisir —</option>
+          <% teachers.forEach(t => { %>
+            <option value="<%= t.id %>"><%= t.user.lastName %> <%= t.user.firstName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Matière *
+        <select name="subjectId">
+          <option value="">— Choisir ou saisir —</option>
+          <% subjects.forEach(s => { %>
+            <option value="<%= s.id %>"><%= s.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Nouvelle matière (si absente)
+        <input type="text" name="subjectName" placeholder="Ex: Mathématiques">
+      </label>
+      <label>Jour *
+        <select name="dayOfWeek" required>
+          <% days.forEach(d => { %><option value="<%= d %>"><%= d %></option><% }) %>
+        </select>
+      </label>
+      <div class="grid-2">
+        <label>Début *
+          <input type="time" name="startTime" value="08:00" required>
+        </label>
+        <label>Fin *
+          <input type="time" name="endTime" value="09:00" required>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Ajouter le créneau</button>
+    </form>
+  </div>
+  <% } %>
+</div>
+
+<style>
+.timetable-grid td { vertical-align: top; min-width: 110px; }
+.timetable-cell { background: #fafafa; }
+.timetable-slot {
+  background: #e8f0fe;
+  border-left: 3px solid #0052CC;
+  padding: .35rem .5rem;
+  margin-bottom: .35rem;
+  border-radius: 4px;
+  font-size: .85rem;
+}
+</style>
+<% } %>

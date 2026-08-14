@@ -22,6 +22,7 @@ const classRoutes = require('../routes/classRoutes');
 const statsRoutes = require('../routes/statsRoutes');
 const reinscriptionRoutes = require('../routes/reinscriptionRoutes');
 const redoublementRoutes = require('../routes/redoublementRoutes');
+const timetableRoutes = require('../routes/timetableRoutes');
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use('/class', classRoutes);
 app.use('/stats', statsRoutes);
 app.use('/reinscription', reinscriptionRoutes);
 app.use('/redoublement', redoublementRoutes);
+app.use('/timetable', timetableRoutes);
 
 app.use((_req, res) => {
   res.status(404).render('error', { message: 'Page introuvable', user: null });

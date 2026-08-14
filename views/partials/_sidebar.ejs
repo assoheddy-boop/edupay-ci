@@ -54,6 +54,7 @@
       <a href="/school/school-year">Année scolaire</a>
       <a href="/transfer/requests">Transferts</a>
       <a href="/reinscription/dashboard">Réinscriptions</a>
+      <a href="/timetable">Emploi du temps</a>
       <a href="/school/settings">Paramètres</a>
     <% } else if (currentUser && currentUser.role === 'PARENT') { %>
       <a href="/parent/dashboard">Accueil</a>
@@ -81,6 +82,7 @@
       <% if (on('health')) { %><a href="/teacher/health">Santé</a><% } %>
       <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
       <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
+      <a href="/timetable">Emploi du temps</a>
     <% } %>
   </nav>
 </aside>

@@ -1166,6 +1166,150 @@ async function generateRedoublementByPlanExcel(schoolYear) {
   };
 }
 
+const TIMETABLE_COLUMNS = [
+  { header: 'Jour', key: 'dayOfWeek', width: 14 },
+  { header: 'Début', key: 'startTime', width: 10 },
+  { header: 'Fin', key: 'endTime', width: 10 },
+  { header: 'Matière', key: 'subject', width: 22 },
+  { header: 'Enseignant', key: 'teacher', width: 24 },
+  { header: 'Classe', key: 'className', width: 18 },
+];
+
+function timetableExportRows(entries) {
+  return (entries || []).map((e) => ({
+    dayOfWeek: e.dayOfWeek,
+    startTime: e.startTime,
+    endTime: e.endTime,
+    subject: e.subject?.name || '—',
+    teacher: e.teacher?.user
+      ? `${e.teacher.user.lastName} ${e.teacher.user.firstName}`
+      : '—',
+    className: e.class?.name || '—',
+  }));
+}
+
+/**
+ * Emploi du temps PDF (élève ou classe).
+ */
+async function generateTimetablePDF(targetId, { mode = 'student' } = {}) {
+  if (!targetId) return { ok: false, error: 'target' };
+
+  let title = 'Emploi du temps';
+  let school = null;
+  let entries = [];
+  let subtitle = '';
+
+  if (mode === 'class') {
+    const cls = await prisma.class.findUnique({
+      where: { id: targetId },
+      include: { school: true },
+    });
+    if (!cls) return { ok: false, error: 'class' };
+    school = cls.school;
+    subtitle = `Classe ${cls.name} (${cls.level})`;
+    const { getClassTimetable } = require('./TimetableService');
+    const result = await getClassTimetable(targetId);
+    entries = result.entries || [];
+  } else {
+    const student = await prisma.student.findUnique({
+      where: { id: targetId },
+      include: { class: { include: { school: true } }, school: true },
+    });
+    if (!student) return { ok: false, error: 'student' };
+    school = student.school || student.class?.school;
+    subtitle = `${student.lastName} ${student.firstName} — ${student.class?.name || '—'}`;
+    const { getStudentTimetable } = require('./TimetableService');
+    const result = await getStudentTimetable(targetId);
+    entries = result.entries || [];
+  }
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `emploi-du-temps-${targetId.slice(0, 8)}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, school, { title });
+    doc.fontSize(11).fillColor('#333').text(subtitle);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Jour', 50, tableTop);
+    doc.text('Horaire', 130, tableTop);
+    doc.text('Matière', 220, tableTop);
+    doc.text('Enseignant', 340, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    if (!entries.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucun créneau enregistré.', 50, y);
+    } else {
+      timetableExportRows(entries).forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(10).fillColor('#333');
+        doc.text(row.dayOfWeek, 50, y);
+        doc.text(`${row.startTime} – ${row.endTime}`, 130, y);
+        doc.text(row.subject, 220, y, { width: 110 });
+        doc.text(row.teacher, 340, y, { width: 200 });
+        y += 20;
+      });
+    }
+    doc.y = y + 12;
+    drawFooter(doc, school);
+  });
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    pdfUrl: `/uploads/exports/${filename}`,
+    entries,
+  };
+}
+
+/**
+ * Emploi du temps Excel (classe).
+ */
+async function generateTimetableExcel(classId) {
+  if (!classId) return { ok: false, error: 'class' };
+
+  const cls = await prisma.class.findUnique({
+    where: { id: classId },
+    include: { school: true },
+  });
+  if (!cls) return { ok: false, error: 'class' };
+
+  const { getClassTimetable } = require('./TimetableService');
+  const result = await getClassTimetable(classId);
+  const entries = result.entries || [];
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EduPay CI';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('Emploi du temps');
+  ws.columns = TIMETABLE_COLUMNS;
+  timetableExportRows(entries).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `emploi-du-temps-${classId.slice(0, 8)}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+  };
+}
+
 module.exports = {
   generateBulletinPDF,
   generatePayrollPDF,
@@ -1183,4 +1327,6 @@ module.exports = {
   generateRedoublementByPlanPDF,
   generateRedoublementByPlanExcel,
   parseMonth,
+  generateTimetablePDF,
+  generateTimetableExcel,
 };
