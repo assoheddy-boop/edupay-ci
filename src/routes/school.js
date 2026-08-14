@@ -6,6 +6,7 @@ const accountingController = require('../controllers/accountingController');
 const extras = require('../controllers/extrasController');
 const hrController = require('../controllers/hrController');
 const classController = require('../controllers/classController');
+const schoolAnalyseController = require('../controllers/schoolAnalyseController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
@@ -26,6 +27,7 @@ const router = express.Router();
 router.use(requireAuth, checkRole('school'), attachModules);
 
 router.get('/dashboard', schoolController.dashboard);
+router.get('/analyse', schoolAnalyseController.analysePage);
 router.get('/settings', schoolController.settings);
 router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
 

@@ -46,6 +46,41 @@
     </div>
   </div>
 
+  <div class="card" style="border:2px solid #3498db;background:linear-gradient(135deg,#f8fbff 0%,#fff 100%)">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <h2>📊 Analyse pédagogique</h2>
+        <p class="page-sub" style="margin:0">Effectifs, absences, réussite et réinscriptions — <%= analyse.schoolYear %></p>
+      </div>
+      <a href="/school/analyse" class="btn btn-primary">Voir les graphiques d'analyse</a>
+    </div>
+    <div class="grid-2" style="padding:0 1rem 1rem">
+      <div style="max-width:280px;margin:0 auto">
+        <canvas id="dashboardGenderChart"></canvas>
+      </div>
+      <div>
+        <div class="stats-grid" style="margin-bottom:0">
+          <div class="stat-card">
+            <span class="stat-value"><%= analyse.gender.boys || 0 %> / <%= analyse.gender.girls || 0 %></span>
+            <span class="stat-label">Garçons / Filles</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value"><%= analyse.absenceByGender.boys || 0 %> / <%= analyse.absenceByGender.girls || 0 %></span>
+            <span class="stat-label">Absences G / F</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value"><%= analyse.reinscription.promoted || 0 %> / <%= analyse.reinscription.repeated || 0 %></span>
+            <span class="stat-label">Promus / Redoublants</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value"><%= Math.round(((analyse.successByGender.boys && analyse.successByGender.boys.averageOn20) || 0) * 10) / 10 %> / <%= Math.round(((analyse.successByGender.girls && analyse.successByGender.girls.averageOn20) || 0) * 10) / 10 %></span>
+            <span class="stat-label">Moyenne G / F (/20)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <h2>Paiements récents</h2>
@@ -90,8 +125,34 @@
     <a href="/school/canteen" class="action-card">🍽️ Cantine</a>
     <a href="/school/lost-items" class="action-card">🧸 Objets perdus</a>
     <a href="/school/activities" class="action-card">🎯 Activités</a>
+    <a href="/school/analyse" class="action-card">📈 Graphiques d'analyse</a>
     <a href="/school/stats" class="action-card">📊 Statistiques</a>
     <a href="/school/fees" class="action-card">💰 Types de frais</a>
     <a href="/school/pickup" class="action-card">🛡️ Sortie école</a>
   </div>
+
+  <script src="/js/chart.umd.min.js"></script>
+  <script>
+    (function () {
+      if (typeof Chart === 'undefined') return;
+      const ctx = document.getElementById('dashboardGenderChart');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Garçons', 'Filles'],
+          datasets: [{
+            data: [<%= analyse.gender.boys || 0 %>, <%= analyse.gender.girls || 0 %>],
+            backgroundColor: ['#3498db', '#e74c3c'],
+          }],
+        },
+        options: {
+          plugins: {
+            legend: { position: 'bottom' },
+            title: { display: true, text: 'Effectifs' },
+          },
+        },
+      });
+    })();
+  </script>
 <% } %>

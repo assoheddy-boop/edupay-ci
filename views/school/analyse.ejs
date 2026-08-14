@@ -1,0 +1,233 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('analyse', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Analyse — ' + school.name }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Graphiques d'analyse</h1>
+    <p class="page-sub"><%= school.name %> — effectifs, absences, réussite et réinscriptions</p>
+  </div>
+  <div>
+    <a href="/school/dashboard" class="btn btn-outline">Tableau de bord</a>
+    <a href="/reinscription/dashboard" class="btn btn-outline">Réinscriptions</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Filtrer</h2></div>
+  <form method="GET" action="/school/analyse" class="form inline-form">
+    <div class="form-group">
+      <label>Année scolaire (réinscriptions)</label>
+      <input type="text" name="schoolYear" value="<%= schoolYear %>" placeholder="2025-2026">
+    </div>
+    <button type="submit" class="btn btn-primary">Appliquer</button>
+  </form>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value"><%= gender.total || 0 %></span>
+    <span class="stat-label">Total élèves</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= gender.boys || 0 %></span>
+    <span class="stat-label">Garçons</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= gender.girls || 0 %></span>
+    <span class="stat-label">Filles</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= Math.round(((successByGender.boys && successByGender.boys.successRate) || 0) * 100) %>% / <%= Math.round(((successByGender.girls && successByGender.girls.successRate) || 0) * 100) %>%</span>
+    <span class="stat-label">Réussite G / F</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Effectifs filles / garçons</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="genderChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Absences et moyennes par genre</h2></div>
+    <div style="max-width:480px;margin:0 auto 1rem">
+      <canvas id="absenceSuccessGenderChart"></canvas>
+    </div>
+    <table class="table">
+      <thead>
+        <tr><th></th><th>Garçons</th><th>Filles</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Absences / retards</td>
+          <td><%= absenceByGender.boys || 0 %></td>
+          <td><%= absenceByGender.girls || 0 %></td>
+        </tr>
+        <tr>
+          <td>Taux de réussite</td>
+          <td><%= Math.round(((successByGender.boys && successByGender.boys.successRate) || 0) * 100) %>%</td>
+          <td><%= Math.round(((successByGender.girls && successByGender.girls.successRate) || 0) * 100) %>%</td>
+        </tr>
+        <tr>
+          <td>Moyenne /20</td>
+          <td><%= ((successByGender.boys && successByGender.boys.averageOn20) || 0).toLocaleString('fr-FR') %></td>
+          <td><%= ((successByGender.girls && successByGender.girls.averageOn20) || 0).toLocaleString('fr-FR') %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% const causeCounts = (causeStats && causeStats.causeCounts) ? causeStats.causeCounts : {}; %>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Réinscription — promus vs redoublants</h2></div>
+    <p class="page-sub" style="padding:0 1rem">Année <%= schoolYear %></p>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="promotionChart"></canvas>
+    </div>
+    <div class="stats-grid" style="margin-top:1rem">
+      <div class="stat-card">
+        <span class="stat-value"><%= reinscription.promoted || 0 %></span>
+        <span class="stat-label">Promus</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= reinscription.repeated || 0 %></span>
+        <span class="stat-label">Redoublants</span>
+      </div>
+    </div>
+  </div>
+
+  <% if (Object.keys(causeCounts).some(function(k) { return causeCounts[k] > 0; })) { %>
+  <div class="card">
+    <div class="card-header"><h2>Causes de redoublement</h2></div>
+    <div style="max-width:360px;margin:0 auto">
+      <canvas id="causesPieChart"></canvas>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="card">
+    <div class="card-header"><h2>Causes de redoublement</h2></div>
+    <p class="empty">Aucune cause identifiée pour <%= schoolYear %>.</p>
+  </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Effectifs par classe</h2></div>
+  <% if (!classStats.length) { %>
+    <p class="empty">Aucune classe.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th>Garçons</th>
+          <th>Filles</th>
+          <th>Total</th>
+          <th>Absences G</th>
+          <th>Absences F</th>
+          <th>Réussite G</th>
+          <th>Réussite F</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% classStats.forEach(function(row) { %>
+          <tr>
+            <td><strong><%= row.className %></strong><% if (row.level) { %> <span class="text-muted">(<%= row.level %>)</span><% } %></td>
+            <td><%= row.boys %></td>
+            <td><%= row.girls %></td>
+            <td><%= row.total %></td>
+            <td><%= row.absences ? row.absences.boys : 0 %></td>
+            <td><%= row.absences ? row.absences.girls : 0 %></td>
+            <td><%= Math.round(((row.success && row.success.boys && row.success.boys.successRate) || 0) * 100) %>%</td>
+            <td><%= Math.round(((row.success && row.success.girls && row.success.girls.successRate) || 0) * 100) %>%</td>
+            <td><a href="/school/classes/<%= row.classId %>" class="btn btn-sm btn-outline">Voir</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const boysColor = '#3498db';
+  const girlsColor = '#e74c3c';
+  const promotedColor = '#27ae60';
+  const repeatedColor = '#e74c3c';
+
+  new Chart(document.getElementById('genderChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Garçons', 'Filles'],
+      datasets: [{
+        data: [<%= gender.boys || 0 %>, <%= gender.girls || 0 %>],
+        backgroundColor: [boysColor, girlsColor],
+      }],
+    },
+  });
+
+  const absenceBoys = <%= absenceByGender.boys || 0 %>;
+  const absenceGirls = <%= absenceByGender.girls || 0 %>;
+  const avgBoys = <%= ((successByGender.boys && successByGender.boys.averageOn20) || 0) %>;
+  const avgGirls = <%= ((successByGender.girls && successByGender.girls.averageOn20) || 0) %>;
+
+  new Chart(document.getElementById('absenceSuccessGenderChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Absences / retards', 'Moyenne /20'],
+      datasets: [
+        { label: 'Garçons', data: [absenceBoys, avgBoys], backgroundColor: boysColor },
+        { label: 'Filles', data: [absenceGirls, avgGirls], backgroundColor: girlsColor },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+
+  new Chart(document.getElementById('promotionChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Promus', 'Redoublants'],
+      datasets: [{
+        data: [<%= reinscription.promoted || 0 %>, <%= reinscription.repeated || 0 %>],
+        backgroundColor: [promotedColor, repeatedColor],
+      }],
+    },
+  });
+
+  <% if (Object.keys(causeCounts).some(function(k) { return causeCounts[k] > 0; })) { %>
+  const causeCounts = <%- JSON.stringify(causeCounts) %>;
+  const causeLabels = Object.keys(causeCounts).filter(function(k) { return causeCounts[k] > 0; });
+  const causeData = causeLabels.map(function(k) { return causeCounts[k]; });
+  const causeColors = {
+    'Absences élevées': '#e67e22',
+    'Notes faibles': '#e74c3c',
+    'Mixte': '#9b59b6',
+    'Autre': '#95a5a6',
+  };
+
+  if (document.getElementById('causesPieChart')) {
+    new Chart(document.getElementById('causesPieChart'), {
+      type: 'pie',
+      data: {
+        labels: causeLabels,
+        datasets: [{
+          data: causeData,
+          backgroundColor: causeLabels.map(function(l) { return causeColors[l] || '#bdc3c7'; }),
+        }],
+      },
+    });
+  }
+  <% } %>
+</script>
+<% } %>

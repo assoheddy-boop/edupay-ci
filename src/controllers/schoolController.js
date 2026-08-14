@@ -5,12 +5,30 @@ const { getPendingPayments } = require('../../services/PaymentService');
 const { createTeacherProfile } = require('../../services/HRService');
 const { generateBulletinPDF } = require('../../services/export');
 const { parseGender } = require('../../services/ClassService');
+const {
+  getSchoolGenderStats,
+  getAbsenceStatsByGender,
+  getSuccessRateByGender,
+} = require('../../services/StatsService');
+const { getReinscriptionStats } = require('../../services/ReinscriptionService');
 
 async function dashboard(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
 
-  const [classes, students, teachers, pendingList, recentPayments] = await Promise.all([
+  const schoolYear = school.currentSchoolYear;
+
+  const [
+    classes,
+    students,
+    teachers,
+    pendingList,
+    recentPayments,
+    gender,
+    absenceByGender,
+    successByGender,
+    reinscription,
+  ] = await Promise.all([
     prisma.class.count({ where: { schoolId: school.id } }),
     prisma.student.count({ where: { schoolId: school.id } }),
     prisma.teacher.count({ where: { schoolId: school.id } }),
@@ -21,6 +39,10 @@ async function dashboard(req, res) {
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),
+    getSchoolGenderStats(school.id),
+    getAbsenceStatsByGender({ schoolId: school.id }),
+    getSuccessRateByGender({ schoolId: school.id }),
+    getReinscriptionStats(school.id, schoolYear),
   ]);
 
   res.render('school/dashboard', {
@@ -28,6 +50,7 @@ async function dashboard(req, res) {
     school,
     stats: { classes, students, teachers, pendingPayments: pendingList.length },
     recentPayments,
+    analyse: { gender, absenceByGender, successByGender, reinscription, schoolYear },
   });
 }
 
