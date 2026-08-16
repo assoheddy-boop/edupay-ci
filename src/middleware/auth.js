@@ -6,7 +6,9 @@ const {
   REFRESH_COOKIE,
   getCookieOptions,
   getRefreshCookieOptions,
+  clearAssistCookie,
 } = require('../utils/cookies');
+const { attachAdminAssist, hasEffectiveRole } = require('../utils/adminAssist');
 const {
   createRefreshToken,
   rotateRefreshToken,
@@ -38,6 +40,7 @@ function setRefreshCookie(res, raw) {
 function clearAuthCookie(res) {
   res.clearCookie(ACCESS_COOKIE, getCookieOptions());
   res.clearCookie(REFRESH_COOKIE, getRefreshCookieOptions());
+  clearAssistCookie(res);
 }
 
 async function issueAuthSession(res, user) {
@@ -141,8 +144,10 @@ async function requireAuth(req, res, next) {
       return unauthenticated(req, res);
     }
 
+    await attachAdminAssist(req, res, user);
     req.user = user;
     res.locals.user = user;
+    res.locals.adminAssist = user.adminAssist || null;
     applyI18n(req, res);
     applyCurrency(req, res);
     next();
@@ -167,7 +172,7 @@ async function requireAuth(req, res, next) {
 
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || !roles.some((role) => hasEffectiveRole(req.user, role))) {
       if (isApiRequest(req)) return res.status(403).json({ error: 'Accès refusé' });
       if (req.accepts('html')) return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
       return res.status(403).json({ error: 'Accès refusé' });
@@ -179,7 +184,7 @@ function requireRole(...roles) {
 function checkRole(role) {
   const expected = ROLE_ALIASES[role] || role;
   return (req, res, next) => {
-    if (!req.user || req.user.role !== expected) {
+    if (!req.user || !hasEffectiveRole(req.user, expected)) {
       return res.status(403).send('Forbidden');
     }
     next();
@@ -197,4 +202,5 @@ module.exports = {
   tryRefreshSession,
   destroyAuthSession,
   ROLE_ALIASES,
+  hasEffectiveRole,
 };

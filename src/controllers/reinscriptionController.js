@@ -40,7 +40,7 @@ async function canAccessSchool(req, schoolId) {
 }
 
 function resolveSchoolId(req) {
-  if (req.user.role === 'SCHOOL_ADMIN') return req.user.school?.id || null;
+  if (req.user?.school?.id) return req.user.school.id;
   return req.query.schoolId || req.body?.schoolId || null;
 }
 

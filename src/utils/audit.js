@@ -9,6 +9,7 @@ const SENSITIVE_PREFIXES = [
   'accounting',
   'transfer',
   'payroll',
+  'admin_assist',
 ];
 
 function isSensitiveAction(action) {

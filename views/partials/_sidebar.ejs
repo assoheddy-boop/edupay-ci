@@ -1,10 +1,13 @@
 <% const currentUser = typeof user !== 'undefined' ? user : null; %>
 <% const m = typeof modules !== 'undefined' ? modules : {}; %>
 <% const on = (k) => m[k]?.enabled !== false; %>
+<% const assist = typeof adminAssist !== 'undefined' ? adminAssist : null; %>
 <% const brandSchool = currentUser && (currentUser.school || (currentUser.teacher && currentUser.teacher.school)); %>
 <% const brandOrg = currentUser && currentUser.organizationAdmin && currentUser.organizationAdmin.organization; %>
+<% const showSchoolNav = (assist && assist.type === 'school') || (currentUser && currentUser.role === 'SCHOOL_ADMIN'); %>
+<% const showGroupNav = (assist && assist.type === 'group') || (currentUser && currentUser.role === 'ORGANIZATION_ADMIN' && !showSchoolNav); %>
 <aside class="app-sidebar" id="appSidebar">
-  <% if (brandOrg) { %>
+  <% if (brandOrg && showGroupNav) { %>
     <div class="sidebar-brand">
       <%- include('_logo', { logoUrl: brandOrg.logoUrl, logoBase64: brandOrg.logoBase64, slug: brandOrg.slug, name: brandOrg.name, size: 'sm' }) %>
       <span><%= brandOrg.name %></span>
@@ -16,18 +19,11 @@
     </div>
   <% } %>
   <nav class="app-sidebar-nav">
-    <% if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
-      <a href="/admin/dashboard">Tableau de bord</a>
-      <a href="/admin/plans">Plans</a>
-      <a href="/admin/modules">Modules</a>
-      <a href="/admin/organizations">Groupes</a>
-      <a href="/admin/finance">Finance</a>
-      <a href="/admin/accounting">Comptabilité</a>
-      <a href="/admin/reporting">Graphiques d'analyse</a>
-      <a href="/admin/group/redoublement">Redoublement groupe</a>
-      <a href="/admin/audit">Audit</a>
-      <a href="/transfer/dashboard">Transferts</a>
-    <% } else if (currentUser && currentUser.role === 'ORGANIZATION_ADMIN') { %>
+    <% if (assist) { %>
+      <a href="/admin/dashboard">Espace Super Admin</a>
+      <a href="/admin/assist/exit">Quitter la prise en main</a>
+    <% } %>
+    <% if (showGroupNav) { %>
       <a href="/group/dashboard">Pilotage</a>
       <a href="/group/campuses">Campus</a>
       <a href="/group/finance">Finance</a>
@@ -35,7 +31,7 @@
       <a href="/group/compare">Comparatif</a>
       <a href="/group/circulars">Circulaires</a>
       <a href="/group/settings">Paramètres</a>
-    <% } else if (currentUser && currentUser.role === 'SCHOOL_ADMIN') { %>
+    <% } else if (showSchoolNav) { %>
       <a href="/school/dashboard">Accueil</a>
       <a href="/school/classes">Classes</a>
       <a href="/school/students">Élèves</a>
@@ -57,6 +53,17 @@
       <a href="/reinscription/dashboard">Réinscriptions</a>
       <a href="/timetable">Emploi du temps</a>
       <a href="/school/settings">Paramètres</a>
+    <% } else if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
+      <a href="/admin/dashboard">Tableau de bord</a>
+      <a href="/admin/plans">Plans</a>
+      <a href="/admin/modules">Modules</a>
+      <a href="/admin/organizations">Groupes</a>
+      <a href="/admin/finance">Finance</a>
+      <a href="/admin/accounting">Comptabilité</a>
+      <a href="/admin/reporting">Graphiques d'analyse</a>
+      <a href="/admin/group/redoublement">Redoublement groupe</a>
+      <a href="/admin/audit">Audit</a>
+      <a href="/transfer/dashboard">Transferts</a>
     <% } else if (currentUser && currentUser.role === 'PARENT') { %>
       <a href="/parent/dashboard">Accueil</a>
       <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>

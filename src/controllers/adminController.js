@@ -11,6 +11,11 @@ const { logAudit } = require('../utils/audit');
 const { ensureSubscriptionPlans, assignPlanToSchool, updatePlanFeatures } = require('../utils/plans');
 const { ensureGroupForOrganization } = require('../utils/group');
 const { getGenderStatsBySchool } = require('../../services/ClassService');
+const {
+  beginSchoolAssist,
+  beginGroupAssist,
+  stopAssist,
+} = require('../utils/adminAssist');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -18,6 +23,7 @@ async function loadSchoolsWithModules() {
       admin: true,
       organization: true,
       modules: true,
+      plan: true,
       _count: { select: { classes: true, students: true } },
     },
     orderBy: { name: 'asc' },
@@ -74,6 +80,7 @@ async function dashboard(req, res) {
     MODULES,
     MODULE_KEYS,
     success: req.query.success || null,
+    error: req.query.error || null,
   });
 }
 
@@ -340,6 +347,25 @@ async function activatePlanModules(req, res) {
   res.redirect('/admin/plans?success=activated');
 }
 
+async function startSchoolAssist(req, res) {
+  const result = await beginSchoolAssist(req, res);
+  if (result.status === 403) return res.status(403).send('Forbidden');
+  if (!result.ok) return res.redirect('/admin/dashboard?error=assist');
+  return res.redirect(result.redirect);
+}
+
+async function startGroupAssist(req, res) {
+  const result = await beginGroupAssist(req, res);
+  if (result.status === 403) return res.status(403).send('Forbidden');
+  if (!result.ok) return res.redirect('/admin/organizations?error=assist');
+  return res.redirect(result.redirect);
+}
+
+async function exitAssist(req, res) {
+  const result = await stopAssist(req, res);
+  return res.redirect(result.redirect);
+}
+
 module.exports = {
   dashboard,
   modulesHub,
@@ -355,4 +381,7 @@ module.exports = {
   plansPage,
   activatePlanModules,
   updatePlanModules,
+  startSchoolAssist,
+  startGroupAssist,
+  exitAssist,
 };

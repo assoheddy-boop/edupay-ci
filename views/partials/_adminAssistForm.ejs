@@ -1,0 +1,9 @@
+<% if (typeof type === 'undefined' || type === 'school') { %>
+<form method="POST" action="/admin/schools/<%= id %>/manage" class="assist-form">
+  <button type="submit" class="btn btn-sm btn-primary"><%= typeof label !== 'undefined' && label ? label : 'Gérer' %></button>
+</form>
+<% } else { %>
+<form method="POST" action="/admin/organizations/<%= id %>/manage" class="assist-form">
+  <button type="submit" class="btn btn-sm btn-primary"><%= typeof label !== 'undefined' && label ? label : 'Prendre la main' %></button>
+</form>
+<% } %>

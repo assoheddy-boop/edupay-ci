@@ -1,5 +1,6 @@
 const ACCESS_COOKIE = 'token';
 const REFRESH_COOKIE = 'refreshToken';
+const ASSIST_COOKIE = 'adminAssist';
 const ACCESS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const REFRESH_MAX_AGE_MS = Number(process.env.JWT_REFRESH_TTL_MS) || ACCESS_MAX_AGE_MS;
 
@@ -46,11 +47,17 @@ function safeBack(req) {
   }
 }
 
+function clearAssistCookie(res) {
+  res.clearCookie(ASSIST_COOKIE, getCookieOptions());
+}
+
 module.exports = {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
+  ASSIST_COOKIE,
   getCookieOptions,
   getRefreshCookieOptions,
   getPrefsCookieOptions,
+  clearAssistCookie,
   safeBack,
 };

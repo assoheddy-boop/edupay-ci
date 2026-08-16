@@ -12,11 +12,15 @@ router.get('/modules', adminController.modulesHub);
 router.get('/schools/:id/modules', adminController.schoolModules);
 router.post('/schools/:id/modules', auditMiddleware('school_modules_update', 'SchoolModule'), adminController.updateSchoolModules);
 router.post('/schools/:id/modules/enable-all', auditMiddleware('school_modules_enable_all', 'SchoolModule'), adminController.enableAllModules);
+router.post('/schools/:id/manage', adminController.startSchoolAssist);
 router.post('/modules/matrix', auditMiddleware('school_modules_matrix', 'SchoolModule'), adminController.updateModulesMatrix);
 router.get('/organizations', adminController.organizations);
 router.post('/organizations', adminController.createOrganization);
 router.post('/organizations/admins', auditMiddleware('org_admin_create', 'OrganizationAdmin'), adminController.createOrgAdmin);
 router.post('/organizations/assign', adminController.assignSchoolToOrg);
+router.post('/organizations/:id/manage', adminController.startGroupAssist);
+router.get('/assist/exit', adminController.exitAssist);
+router.post('/assist/exit', adminController.exitAssist);
 
 router.get('/plans', adminController.plansPage);
 router.post('/plans/activate', auditMiddleware('school_plan_activate', 'School'), adminController.activatePlanModules);

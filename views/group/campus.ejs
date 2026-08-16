@@ -10,6 +10,11 @@
       <a href="/group/campuses" class="text-muted">← Tous les campus</a>
       <h1><%= snap.school.campusLabel || snap.school.name %></h1>
       <p class="page-sub"><%= snap.school.name %> · <%= snap.school.city || '—' %> · <%= snap.school.address || '' %></p>
+      <% if (user && user.role === 'SUPER_ADMIN') { %>
+        <div style="margin-top:0.75rem">
+          <%- include('../partials/_adminAssistForm', { type: 'school', id: snap.school.id, label: 'Gérer cette école' }) %>
+        </div>
+      <% } %>
     </div>
   </div>
 </div>

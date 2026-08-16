@@ -1,6 +1,7 @@
 const { MODULES } = require('../config/modules');
 const { resolveSchoolId, resolveParentSchoolIds } = require('./modules');
 const { getSchoolPlan, planIncludesFeature } = require('../utils/plans');
+const { bypassPlanAndModules } = require('../utils/adminAssist');
 
 function denyModule(req, res, moduleKey, school) {
   const isUpgrade = moduleKey === 'redoublementAnalysis';
@@ -20,6 +21,8 @@ function denyModule(req, res, moduleKey, school) {
 function requirePlan(moduleKey) {
   return async (req, res, next) => {
     try {
+      if (bypassPlanAndModules(req.user)) return next();
+
       const schoolId = await resolveSchoolId(req.user, req);
 
       if (!schoolId && req.user?.role === 'PARENT') {

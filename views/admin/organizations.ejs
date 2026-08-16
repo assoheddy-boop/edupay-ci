@@ -21,6 +21,7 @@
   <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
 
   <% if (error === 'email') { %><div class="alert alert-error">Email déjà utilisé.</div><% } %>
+  <% if (error === 'assist') { %><div class="alert alert-error">Impossible de prendre la main — groupe introuvable.</div><% } %>
 
 
 
@@ -53,13 +54,16 @@
       <h2 class="person-line">
         <%- include('../partials/_logo', { logoUrl: org.logoUrl, logoBase64: org.logoBase64, name: org.name, size: 'sm' }) %>
         <%= org.name %>
+        <span style="margin-left:auto">
+          <%- include('../partials/_adminAssistForm', { type: 'group', id: org.id, label: 'Prendre la main' }) %>
+        </span>
       </h2>
 
       <% if (org.schools.length) { %>
 
         <table class="table">
 
-          <thead><tr><th>École</th><th>Campus</th><th>Ville</th></tr></thead>
+          <thead><tr><th>École</th><th>Campus</th><th>Ville</th><th></th></tr></thead>
 
           <tbody>
 
@@ -72,6 +76,7 @@
                 </td>
                 <td><%= s.campusLabel || '—' %></td>
                 <td><%= s.city %></td>
+                <td><%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %></td>
               </tr>
 
             <% }) %>

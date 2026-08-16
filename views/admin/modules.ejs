@@ -95,6 +95,7 @@
         <form method="POST" action="/admin/schools/<%= selected.id %>/modules/enable-all">
           <button type="submit" class="btn btn-outline btn-sm"><%= tx('modules.enableAll') %></button>
         </form>
+        <%- include('../partials/_adminAssistForm', { type: 'school', id: selected.id, label: 'Gérer' }) %>
       </div>
 
       <form method="POST" action="/admin/schools/<%= selected.id %>/modules">

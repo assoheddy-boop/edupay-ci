@@ -1,6 +1,16 @@
 const prisma = require('../config/database');
+const { MODULES, MODULE_KEYS } = require('../config/modules');
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { getSchoolPlan, planIncludesFeature } = require('../utils/plans');
+const { bypassPlanAndModules } = require('../utils/adminAssist');
+
+function enableAllModulesMap(map = {}) {
+  const enabled = { ...map };
+  MODULE_KEYS.forEach((key) => {
+    enabled[key] = { ...(enabled[key] || {}), ...MODULES[key], enabled: true };
+  });
+  return enabled;
+}
 
 async function getParentSchoolIds(parentId) {
   const links = await prisma.parentStudent.findMany({
@@ -65,7 +75,10 @@ async function attachModules(req, res, next) {
         res.locals.modules = {};
       }
     } else if (schoolId) {
-      res.locals.modules = await applyPlanMask(schoolId, await getModuleMap(schoolId));
+      const map = await getModuleMap(schoolId);
+      res.locals.modules = bypassPlanAndModules(req.user)
+        ? enableAllModulesMap(map)
+        : await applyPlanMask(schoolId, map);
     } else {
       res.locals.modules = {};
     }
@@ -82,6 +95,8 @@ function requireModule(moduleKey) {
   return [
     requirePlan(moduleKey),
     async (req, res, next) => {
+      if (bypassPlanAndModules(req.user)) return next();
+
       const schoolId = await resolveSchoolId(req.user, req);
       if (!schoolId && req.user?.role === 'PARENT') {
         const schoolIds = await resolveParentSchoolIds(req.user);
@@ -121,4 +136,5 @@ module.exports = {
   resolveSchoolId,
   resolveParentSchoolIds,
   getParentSchoolIds,
+  enableAllModulesMap,
 };

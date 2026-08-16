@@ -21,6 +21,9 @@
   <% if (success === 'premium') { %>
     <div class="alert alert-success">Plateforme passée en mode premium.</div>
   <% } %>
+  <% if (typeof error !== 'undefined' && error === 'assist') { %>
+    <div class="alert alert-error">Impossible de prendre la main — école ou groupe introuvable.</div>
+  <% } %>
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -201,10 +204,20 @@
   </div>
 
   <div class="card">
-    <div class="card-header">
-      <h2>Écoles inscrites</h2>
+    <div class="card-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <h2>Écoles et groupes</h2>
+        <p class="page-sub">Prenez la main pour aider un directeur — tous les modules sont accessibles, hors limites du plan.</p>
+      </div>
+      <label class="assist-search">
+        <span class="sr-only">Rechercher</span>
+        <input type="search" id="adminAssistSearch" placeholder="Rechercher une école ou un groupe…" autocomplete="off">
+      </label>
     </div>
-    <table class="table">
+
+    <h3 class="assist-section-title">Écoles inscrites</h3>
+    <div class="table-scroll">
+    <table class="table" id="adminSchoolsTable">
       <thead>
         <tr>
           <th>École</th>
@@ -212,13 +225,13 @@
           <th>Groupe</th>
           <th>Élèves</th>
           <th>Modules actifs</th>
-          <th>Abonnement</th>
+          <th>Plan</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <% schools.forEach(function(s) { %>
-          <tr>
+          <tr class="assist-filter-row" data-search="<%= (s.name + ' ' + (s.city || '') + ' ' + (s.admin && s.admin.email ? s.admin.email : '') + ' ' + (s.organization && s.organization.name ? s.organization.name : '')).toLowerCase() %>">
             <td>
               <strong><%= s.name %></strong><br>
               <small><%= s.admin?.email || '—' %></small>
@@ -229,13 +242,67 @@
             <td>
               <span class="badge"><%= s.enabledCount %>/<%= MODULE_KEYS.length %></span>
             </td>
-            <td><span class="badge badge-premium">Premium</span></td>
             <td>
-              <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-primary">Modules</a>
+              <span class="badge badge-premium"><%= s.plan?.name || s.subscription || '—' %></span>
+            </td>
+            <td class="assist-actions">
+              <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
+              <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-outline">Modules</a>
             </td>
           </tr>
         <% }) %>
       </tbody>
     </table>
+    </div>
+
+    <h3 class="assist-section-title">Groupes scolaires</h3>
+    <% if (!organizations || !organizations.length) { %>
+      <p class="empty">Aucun groupe scolaire.</p>
+    <% } else { %>
+    <div class="table-scroll">
+    <table class="table" id="adminGroupsTable">
+      <thead>
+        <tr>
+          <th>Groupe</th>
+          <th>Écoles</th>
+          <th>Admins</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% organizations.forEach(function(org) { %>
+          <tr class="assist-filter-row" data-search="<%= org.name.toLowerCase() %>">
+            <td><strong><%= org.name %></strong></td>
+            <td><%= org._count?.schools ?? 0 %></td>
+            <td><%= org._count?.admins ?? 0 %></td>
+            <td class="assist-actions">
+              <%- include('../partials/_adminAssistForm', { type: 'group', id: org.id, label: 'Prendre la main' }) %>
+              <a href="/admin/organizations" class="btn btn-sm btn-outline">Fiche</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+    <% } %>
+    <p class="empty" id="adminAssistEmpty" hidden>Aucun résultat.</p>
   </div>
+  <script>
+    (function () {
+      const input = document.getElementById('adminAssistSearch');
+      const empty = document.getElementById('adminAssistEmpty');
+      if (!input) return;
+      input.addEventListener('input', function () {
+        const q = input.value.trim().toLowerCase();
+        const rows = document.querySelectorAll('.assist-filter-row');
+        let visible = 0;
+        rows.forEach(function (row) {
+          const match = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+          row.hidden = !match;
+          if (match) visible += 1;
+        });
+        if (empty) empty.hidden = visible > 0;
+      });
+    })();
+  </script>
 <% } %>

@@ -570,6 +570,62 @@ a.admin-hub-card {
   margin-bottom: 2rem;
   font-size: 0.9rem;
 }
+
+.admin-assist-banner {
+  background: #1e3a5f;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1.25rem;
+  font-size: 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 120;
+}
+.admin-assist-banner strong { font-weight: 700; }
+.btn-assist-exit {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.7);
+  color: #fff;
+}
+.btn-assist-exit:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.assist-form { display: inline-flex; margin: 0; }
+.assist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.assist-search { min-width: min(100%, 18rem); }
+.assist-search input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: var(--radius);
+}
+.assist-section-title {
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+@media (max-width: 600px) {
+  .assist-actions { justify-content: stretch; }
+  .assist-actions .btn,
+  .assist-actions form { width: 100%; }
+  .assist-actions .btn { text-align: center; }
+}
 .stat-value { display: block; font-size: 2rem; font-weight: 700; color: var(--blue); }
 .stat-label { font-size: 0.85rem; color: var(--gray-light); }
 

@@ -1,0 +1,8 @@
+<% if (typeof adminAssist !== 'undefined' && adminAssist) { %>
+<div class="admin-assist-banner" role="status">
+  <span>
+    Vous gérez <strong><%= adminAssist.label %></strong> en tant que super admin
+  </span>
+  <a href="/admin/assist/exit" class="btn btn-sm btn-assist-exit">Quitter</a>
+</div>
+<% } %>
