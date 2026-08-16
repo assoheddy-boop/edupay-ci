@@ -2,10 +2,17 @@
 <% const content = include('payments', { _inLayout: true }); %>
 <%- include('../layouts/parentLayout', { body: content, title: 'Paiements' }) %>
 <% } else { %>
-<div class="page-header">
+  <div class="page-header">
     <h1>Paiements</h1>
     <p class="page-sub">Payez via Wave ou Orange Money, puis téléversez la capture</p>
   </div>
+
+  <% if (error === 'child') { %>
+    <div class="alert alert-error">Cet élève n'est pas lié à votre compte.</div>
+  <% } else if (error) { %>
+    <div class="alert alert-error">Impossible d'enregistrer le paiement.</div>
+  <% } %>
+  <% if (success) { %><div class="alert alert-success">Preuve envoyée. En attente de validation par l'école.</div><% } %>
 
   <% children.forEach(link => { const s = link.student; const school = s.class.school; %>
     <div class="payment-card">
@@ -59,7 +66,7 @@
           <tbody>
             <% s.payments.forEach(p => { %>
               <tr>
-                <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
+                <td><%= formatMoney(p.amount) %></td>
                 <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
                 <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
               </tr>

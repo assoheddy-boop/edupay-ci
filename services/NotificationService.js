@@ -5,6 +5,7 @@ const { sendSms, sendWhatsApp } = require('../src/services/sms');
 const NOTIFICATION_TYPES = {
   payment_validated: { prisma: 'PAYMENT', title: 'Paiement validé', sms: true },
   absence_reported: { prisma: 'ABSENCE', title: 'Absence signalée', sms: true },
+  late_reported: { prisma: 'LATE', title: 'Retard signalé', sms: true },
   new_homework: { prisma: 'HOMEWORK', title: 'Nouveau devoir', sms: false },
   new_message: { prisma: 'GENERAL', title: 'Nouveau message', sms: false },
   payment_overdue: { prisma: 'PAYMENT', title: 'Paiement en retard', sms: true },

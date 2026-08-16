@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { putObject } = require('../../services/StorageService');
 
 const ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -105,7 +106,7 @@ function drawDocumentHeader(doc, school, { title, subtitle, y = 45, logoWidth = 
   doc.moveDown();
 }
 
-function saveSchoolLogo(schoolId, file) {
+async function saveSchoolLogo(schoolId, file) {
   if (!file?.buffer) throw new Error('Fichier logo invalide');
 
   const ext = path.extname(file.originalname).toLowerCase() || '.png';
@@ -113,22 +114,17 @@ function saveSchoolLogo(schoolId, file) {
     throw new Error('Format non supporté. Utilisez JPG, PNG ou WebP.');
   }
 
-  ensureLogoDir();
-
-  for (const e of ALLOWED_EXT) {
-    const oldPath = path.join(getLogoDir(), `${schoolId}${e}`);
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-  }
-
   const filename = `${schoolId}${ext}`;
-  const filepath = path.join(getLogoDir(), filename);
-  fs.writeFileSync(filepath, file.buffer);
-
   const mime = file.mimetype || 'image/png';
-  const logoBase64 = `data:${mime};base64,${file.buffer.toString('base64')}`;
-  const logoUrl = `/uploads/logos/${filename}`;
+  const stored = await putObject({
+    folder: 'logos',
+    filename,
+    buffer: file.buffer,
+    contentType: mime,
+  });
 
-  return { logoUrl, logoBase64 };
+  const logoBase64 = `data:${mime};base64,${file.buffer.toString('base64')}`;
+  return { logoUrl: stored.url, logoBase64 };
 }
 
 function removeSchoolLogoFiles(schoolId) {

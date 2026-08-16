@@ -3,7 +3,8 @@
 <%- include('../layouts/teacherLayout', { body: content, title: 'Appel' }) %>
 <% } else { %>
 <div class="page-header"><h1>✅ Appel du jour</h1></div>
-  <% if (success) { %><div class="alert alert-success">Absences enregistrées — parents notifiés.</div><% } %>
+  <% if (success) { %><div class="alert alert-success">Appel enregistré — parents notifiés en cas d'absence ou de retard.</div><% } %>
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error">Impossible d'enregistrer l'appel.</div><% } %>
 
   <% classLinks.forEach(cl => { %>
     <div class="card">
@@ -11,13 +12,27 @@
       <form method="POST" action="/teacher/attendance" class="form">
         <input type="hidden" name="classId" value="<%= cl.class.id %>">
         <input type="hidden" name="date" value="<%= today %>">
-        <p class="page-sub">Cochez les élèves <strong>absents</strong> :</p>
+        <p class="page-sub">Marquez chaque élève : <strong>Présent</strong>, <strong>Retard</strong> ou <strong>Absent</strong>.</p>
         <div class="attendance-grid">
           <% cl.class.students.forEach(s => { %>
-            <label class="attendance-check">
-              <input type="checkbox" name="absentIds" value="<%= s.id %>">
-              <%= s.firstName %> <%= s.lastName %>
-            </label>
+            <% const current = (typeof statusByStudent !== 'undefined' && statusByStudent[s.id]) || 'present'; %>
+            <div class="attendance-row">
+              <span class="attendance-name"><%= s.firstName %> <%= s.lastName %></span>
+              <div class="attendance-choices" role="group" aria-label="Présence <%= s.firstName %> <%= s.lastName %>">
+                <label class="attendance-choice present">
+                  <input type="radio" name="status_<%= s.id %>" value="present" <%= current === 'present' ? 'checked' : '' %>>
+                  <span>Présent</span>
+                </label>
+                <label class="attendance-choice late">
+                  <input type="radio" name="status_<%= s.id %>" value="late" <%= current === 'late' ? 'checked' : '' %>>
+                  <span>Retard</span>
+                </label>
+                <label class="attendance-choice absent">
+                  <input type="radio" name="status_<%= s.id %>" value="absent" <%= current === 'absent' ? 'checked' : '' %>>
+                  <span>Absent</span>
+                </label>
+              </div>
+            </div>
           <% }) %>
         </div>
         <button type="submit" class="btn btn-primary btn-lg">Enregistrer l'appel</button>

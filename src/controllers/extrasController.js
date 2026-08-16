@@ -269,7 +269,7 @@ async function schoolLostItemsPage(req, res) {
 
 async function createLostItem(req, res) {
   const { description, studentId } = req.body;
-  const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const photoUrl = req.file ? (req.file.url || `/uploads/lost-items/${req.file.filename}`) : null;
 
   try {
     const item = await prisma.lostItem.create({

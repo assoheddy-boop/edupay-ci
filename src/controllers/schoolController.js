@@ -73,7 +73,7 @@ async function updateSettings(req, res) {
 
     if (req.file) {
       const { saveSchoolLogo } = require('../utils/schoolLogo');
-      const logo = saveSchoolLogo(req.user.school.id, req.file);
+      const logo = await saveSchoolLogo(req.user.school.id, req.file);
       data.logoUrl = logo.logoUrl;
       data.logoBase64 = logo.logoBase64;
     }
@@ -266,7 +266,7 @@ async function createStudent(req, res) {
     }).then(async (created) => {
       if (req.file) {
         const { savePersonPhoto } = require('../utils/media');
-        const { photoUrl } = savePersonPhoto('student', created.id, req.file);
+        const { photoUrl } = await savePersonPhoto('student', created.id, req.file);
         await prisma.student.update({ where: { id: created.id }, data: { photoUrl } });
       }
     });
@@ -302,7 +302,7 @@ async function updateStudent(req, res) {
     }
     if (req.file) {
       const { savePersonPhoto } = require('../utils/media');
-      data.photoUrl = savePersonPhoto('student', id, req.file).photoUrl;
+      data.photoUrl = (await savePersonPhoto('student', id, req.file)).photoUrl;
     }
 
     await prisma.student.updateMany({
@@ -543,7 +543,7 @@ async function inviteTeacher(req, res) {
 
     if (req.file && result.user) {
       const { savePersonPhoto } = require('../utils/media');
-      const { photoUrl } = savePersonPhoto('user', result.user.id, req.file);
+      const { photoUrl } = await savePersonPhoto('user', result.user.id, req.file);
       await prisma.user.update({ where: { id: result.user.id }, data: { photoUrl } });
     }
 
@@ -600,7 +600,7 @@ async function updateTeacherPhoto(req, res) {
       await prisma.user.update({ where: { id: teacher.userId }, data: { photoUrl: null } });
     } else if (req.file) {
       const { savePersonPhoto } = require('../utils/media');
-      const { photoUrl } = savePersonPhoto('user', teacher.userId, req.file);
+      const { photoUrl } = await savePersonPhoto('user', teacher.userId, req.file);
       await prisma.user.update({ where: { id: teacher.userId }, data: { photoUrl } });
     }
     res.redirect('/school/teachers?success=photo');

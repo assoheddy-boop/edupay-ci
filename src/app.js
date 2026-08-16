@@ -23,6 +23,7 @@ const statsRoutes = require('../routes/statsRoutes');
 const reinscriptionRoutes = require('../routes/reinscriptionRoutes');
 const redoublementRoutes = require('../routes/redoublementRoutes');
 const timetableRoutes = require('../routes/timetableRoutes');
+const cronRoutes = require('./routes/cron');
 
 const app = express();
 
@@ -47,6 +48,8 @@ app.use(metricsMiddleware);
 app.use((req, res, next) => {
   res.locals.appName = 'EduPay CI';
   res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
+  res.locals.showDemoAccounts = process.env.SHOW_DEMO_ACCOUNTS === 'true'
+    || process.env.NODE_ENV !== 'production';
   next();
 });
 
@@ -55,7 +58,13 @@ app.get('/prefs/currency/:code', setCurrency);
 
 app.get('/', (_req, res) => {
   const { plans, moduleList } = getPlansForLanding();
-  res.render('index', { user: null, plans, moduleList });
+  res.render('home', {
+    user: null,
+    plans,
+    moduleList,
+    homeCss: true,
+    title: 'Gestion scolaire & paiements Wave/OM',
+  });
 });
 
 app.get('/api/health', apiLimiter, (_req, res) => {
@@ -63,6 +72,8 @@ app.get('/api/health', apiLimiter, (_req, res) => {
 });
 
 app.get('/metrics', metricsHandler);
+
+app.use('/api/internal/cron', cronRoutes);
 
 app.use('/api/v1', apiV1Routes);
 

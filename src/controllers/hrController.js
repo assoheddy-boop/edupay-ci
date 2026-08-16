@@ -1,4 +1,3 @@
-const fs = require('fs');
 const path = require('path');
 const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
@@ -14,12 +13,7 @@ const { generatePayroll, markPayrollPaid } = require('../services/hrPayrollServi
 const { generatePayroll: generateTeacherPayroll } = require('../../services/HRService');
 const { generatePayrollPDF } = require('../../services/export');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
-
-const HR_UPLOAD_DIR = path.join(__dirname, '../../uploads/hr');
-
-function ensureHrDir() {
-  if (!fs.existsSync(HR_UPLOAD_DIR)) fs.mkdirSync(HR_UPLOAD_DIR, { recursive: true });
-}
+const { putObject } = require('../../services/StorageService');
 
 async function dashboard(req, res) {
   const schoolId = req.user.school.id;
@@ -94,7 +88,7 @@ async function updateStaffProfile(req, res) {
 
   if (req.file) {
     const { savePersonPhoto } = require('../utils/media');
-    const { photoUrl } = savePersonPhoto('user', teacher.userId, req.file);
+    const { photoUrl } = await savePersonPhoto('user', teacher.userId, req.file);
     await prisma.user.update({ where: { id: teacher.userId }, data: { photoUrl } });
   } else if (req.body.removePhoto === 'on') {
     const { removePersonPhoto } = require('../utils/media');
@@ -137,11 +131,14 @@ async function uploadStaffDocument(req, res) {
 
   if (!req.file) return res.redirect(`/school/hr/staff/${teacherId}?error=file`);
 
-  ensureHrDir();
   const ext = path.extname(req.file.originalname).toLowerCase() || '.pdf';
   const filename = `${teacherId}-${Date.now()}${ext}`;
-  const filepath = path.join(HR_UPLOAD_DIR, filename);
-  fs.writeFileSync(filepath, req.file.buffer);
+  const stored = await putObject({
+    folder: 'hr',
+    filename,
+    buffer: req.file.buffer,
+    contentType: req.file.mimetype,
+  });
 
   const mime = req.file.mimetype;
   const fileData = mime.startsWith('image/') || mime === 'application/pdf'
@@ -153,7 +150,7 @@ async function uploadStaffDocument(req, res) {
       teacherId,
       schoolId,
       label: label || 'Document',
-      fileUrl: `/uploads/hr/${filename}`,
+      fileUrl: stored.url,
       fileData,
       mimeType: mime,
     },

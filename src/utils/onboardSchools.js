@@ -8,9 +8,9 @@ const { generateTempPassword, pickSchoolFields } = require('../config/epvSchools
 const { saveSchoolLogo, publicPathFromLogoFile } = require('./schoolLogo');
 
 function applyCatalogLogo(schoolId, logoFile) {
-  if (!logoFile) return null;
+  if (!logoFile) return Promise.resolve(null);
   const abs = path.isAbsolute(logoFile) ? logoFile : path.join(__dirname, '../..', logoFile);
-  if (!fs.existsSync(abs)) return null;
+  if (!fs.existsSync(abs)) return Promise.resolve(null);
   const buffer = fs.readFileSync(abs);
   return saveSchoolLogo(schoolId, {
     buffer,
@@ -21,7 +21,7 @@ function applyCatalogLogo(schoolId, logoFile) {
 
 async function attachLogoAndPhone(school, def) {
   const data = {};
-  const logo = applyCatalogLogo(school.id, def.logoFile);
+  const logo = await applyCatalogLogo(school.id, def.logoFile);
   const publicUrl = publicPathFromLogoFile(def.logoFile);
   if (publicUrl) data.logoUrl = publicUrl;
   else if (logo) data.logoUrl = logo.logoUrl;

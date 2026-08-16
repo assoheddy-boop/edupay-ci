@@ -328,7 +328,7 @@ async function updateSettings(req, res) {
     }
     if (req.file) {
       const { saveOrgLogo } = require('../utils/schoolLogo');
-      const logo = saveOrgLogo(organization.id, req.file);
+      const logo = await saveOrgLogo(organization.id, req.file);
       data.logoUrl = logo.logoUrl;
       data.logoBase64 = logo.logoBase64;
     }

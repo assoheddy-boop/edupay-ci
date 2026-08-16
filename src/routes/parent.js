@@ -9,11 +9,12 @@ const extras = require('../controllers/extrasController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 
 const { attachModules, requireModule } = require('../middleware/modules');
+const { attachConsentPrompt } = require('../middleware/consentPrompt');
 
 const { addChildRules, handleValidationErrors } = require('../middleware/validators');
 
 const upload = require('../middleware/upload');
-const { chatUpload } = upload;
+const { chatUpload, persistUpload } = upload;
 
 
 
@@ -21,7 +22,7 @@ const router = express.Router();
 
 
 
-router.use(requireAuth, checkRole('parent'), attachModules);
+router.use(requireAuth, checkRole('parent'), attachModules, attachConsentPrompt);
 
 
 
@@ -54,7 +55,7 @@ router.get('/messages/:partnerId', requireModule('chat'), messageController.chat
 router.post('/messages/:partnerId', requireModule('chat'), chatUpload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'attachment', maxCount: 1 },
-]), messageController.send);
+]), persistUpload('chat'), messageController.send);
 
 router.get('/suivi', requireModule('absences'), extras.parentSuiviPage);
 
@@ -75,6 +76,8 @@ router.get('/health', requireModule('health'), extras.parentHealthPage);
 router.get('/privacy', parentController.privacyPage);
 
 router.post('/privacy', parentController.updateConsent);
+
+router.post('/privacy/first-login', parentController.handleFirstLoginConsent);
 
 module.exports = router;
 

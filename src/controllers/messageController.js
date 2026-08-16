@@ -99,7 +99,7 @@ async function send(req, res) {
   let fileUrl = null;
   let fileName = null;
   if (uploaded) {
-    const url = `/uploads/${uploaded.filename}`;
+    const url = uploaded.url || `/uploads/chat/${uploaded.filename}`;
     const isAudio = (uploaded.mimetype || '').startsWith('audio/')
       || /\.(mp3|wav|m4a|ogg)$/i.test(uploaded.originalname || '');
     if (isAudio) {

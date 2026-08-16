@@ -101,7 +101,50 @@ function runPgDump(pgDump, parsed, outfile) {
   });
 }
 
+async function createNeonSnapshot() {
+  const apiKey = process.env.NEON_API_KEY;
+  const projectId = process.env.NEON_PROJECT_ID;
+  const branchId = process.env.NEON_BRANCH_ID;
+  if (!apiKey || !projectId || !branchId) return null;
+
+  const name = `edupay-${new Date().toISOString().slice(0, 10)}`;
+  const retainDays = Number(process.env.NEON_SNAPSHOT_RETAIN_DAYS) || 7;
+  const expiresAt = new Date(Date.now() + retainDays * 24 * 60 * 60 * 1000).toISOString();
+  const endpoint = new URL(
+    `https://console.neon.tech/api/v2/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branchId)}/snapshot`,
+  );
+  endpoint.searchParams.set('name', name);
+  endpoint.searchParams.set('expires_at', expiresAt);
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    logger.error('neon snapshot failed', { status: res.status, body: body.slice(0, 300) });
+    return { ok: false, error: 'neon_snapshot_failed' };
+  }
+
+  const payload = await res.json().catch(() => ({}));
+  const snapshotId = payload?.snapshot?.id || payload?.id || null;
+  logger.info('neon snapshot created', { snapshotId, name });
+  return { ok: true, driver: 'neon', snapshotId, name };
+}
+
 async function dailyDatabaseBackup() {
+  const neon = await createNeonSnapshot();
+  if (neon?.ok) return neon;
+
+  if (process.env.VERCEL) {
+    if (neon) return neon;
+    logger.info('backup skipped', { reason: 'neon_pitr' });
+    return { skipped: true, reason: 'neon_pitr' };
+  }
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     logger.warn('backup skipped', { reason: 'no_database_url' });
@@ -145,6 +188,7 @@ async function dailyDatabaseBackup() {
 module.exports = {
   BACKUP_DIR,
   dailyDatabaseBackup,
+  createNeonSnapshot,
   resolvePgDump,
   parseDatabaseUrl,
   redactDbUrl,

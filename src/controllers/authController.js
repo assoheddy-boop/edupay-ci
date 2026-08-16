@@ -84,6 +84,12 @@ async function register(req, res) {
     const hashed = await hashPassword(password);
 
     if (role === 'SCHOOL_ADMIN') {
+      if (process.env.ALLOW_PUBLIC_SCHOOL_REGISTER === 'false') {
+        return res.render('auth/register', {
+          error: 'Les inscriptions écoles sont temporairement fermées. Contactez EduPay CI.',
+          role,
+        });
+      }
       const slug = await generateUniqueSchoolSlug(schoolName);
       const { findPlanBySlug, assignPlanToSchool } = require('../utils/plans');
       const selectedPlan = await findPlanBySlug(plan || 'essentiel');
@@ -208,7 +214,7 @@ async function uploadPhoto(req, res) {
       await prisma.user.update({ where: { id: req.user.id }, data: { photoUrl: null } });
     } else if (req.file) {
       const { savePersonPhoto } = require('../utils/media');
-      const { photoUrl } = savePersonPhoto('user', req.user.id, req.file);
+      const { photoUrl } = await savePersonPhoto('user', req.user.id, req.file);
       await prisma.user.update({ where: { id: req.user.id }, data: { photoUrl } });
     }
     const url = new URL(back, 'http://localhost');

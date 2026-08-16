@@ -4,6 +4,7 @@ describe('NotificationService', () => {
   test('exposes the three event types', () => {
     expect(NOTIFICATION_TYPES).toHaveProperty('payment_validated');
     expect(NOTIFICATION_TYPES).toHaveProperty('absence_reported');
+    expect(NOTIFICATION_TYPES).toHaveProperty('late_reported');
     expect(NOTIFICATION_TYPES).toHaveProperty('new_homework');
   });
 

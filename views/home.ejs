@@ -1,0 +1,242 @@
+<%- include('partials/head') %>
+<div class="home">
+  <header class="home-top">
+    <a href="/" class="home-logo">
+      <span class="home-logo-mark" aria-hidden="true">🎓</span>
+      <span>EduPay <strong>CI</strong></span>
+    </a>
+    <nav class="home-links" aria-label="Navigation principale">
+      <a href="#tarifs">Offres</a>
+      <a href="#contact">Contact</a>
+      <a href="/auth/login">Connexion</a>
+      <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary">Demander une démo</a>
+    </nav>
+  </header>
+
+  <section class="home-hero">
+    <div class="home-hero-inner">
+      <p class="home-kicker">Côte d'Ivoire · Wave &amp; Orange Money</p>
+      <h1>EduPay CI — bien plus qu'un paiement scolaire</h1>
+      <p class="home-hero-lead">
+        La plateforme qui relie paiements mobiles, vie scolaire, RH et gouvernance multi-campus.
+        Conçue pour les écoles ivoiriennes — pas seulement pour encaisser les frais.
+      </p>
+      <div class="home-hero-actions">
+        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary home-btn-xl">Demander une démo</a>
+        <a href="#tarifs" class="home-btn home-btn-ghost home-btn-xl">Voir les offres</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="piliers" aria-labelledby="pillars-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="pillars-title">Quatre piliers, une seule plateforme</h2>
+        <p>Ce que les outils de paiement seuls ne couvrent pas — et ce qu'un logiciel pensé hors de Côte d'Ivoire peine à faire avec Wave et Orange Money.</p>
+      </header>
+      <div class="home-pillars">
+        <article class="home-card">
+          <span class="home-card-icon" aria-hidden="true">💳</span>
+          <h3>Paiements simplifiés</h3>
+          <p>Wave et Orange Money, preuve de paiement, validation par l'école. Le parent paie depuis son téléphone ; la direction voit ce qui est réglé.</p>
+        </article>
+        <article class="home-card">
+          <span class="home-card-icon" aria-hidden="true">📚</span>
+          <h3>Vie scolaire</h3>
+          <p>Notes, appel Présent / Retard / Absent, bulletins, suivi parent. L'enfant n'a pas d'écran : la famille reçoit l'essentiel.</p>
+        </article>
+        <article class="home-card">
+          <span class="home-card-icon" aria-hidden="true">👩‍🏫</span>
+          <h3>RH &amp; Comptabilité</h3>
+          <p>Équipe, congés, paie, recettes et dépenses : le pilotage administratif dans le même espace que la scolarité.</p>
+        </article>
+        <article class="home-card">
+          <span class="home-card-icon" aria-hidden="true">🌍</span>
+          <h3>Multi-campus &amp; Gouvernance</h3>
+          <p>Groupes scolaires, vue consolidée, modules activables campus par campus. Une direction, plusieurs établissements.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-section-alt" id="comparaison" aria-labelledby="compare-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="compare-title">Paiement seul, ou école entière&nbsp;?</h2>
+        <p class="home-key-sentence">Contrairement aux solutions limitées aux paiements, EduPay CI offre une gestion scolaire complète.</p>
+      </header>
+      <div class="home-compare">
+        <article class="home-compare-col">
+          <h3>Solutions classiques</h3>
+          <p class="home-compare-tag">Paiement uniquement</p>
+          <ul>
+            <li>Encaissement des frais</li>
+            <li>Peu ou pas de suivi pédagogique</li>
+            <li>RH et compta ailleurs, ou nulle part</li>
+            <li>Un campus, un outil, un tableur</li>
+          </ul>
+        </article>
+        <article class="home-compare-col home-compare-col-accent">
+          <h3>EduPay CI</h3>
+          <p class="home-compare-tag">Paiement + Vie scolaire + RH + Multi-campus</p>
+          <ul>
+            <li>Wave / Orange Money + preuve + validation</li>
+            <li>Notes, appel, bulletins, parents informés</li>
+            <li>RH et comptabilité dans le même fil</li>
+            <li>Réseaux et groupes : une gouvernance, plusieurs campus</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="temoignages" aria-labelledby="social-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="social-title">Ce que l'on vise, concrètement</h2>
+        <p>Pas de chiffres gonflés. Un produit en déploiement, un réseau EPV déjà au catalogue, et des usages qui changent le quotidien.</p>
+      </header>
+      <div class="home-figures">
+        <div class="home-figure">
+          <strong>Réseau EPV</strong>
+          <span>Premiers établissements connectés — Abidjan et Bingerville</span>
+        </div>
+        <div class="home-figure">
+          <strong>Wave &amp; OM</strong>
+          <span>Deux canaux que les familles ivoiriennes utilisent déjà</span>
+        </div>
+        <div class="home-figure">
+          <strong>Redoublement</strong>
+          <span>Des indicateurs pour agir plus tôt, pas un taux magique affiché en vitrine</span>
+        </div>
+      </div>
+      <div class="home-quotes">
+        <blockquote>
+          <p>« On savait qui avait payé. On ne savait pas qui était en retard en classe. Maintenant les deux se voient le jour même. »</p>
+          <footer>Direction d'établissement, Abidjan</footer>
+        </blockquote>
+        <blockquote>
+          <p>« Je paie par Wave, je vois les notes. Je n'ai pas besoin d'un autre application pour l'école. »</p>
+          <footer>Parent, Cocody</footer>
+        </blockquote>
+        <blockquote>
+          <p>« L'appel, c'est trois boutons. On ne cherche plus le cahier. »</p>
+          <footer>Enseignant, Yopougon</footer>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-section-alt" id="appel" aria-labelledby="appel-title">
+    <div class="home-wrap home-appel">
+      <div class="home-appel-copy">
+        <h2 id="appel-title">Un clic par élève, pensé pour le pouce</h2>
+        <p>Sur le terrain, l'enseignant n'a pas une main libre et un clavier. L'appel du jour tient en trois gros boutons : Présent, Retard, Absent. Les parents sont notifiés en cas d'absence ou de retard.</p>
+        <ul class="home-appel-points">
+          <li>Une ligne par élève, lisible au soleil</li>
+          <li>Un geste, pas un menu</li>
+          <li>Le même statut que voit la famille</li>
+        </ul>
+      </div>
+      <div class="home-phone" aria-hidden="true">
+        <div class="home-phone-frame">
+          <div class="home-phone-notch"></div>
+          <div class="home-phone-screen">
+            <p class="home-phone-appbar">Appel du jour · CM2 A</p>
+            <div class="home-phone-row">
+              <span>Aya Kouassi</span>
+              <div class="home-att">
+                <span class="is-on is-present">Présent</span>
+                <span>Retard</span>
+                <span>Absent</span>
+              </div>
+            </div>
+            <div class="home-phone-row">
+              <span>Jean Yao</span>
+              <div class="home-att">
+                <span>Présent</span>
+                <span class="is-on is-late">Retard</span>
+                <span>Absent</span>
+              </div>
+            </div>
+            <div class="home-phone-row">
+              <span>Fatou Diallo</span>
+              <div class="home-att">
+                <span>Présent</span>
+                <span>Retard</span>
+                <span class="is-on is-absent">Absent</span>
+              </div>
+            </div>
+            <div class="home-phone-save">Enregistrer l'appel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="tarifs" aria-labelledby="tarifs-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="tarifs-title">Des offres claires, en FCFA</h2>
+        <p>Activez les modules dont votre établissement a besoin. Le plan Groupe se discute selon le nombre de campus.</p>
+      </header>
+      <div class="home-plans">
+        <% plans.filter(function (p) { return !p.isGroup; }).forEach(function (plan) { %>
+          <article class="home-plan<%= plan.highlight ? ' is-featured' : '' %>">
+            <% if (plan.badge) { %><span class="home-plan-badge"><%= plan.badge %></span><% } %>
+            <h3><%= plan.name %></h3>
+            <p class="home-plan-tag"><%= plan.tagline %></p>
+            <p class="home-plan-price">
+              <strong><%= plan.priceLabel %></strong>
+              <% if (plan.period) { %><span><%= plan.period %></span><% } %>
+            </p>
+            <p class="home-plan-limits"><%= plan.limits %></p>
+            <a href="<%= plan.ctaHref %>" class="home-btn <%= plan.highlight ? 'home-btn-primary' : 'home-btn-outline' %>"><%= plan.cta %></a>
+          </article>
+        <% }) %>
+      </div>
+      <% const groupe = plans.find(function (p) { return p.isGroup; }); %>
+      <% if (groupe) { %>
+        <aside class="home-group">
+          <div>
+            <h3><%= groupe.name %></h3>
+            <p><%= groupe.tagline %> — <%= groupe.priceLabel %>, <%= groupe.period %>.</p>
+          </div>
+          <a href="<%= groupe.ctaHref %>" class="home-btn home-btn-primary"><%= groupe.cta %></a>
+        </aside>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="home-cta-band" id="contact">
+    <div class="home-wrap">
+      <h2>Parlons de votre établissement</h2>
+      <p>Une démo, un devis groupe, ou simplement une question. Pas de mot de passe de démonstration sur cette page : on vous ouvre un espace propre.</p>
+      <div class="home-hero-actions">
+        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary home-btn-xl">Demander une démo</a>
+        <a href="mailto:contact@edupay.ci?subject=Demande%20de%20d%C3%A9mo%20EduPay%20CI" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@edupay.ci</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="home-footer">
+    <div class="home-wrap home-footer-grid">
+      <div>
+        <p class="home-footer-brand">EduPay <strong>CI</strong></p>
+        <p>Gestion scolaire et paiements Wave / Orange Money, Côte d'Ivoire.</p>
+      </div>
+      <div>
+        <h3>Contact</h3>
+        <p><a href="mailto:contact@edupay.ci">contact@edupay.ci</a></p>
+        <p><a href="/auth/login">Connexion</a> · <a href="/auth/register">Inscription</a></p>
+      </div>
+      <div>
+        <h3>Mentions légales</h3>
+        <p>EduPay CI est une plateforme de gestion scolaire destinée aux établissements, enseignants et parents en Côte d'Ivoire. Les données saisies sont utilisées pour le suivi pédagogique, administratif et financier de l'école.</p>
+        <p>Hébergement de l'application : infrastructure cloud (Vercel). Pour toute demande relative aux données ou à un établissement : <a href="mailto:contact@edupay.ci">contact@edupay.ci</a>.</p>
+      </div>
+    </div>
+    <p class="home-footer-copy">© <%= new Date().getFullYear() %> EduPay CI — Simple, professionnel, ivoirien.</p>
+  </footer>
+</div>
+<%- include('partials/scripts') %>

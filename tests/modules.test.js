@@ -43,4 +43,25 @@ describe('Protected routes', () => {
       .send({ matricule: 'ETOILE-001' });
     expect(res.status).toBe(302);
   });
+
+  test('school sidebar exposes lost-items when the module is enabled', async () => {
+    const agent = await loginAgent('ecole@demo.ci');
+    const res = await agent.get('/school/dashboard');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('/school/lost-items');
+  });
+
+  test('parent sidebar exposes pickup when the module is enabled', async () => {
+    const agent = await loginAgent('parent@demo.ci');
+    const res = await agent.get('/parent/dashboard');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('/parent/pickup');
+  });
+
+  test('teacher sidebar exposes behavior when the module is enabled', async () => {
+    const agent = await loginAgent('prof@demo.ci');
+    const res = await agent.get('/teacher/dashboard');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('/teacher/behavior');
+  });
 });

@@ -44,6 +44,9 @@ function metricsMiddleware(req, res, next) {
 
 async function metricsHandler(req, res) {
   const expected = process.env.METRICS_BEARER;
+  if (process.env.NODE_ENV === 'production' && !expected) {
+    return res.status(403).json({ error: 'Non autorisé' });
+  }
   if (expected) {
     const got = req.headers.authorization?.replace(/^Bearer\s+/i, '');
     if (got !== expected) return res.status(401).json({ error: 'Non autorisé' });

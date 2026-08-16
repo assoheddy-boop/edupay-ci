@@ -5,15 +5,29 @@ jest.mock('../services/logger', () => ({
 }));
 
 const logger = require('../services/logger');
-const { dailyDatabaseBackup, parseDatabaseUrl, redactDbUrl } = require('../services/BackupService');
+const { dailyDatabaseBackup, parseDatabaseUrl, redactDbUrl, createNeonSnapshot } = require('../services/BackupService');
 
 describe('BackupService', () => {
   const originalUrl = process.env.DATABASE_URL;
+  const neonKeys = ['NEON_API_KEY', 'NEON_PROJECT_ID', 'NEON_BRANCH_ID', 'VERCEL'];
+  const neonPrev = {};
+
+  beforeEach(() => {
+    for (const key of neonKeys) {
+      neonPrev[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
 
   afterEach(() => {
     if (originalUrl === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = originalUrl;
+    for (const key of neonKeys) {
+      if (neonPrev[key] === undefined) delete process.env[key];
+      else process.env[key] = neonPrev[key];
+    }
     jest.clearAllMocks();
+    if (global.fetch?.mockRestore) global.fetch.mockRestore();
   });
 
   test('redactDbUrl strips connection strings', () => {
@@ -47,5 +61,39 @@ describe('BackupService', () => {
     expect(result.skipped).toBe(true);
     expect(result.reason).toBe('no_pg_dump');
     delete process.env.PG_DUMP_PATH;
+  });
+
+  test('createNeonSnapshot is a no-op without credentials', async () => {
+    await expect(createNeonSnapshot()).resolves.toBeNull();
+  });
+
+  test('creates a Neon snapshot when API credentials are set', async () => {
+    process.env.NEON_API_KEY = 'neon-key';
+    process.env.NEON_PROJECT_ID = 'ancient-cloud-90631299';
+    process.env.NEON_BRANCH_ID = 'br-main';
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ snapshot: { id: 'snap-1' } }),
+      text: async () => '',
+    });
+
+    const result = await dailyDatabaseBackup();
+    expect(result).toEqual({
+      ok: true,
+      driver: 'neon',
+      snapshotId: 'snap-1',
+      name: expect.stringMatching(/^edupay-/),
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.objectContaining({ href: expect.stringContaining('/snapshot') }),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  test('skips pg_dump on Vercel when Neon API is not configured', async () => {
+    process.env.VERCEL = '1';
+    process.env.DATABASE_URL = 'postgresql://edupay:x@localhost:5432/edupay_ci';
+    const result = await dailyDatabaseBackup();
+    expect(result).toEqual({ skipped: true, reason: 'neon_pitr' });
   });
 });

@@ -44,6 +44,25 @@ async function listConsents(parentId) {
   });
 }
 
+function isConsentPromptEnabled() {
+  const raw = String(process.env.PARENT_CONSENT_PROMPT || '').trim().toLowerCase();
+  if (raw === '0' || raw === 'false' || raw === 'off') return false;
+  return true;
+}
+
+async function hasConsentRecords(parentId) {
+  if (!parentId) return false;
+  const count = await prisma.consent.count({ where: { parentId } });
+  return count > 0;
+}
+
+async function needsFirstLoginConsent(parentId) {
+  if (!isConsentPromptEnabled()) return false;
+  if (!parentId) return false;
+  const has = await hasConsentRecords(parentId);
+  return !has;
+}
+
 async function upsertConsent(parentId, type, status) {
   const consentType = normalizeType(type);
   const consentStatus = status === 'GRANTED' || status === 'REVOKED' || status === 'PENDING'
@@ -69,4 +88,7 @@ module.exports = {
   normalizeStatus,
   listConsents,
   upsertConsent,
+  isConsentPromptEnabled,
+  hasConsentRecords,
+  needsFirstLoginConsent,
 };

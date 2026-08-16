@@ -1,15 +1,17 @@
 <%- include('partials/head') %>
 <%- include('partials/header', { user: null }) %>
 <main class="container">
+<% if (typeof showDemoAccounts !== 'undefined' && showDemoAccounts) { %>
 <div class="demo-banner">
   <strong>Démo :</strong> École <code>ecole@demo.ci</code> · Parent <code>parent@demo.ci</code> · Prof <code>prof@demo.ci</code> · Groupe <code>groupe@demo.ci</code> — mot de passe <code>demo1234</code>
 </div>
+<% } %>
 
 <section class="hero">
   <div class="hero-content">
     <span class="badge">🇨🇮 Côte d'Ivoire</span>
     <h1>Gestion scolaire moderne &amp; paiements simplifiés</h1>
-    <p class="hero-sub">Connectez votre école, vos enseignants et les parents. Payez via Wave ou Orange Money, sans API compliquée.</p>
+    <p class="hero-sub">Appel Présent / Retard / Absent, notes visibles par les parents, paiements Wave ou Orange Money.</p>
     <div class="hero-actions">
       <a href="/auth/register?role=SCHOOL_ADMIN" class="btn btn-primary btn-lg">Créer mon école</a>
       <a href="#tarifs" class="btn btn-outline btn-lg">Voir les offres</a>
@@ -28,9 +30,14 @@
       <p>Suivi scolaire complet avec génération PDF.</p>
     </div>
     <div class="feature-card">
+      <span class="feature-icon">✅</span>
+      <h3>Appel en 3 boutons</h3>
+      <p>Présent, retard ou absent. Les parents voient le statut le jour même.</p>
+    </div>
+    <div class="feature-card">
       <span class="feature-icon">👨‍👩‍👧</span>
       <h3>Sans écran pour l'enfant</h3>
-      <p>Les parents reçoivent tout : devoirs, absences, alertes.</p>
+      <p>Les parents reçoivent tout : notes, absences, alertes Wave/OM.</p>
     </div>
   </div>
 </section>
@@ -125,7 +132,9 @@
         <a href="<%= groupe.ctaHref %>" class="btn btn-primary btn-lg"><%= groupe.cta %></a>
         <a href="/auth/login" class="btn btn-outline">Déjà client groupe</a>
       </div>
+      <% if (typeof showDemoAccounts !== 'undefined' && showDemoAccounts) { %>
       <p class="group-demo">Compte démo : <code>groupe@demo.ci</code> / <code>demo1234</code></p>
+      <% } %>
     </div>
     <div class="group-visual card">
       <h3>Vue consolidée</h3>

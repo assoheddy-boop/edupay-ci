@@ -108,7 +108,7 @@
                 <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
                 <%= p.student.firstName %> <%= p.student.lastName %>
               </td>
-              <td><%= p.amount.toLocaleString('fr-FR') %> FCFA</td>
+              <td><%= formatMoney(p.amount) %></td>
               <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
               <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
             </tr>

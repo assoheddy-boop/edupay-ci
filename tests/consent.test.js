@@ -2,6 +2,7 @@ jest.mock('../src/config/database', () => ({
   consent: {
     findMany: jest.fn(),
     upsert: jest.fn(),
+    count: jest.fn(),
   },
 }));
 
@@ -12,6 +13,9 @@ const {
   normalizeStatus,
   listConsents,
   upsertConsent,
+  isConsentPromptEnabled,
+  hasConsentRecords,
+  needsFirstLoginConsent,
 } = require('../services/ConsentService');
 
 describe('ConsentService', () => {
@@ -77,5 +81,53 @@ describe('ConsentService', () => {
     const result = await upsertConsent('u1', 'COOKIES', 'grant');
     expect(result).toEqual({ ok: false, error: 'type' });
     expect(prisma.consent.upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('first-login consent prompt', () => {
+  const originalFlag = process.env.PARENT_CONSENT_PROMPT;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    if (originalFlag === undefined) delete process.env.PARENT_CONSENT_PROMPT;
+    else process.env.PARENT_CONSENT_PROMPT = originalFlag;
+  });
+
+  test('isConsentPromptEnabled defaults to on', () => {
+    delete process.env.PARENT_CONSENT_PROMPT;
+    expect(isConsentPromptEnabled()).toBe(true);
+  });
+
+  test('isConsentPromptEnabled can be turned off', () => {
+    process.env.PARENT_CONSENT_PROMPT = 'false';
+    expect(isConsentPromptEnabled()).toBe(false);
+  });
+
+  test('hasConsentRecords is false when none exist', async () => {
+    prisma.consent.count.mockResolvedValue(0);
+    expect(await hasConsentRecords('u1')).toBe(false);
+  });
+
+  test('hasConsentRecords is true when a row exists', async () => {
+    prisma.consent.count.mockResolvedValue(1);
+    expect(await hasConsentRecords('u1')).toBe(true);
+  });
+
+  test('needsFirstLoginConsent is true only without records', async () => {
+    delete process.env.PARENT_CONSENT_PROMPT;
+    prisma.consent.count.mockResolvedValue(0);
+    expect(await needsFirstLoginConsent('u1')).toBe(true);
+    prisma.consent.count.mockResolvedValue(2);
+    expect(await needsFirstLoginConsent('u1')).toBe(false);
+  });
+
+  test('needsFirstLoginConsent stays false when the flag is off', async () => {
+    process.env.PARENT_CONSENT_PROMPT = '0';
+    prisma.consent.count.mockResolvedValue(0);
+    expect(await needsFirstLoginConsent('u1')).toBe(false);
+    expect(prisma.consent.count).not.toHaveBeenCalled();
   });
 });

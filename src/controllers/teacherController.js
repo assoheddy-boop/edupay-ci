@@ -149,7 +149,7 @@ async function homeworks(req, res) {
 
 async function createHomework(req, res) {
   const { classId, title, description, dueDate } = req.body;
-  const attachmentUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const attachmentUrl = req.file ? (req.file.url || `/uploads/homeworks/${req.file.filename}`) : null;
 
   try {
     const link = await prisma.teacherClass.findFirst({
@@ -243,56 +243,95 @@ async function attendancePage(req, res) {
     where: { teacherId: req.user.teacher.id },
     include: { class: { include: { students: { orderBy: { lastName: 'asc' } } } } },
   });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const studentIds = classLinks.flatMap((cl) => cl.class.students.map((s) => s.id));
+  const marks = studentIds.length
+    ? await prisma.absence.findMany({
+      where: { studentId: { in: studentIds }, date: today },
+    })
+    : [];
+  const statusByStudent = Object.fromEntries(
+    marks.map((a) => [a.studentId, a.type === 'LATE' ? 'late' : 'absent']),
+  );
   res.render('teacher/attendance', {
     user: req.user,
     classLinks,
-    today: new Date().toISOString().slice(0, 10),
+    statusByStudent,
+    today: today.toISOString().slice(0, 10),
     success: req.query.success || null,
+    error: req.query.error || null,
   });
 }
 
+function attendanceTypeFromStatus(raw) {
+  const v = String(raw || 'present').toLowerCase();
+  if (v === 'late' || v === 'retard') return 'LATE';
+  if (v === 'absent' || v === 'absence') return 'ABSENCE';
+  return null;
+}
+
+async function notifyAttendance(student, date, type) {
+  const parents = await prisma.parentStudent.findMany({
+    where: { studentId: student.id },
+    include: { parent: true },
+  });
+  const day = new Date(date).toLocaleDateString('fr-FR');
+  const kind = type === 'LATE' ? 'late_reported' : 'absence_reported';
+  const message = type === 'LATE'
+    ? `${student.firstName} en retard le ${day}.`
+    : `${student.firstName} absent le ${day}.`;
+  for (const ps of parents) {
+    await sendNotification(ps.parent.userId, kind, message);
+  }
+}
+
 async function submitAttendance(req, res) {
-  const { classId, date, absentIds } = req.body;
-  const absentList = Array.isArray(absentIds) ? absentIds : absentIds ? [absentIds] : [];
+  const { classId, date } = req.body;
 
   try {
     const students = await prisma.student.findMany({
       where: { classId, class: { teachers: { some: { teacherId: req.user.teacher.id } } } },
     });
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
 
     for (const student of students) {
-      if (!absentList.includes(student.id)) continue;
-
-      const dayStart = new Date(date);
-      dayStart.setHours(0, 0, 0, 0);
+      const type = attendanceTypeFromStatus(req.body[`status_${student.id}`]);
       const existing = await prisma.absence.findFirst({
-        where: {
-          studentId: student.id,
-          date: dayStart,
-        },
+        where: { studentId: student.id, date: dayStart },
       });
-      if (existing) continue;
+
+      if (!type) {
+        if (existing) await prisma.absence.delete({ where: { id: existing.id } });
+        continue;
+      }
+
+      if (existing) {
+        if (existing.type !== type) {
+          await prisma.absence.update({
+            where: { id: existing.id },
+            data: {
+              type,
+              reason: type === 'LATE' ? 'Retard (appel)' : 'Appel du jour',
+              recordedBy: req.user.teacher.id,
+            },
+          });
+          await notifyAttendance(student, date, type);
+        }
+        continue;
+      }
 
       await prisma.absence.create({
         data: {
           studentId: student.id,
           date: dayStart,
-          type: 'ABSENCE',
-          reason: 'Appel du jour',
+          type,
+          reason: type === 'LATE' ? 'Retard (appel)' : 'Appel du jour',
           recordedBy: req.user.teacher.id,
         },
       });
-      const parents = await prisma.parentStudent.findMany({
-        where: { studentId: student.id },
-        include: { parent: true },
-      });
-      for (const ps of parents) {
-        await sendNotification(
-          ps.parent.userId,
-          'absence_reported',
-          `${student.firstName} absent le ${new Date(date).toLocaleDateString('fr-FR')}.`,
-        );
-      }
+      await notifyAttendance(student, date, type);
     }
 
     res.redirect('/teacher/attendance?success=1');
@@ -351,6 +390,7 @@ module.exports = {
   createSchedule,
   attendancePage,
   submitAttendance,
+  attendanceTypeFromStatus,
   bulkGradesPage,
   submitBulkGrades,
 };

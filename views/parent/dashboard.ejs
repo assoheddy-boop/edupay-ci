@@ -147,7 +147,7 @@
             <% (s.payments || []).forEach(p => { %>
               <p>
                 <%= p.feeType ? p.feeType.name : 'Paiement' %> :
-                <strong><%= p.amount.toLocaleString('fr-FR') %> FCFA</strong>
+                <strong><%= formatMoney(p.amount) %></strong>
                 — <%= p.status %>
               </p>
             <% }) %>

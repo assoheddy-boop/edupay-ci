@@ -1,24 +1,8 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const { storeMulterFile, collectMulterFiles } = require('../../services/StorageService');
 
-const uploadDir = path.join(__dirname, '../../uploads');
-
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-} catch {
-  // Vercel / serverless filesystems are read-only outside /tmp
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
+const memory = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   const allowed = /jpeg|jpg|png|pdf|webp|mp3|wav|m4a/;
@@ -28,13 +12,13 @@ const fileFilter = (_req, file, cb) => {
 };
 
 const upload = multer({
-  storage,
+  storage: memory,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter,
 });
 
 const csvUpload = multer({
-  storage: multer.memoryStorage(),
+  storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = /\.csv$/i.test(file.originalname)
@@ -46,7 +30,7 @@ const csvUpload = multer({
 });
 
 const logoUpload = multer({
-  storage: multer.memoryStorage(),
+  storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = /jpeg|jpg|png|webp/i.test(path.extname(file.originalname))
@@ -56,7 +40,7 @@ const logoUpload = multer({
 });
 
 const hrDocUpload = multer({
-  storage: multer.memoryStorage(),
+  storage: memory,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = /jpeg|jpg|png|webp|pdf/i.test(path.extname(file.originalname))
@@ -67,7 +51,7 @@ const hrDocUpload = multer({
 });
 
 const chatUpload = multer({
-  storage,
+  storage: memory,
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -80,8 +64,23 @@ const chatUpload = multer({
   },
 });
 
+function persistUpload(folder) {
+  return async (req, _res, next) => {
+    try {
+      const files = collectMulterFiles(req);
+      for (const file of files) {
+        await storeMulterFile(file, folder);
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
 module.exports = upload;
 module.exports.csvUpload = csvUpload;
 module.exports.logoUpload = logoUpload;
 module.exports.hrDocUpload = hrDocUpload;
 module.exports.chatUpload = chatUpload;
+module.exports.persistUpload = persistUpload;

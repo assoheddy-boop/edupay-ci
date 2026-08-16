@@ -21,6 +21,7 @@ const {
 } = require('../middleware/validators');
 const upload = require('../middleware/upload');
 const csvUpload = upload.csvUpload;
+const { persistUpload } = upload;
 
 const router = express.Router();
 
@@ -75,7 +76,7 @@ router.get('/messages/:partnerId', requireModule('chat'), requirePremium('Chat')
 router.post('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), uploadLimiter, upload.chatUpload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'attachment', maxCount: 1 },
-]), messageController.send);
+]), persistUpload('chat'), messageController.send);
 
 router.get('/stats', requireModule('stats'), requirePremium('Statistiques'), statsController.statsPage);
 router.get('/export/students', requireModule('stats'), requirePremium('Export Excel'), statsController.exportStudents);
@@ -91,7 +92,7 @@ router.get('/accounting/report', requireModule('accounting'), accountingControll
 router.get('/canteen', requireModule('canteen'), extras.schoolCanteenPage);
 router.post('/canteen', requireModule('canteen'), extras.createCanteenMenu);
 router.get('/lost-items', requireModule('lost_items'), extras.schoolLostItemsPage);
-router.post('/lost-items', requireModule('lost_items'), upload.single('photo'), extras.createLostItem);
+router.post('/lost-items', requireModule('lost_items'), upload.single('photo'), persistUpload('lost-items'), extras.createLostItem);
 router.post('/lost-items/:id/claim', requireModule('lost_items'), extras.claimLostItem);
 router.get('/activities', requireModule('activities'), extras.schoolActivitiesPage);
 router.post('/activities', requireModule('activities'), extras.createActivity);

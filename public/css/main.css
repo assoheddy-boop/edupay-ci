@@ -441,6 +441,16 @@ a.admin-hub-card {
 
 .alert-error { background: #fdecea; color: var(--danger); }
 .alert-success { background: #e8f5e9; color: var(--green-dark); }
+.alert-info { background: #e8f0fe; color: #0d47a1; }
+
+.consent-banner h2 { font-size: 1.05rem; margin-bottom: 0.25rem; }
+.consent-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
 
 /* Page layout */
 .page-header {
@@ -500,8 +510,56 @@ a.admin-hub-card {
 .upgrade-list li { padding: 0.35rem 0; }
 
 .timeline-full .timeline-event { padding: 0.85rem; border-bottom: 1px solid #eee; }
-.attendance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+.attendance-grid { display: flex; flex-direction: column; gap: 0.65rem; margin: 1rem 0; }
 .attendance-check { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--gray-bg); border-radius: 6px; }
+.attendance-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--gray-bg);
+  border-radius: 8px;
+}
+.attendance-name { font-weight: 600; }
+.attendance-choices { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.attendance-choice { margin: 0; cursor: pointer; }
+.attendance-choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.attendance-choice span {
+  display: inline-block;
+  min-width: 5.6rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+}
+.attendance-choice.present input:checked + span,
+.attendance-choice.present input:focus-visible + span {
+  background: #e8f5e9;
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+.attendance-choice.late input:checked + span,
+.attendance-choice.late input:focus-visible + span {
+  background: #fff3e0;
+  border-color: var(--warning);
+  color: #e65100;
+}
+.attendance-choice.absent input:checked + span,
+.attendance-choice.absent input:focus-visible + span {
+  background: #fdecea;
+  border-color: var(--danger);
+  color: var(--danger);
+}
 .chat-typing { font-size: 0.8rem; color: var(--gray-light); min-height: 1.2rem; }
 
 .demo-banner {

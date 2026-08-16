@@ -116,6 +116,10 @@ async function dailyBackup() {
 
 function startCronJobs() {
   if (process.env.DISABLE_CRON === 'true') return;
+  if (process.env.VERCEL) {
+    console.log('[Cron] Vercel — jobs HTTP /api/internal/cron/*');
+    return;
+  }
 
   cron.schedule('0 8 * * *', paymentReminders, { timezone: 'Africa/Abidjan' });
   cron.schedule('0 9 * * 1', weeklyParentSummary, { timezone: 'Africa/Abidjan' });

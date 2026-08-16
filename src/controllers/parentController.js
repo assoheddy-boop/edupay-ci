@@ -67,13 +67,26 @@ async function payments(req, res) {
       })
     : [];
 
-  res.render('parent/payments', { user: req.user, children, error: null, success: null });
+  res.render('parent/payments', {
+    user: req.user,
+    children,
+    error: req.query.error || null,
+    success: req.query.success || null,
+  });
 }
 
 async function createPayment(req, res) {
   const { studentId, amount, feeTypeId, reference } = req.body;
+  const parent = req.user.parentProfile;
 
   try {
+    if (!parent) return res.redirect('/parent/payments?error=1');
+
+    const link = await prisma.parentStudent.findFirst({
+      where: { parentId: parent.id, studentId: String(studentId) },
+    });
+    if (!link) return res.redirect('/parent/payments?error=child');
+
     let proofUrl = null;
     let proofId = null;
 
@@ -335,6 +348,24 @@ async function updateConsent(req, res) {
   }
 }
 
+async function handleFirstLoginConsent(req, res) {
+  const { upsertConsent } = require('../../services/ConsentService');
+  const { getPrefsCookieOptions, safeBack } = require('../utils/cookies');
+  const { DISMISS_COOKIE } = require('../middleware/consentPrompt');
+  const action = String(req.body?.action || '').trim().toLowerCase();
+  try {
+    const status = (action === 'accept' || action === 'grant') ? 'GRANTED' : 'PENDING';
+    const result = await upsertConsent(req.user.id, 'DATA_PROCESSING', status);
+    if (!result.ok) return res.redirect('/parent/privacy?error=1');
+    res.cookie(DISMISS_COOKIE, '1', getPrefsCookieOptions());
+    const back = safeBack(req);
+    return res.redirect(back === '/' ? '/parent/dashboard' : back);
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/parent/privacy?error=1');
+  }
+}
+
 module.exports = {
   dashboard,
   payments,
@@ -349,4 +380,5 @@ module.exports = {
   timeline,
   privacyPage,
   updateConsent,
+  handleFirstLoginConsent,
 };

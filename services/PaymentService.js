@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const prisma = require('../src/config/database');
 const logger = require('./logger');
+const { putObject, readMulterBuffer } = require('./StorageService');
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
@@ -14,13 +15,6 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.pdf']);
 const MAX_PROOF_SIZE = 5 * 1024 * 1024;
-const PAYMENTS_DIR = path.join(__dirname, '../uploads/payments');
-
-function ensurePaymentsDir() {
-  if (!fs.existsSync(PAYMENTS_DIR)) {
-    fs.mkdirSync(PAYMENTS_DIR, { recursive: true });
-  }
-}
 
 function inspectProofFile(file) {
   if (!file) return { ok: false, error: 'file' };
@@ -41,8 +35,8 @@ function inspectProofFile(file) {
 }
 
 async function readFileBuffer(file) {
-  if (file.buffer && Buffer.isBuffer(file.buffer)) return file.buffer;
-  if (file.path) return fs.promises.readFile(file.path);
+  const buffer = await readMulterBuffer(file);
+  if (buffer) return buffer;
   throw Object.assign(new Error('Fichier introuvable'), { code: 'file' });
 }
 
@@ -57,7 +51,7 @@ function uniqueHash(buffer, studentId) {
 
 /**
  * Vérifie le type MIME et la taille, génère un hash unique,
- * sauvegarde dans /uploads/payments et enregistre PaymentProof.
+ * sauvegarde (disque local, Vercel Blob ou S3) et enregistre PaymentProof.
  */
 async function validateProof(file, studentId) {
   const inspection = inspectProofFile(file);
@@ -79,17 +73,20 @@ async function validateProof(file, studentId) {
       return { ok: false, error: 'size' };
     }
 
-    ensurePaymentsDir();
     const hash = uniqueHash(buffer, studentId);
     const filename = `${hash}${inspection.ext}`;
-    const destPath = path.join(PAYMENTS_DIR, filename);
-    await fs.promises.writeFile(destPath, buffer);
+    const stored = await putObject({
+      folder: 'payments',
+      filename,
+      buffer,
+      contentType: inspection.mime || file.mimetype,
+    });
 
-    if (file.path && path.resolve(file.path) !== path.resolve(destPath)) {
+    if (file.path) {
       await fs.promises.unlink(file.path).catch(() => {});
     }
 
-    const fileUrl = `/uploads/payments/${filename}`;
+    const fileUrl = stored.url;
     const proof = await prisma.paymentProof.create({
       data: {
         hash,

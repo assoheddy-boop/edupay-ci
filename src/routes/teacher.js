@@ -6,6 +6,7 @@ const teacherHrController = require('../controllers/teacherHrController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
 const upload = require('../middleware/upload');
+const { persistUpload } = upload;
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.post('/grades', requireModule('grades'), teacherController.createGrade);
 router.get('/absences', requireModule('absences'), teacherController.absences);
 router.post('/absences', requireModule('absences'), teacherController.createAbsence);
 router.get('/homeworks', requireModule('homeworks'), teacherController.homeworks);
-router.post('/homeworks', requireModule('homeworks'), upload.single('attachment'), teacherController.createHomework);
+router.post('/homeworks', requireModule('homeworks'), upload.single('attachment'), persistUpload('homeworks'), teacherController.createHomework);
 router.get('/schedule', teacherController.schedulePage);
 router.post('/schedule', teacherController.createSchedule);
 router.get('/attendance', requireModule('absences'), teacherController.attendancePage);
@@ -30,7 +31,7 @@ router.get('/messages/:partnerId', requireModule('chat'), messageController.chat
 router.post('/messages/:partnerId', requireModule('chat'), upload.chatUpload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'attachment', maxCount: 1 },
-]), messageController.send);
+]), persistUpload('chat'), messageController.send);
 router.get('/transport', requireModule('transport'), extras.transportPage);
 router.post('/transport', requireModule('transport'), extras.createTransportLog);
 router.get('/behavior', requireModule('behavior'), extras.behaviorPage);

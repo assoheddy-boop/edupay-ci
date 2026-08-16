@@ -25,7 +25,7 @@
           <% payments.forEach(p => { %>
             <tr>
               <td><%= p.student.firstName %> <%= p.student.lastName %><br><small><%= p.student.class.name %></small></td>
-              <td><strong><%= p.amount.toLocaleString('fr-FR') %> FCFA</strong></td>
+              <td><strong><%= formatMoney(p.amount) %></strong></td>
               <td>
                 <% if (p.proofUrl) { %>
                   <a href="<%= p.proofUrl %>" target="_blank" class="btn btn-sm btn-outline">Voir capture</a>

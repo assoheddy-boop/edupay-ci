@@ -1,0 +1,17 @@
+<% if (typeof needsConsentPrompt !== 'undefined' && needsConsentPrompt) { %>
+  <div class="consent-banner alert alert-info" role="region" aria-labelledby="consentPromptTitle">
+    <h2 id="consentPromptTitle">Confidentialité</h2>
+    <p>Pour le suivi scolaire, l'école a besoin de votre accord pour le traitement des données personnelles. Vous pourrez modifier ce choix à tout moment.</p>
+    <div class="consent-banner-actions">
+      <form method="POST" action="/parent/privacy/first-login" class="form form-inline">
+        <input type="hidden" name="action" value="accept">
+        <button type="submit" class="btn btn-primary btn-sm">J'accepte</button>
+      </form>
+      <form method="POST" action="/parent/privacy/first-login" class="form form-inline">
+        <input type="hidden" name="action" value="later">
+        <button type="submit" class="btn btn-outline btn-sm">Plus tard</button>
+      </form>
+      <a href="/parent/privacy" class="btn btn-outline btn-sm">Gérer les consentements</a>
+    </div>
+  </div>
+<% } %>
