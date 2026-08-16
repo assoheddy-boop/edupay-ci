@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 function uploadsRoot() {
   if (process.env.UPLOADS_DIR) return process.env.UPLOADS_DIR;
-  if (process.env.VERCEL) return path.join(os.tmpdir(), 'edupay-uploads');
+  if (process.env.VERCEL) return path.join(os.tmpdir(), 'educonnect-uploads');
   return path.join(__dirname, '../uploads');
 }
 

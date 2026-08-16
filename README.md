@@ -33,7 +33,7 @@ $env:SEED_DEMO='true'; npm run db:seed
 
 | Rôle | Email |
 |------|-------|
-| Super admin | admin@edupay.ci |
+| Super admin | admin@educonnect.ci |
 | Admin groupe | groupe@demo.ci |
 | Admin école | ecole@demo.ci |
 | Parent | parent@demo.ci |

@@ -82,6 +82,11 @@ async function ensureStudent(schoolId, classId, data) {
 }
 
 async function main() {
+  if (process.env.SEED_DEMO !== 'true') {
+    console.log('seed-rich ignoré — définir SEED_DEMO=true (données @demo.ci, jamais en production).');
+    return;
+  }
+
   const school = await prisma.school.findFirst({
     where: { slug: 'ecole-les-etoiles' },
     include: { admin: true },

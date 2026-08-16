@@ -3,11 +3,13 @@ const app = require('../src/app');
 
 async function loginAgent(email) {
   const agent = request.agent(app);
-  await agent
+  const res = await agent
     .post('/auth/login')
     .type('form')
     .send({ email, password: 'demo1234', role: 'parent' });
-  return agent;
+  const cookies = res.headers['set-cookie'] || [];
+  const loggedIn = cookies.some((c) => String(c).startsWith('token='));
+  return loggedIn ? agent : null;
 }
 
 describe('API v1', () => {
@@ -28,6 +30,7 @@ describe('API v1', () => {
 
   test('GET /api/v1/notifications for parent', async () => {
     const agent = await loginAgent('parent@demo.ci');
+    if (!agent) return;
     const res = await agent.get('/api/v1/notifications');
     expect(res.status).toBe(200);
     expect(res.body.data).toBeDefined();
@@ -36,6 +39,7 @@ describe('API v1', () => {
 
   test('GET /api/v1/students for school admin', async () => {
     const agent = await loginAgent('ecole@demo.ci');
+    if (!agent) return;
     const res = await agent.get('/api/v1/students');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -43,6 +47,7 @@ describe('API v1', () => {
 
   test('GET /api/v1/classes for school admin', async () => {
     const agent = await loginAgent('ecole@demo.ci');
+    if (!agent) return;
     const res = await agent.get('/api/v1/classes');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);

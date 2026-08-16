@@ -15,7 +15,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(edupay_http_request_duration_seconds_count[5m]))",
+          "expr": "sum(rate(educonnect_http_request_duration_seconds_count[5m]))",
           "legendFormat": "req/s",
           "refId": "A"
         }
@@ -30,7 +30,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(edupay_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(educonnect_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "A"
         }
@@ -45,12 +45,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "edupay_process_resident_memory_bytes",
+          "expr": "educonnect_process_resident_memory_bytes",
           "legendFormat": "RSS",
           "refId": "A"
         },
         {
-          "expr": "edupay_nodejs_heap_size_used_bytes",
+          "expr": "educonnect_nodejs_heap_size_used_bytes",
           "legendFormat": "heap used",
           "refId": "B"
         }
@@ -65,12 +65,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(edupay_process_cpu_user_seconds_total[5m])",
+          "expr": "rate(educonnect_process_cpu_user_seconds_total[5m])",
           "legendFormat": "user",
           "refId": "A"
         },
         {
-          "expr": "rate(edupay_process_cpu_system_seconds_total[5m])",
+          "expr": "rate(educonnect_process_cpu_system_seconds_total[5m])",
           "legendFormat": "system",
           "refId": "B"
         }
@@ -88,11 +88,11 @@
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
-      "title": "Logs EduPay (JSON / Loki)",
+      "title": "Logs EduConnect (JSON / Loki)",
       "type": "logs",
       "targets": [
         {
-          "expr": "{app=\"edupay-ci\"}",
+          "expr": "{app=\"educonnect\"}",
           "refId": "A"
         }
       ]
@@ -100,11 +100,11 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["edupay", "prometheus", "loki"],
+  "tags": ["educonnect", "prometheus", "loki"],
   "templating": { "list": [] },
   "time": { "from": "now-6h", "to": "now" },
   "timezone": "Africa/Abidjan",
-  "title": "EduPay CI — métriques & logs",
-  "uid": "edupay-ci-overview",
+  "title": "EduConnect — métriques & logs",
+  "uid": "educonnect-overview",
   "version": 1
 }

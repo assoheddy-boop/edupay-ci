@@ -54,7 +54,7 @@ async function absences(req, res) {
   if (!filters) return res.status(403).json({ error: 'Accès école requis' });
   const result = await getAbsenceStats(filters);
   if (!result.ok) return res.status(500).json({ error: 'Statistiques indisponibles' });
-  return sendDataset(req, res, result.rows, 'edupay-absences');
+  return sendDataset(req, res, result.rows, 'educonnect-absences');
 }
 
 async function successRate(req, res) {
@@ -62,7 +62,7 @@ async function successRate(req, res) {
   if (!filters) return res.status(403).json({ error: 'Accès école requis' });
   const result = await getSuccessRate(filters);
   if (!result.ok) return res.status(500).json({ error: 'Statistiques indisponibles' });
-  return sendDataset(req, res, result.rows, 'edupay-success-rate');
+  return sendDataset(req, res, result.rows, 'educonnect-success-rate');
 }
 
 async function health(req, res) {
@@ -70,7 +70,7 @@ async function health(req, res) {
   if (!filters) return res.status(403).json({ error: 'Accès école requis' });
   const result = await getHealthStats(filters);
   if (!result.ok) return res.status(500).json({ error: 'Statistiques indisponibles' });
-  return sendDataset(req, res, result.rows, 'edupay-health');
+  return sendDataset(req, res, result.rows, 'educonnect-health');
 }
 
 async function payments(req, res) {
@@ -128,7 +128,7 @@ async function payments(req, res) {
     feeType: p.feeType?.name || '',
   }));
 
-  return sendDataset(req, res, data, 'edupay-payments');
+  return sendDataset(req, res, data, 'educonnect-payments');
 }
 
 module.exports = { absences, successRate, health, payments };

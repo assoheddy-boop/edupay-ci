@@ -57,7 +57,7 @@ const PLANS = {
     highlight: false,
     isGroup: true,
     cta: 'Demander une démo',
-    ctaHref: 'mailto:contact@edupay.ci?subject=Groupe%20scolaire%20EduConnect',
+    ctaHref: 'mailto:contact@educonnect.ci?subject=Groupe%20scolaire%20EduConnect',
     limits: '2 campus et plus · tarif dégressif',
     modules: Object.keys(MODULES),
     perks: [

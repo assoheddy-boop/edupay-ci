@@ -38,7 +38,7 @@ const prettyFormat = winston.format.combine(
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  defaultMeta: { service: 'edupay-ci' },
+  defaultMeta: { service: 'educonnect' },
   format: baseFormat,
   transports: [
     new winston.transports.Console({

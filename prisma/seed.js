@@ -17,6 +17,10 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 
 async function main() {
+  if (process.env.SEED_DEMO !== 'true') {
+    console.log('Seed démo ignoré — définir SEED_DEMO=true pour créer les comptes @demo.ci (jamais en production).');
+    return;
+  }
 
   const hash = await bcrypt.hash('demo1234', 10);
 
@@ -24,13 +28,13 @@ async function main() {
 
   await prisma.user.upsert({
 
-    where: { email: 'admin@edupay.ci' },
+    where: { email: 'admin@educonnect.ci' },
 
     update: {},
 
     create: {
 
-      email: 'admin@edupay.ci',
+      email: 'admin@educonnect.ci',
 
       password: hash,
 
@@ -406,7 +410,7 @@ async function main() {
 
   console.log('✅ Démo EduConnect créée');
 
-  console.log('Admin site : admin@edupay.ci / demo1234');
+  console.log('Admin site : admin@educonnect.ci / demo1234');
 
   console.log('Groupe     : groupe@demo.ci / demo1234');
   console.log('Campus Yop : ecole.yopougon@demo.ci / demo1234');

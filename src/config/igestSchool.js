@@ -13,7 +13,7 @@ const IGEST_SCHOOL = {
   waveNumber: null,
   omNumber: null,
   admin: {
-    email: 'igest@edupay.ci',
+    email: 'igest@educonnect.ci',
     firstName: 'Affoua Valentine',
     lastName: 'Dongo',
     phone: '05 45 47 48 29',

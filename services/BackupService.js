@@ -50,7 +50,7 @@ function pruneOldBackups() {
   const cutoff = Date.now() - RETAIN_DAYS * 24 * 60 * 60 * 1000;
   try {
     for (const name of fs.readdirSync(BACKUP_DIR)) {
-      if (!name.startsWith('edupay-') || !name.endsWith('.dump')) continue;
+      if ((!name.startsWith('educonnect-') && !name.startsWith('edupay-')) || !name.endsWith('.dump')) continue;
       const full = path.join(BACKUP_DIR, name);
       const stat = fs.statSync(full);
       if (stat.mtimeMs < cutoff) fs.unlinkSync(full);
@@ -107,7 +107,7 @@ async function createNeonSnapshot() {
   const branchId = process.env.NEON_BRANCH_ID;
   if (!apiKey || !projectId || !branchId) return null;
 
-  const name = `edupay-${new Date().toISOString().slice(0, 10)}`;
+  const name = `educonnect-${new Date().toISOString().slice(0, 10)}`;
   const retainDays = Number(process.env.NEON_SNAPSHOT_RETAIN_DAYS) || 7;
   const expiresAt = new Date(Date.now() + retainDays * 24 * 60 * 60 * 1000).toISOString();
   const endpoint = new URL(
@@ -171,7 +171,7 @@ async function dailyDatabaseBackup() {
   }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const outfile = path.join(BACKUP_DIR, `edupay-${stamp}.dump`);
+  const outfile = path.join(BACKUP_DIR, `educonnect-${stamp}.dump`);
 
   const result = await runPgDump(pgDump, parsed, outfile);
   if (!result.ok) {

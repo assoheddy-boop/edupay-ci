@@ -1,5 +1,5 @@
 {
-  "name": "edupay-ci",
+  "name": "educonnect",
   "version": "1.0.0",
   "description": "EduConnect — Gestion scolaire moderne & paiements simplifiés — Côte d'Ivoire",
   "main": "src/server.js",

@@ -26,7 +26,7 @@ describe('EduConnect API', () => {
   test('GET /metrics exposes prometheus text', async () => {
     const res = await request(app).get('/metrics');
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/process_cpu|nodejs_|edupay_/);
+    expect(res.text).toMatch(/educonnect_/);
   });
 
   test('GET /metrics is closed in production without METRICS_BEARER', async () => {

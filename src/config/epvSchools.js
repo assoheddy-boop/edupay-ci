@@ -15,7 +15,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.fatoumaba@edupay.ci',
+      email: 'epv.fatoumaba@educonnect.ci',
       firstName: 'Direction',
       lastName: 'Fatoumaba',
       phone: null,
@@ -30,7 +30,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.graine@edupay.ci',
+      email: 'epv.graine@educonnect.ci',
       firstName: 'Direction',
       lastName: 'Graine de la Réussite',
       phone: null,
@@ -45,7 +45,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.effort@edupay.ci',
+      email: 'epv.effort@educonnect.ci',
       firstName: 'Direction',
       lastName: "L'Effort",
       phone: null,
@@ -60,7 +60,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.eceme@edupay.ci',
+      email: 'epv.eceme@educonnect.ci',
       firstName: 'Direction',
       lastName: 'ECEME',
       phone: null,
@@ -76,7 +76,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.bonne-main@edupay.ci',
+      email: 'epv.bonne-main@educonnect.ci',
       firstName: 'Direction',
       lastName: 'La Bonne Main de Dieu',
       phone: '07 87 78 11 12 / 01 43 57 44 98',
@@ -91,7 +91,7 @@ const EPV_SCHOOLS = [
     waveNumber: null,
     omNumber: null,
     admin: {
-      email: 'epv.datro-zahui@edupay.ci',
+      email: 'epv.datro-zahui@educonnect.ci',
       firstName: 'Direction',
       lastName: 'Datro Zahui',
       phone: null,

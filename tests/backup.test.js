@@ -31,17 +31,17 @@ describe('BackupService', () => {
   });
 
   test('redactDbUrl strips connection strings', () => {
-    const raw = 'failed postgres://user:secret@db.example:5432/edupay extra';
+    const raw = 'failed postgres://user:secret@db.example:5432/edupay_ci extra';
     expect(redactDbUrl(raw)).toBe('failed postgres://*** extra');
     expect(redactDbUrl(raw)).not.toMatch(/secret/);
   });
 
   test('parseDatabaseUrl extracts fields without exposing them in errors', () => {
-    const parsed = parseDatabaseUrl('postgresql://edupay:s3cret@localhost:5432/edupay_ci?sslmode=require');
+    const parsed = parseDatabaseUrl('postgresql://postgres:s3cret@localhost:5432/edupay_ci?sslmode=require');
     expect(parsed).toMatchObject({
       host: 'localhost',
       port: '5432',
-      user: 'edupay',
+      user: 'postgres',
       database: 'edupay_ci',
       sslmode: 'require',
     });
@@ -55,7 +55,7 @@ describe('BackupService', () => {
   });
 
   test('skips when pg_dump is missing', async () => {
-    process.env.DATABASE_URL = 'postgresql://edupay:x@localhost:5432/edupay_ci';
+    process.env.DATABASE_URL = 'postgresql://postgres:x@localhost:5432/edupay_ci';
     process.env.PG_DUMP_PATH = 'C:\\definitely-missing-pg-dump.exe';
     const result = await dailyDatabaseBackup();
     expect(result.skipped).toBe(true);
@@ -82,7 +82,7 @@ describe('BackupService', () => {
       ok: true,
       driver: 'neon',
       snapshotId: 'snap-1',
-      name: expect.stringMatching(/^edupay-/),
+      name: expect.stringMatching(/^educonnect-/),
     });
     expect(global.fetch).toHaveBeenCalledWith(
       expect.objectContaining({ href: expect.stringContaining('/snapshot') }),
@@ -92,7 +92,7 @@ describe('BackupService', () => {
 
   test('skips pg_dump on Vercel when Neon API is not configured', async () => {
     process.env.VERCEL = '1';
-    process.env.DATABASE_URL = 'postgresql://edupay:x@localhost:5432/edupay_ci';
+    process.env.DATABASE_URL = 'postgresql://postgres:x@localhost:5432/edupay_ci';
     const result = await dailyDatabaseBackup();
     expect(result).toEqual({ skipped: true, reason: 'neon_pitr' });
   });

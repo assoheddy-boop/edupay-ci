@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 
 describe('StorageService', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'edupay-storage-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'educonnect-storage-'));
   let prevUploads;
   let prevDriver;
 

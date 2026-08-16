@@ -40,7 +40,7 @@ const BUREAU = path.join(
 const BUREAU_V3 = BUREAU.replace(/\.pdf$/i, '-v3.pdf');
 
 const URL = 'https://educonnect-assoheddy-boops-projects.vercel.app';
-const CONTACT = 'contact@edupay.ci';
+const CONTACT = 'contact@educonnect.ci';
 const DOC_DATE = 'Août 2026';
 const FOOTER_LABEL = 'EduConnect — Présentation à l\'attention de la direction — août 2026';
 
@@ -898,7 +898,7 @@ function writeContent(ctx) {
     modules: 'Tous les modules, tableau de bord consolidé, modules activables par campus, facturation unique ou par établissement, accompagnement au déploiement.',
   });
 
-  para(ctx, 'Pour un groupe : écrire à contact@edupay.ci. Pour une école seule : créer le compte sur le site, choisir l\'offre, ou demander une démonstration.');
+  para(ctx, `Pour un groupe : écrire à ${CONTACT}. Pour une école seule : créer le compte sur le site, choisir l'offre, ou demander une démonstration.`);
 
   // —— 9. Sécurité ——
   ctx.doc.addPage();

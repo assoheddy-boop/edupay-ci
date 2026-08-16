@@ -30,6 +30,10 @@ describe('Catalogue EPV', () => {
     expect(result.count).toBe(6);
   });
 
+  test('utilise des identifiants @educonnect.ci', () => {
+    expect(EPV_SCHOOLS.every((s) => /@educonnect\.ci$/i.test(s.admin.email))).toBe(true);
+  });
+
   test('reprend Bingerville et Yopougon depuis les infos déjà connues', () => {
     const eceme = EPV_SCHOOLS.find((s) => s.slug === 'epv-eceme');
     const bonneMain = EPV_SCHOOLS.find((s) => s.slug === 'epv-la-bonne-main-de-dieu');
@@ -101,7 +105,7 @@ describe('Catalogue IGEST', () => {
     expect(IGEST_SCHOOL.slug).toBe('igest-yopougon-sideci');
     expect(IGEST_SCHOOL.city).toBe('Abidjan');
     expect(IGEST_SCHOOL.campusLabel).toBe('Yopougon-Sideci');
-    expect(IGEST_SCHOOL.admin.email).toBe('igest@edupay.ci');
+    expect(IGEST_SCHOOL.admin.email).toBe('igest@educonnect.ci');
     expect(IGEST_SCHOOL.admin.firstName).toBe('Affoua Valentine');
     expect(IGEST_SCHOOL.admin.lastName).toBe('Dongo');
     expect(IGEST_SCHOOL.admin.phone).toBe('05 45 47 48 29');

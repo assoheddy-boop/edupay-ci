@@ -1,12 +1,12 @@
 const client = require('prom-client');
 
-if (!global.__edupayMetricsInit) {
-  client.collectDefaultMetrics({ prefix: 'edupay_' });
-  global.__edupayMetricsInit = true;
+if (!global.__educonnectMetricsInit) {
+  client.collectDefaultMetrics({ prefix: 'educonnect_' });
+  global.__educonnectMetricsInit = true;
 }
 
 function getHttpDuration() {
-  const name = 'edupay_http_request_duration_seconds';
+  const name = 'educonnect_http_request_duration_seconds';
   const existing = client.register.getSingleMetric(name);
   if (existing) return existing;
   return new client.Histogram({

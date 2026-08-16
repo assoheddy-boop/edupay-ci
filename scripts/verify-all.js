@@ -6,7 +6,7 @@ const http = require('http');
 
 const BASE = process.env.VERIFY_URL || 'http://localhost:3000';
 const ACCOUNTS = [
-  { name: 'Admin', email: 'admin@edupay.ci', password: 'demo1234', dashboard: '/admin/dashboard' },
+  { name: 'Admin', email: 'admin@educonnect.ci', password: 'demo1234', dashboard: '/admin/dashboard' },
   { name: 'Groupe', email: 'groupe@demo.ci', password: 'demo1234', dashboard: '/group/dashboard' },
   { name: 'École', email: 'ecole@demo.ci', password: 'demo1234', dashboard: '/school/dashboard' },
   { name: 'Parent', email: 'parent@demo.ci', password: 'demo1234', dashboard: '/parent/dashboard' },

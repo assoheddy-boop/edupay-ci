@@ -109,7 +109,7 @@ async function exportStudents(req, res) {
     })),
   );
 
-  await sendExcel(res, 'eleves-edupay.xlsx', wb);
+  await sendExcel(res, 'eleves-educonnect.xlsx', wb);
 }
 
 async function exportPayments(req, res) {
@@ -137,7 +137,7 @@ async function exportPayments(req, res) {
     })),
   );
 
-  await sendExcel(res, 'paiements-edupay.xlsx', wb);
+  await sendExcel(res, 'paiements-educonnect.xlsx', wb);
 }
 
 async function exportGrades(req, res) {
@@ -165,7 +165,7 @@ async function exportGrades(req, res) {
     })),
   );
 
-  await sendExcel(res, 'notes-edupay.xlsx', wb);
+  await sendExcel(res, 'notes-educonnect.xlsx', wb);
 }
 
 async function exportStats(req, res) {

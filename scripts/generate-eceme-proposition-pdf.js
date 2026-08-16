@@ -324,7 +324,7 @@ function writePdf(filePath) {
     y = sectionTitle(doc, y, 'Scénario recommandé', fonts);
     y = scenarioBlock(
       doc, y, 'C', 'Site vitrine + espace parents', '10 à 16 semaines',
-      'Scénario B enrichi : connexion parents vers un outil moderne (EduPay en option), avec paiements, reçus et évolutions possibles (notes, absences).',
+      'Scénario B enrichi : connexion parents vers un outil moderne (EduConnect en option), avec paiements, reçus et évolutions possibles (notes, absences).',
       [
         ['Site public', 'Identique au scénario B — vitrine complète et autonome'],
         ['Espace parents', 'Bouton permanent « Connexion parents » — paiements déjà en ligne'],
