@@ -1511,3 +1511,57 @@ code {
 h1 .hint, h2 .hint, h3 .hint, .stat-label .hint {
   vertical-align: text-top;
 }
+
+/* Offline-first banner & status */
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 160;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.offline-banner[hidden] { display: none !important; }
+.offline-banner-pending { background: #fff8e1; color: #8a5a00; }
+.offline-banner-error { background: #fdecea; color: var(--danger); }
+.offline-banner-ok { background: #e8f5e9; color: var(--green-dark); }
+.offline-banner-msg { flex: 1; min-width: 12rem; }
+.offline-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.offline-banner .btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+.offline-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 170;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+.offline-fab[hidden] { display: none !important; }
+.offline-conflict {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.offline-page { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
+.offline-card { max-width: 32rem; text-align: center; padding: 2rem 1.5rem; }
+.offline-status-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }

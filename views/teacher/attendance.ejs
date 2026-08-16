@@ -9,7 +9,7 @@
   <% classLinks.forEach(cl => { %>
     <div class="card">
       <h2><%= cl.class.name %></h2>
-      <form method="POST" action="/teacher/attendance" class="form">
+      <form method="POST" action="/teacher/attendance" class="form" data-offline-queue="attendance">
         <input type="hidden" name="classId" value="<%= cl.class.id %>">
         <input type="hidden" name="date" value="<%= today %>">
         <p class="page-sub">Marquez chaque élève : <strong>Présent</strong>, <strong>Retard</strong> ou <strong>Absent</strong>.</p>

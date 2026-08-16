@@ -10,11 +10,11 @@
   <% if (success === 'photo') { %><div class="alert alert-success">Photo mise à jour.</div><% } %>
   <% if (error === 'photo') { %><div class="alert alert-error">Impossible d'enregistrer la photo.</div><% } %>
   <% if (success === '1') { %><div class="alert alert-success">Classe assignée.</div><% } %>
-  <% if (error === 'email') { %><div class="alert alert-error">Cet email est déjà utilisé.</div><% } %>
+  <% if (error === 'email' || error === 'phone') { %><div class="alert alert-error">Un compte existe déjà avec cet email ou ce téléphone.</div><% } %>
 
   <div class="card" style="margin-bottom:1.5rem">
     <h2>Inviter / créer un enseignant</h2>
-    <form method="POST" action="/school/teachers/invite" class="form" enctype="multipart/form-data">
+    <form method="POST" action="/school/teachers/invite" class="form" enctype="multipart/form-data" data-offline-queue="teacher" data-offline-file="photo">
       <div class="form-row">
         <div class="form-group"><label>Prénom</label><input type="text" name="firstName" required></div>
         <div class="form-group"><label>Nom</label><input type="text" name="lastName" required></div>
@@ -44,13 +44,13 @@
             <strong><%= t.user.firstName %> <%= t.user.lastName %></strong>
             <p class="page-sub"><%= t.user.email %> — <%= t.subject || 'Matière non définie' %></p>
             <p>Classes : <%= t.classes.length ? t.classes.map(c => c.class.name).join(', ') : 'Aucune' %></p>
-            <form method="POST" action="/school/teachers/<%= t.id %>/photo" enctype="multipart/form-data" class="form form-inline" style="margin-top:0.5rem">
+            <form method="POST" action="/school/teachers/<%= t.id %>/photo" enctype="multipart/form-data" class="form form-inline" style="margin-top:0.5rem" data-offline-skip="1">
               <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
               <button type="submit" class="btn btn-outline btn-sm">Photo</button>
             </form>
             </div>
           </div>
-          <form method="POST" action="/school/teachers/<%= t.id %>/classes" class="form form-inline">
+          <form method="POST" action="/school/teachers/<%= t.id %>/classes" class="form form-inline" data-offline-skip="1">
             <select name="classId" required>
               <option value="">Assigner à…</option>
               <% classes.forEach(c => { %>

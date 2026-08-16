@@ -16,7 +16,7 @@
 
       <h2>Ajouter une classe</h2>
 
-      <form method="POST" action="/school/classes" class="form">
+      <form method="POST" action="/school/classes" class="form" data-offline-queue="class">
 
         <div class="form-group">
 
@@ -66,7 +66,7 @@
 
             <summary><strong><%= c.name %></strong> — <%= c.level %> (<%= c._count.students %> élève(s))</summary>
 
-            <form method="POST" action="/school/classes/<%= c.id %>/update" class="form" style="margin-top:0.75rem">
+            <form method="POST" action="/school/classes/<%= c.id %>/update" class="form" style="margin-top:0.75rem" data-offline-skip="1">
 
               <div class="form-row">
 

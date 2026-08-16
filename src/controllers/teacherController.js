@@ -1,5 +1,12 @@
 const prisma = require('../config/database');
 const { sendNotification } = require('../../services/NotificationService');
+const {
+  applyAttendance,
+  applyGrade,
+  applyHomework,
+  attendanceTypeFromStatus,
+  statusesFromBody,
+} = require('../services/offlineActions');
 
 async function dashboard(req, res) {
   const teacher = req.user.teacher;
@@ -45,36 +52,9 @@ async function grades(req, res) {
 }
 
 async function createGrade(req, res) {
-  const { studentId, subject, value, maxValue, period, comment } = req.body;
   try {
-    await prisma.grade.create({
-      data: {
-        studentId,
-        teacherId: req.user.teacher.id,
-        subject,
-        value: parseFloat(value),
-        maxValue: parseFloat(maxValue || 20),
-        period,
-        comment,
-      },
-    });
-
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: { parents: { include: { parent: true } } },
-    });
-
-    for (const link of student?.parents || []) {
-      await prisma.notification.create({
-        data: {
-          userId: link.parent.userId,
-          type: 'GENERAL',
-          title: 'Nouvelle note',
-          body: `${student.firstName} a reçu ${value}/${maxValue || 20} en ${subject}.`,
-        },
-      });
-    }
-
+    const result = await applyGrade({ user: req.user, payload: req.body });
+    if (!result.ok) return res.redirect('/teacher/grades?error=1');
     res.redirect('/teacher/grades?success=1');
   } catch (err) {
     console.error(err);
@@ -148,44 +128,19 @@ async function homeworks(req, res) {
 }
 
 async function createHomework(req, res) {
-  const { classId, title, description, dueDate } = req.body;
-  const attachmentUrl = req.file ? (req.file.url || `/uploads/homeworks/${req.file.filename}`) : null;
-
   try {
-    const link = await prisma.teacherClass.findFirst({
-      where: { teacherId: req.user.teacher.id, classId },
-    });
-    if (!link) return res.redirect('/teacher/homeworks?error=class');
-
-    const homework = await prisma.homework.create({
-      data: {
-        classId,
-        teacherId: req.user.teacher.id,
-        title,
-        description,
-        dueDate: new Date(dueDate),
-        attachmentUrl,
+    const result = await applyHomework({
+      user: req.user,
+      payload: {
+        ...req.body,
+        attachmentUrl: req.file ? (req.file.url || `/uploads/homeworks/${req.file.filename}`) : null,
       },
+      file: req.file,
     });
-
-    const students = await prisma.student.findMany({
-      where: { classId },
-      include: { parents: { include: { parent: true } } },
-    });
-
-    for (const student of students) {
-      for (const ps of student.parents) {
-        await sendNotification(
-          ps.parent.userId,
-          'new_homework',
-          `${title} — à rendre le ${new Date(dueDate).toLocaleDateString('fr-FR')} (${student.firstName}).`,
-        );
-      }
-      await prisma.homeworkSubmission.create({
-        data: { homeworkId: homework.id, studentId: student.id },
-      });
+    if (!result.ok) {
+      const code = result.error === 'class' ? 'class' : '1';
+      return res.redirect(`/teacher/homeworks?error=${code}`);
     }
-
     res.redirect('/teacher/homeworks?success=1');
   } catch (err) {
     console.error(err);
@@ -264,76 +219,17 @@ async function attendancePage(req, res) {
   });
 }
 
-function attendanceTypeFromStatus(raw) {
-  const v = String(raw || 'present').toLowerCase();
-  if (v === 'late' || v === 'retard') return 'LATE';
-  if (v === 'absent' || v === 'absence') return 'ABSENCE';
-  return null;
-}
-
-async function notifyAttendance(student, date, type) {
-  const parents = await prisma.parentStudent.findMany({
-    where: { studentId: student.id },
-    include: { parent: true },
-  });
-  const day = new Date(date).toLocaleDateString('fr-FR');
-  const kind = type === 'LATE' ? 'late_reported' : 'absence_reported';
-  const message = type === 'LATE'
-    ? `${student.firstName} en retard le ${day}.`
-    : `${student.firstName} absent le ${day}.`;
-  for (const ps of parents) {
-    await sendNotification(ps.parent.userId, kind, message);
-  }
-}
-
 async function submitAttendance(req, res) {
-  const { classId, date } = req.body;
-
   try {
-    const students = await prisma.student.findMany({
-      where: { classId, class: { teachers: { some: { teacherId: req.user.teacher.id } } } },
+    const result = await applyAttendance({
+      user: req.user,
+      payload: {
+        classId: req.body.classId,
+        date: req.body.date,
+        statuses: statusesFromBody(req.body),
+      },
     });
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-
-    for (const student of students) {
-      const type = attendanceTypeFromStatus(req.body[`status_${student.id}`]);
-      const existing = await prisma.absence.findFirst({
-        where: { studentId: student.id, date: dayStart },
-      });
-
-      if (!type) {
-        if (existing) await prisma.absence.delete({ where: { id: existing.id } });
-        continue;
-      }
-
-      if (existing) {
-        if (existing.type !== type) {
-          await prisma.absence.update({
-            where: { id: existing.id },
-            data: {
-              type,
-              reason: type === 'LATE' ? 'Retard (appel)' : 'Appel du jour',
-              recordedBy: req.user.teacher.id,
-            },
-          });
-          await notifyAttendance(student, date, type);
-        }
-        continue;
-      }
-
-      await prisma.absence.create({
-        data: {
-          studentId: student.id,
-          date: dayStart,
-          type,
-          reason: type === 'LATE' ? 'Retard (appel)' : 'Appel du jour',
-          recordedBy: req.user.teacher.id,
-        },
-      });
-      await notifyAttendance(student, date, type);
-    }
-
+    if (!result.ok) return res.redirect('/teacher/attendance?error=1');
     res.redirect('/teacher/attendance?success=1');
   } catch (err) {
     console.error(err);
@@ -350,26 +246,9 @@ async function bulkGradesPage(req, res) {
 }
 
 async function submitBulkGrades(req, res) {
-  const { subject, period, maxValue, classId } = req.body;
-  const students = await prisma.student.findMany({
-    where: { classId, class: { teachers: { some: { teacherId: req.user.teacher.id } } } },
-  });
-
   try {
-    for (const student of students) {
-      const val = req.body[`grade_${student.id}`];
-      if (!val || val === '') continue;
-      await prisma.grade.create({
-        data: {
-          studentId: student.id,
-          teacherId: req.user.teacher.id,
-          subject,
-          period,
-          value: parseFloat(val),
-          maxValue: parseFloat(maxValue || 20),
-        },
-      });
-    }
+    const result = await applyGrade({ user: req.user, payload: req.body });
+    if (!result.ok) return res.redirect('/teacher/bulk-grades?error=1');
     res.redirect('/teacher/bulk-grades?success=1');
   } catch (err) {
     console.error(err);

@@ -1,7 +1,7 @@
 const prisma = require('../config/database');
 const { findSchoolByCode } = require('../utils/schoolCode');
 const { logAudit } = require('../utils/audit');
-const { validateProof } = require('../../services/PaymentService');
+const { applyPayment } = require('../services/offlineActions');
 
 async function dashboard(req, res) {
   const parent = req.user.parentProfile;
@@ -76,61 +76,16 @@ async function payments(req, res) {
 }
 
 async function createPayment(req, res) {
-  const { studentId, amount, feeTypeId, reference } = req.body;
-  const parent = req.user.parentProfile;
-
   try {
-    if (!parent) return res.redirect('/parent/payments?error=1');
-
-    const link = await prisma.parentStudent.findFirst({
-      where: { parentId: parent.id, studentId: String(studentId) },
+    const result = await applyPayment({
+      user: req.user,
+      payload: req.body,
+      file: req.file || null,
     });
-    if (!link) return res.redirect('/parent/payments?error=child');
-
-    let proofUrl = null;
-    let proofId = null;
-
-    if (req.file) {
-      const proof = await validateProof(req.file, studentId);
-      if (!proof.ok) return res.redirect(`/parent/payments?error=${proof.error}`);
-      proofUrl = proof.fileUrl;
-      proofId = proof.proof.id;
+    if (!result.ok) {
+      const code = result.error === 'child' ? 'child' : (result.error || '1');
+      return res.redirect(`/parent/payments?error=${code}`);
     }
-
-    const payment = await prisma.payment.create({
-      data: {
-        studentId,
-        amount: parseInt(amount, 10),
-        feeTypeId: feeTypeId || null,
-        reference,
-        proofUrl,
-        status: 'PENDING',
-      },
-    });
-
-    if (proofId) {
-      await prisma.paymentProof.update({
-        where: { id: proofId },
-        data: { paymentId: payment.id },
-      });
-    }
-
-    const school = await prisma.school.findFirst({
-      where: { classes: { some: { students: { some: { id: studentId } } } } },
-      include: { admin: true },
-    });
-
-    if (school?.admin) {
-      await prisma.notification.create({
-        data: {
-          userId: school.admin.id,
-          type: 'PAYMENT',
-          title: 'Nouveau paiement en attente',
-          body: `Un parent a soumis une preuve de paiement de ${amount} FCFA.`,
-        },
-      });
-    }
-
     res.redirect('/parent/payments?success=1');
   } catch (err) {
     console.error(err);

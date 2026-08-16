@@ -1,0 +1,16 @@
+<%- include('partials/head') %>
+<main class="container offline-page">
+  <div class="card offline-card">
+    <p class="offline-status-icon" aria-hidden="true">⏳</p>
+    <h1>Vous êtes hors ligne</h1>
+    <p>EduConnect enregistre vos saisies sur cet appareil (appel, notes, devoirs, classes, élèves, enseignants, paiements). La synchronisation se fera automatiquement dès que le réseau revient.</p>
+    <p class="page-sub">Les pages connectées ne peuvent pas être mises en cache. Rouvrez l’application une fois en ligne pour consulter les listes à jour.</p>
+    <button type="button" class="btn btn-primary btn-lg" id="offlineRetry">Réessayer</button>
+  </div>
+</main>
+<%- include('partials/scripts') %>
+<script>
+  document.getElementById('offlineRetry')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+</script>

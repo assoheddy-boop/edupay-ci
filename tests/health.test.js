@@ -9,6 +9,13 @@ describe('EduConnect API', () => {
     expect(res.body.app).toBe('EduConnect');
   });
 
+  test('GET /offline renders the PWA fallback', async () => {
+    const res = await request(app).get('/offline');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/hors ligne/i);
+    expect(res.text).toMatch(/synchronisation|synchronis/i);
+  });
+
   test('GET / returns 200', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);

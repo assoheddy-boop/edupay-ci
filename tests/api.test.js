@@ -16,6 +16,11 @@ describe('API v1', () => {
     expect(res.status).toBe(401);
   });
 
+  test('POST /api/v1/sync requires auth', async () => {
+    const res = await request(app).post('/api/v1/sync').send({ items: [] });
+    expect(res.status).toBe(401);
+  });
+
   test('GET /api/v1/notifications for parent', async () => {
     const agent = await loginAgent('parent@demo.ci');
     const res = await agent.get('/api/v1/notifications');

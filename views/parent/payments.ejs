@@ -40,7 +40,7 @@
         <% } %>
       </div>
 
-      <form method="POST" action="/parent/payments" enctype="multipart/form-data" class="form">
+      <form method="POST" action="/parent/payments" enctype="multipart/form-data" class="form" data-offline-queue="payment" data-offline-file="proof">
         <input type="hidden" name="studentId" value="<%= s.id %>">
         <div class="form-row">
           <div class="form-group">

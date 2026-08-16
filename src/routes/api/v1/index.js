@@ -1,12 +1,16 @@
 const express = require('express');
 const apiController = require('../../../controllers/apiController');
 const reportingApi = require('../../../controllers/reportingApiController');
+const syncController = require('../../../controllers/syncController');
 const { requireAuth, requireRole } = require('../../../middleware/auth');
 const { apiLimiter } = require('../../../middleware/rateLimit');
 
 const router = express.Router();
 
 router.use(apiLimiter, requireAuth);
+
+router.post('/sync', syncController.syncBatch);
+router.post('/sync/resolve', syncController.resolveConflict);
 
 router.get('/students', requireRole('SCHOOL_ADMIN', 'TEACHER'), apiController.listStudents);
 router.get('/students/:id', requireRole('SCHOOL_ADMIN', 'TEACHER'), apiController.getStudent);

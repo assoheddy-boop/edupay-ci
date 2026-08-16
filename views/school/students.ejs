@@ -40,7 +40,7 @@
 
     <% } else { %>
 
-      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline">
+      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline" data-offline-skip="1">
 
         <input type="file" name="csv" accept=".csv" required>
 
@@ -60,7 +60,7 @@
 
       <h2>Ajouter un élève</h2>
 
-      <form method="POST" action="/school/students" class="form" enctype="multipart/form-data">
+      <form method="POST" action="/school/students" class="form" enctype="multipart/form-data" data-offline-queue="student" data-offline-file="photo">
 
         <div class="form-row">
 

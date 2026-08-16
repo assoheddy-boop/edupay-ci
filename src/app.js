@@ -38,8 +38,8 @@ app.use(helmet({
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/js', express.static(path.join(__dirname, '../node_modules/chart.js/dist')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '8mb' }));
+app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
 app.use(i18nMiddleware);
 app.use(currencyMiddleware);
@@ -55,6 +55,10 @@ app.use((req, res, next) => {
 
 app.get('/prefs/lang/:locale', setLocale);
 app.get('/prefs/currency/:code', setCurrency);
+
+app.get('/offline', (_req, res) => {
+  res.render('offline', { user: null, title: 'Hors ligne' });
+});
 
 app.get('/', (_req, res) => {
   const { plans, moduleList } = getPlansForLanding();

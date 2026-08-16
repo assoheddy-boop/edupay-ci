@@ -8,7 +8,7 @@
   <% classLinks.forEach(cl => { %>
     <div class="card">
       <h2><%= cl.class.name %></h2>
-      <form method="POST" action="/teacher/bulk-grades" class="form">
+      <form method="POST" action="/teacher/bulk-grades" class="form" data-offline-queue="grade" data-offline-bulk="1">
         <input type="hidden" name="classId" value="<%= cl.class.id %>">
         <div class="form-row">
           <div class="form-group"><label>Matière</label><input type="text" name="subject" required></div>

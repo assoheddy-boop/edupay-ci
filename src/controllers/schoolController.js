@@ -2,9 +2,9 @@ const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { getPendingPayments } = require('../../services/PaymentService');
-const { createTeacherProfile } = require('../../services/HRService');
 const { generateBulletinPDF } = require('../../services/export');
 const { parseGender } = require('../../services/ClassService');
+const { applyClass, applyStudent, applyTeacher } = require('../services/offlineActions');
 const {
   getSchoolGenderStats,
   getAbsenceStatsByGender,
@@ -108,18 +108,9 @@ async function listClasses(req, res) {
 }
 
 async function createClass(req, res) {
-  const { name, level, schoolYear } = req.body;
-  const school = req.user.school;
   try {
-    await prisma.class.create({
-      data: {
-        name,
-        level,
-        schoolYear: schoolYear || school.currentSchoolYear,
-        schoolId: school.id,
-      },
-    });
-    await logAudit({ action: 'class_create', entity: 'Class', user: req.user, ip: req.ip, details: { name } });
+    const result = await applyClass({ user: req.user, payload: req.body });
+    if (!result.ok) return res.redirect('/school/classes?error=create');
     res.redirect('/school/classes?success=1');
   } catch (err) {
     console.error(err);
@@ -247,30 +238,13 @@ async function importStudents(req, res) {
 }
 
 async function createStudent(req, res) {
-  const { firstName, lastName, matricule, classId, birthDate, gender } = req.body;
-  const schoolId = req.user.school.id;
   try {
-    const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
-    if (!cls) return res.redirect('/school/students?error=class');
-
-    await prisma.student.create({
-      data: {
-        firstName,
-        lastName,
-        matricule: matricule || null,
-        classId,
-        schoolId,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        gender: parseGender(gender),
-      },
-    }).then(async (created) => {
-      if (req.file) {
-        const { savePersonPhoto } = require('../utils/media');
-        const { photoUrl } = await savePersonPhoto('student', created.id, req.file);
-        await prisma.student.update({ where: { id: created.id }, data: { photoUrl } });
-      }
-    });
-    await logAudit({ action: 'student_create', entity: 'Student', user: req.user, ip: req.ip, details: { matricule } });
+    const result = await applyStudent({ user: req.user, payload: req.body, file: req.file || null });
+    if (!result.ok) {
+      if (result.error === 'class') return res.redirect('/school/students?error=class');
+      if (result.error === 'matricule') return res.redirect('/school/students?error=matricule');
+      return res.redirect('/school/students?error=1');
+    }
     res.redirect('/school/students?success=1');
   } catch (err) {
     console.error(err);
@@ -527,35 +501,12 @@ async function listTeachers(req, res) {
 }
 
 async function inviteTeacher(req, res) {
-  const { email, firstName, lastName, phone, subject, password } = req.body;
-  const schoolId = req.user.school.id;
   try {
-    const result = await createTeacherProfile({
-      email,
-      firstName,
-      lastName,
-      phone,
-      subject,
-      password,
-      schoolId,
-    });
-    if (!result.ok) return res.redirect(`/school/teachers?error=${result.error}`);
-
-    if (req.file && result.user) {
-      const { savePersonPhoto } = require('../utils/media');
-      const { photoUrl } = await savePersonPhoto('user', result.user.id, req.file);
-      await prisma.user.update({ where: { id: result.user.id }, data: { photoUrl } });
+    const result = await applyTeacher({ user: req.user, payload: req.body, file: req.file || null });
+    if (!result.ok) {
+      const code = result.error === 'conflict' ? (result.existing?.field || 'email') : (result.error || 'invite');
+      return res.redirect(`/school/teachers?error=${code}`);
     }
-
-    await logAudit({
-      action: 'teacher_invite',
-      entity: 'Teacher',
-      entityId: result.teacher.id,
-      user: req.user,
-      ip: req.ip,
-      details: { email, subject },
-    });
-
     res.redirect('/school/teachers?success=invited');
   } catch (err) {
     console.error(err);
