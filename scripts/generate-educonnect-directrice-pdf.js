@@ -16,6 +16,11 @@ const MUTED = '#5C5C5C';
 const LINE = '#D6DEE8';
 const WHITE = '#FFFFFF';
 const GREEN = '#0F7B3A';
+const GREEN_SOFT = '#E6F4EA';
+const ORANGE = '#C05621';
+const ORANGE_SOFT = '#FCEEE6';
+const AMBER = '#B45309';
+const AMBER_SOFT = '#FEF3C7';
 
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
@@ -32,6 +37,7 @@ const BUREAU = path.join(
   'Bureau',
   'EduConnect-Presentation-directrice.pdf'
 );
+const BUREAU_V3 = BUREAU.replace(/\.pdf$/i, '-v3.pdf');
 
 const URL = 'https://edupay-ci.vercel.app';
 const CONTACT = 'contact@edupay.ci';
@@ -153,6 +159,11 @@ function drawCover(doc, fonts) {
     align: 'center',
   });
   doc.text(t('l\'encaissement, la classe, la famille et l\'administration.', fonts), MARGIN, doc.y + 2, {
+    width: CONTENT_W,
+    align: 'center',
+  });
+  doc.fillColor(BLUE_DARK).font(fonts.reg).fontSize(10);
+  doc.text(t('Coupure réseau ou courant : l\'appel, les notes et les devoirs restent possibles hors ligne.', fonts), MARGIN, 568, {
     width: CONTENT_W,
     align: 'center',
   });
@@ -286,6 +297,69 @@ function callout(ctx, title, text, bg = BLUE_SOFT) {
   ctx.y = y + boxH + 12;
 }
 
+function twoColBoxes(ctx, left, right) {
+  const { doc, fonts } = ctx;
+  const gap = 10;
+  const colW = (CONTENT_W - gap) / 2;
+  const pad = 10;
+  const innerW = colW - pad * 2;
+  const titleH = 22;
+
+  function bodyHeight(box) {
+    let h = 0;
+    doc.font(fonts.reg).fontSize(8.6);
+    box.items.forEach((item) => {
+      h += doc.heightOfString(t(item, fonts), { width: innerW - 12, lineGap: 1.6 }) + 6;
+    });
+    return h;
+  }
+
+  const h = titleH + pad + Math.max(bodyHeight(left), bodyHeight(right)) + pad;
+  ensureSpace(ctx, h + 12);
+  const y = ctx.y;
+
+  function paint(box, x) {
+    doc.save();
+    doc.roundedRect(x, y, colW, h, 5).fill(box.bg || BLUE_SOFT);
+    doc.restore();
+    doc.save();
+    doc.roundedRect(x, y, colW, titleH, 5).fill(box.head || BLUE);
+    doc.rect(x, y + titleH - 6, colW, 6).fill(box.head || BLUE);
+    doc.restore();
+    doc.fillColor(WHITE).font(fonts.bold).fontSize(9);
+    doc.text(t(box.title, fonts), x + pad, y + 6, { width: innerW, lineBreak: false });
+    let ty = y + titleH + pad;
+    box.items.forEach((item) => {
+      doc.circle(x + pad + 3, ty + 5, 1.8).fill(box.dot || BLUE);
+      doc.fillColor(GRAY).font(fonts.reg).fontSize(8.6);
+      doc.text(t(item, fonts), x + pad + 12, ty, { width: innerW - 12, lineGap: 1.6 });
+      ty = doc.y + 6;
+    });
+  }
+
+  paint(left, MARGIN);
+  paint(right, MARGIN + colW + gap);
+  ctx.y = y + h + 12;
+}
+
+function statusPills(ctx, pills) {
+  const { doc, fonts } = ctx;
+  ensureSpace(ctx, 28);
+  let x = MARGIN;
+  const y = ctx.y;
+  pills.forEach((pill) => {
+    doc.font(fonts.bold).fontSize(8.5);
+    const w = Math.min(doc.widthOfString(t(pill.label, fonts)) + 16, 170);
+    doc.save();
+    doc.roundedRect(x, y, w, 16, 8).fill(pill.bg);
+    doc.restore();
+    doc.fillColor(pill.fg).font(fonts.bold).fontSize(8.5);
+    doc.text(t(pill.label, fonts), x + 8, y + 3.5, { width: w - 16, lineBreak: false });
+    x += w + 8;
+  });
+  ctx.y = y + 24;
+}
+
 function kvLine(ctx, key, value) {
   const { doc, fonts } = ctx;
   ensureSpace(ctx, 18);
@@ -416,9 +490,10 @@ function writeContent(ctx) {
     '3.  Tous les modules, un par un',
     '4.  L\'appel numérique (Présent / Retard / Absent)',
     '5.  Les paiements Wave et Orange Money',
-    '6.  Les offres (Essentiel, Premium, Pro, Groupe)',
-    '7.  Sécurité et données',
-    '8.  Comment démarrer',
+    '6.  Mode hors-ligne — coupures réseau et courant',
+    '7.  Les offres (Essentiel, Premium, Pro, Groupe)',
+    '8.  Sécurité et données',
+    '9.  Comment démarrer',
   ];
   toc.forEach((line) => bullet(ctx, line));
 
@@ -439,6 +514,7 @@ function writeContent(ctx) {
   bullet(ctx, 'Qui a payé la scolarité de septembre ? Le parent envoie la capture ; vous validez. Le statut n\'est plus « on verra demain ».');
   bullet(ctx, 'Qui était en retard ce matin en CM2 A ? L\'enseignant a marqué Retard. Le parent est notifié. Vous le voyez sans ouvrir un cahier.');
   bullet(ctx, 'Qui de l\'équipe est en congé, et la paie du mois ? Le module RH (plan Pro) tient dossiers, congés et bulletins de salaire.');
+  bullet(ctx, 'Le réseau tombe ou le courant saute pendant l\'appel ? L\'enseignant enregistre sur le téléphone ; dès que la 4G revient, tout part tout seul (détail en section 6).');
 
   subTitle(ctx, 'Ce que les outils de paiement seuls ne font pas');
   para(ctx, 'Un portail qui ne fait qu\'encaisser les frais laisse la vie scolaire ailleurs : notes sur papier, absences dans un cahier, RH dans un classeur. EduConnect part du paiement mobile que les familles utilisent déjà, et y ajoute la classe, la famille et l\'administration.');
@@ -620,6 +696,7 @@ function writeContent(ctx) {
   bullet(ctx, 'Réinscription : suivi des réinscriptions et causes de redoublement, exports PDF / Excel.');
   bullet(ctx, 'Transferts : un parent demande le transfert ; l\'école d\'origine approuve ou refuse ; l\'administration EduConnect clôture le dossier.');
   bullet(ctx, 'Bourses (espace super admin) : création et suivi de dossiers de bourse.');
+  bullet(ctx, 'Mode hors-ligne : enregistrement sur le téléphone (appel, notes, devoirs, créations, preuve de paiement) puis synchronisation automatique — voir section 6.');
 
   subTitle(ctx, 'Récapitulatif : quel module dans quelle offre ?');
   para(ctx, 'Point = inclus. Essentiel convient pour démarrer. Premium couvre la vie scolaire. Pro ajoute le pilotage (compta, RH). Groupe ajoute le multi-campus.');
@@ -667,6 +744,7 @@ function writeContent(ctx) {
   );
 
   para(ctx, 'Un signalement d\'absence hors appel reste possible (motif saisi par l\'enseignant). L\'espace parent « suivi » reprend absences et retards. Les statistiques peuvent croiser assiduité et genre, pour un pilotage plus fin — pas pour un affichage public.');
+  para(ctx, 'Sans réseau, l\'appel du jour peut quand même être enregistré sur le téléphone, puis envoyé automatiquement au retour de la connexion (section 6). Les notifications aux parents partent au moment de cette synchronisation, pas pendant la coupure.');
 
   // —— 7. Paiements ——
   ctx.doc.addPage();
@@ -689,12 +767,98 @@ function writeContent(ctx) {
   );
 
   para(ctx, 'Vous définissez aussi les types de frais (scolarité, cantine, transport, inscription…). Les exports Excel des paiements servent à la comptabilité. En plan Pro, les recettes peuvent rejoindre la comptabilité interne (comptes Wave, Orange Money, caisse, banque).');
+  para(ctx, 'Le parent paie toujours dans Wave ou Orange Money, sur son téléphone (ces applications ont leur propre réseau). Ce qu\'EduConnect peut enregistrer hors ligne, c\'est l\'envoi de la capture d\'écran — détail en section 6.');
 
-  // —— 8. Offres ——
+  // —— 8. Hors-ligne ——
   ctx.doc.addPage();
   ctx.page += 1;
   ctx.y = HEADER_H + 22;
-  sectionTitle(ctx, '6.  Offres, en FCFA');
+  sectionTitle(ctx, '6.  Mode hors-ligne — coupures réseau et courant');
+  para(ctx, 'En Côte d\'Ivoire, la 4G tombe et le courant saute. EduConnect est conçu pour ça. Après une première connexion en ligne, les gestes du quotidien — appel, notes, devoirs, créations, preuve de paiement — peuvent être enregistrés sur le téléphone, même sans internet. Dès que le réseau revient, tout part tout seul. Rien n\'est perdu sur l\'appareil, à condition de ne pas vider les données du navigateur.');
+
+  subTitle(ctx, 'Comment s\'y préparer (une fois, avec du réseau)');
+  numbered(ctx, 1, `Ouvrir ${URL} et se connecter (direction, enseignant ou parent). Cette première visite en ligne est indispensable.`);
+  numbered(ctx, 2, 'Sur le téléphone : menu du navigateur, puis « Ajouter à l\'écran d\'accueil » (Safari sur iPhone, Chrome sur Android). L\'icône EduConnect reste sur le bureau, comme une petite application.');
+  numbered(ctx, 3, 'Le jour de la coupure : continuer sur le même téléphone, dans le même navigateur (ou l\'icône d\'accueil). Ne pas effacer l\'historique du site.');
+  numbered(ctx, 4, 'Quand la 4G revient — même sur batterie, même ailleurs que dans l\'école — les saisies en attente se synchronisent automatiquement. Un bouton « Synchroniser » permet aussi de forcer l\'envoi.');
+
+  subTitle(ctx, 'Avec connexion  ·  Sans connexion');
+  para(ctx, '« Sans connexion » suppose que la personne s\'est déjà connectée une fois en ligne, sur cet appareil. Ce qui n\'est pas dans la colonne de gauche exige internet.');
+
+  twoColBoxes(ctx, {
+    title: 'Sans connexion',
+    head: ORANGE,
+    bg: ORANGE_SOFT,
+    dot: ORANGE,
+    items: [
+      'Appel du jour : Présent, Retard, Absent',
+      'Notes, y compris la saisie en lot pour toute la classe',
+      'Devoirs, avec pièce jointe (photo du tableau, fichier)',
+      'Créer une classe, un élève, un enseignant (compte direction déjà ouvert)',
+      'Parent : envoyer la capture Wave / Orange Money',
+      'Enregistrement sur le téléphone ; bandeau « en attente de synchronisation »',
+    ],
+  }, {
+    title: 'Avec connexion',
+    head: GREEN,
+    bg: GREEN_SOFT,
+    dot: GREEN,
+    items: [
+      'Tout ce qui précède, enregistré tout de suite sur le serveur',
+      'Première inscription, création d\'école, première connexion',
+      'Modifier ou supprimer une fiche, import CSV, affecter un prof à une classe',
+      'Messages, bulletins PDF, stats en direct, autre campus',
+      'Valider ou refuser un paiement (côté direction)',
+      'Les alertes parents (retard, absence, devoir) partent à la synchronisation',
+    ],
+  });
+
+  ctx.doc.addPage();
+  ctx.page += 1;
+  ctx.y = HEADER_H + 22;
+
+  callout(
+    ctx,
+    'Coupure de courant à l\'école',
+    'Le téléphone tient la file d\'attente. Le serveur EduConnect est dans le cloud : il n\'a pas besoin de l\'électricité de l\'établissement. Exemple : l\'enseignante de CM2 fait l\'appel à 7 h 20, bandeau « en attente ». À 9 h la 4G revient, les statuts partent, les parents sont notifiés. Rien à retaper.'
+  );
+
+  callout(
+    ctx,
+    'Paiements : ce qui est hors ligne, ce qui ne l\'est pas',
+    'Le parent paie dans Wave ou Orange Money, comme aujourd\'hui : ces applications ont leur propre réseau opérateur. EduConnect n\'envoie pas l\'argent à sa place. Ce qui peut attendre le retour d\'internet, c\'est l\'envoi de la capture d\'écran dans l\'espace parent. La direction valide ensuite, une fois en ligne.'
+  );
+
+  subTitle(ctx, 'Ce que chacun voit à l\'écran');
+  para(ctx, 'Après une saisie hors ligne, un bandeau apparaît : « Données enregistrées localement, en attente de synchronisation ». Une icône flottante rappelle l\'état. Quand le réseau revient, l\'envoi est automatique (un essai a aussi lieu en rouvrant l\'application).');
+
+  statusPills(ctx, [
+    { label: 'En attente', bg: ORANGE_SOFT, fg: ORANGE },
+    { label: 'Envoyé — synchronisé', bg: GREEN_SOFT, fg: GREEN },
+    { label: 'À traiter', bg: AMBER_SOFT, fg: AMBER },
+  ]);
+
+  bullet(ctx, 'En attente (sablier) : la saisie est sur l\'appareil, pas encore sur le serveur. L\'enseignant peut continuer ; la directrice n\'a pas encore la donnée.');
+  bullet(ctx, 'Envoyé (coche verte, quelques secondes) : la synchro a réussi. Le bandeau disparaît.');
+  bullet(ctx, 'À traiter (triangle d\'alerte) : une erreur, ou un professeur dont l\'e-mail existe déjà. Toucher l\'icône pour réessayer.');
+
+  subTitle(ctx, 'Conflit d\'e-mail enseignant : Fusionner ou Annuler');
+  para(ctx, 'Si vous invitez un enseignant hors ligne et que, à la synchro, cet e-mail (ou ce téléphone) existe déjà, le bandeau affiche : « Professeur déjà existant, fusionner ou annuler ».');
+  bullet(ctx, 'Fusionner : rattacher le compte déjà existant à votre école, sans doublon. Annuler : abandonner l\'invitation locale.');
+  para(ctx, 'Ces deux boutons ont besoin d\'internet — ce n\'est pas un blocage pendant la coupure, c\'est un choix une fois le réseau revenu.');
+
+  subTitle(ctx, 'Limites honnêtes — pour ne pas trop promettre');
+  bullet(ctx, 'Première connexion et création d\'école : internet obligatoire. Un établissement ne se crée pas « dans le noir ».');
+  bullet(ctx, 'Modifications, suppressions, import CSV, affectation des classes : pas de file d\'attente. Idem pour messages, bulletins PDF serveur, autre campus en direct.');
+  bullet(ctx, 'Fermer complètement le navigateur puis le rouvrir sans réseau — surtout sur iPhone — peut afficher « Vous êtes hors ligne » plutôt que la dernière liste. Gardez l\'onglet ouvert, ou reconnectez-vous en ligne.');
+  bullet(ctx, '4G instable : si le téléphone croit encore être en ligne, le formulaire part tout de suite. S\'il échoue, réessayez quand c\'est stable.');
+  bullet(ctx, 'Pièces jointes : 5 Mo max. Ne pas vider les données du site ni changer de téléphone au milieu d\'une file : l\'enregistrement est sur cet appareil-là.');
+
+  // —— 9. Offres ——
+  ctx.doc.addPage();
+  ctx.page += 1;
+  ctx.y = HEADER_H + 22;
+  sectionTitle(ctx, '7.  Offres, en FCFA');
   para(ctx, 'Les tarifs ci-dessous sont ceux publiés sur la plateforme. Ils peuvent évoluer ; un devis groupe se discute selon le nombre de campus. Il n\'existe pas d\'essai de 14 jours : l\'offre Essentiel est gratuite, sans limite de durée, dans la limite indiquée.');
 
   planCard(ctx, {
@@ -740,7 +904,7 @@ function writeContent(ctx) {
   ctx.doc.addPage();
   ctx.page += 1;
   ctx.y = HEADER_H + 22;
-  sectionTitle(ctx, '7.  Sécurité et données');
+  sectionTitle(ctx, '8.  Sécurité et données');
   para(ctx, 'EduConnect traite des données d\'élèves, de familles et de personnel. La conception vise un usage professionnel, pas une vitrine ouverte.');
 
   bullet(ctx, 'Connexion par identifiants personnels. Les sessions s\'appuient sur des jetons d\'accès de courte durée (JWT) et un jeton de renouvellement, stockés dans des cookies protégés — pas dans l\'adresse du navigateur.');
@@ -749,12 +913,13 @@ function writeContent(ctx) {
   bullet(ctx, 'Modules activables école par école : une fonction absente de votre offre n\'apparaît pas « par erreur ».');
   bullet(ctx, 'Journal d\'audit des actions sensibles (connexion, validation de paiement, modification d\'élève, etc.).');
   bullet(ctx, 'Hébergement de l\'application sur infrastructure cloud (Vercel), accès HTTPS.');
+  bullet(ctx, 'Saisies hors ligne : elles restent sur le téléphone de la personne jusqu\'à la synchronisation. Elles ne transitent pas par un autre établissement.');
 
   subTitle(ctx, 'Consentement des parents');
-  para(ctx, 'Dès la première connexion, le parent est invité à se prononcer. Quatre types existent : traitement des données nécessaires au suivi scolaire ; photos et médias ; données de santé ; communications. Il peut les modifier ensuite dans son espace confidentialité. Un signalement santé s\'inscrit dans ce cadre.');
+  para(ctx, 'Dès la première connexion, le parent se prononce : données scolaires, photos, santé, communications. Il peut modifier ensuite. Un signalement santé s\'inscrit dans ce cadre.');
 
   subTitle(ctx, 'Comptes de démonstration');
-  para(ctx, 'La vitrine publique de production n\'affiche pas de mots de passe de démonstration. Les comptes d\'essai servent aux tests internes. Pour une directrice, l\'espace ouvert est le sien : inscription école, ou démo organisée avec nos équipes — pas un identifiant générique collé sur la page d\'accueil.');
+  para(ctx, 'La vitrine de production n\'affiche pas de mots de passe de démo. Pour une directrice : inscription école, ou démo avec nos équipes — pas un identifiant générique sur la page d\'accueil.');
 
   callout(
     ctx,
@@ -762,15 +927,17 @@ function writeContent(ctx) {
     `Pour toute demande relative aux données d'un établissement : ${CONTACT}. EduConnect n'est pas un réseau social d'élèves. L'enfant n'a pas de compte.`
   );
 
-  // —— 10. Démarrer ——
-  sectionTitle(ctx, '8.  Comment démarrer');
+  ctx.doc.addPage();
+  ctx.page += 1;
+  ctx.y = HEADER_H + 22;
+  sectionTitle(ctx, '9.  Comment démarrer');
   para(ctx, 'Vous pouvez créer votre école en quelques minutes, ou nous écrire pour une démonstration accompagnée.');
 
   numbered(ctx, 1, `Ouvrir ${URL} et choisir « Demander une démo » / inscription école — ou écrire à ${CONTACT}.`);
   numbered(ctx, 2, 'Renseigner le nom de l\'établissement, la ville (Abidjan par défaut), les numéros Wave et Orange Money.');
   numbered(ctx, 3, 'Créer les classes (CP, CE1… ou 6e, 5e…), importer les élèves, inviter les enseignants avec le code école.');
   numbered(ctx, 4, 'Informer les parents : ils s\'inscrivent, lient leurs enfants, paient et suivent la scolarité.');
-  numbered(ctx, 5, 'Rester sur Essentiel (gratuit, jusqu\'à 150 élèves) ou passer à Premium / Pro selon les modules utiles. Un groupe scolaire se discute à part.');
+  numbered(ctx, 5, 'Sur chaque téléphone utilisé hors ligne : se connecter une première fois avec du réseau, puis « Ajouter à l\'écran d\'accueil ». Rester sur Essentiel (gratuit, jusqu\'à 150 élèves) ou passer à Premium / Pro ; un groupe se discute à part.');
 
   callout(
     ctx,
@@ -796,7 +963,7 @@ function writePdf(filePath) {
         Title: 'EduConnect — Présentation à l\'attention de la direction',
         Author: 'EduConnect',
         Subject: 'Plateforme de gestion scolaire — Côte d\'Ivoire',
-        Keywords: 'EduConnect, école, Wave, Orange Money, Côte d\'Ivoire',
+        Keywords: 'EduConnect, école, Wave, Orange Money, hors-ligne, Côte d\'Ivoire',
       },
     });
 
@@ -839,11 +1006,20 @@ function verifyPdf(filePath) {
       '    if i == 0 and "EduConnect" not in t:',
       '        raise SystemExit("page1 missing EduConnect")',
       'joined = "\\n".join(texts)',
-      'if len(joined) < 800:',
-      '    raise SystemExit("too little text: %d" % len(joined))',
+      'plain = " ".join(joined.split())',
+      'if len(plain) < 800:',
+      '    raise SystemExit("too little text: %d" % len(plain))',
+      'if "IndexedDB" in joined:',
+      '    raise SystemExit("IndexedDB jargon leaked into PDF")',
+      'needles = ["hors-ligne", "Sans connexion", "attente de synchronisation", "Fusionner"]',
+      'missing = [n for n in needles if n.lower() not in plain.lower()]',
+      'if missing:',
+      '    raise SystemExit("missing: " + ", ".join(missing))',
       'print(len(r.pages))',
       'print(len(joined))',
       'print(texts[0][:240].replace("\\n", " | "))',
+      'hl = [str(i+1) for i, t in enumerate(texts) if "hors-ligne" in t.lower() or "hors ligne" in t.lower()]',
+      'print("hors-ligne pages: " + ",".join(hl))',
     ].join('\n')
   );
   try {
@@ -852,7 +1028,8 @@ function verifyPdf(filePath) {
     return {
       pages: parseInt(lines[0], 10),
       chars: parseInt(lines[1], 10),
-      preview: lines.slice(2).join('\n'),
+      preview: lines[2] || '',
+      horsLignePages: (lines[3] || '').replace('hors-ligne pages: ', ''),
     };
   } finally {
     try {
@@ -879,8 +1056,10 @@ async function main() {
   const copies = [];
   const bureauDir = path.dirname(BUREAU);
   const bureauV2 = BUREAU.replace(/\.pdf$/i, '-v2.pdf');
+  const bureauV4 = BUREAU.replace(/\.pdf$/i, '-v4.pdf');
+  const bureauV5 = BUREAU.replace(/\.pdf$/i, '-v5.pdf');
   if (fs.existsSync(bureauDir)) {
-    const dests = [BUREAU, bureauV2];
+    const dests = [BUREAU, BUREAU_V3, bureauV2, bureauV4, bureauV5];
     let copied = false;
     for (const dest of dests) {
       try {
@@ -904,6 +1083,7 @@ async function main() {
     pages: verification.pages,
     chars: verification.chars,
     preview: verification.preview,
+    horsLignePages: verification.horsLignePages,
     sizeBytes: stat.size,
     output: OUTPUT,
     copies,
