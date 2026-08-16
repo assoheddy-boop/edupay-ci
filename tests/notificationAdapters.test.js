@@ -39,12 +39,12 @@ describe('notification adapters without credentials', () => {
     process.env.ORANGE_SMS_SENDER = 'EduConnect';
     const prevFetch = global.fetch;
     global.fetch = jest.fn().mockResolvedValue({ ok: true });
-    await expect(sendSms('0700000000', "École ECEME : test", { sender: 'ECEME' })).resolves.toMatchObject({
+    await expect(sendSms('0700000000', "École Sainte Marie : test", { sender: 'SteMarie' })).resolves.toMatchObject({
       ok: true,
-      sender: 'ECEME',
+      sender: 'SteMarie',
     });
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(body.outboundSMSMessageRequest.senderAddress).toBe('ECEME');
+    expect(body.outboundSMSMessageRequest.senderAddress).toBe('SteMarie');
     global.fetch = prevFetch;
   });
 

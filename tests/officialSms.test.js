@@ -17,19 +17,19 @@ describe('official SMS helpers', () => {
   });
 
   test('prefixes parent SMS with the school name', () => {
-    expect(prefixSmsBody('ECEME', "votre enfant est absent aujourd'hui.")).toBe(
-      "École ECEME : votre enfant est absent aujourd'hui.",
+    expect(prefixSmsBody('Sainte Marie', "votre enfant est absent aujourd'hui.")).toBe(
+      "École Sainte Marie : votre enfant est absent aujourd'hui.",
     );
-    expect(prefixSmsBody('ECEME', "École ECEME : déjà préfixé.")).toBe('École ECEME : déjà préfixé.');
+    expect(prefixSmsBody('Sainte Marie', "École Sainte Marie : déjà préfixé.")).toBe('École Sainte Marie : déjà préfixé.');
   });
 
   test('uses smsSenderId, never Wave/OM payment wallets', () => {
     const school = {
-      smsSenderId: 'ECEME',
+      smsSenderId: 'SteMarie',
       waveNumber: '07 00 00 00 01',
       omNumber: '07 00 00 00 02',
     };
-    expect(resolveSmsSender({ school })).toBe('ECEME');
+    expect(resolveSmsSender({ school })).toBe('SteMarie');
     expect(resolveSmsSender({ school: { ...school, smsSenderId: null }, snapshot: null })).not.toBe(school.waveNumber);
     expect(resolveSmsSender({ school: { ...school, smsSenderId: null }, snapshot: null })).not.toBe(school.omNumber);
   });
@@ -37,21 +37,23 @@ describe('official SMS helpers', () => {
   test('job snapshot wins over school sender, then env', () => {
     const prev = process.env.ORANGE_SMS_SENDER;
     process.env.ORANGE_SMS_SENDER = 'EduConnect';
-    expect(resolveSmsSender({ snapshot: 'ECOLE1', school: { smsSenderId: 'ECEME' } })).toBe('ECOLE1');
+    expect(resolveSmsSender({ snapshot: 'ECOLE1', school: { smsSenderId: 'SteMarie' } })).toBe('ECOLE1');
     expect(resolveSmsSender({ school: { smsSenderId: null } })).toBe('EduConnect');
     if (prev === undefined) delete process.env.ORANGE_SMS_SENDER;
     else process.env.ORANGE_SMS_SENDER = prev;
   });
 
   test('sanitizes sender IDs', () => {
-    expect(sanitizeSmsSenderId('  ECEME  ')).toBe('ECEME');
+    expect(sanitizeSmsSenderId('  SteMarie  ')).toBe('SteMarie');
     expect(sanitizeSmsSenderId('')).toBeNull();
     expect(sanitizeSmsSenderId('<script>')).toBeNull();
   });
 
   test('preview example is French and school-prefixed', () => {
-    expect(smsPreviewExample('ECEME')).toContain('École ECEME');
-    expect(smsPreviewExample('ECEME')).not.toMatch(/Wave|Orange Money/i);
+    expect(smsPreviewExample('Sainte Marie')).toContain('École Sainte Marie');
+    expect(smsPreviewExample('Sainte Marie')).not.toMatch(/Wave|Orange Money/i);
+    expect(smsPreviewExample()).toContain('École [nom de l\'école]');
+    expect(smsPreviewExample()).not.toMatch(/ECEME/i);
   });
 });
 

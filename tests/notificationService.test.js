@@ -51,7 +51,7 @@ const {
   MAX_ATTEMPTS,
 } = require('../services/NotificationService');
 
-const ECEME = { id: 'sch-eceme', name: 'ECEME', smsSenderId: 'ECEME' };
+const SCHOOL = { id: 'sch-1', name: 'Sainte Marie', smsSenderId: 'SteMarie' };
 
 function jobFromCreate(data, id) {
   return {
@@ -113,12 +113,12 @@ describe('enqueue', () => {
       email: 'parent@educonnect-ci.com',
     });
     prisma.consent.findUnique.mockResolvedValue(null);
-    prisma.school.findUnique.mockResolvedValue(ECEME);
+    prisma.school.findUnique.mockResolvedValue(SCHOOL);
     getModuleMap.mockResolvedValue({ sms_official: { enabled: true } });
   });
 
   test('creates pending jobs per channel and sends in-app immediately', async () => {
-    const result = await sendNotification('u1', 'absence_reported', 'Awa absente le 16/08/2026.', { schoolId: ECEME.id });
+    const result = await sendNotification('u1', 'absence_reported', 'Awa absente le 16/08/2026.', { schoolId: SCHOOL.id });
     expect(result.ok).toBe(true);
     const channels = prisma.notificationJob.create.mock.calls.map((call) => call[0].data.channel);
     expect(channels).toEqual([
@@ -161,28 +161,28 @@ describe('enqueue', () => {
 
   test('skips SMS jobs when official SMS module is off', async () => {
     getModuleMap.mockResolvedValue({ sms_official: { enabled: false } });
-    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: ECEME.id });
+    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: SCHOOL.id });
     const channels = prisma.notificationJob.create.mock.calls.map((call) => call[0].data.channel);
     expect(channels).toEqual([CHANNELS.IN_APP, CHANNELS.EMAIL, CHANNELS.PUSH]);
   });
 
   test('snapshots school sender and prefixes SMS body when module is on', async () => {
-    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: ECEME.id });
+    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: SCHOOL.id });
     const smsJob = prisma.notificationJob.create.mock.calls
       .map((call) => call[0].data)
       .find((data) => data.channel === CHANNELS.SMS);
     expect(smsJob).toMatchObject({
-      schoolId: ECEME.id,
-      senderId: 'ECEME',
+      schoolId: SCHOOL.id,
+      senderId: 'SteMarie',
     });
-    expect(smsJob.payload.smsBody).toBe("École ECEME : votre enfant est absent aujourd'hui.");
+    expect(smsJob.payload.smsBody).toBe("École Sainte Marie : votre enfant est absent aujourd'hui.");
   });
 
   test('falls back to ORANGE_SMS_SENDER when school has no smsSenderId', async () => {
-    prisma.school.findUnique.mockResolvedValue({ id: ECEME.id, name: 'ECEME', smsSenderId: null });
+    prisma.school.findUnique.mockResolvedValue({ id: SCHOOL.id, name: 'Sainte Marie', smsSenderId: null });
     const prev = process.env.ORANGE_SMS_SENDER;
     process.env.ORANGE_SMS_SENDER = 'EduConnect';
-    await sendNotification('u1', 'payment_validated', '25 000 FCFA confirmés.', { schoolId: ECEME.id });
+    await sendNotification('u1', 'payment_validated', '25 000 FCFA confirmés.', { schoolId: SCHOOL.id });
     const smsJob = prisma.notificationJob.create.mock.calls
       .map((call) => call[0].data)
       .find((data) => data.channel === CHANNELS.SMS);
@@ -203,7 +203,7 @@ describe('worker status transitions', () => {
       email: 'parent@educonnect-ci.com',
     });
     prisma.consent.findUnique.mockResolvedValue(null);
-    prisma.school.findUnique.mockResolvedValue(ECEME);
+    prisma.school.findUnique.mockResolvedValue(SCHOOL);
     getModuleMap.mockResolvedValue({ sms_official: { enabled: true } });
   });
 
@@ -319,11 +319,11 @@ describe('worker status transitions', () => {
     prisma.notificationJob.findMany.mockResolvedValue([{
       id: 'sms-school',
       userId: 'u1',
-      schoolId: ECEME.id,
-      senderId: 'ECEME',
+      schoolId: SCHOOL.id,
+      senderId: 'SteMarie',
       channel: 'SMS',
       eventType: 'ABSENCE',
-      payload: { title: 'Absence signalée', body: "votre enfant est absent aujourd'hui.", schoolName: 'ECEME' },
+      payload: { title: 'Absence signalée', body: "votre enfant est absent aujourd'hui.", schoolName: 'Sainte Marie' },
       status: 'pending',
       attempts: 0,
       scheduledAt: new Date(),
@@ -333,8 +333,8 @@ describe('worker status transitions', () => {
     expect(result.sent).toBe(1);
     expect(sendSms).toHaveBeenCalledWith(
       '0700000000',
-      "École ECEME : votre enfant est absent aujourd'hui.",
-      { sender: 'ECEME' },
+      "École Sainte Marie : votre enfant est absent aujourd'hui.",
+      { sender: 'SteMarie' },
     );
   });
 
@@ -343,7 +343,7 @@ describe('worker status transitions', () => {
     prisma.notificationJob.findMany.mockResolvedValue([{
       id: 'sms-off',
       userId: 'u1',
-      schoolId: ECEME.id,
+      schoolId: SCHOOL.id,
       channel: 'SMS',
       eventType: 'ABSENCE',
       payload: { title: 'Absence signalée', body: 'Awa absente.' },
