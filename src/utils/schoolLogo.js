@@ -35,6 +35,14 @@ function logoSrcFor(school) {
     // ignore
   }
 
+  try {
+    const { findExtraSchool } = require('../config/extraSchools');
+    const fromExtra = publicPathFromLogoFile(findExtraSchool(school.slug)?.logoFile);
+    if (fromExtra) return fromExtra;
+  } catch {
+    // ignore
+  }
+
   if (url && !url.startsWith('/uploads/')) return url;
 
   const b64 = school.logoBase64 || '';

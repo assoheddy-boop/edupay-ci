@@ -103,8 +103,13 @@ function generateTempPassword(slug) {
   const shared = process.env.ONBOARD_TEMP_PASSWORD;
   if (shared) return shared;
   const token = crypto.randomBytes(4).toString('hex');
-  const prefix = (slug || 'epv').split('-')[1] || 'ecole';
-  return `Epv-${prefix}-${token}!`;
+  const parts = String(slug || 'epv').split('-');
+  if (parts[0] === 'epv') {
+    const prefix = parts[1] || 'ecole';
+    return `Epv-${prefix}-${token}!`;
+  }
+  const label = (parts[0] || 'ecole').charAt(0).toUpperCase() + (parts[0] || 'ecole').slice(1);
+  return `${label}-${token}!`;
 }
 
 function pickSchoolFields(def, existing = {}) {

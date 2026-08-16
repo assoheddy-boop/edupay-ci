@@ -6,6 +6,8 @@ const {
   pickSchoolFields,
   generateTempPassword,
 } = require('../src/config/epvSchools');
+const { IGEST_SCHOOL } = require('../src/config/igestSchool');
+const { EXTRA_SCHOOLS } = require('../src/config/extraSchools');
 
 describe('Catalogue EPV', () => {
   test('contient les 6 écoles en contact', () => {
@@ -78,5 +80,32 @@ describe('generateTempPassword', () => {
     const b = generateTempPassword('epv-fatoumaba');
     expect(a).toMatch(/^Epv-fatoumaba-.+!$/);
     expect(a).not.toBe(b);
+  });
+
+  test('préfixe IGEST pour un slug hors EPV', () => {
+    delete process.env.ONBOARD_TEMP_PASSWORD;
+    expect(generateTempPassword('igest-yopougon-sideci')).toMatch(/^Igest-.+!$/);
+  });
+});
+
+describe('Catalogue IGEST', () => {
+  test('reste hors du catalogue EPV (toujours 6 écoles EPV)', () => {
+    expect(EPV_SCHOOLS).toHaveLength(6);
+    expect(EPV_SCHOOLS.some((s) => s.slug === IGEST_SCHOOL.slug)).toBe(false);
+    expect(EXTRA_SCHOOLS).toEqual([IGEST_SCHOOL]);
+  });
+
+  test('définit le nom, le slug, le téléphone et le fichier logo', () => {
+    expect(IGEST_SCHOOL.name).toBe('IGEST');
+    expect(IGEST_SCHOOL.legalName).toContain('Institut Général d\'Enseignement Secondaire');
+    expect(IGEST_SCHOOL.slug).toBe('igest-yopougon-sideci');
+    expect(IGEST_SCHOOL.city).toBe('Abidjan');
+    expect(IGEST_SCHOOL.campusLabel).toBe('Yopougon-Sideci');
+    expect(IGEST_SCHOOL.admin.email).toBe('igest@edupay.ci');
+    expect(IGEST_SCHOOL.admin.firstName).toBe('Affoua Valentine');
+    expect(IGEST_SCHOOL.admin.lastName).toBe('Dongo');
+    expect(IGEST_SCHOOL.admin.phone).toBe('05 45 47 48 29');
+    expect(IGEST_SCHOOL.logoFile).toBe('public/img/schools/igest-yopougon-sideci.png');
+    expect(fs.existsSync(path.join(__dirname, '..', IGEST_SCHOOL.logoFile))).toBe(true);
   });
 });

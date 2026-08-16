@@ -15,6 +15,7 @@
     "db:seed-rich": "node prisma/seed-rich.js",
     "db:bootstrap-premium": "node scripts/bootstrap-premium.js",
     "db:onboard-epv": "node scripts/onboard-epv-schools.js",
+    "db:onboard-extra": "node scripts/onboard-extra-schools.js",
     "db:studio": "prisma studio",
     "verify": "node scripts/verify-all.js"
   },

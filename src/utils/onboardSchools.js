@@ -73,11 +73,22 @@ async function onboardSchool(def, { plan, password } = {}) {
     await provisionSchoolServices(school.id, plan);
     await attachLogoAndPhone(school, def);
 
+    const adminId = school.adminId || school.admin?.id;
+    if (adminId && def.admin) {
+      const adminData = {};
+      if (def.admin.firstName) adminData.firstName = def.admin.firstName;
+      if (def.admin.lastName) adminData.lastName = def.admin.lastName;
+      if (def.admin.phone) adminData.phone = def.admin.phone;
+      if (Object.keys(adminData).length) {
+        await prisma.user.update({ where: { id: adminId }, data: adminData });
+      }
+    }
+
     let shownPassword = null;
     const resetPassword = password || process.env.ONBOARD_TEMP_PASSWORD;
-    if (resetPassword && school.admin?.id) {
+    if (resetPassword && adminId) {
       await prisma.user.update({
-        where: { id: school.admin.id },
+        where: { id: adminId },
         data: { password: await hashPassword(resetPassword) },
       });
       shownPassword = resetPassword;
@@ -168,11 +179,11 @@ async function onboardSchool(def, { plan, password } = {}) {
   };
 }
 
-async function onboardSchools(schools, { planSlug = 'premium' } = {}) {
+async function onboardSchools(schools, { planSlug = 'premium', password } = {}) {
   const plan = await ensurePlan(planSlug);
   const results = [];
   for (const def of schools) {
-    results.push(await onboardSchool(def, { plan }));
+    results.push(await onboardSchool(def, { plan, password }));
   }
   return results;
 }

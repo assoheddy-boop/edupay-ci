@@ -27,4 +27,14 @@ describe('logoSrcFor', () => {
     expect(logoSrcFor({ logoBase64: 'data:image/png;base64,abc', logoUrl: '/uploads/x.png' }))
       .toBe('data:image/png;base64,abc');
   });
+
+  test('uses the public catalog file for IGEST', () => {
+    expect(publicPathFromLogoFile('public/img/schools/igest-yopougon-sideci.png'))
+      .toBe('/img/schools/igest-yopougon-sideci.png');
+    expect(logoSrcFor({
+      slug: 'igest-yopougon-sideci',
+      logoUrl: '/uploads/logos/abc.png',
+      logoBase64: `data:image/png;base64,${'A'.repeat(200000)}`,
+    })).toBe('/img/schools/igest-yopougon-sideci.png');
+  });
 });
