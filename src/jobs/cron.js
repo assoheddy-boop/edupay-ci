@@ -89,7 +89,7 @@ async function weeklyParentSummaryForSchool(schoolId) {
     await prisma.notification.create({
       data: { userId: parent.userId, type: 'GENERAL', title: 'Résumé hebdomadaire', body },
     });
-    if (parent.user.phone) await sendSms(parent.user.phone, `EduPay CI: ${body}`);
+    if (parent.user.phone) await sendSms(parent.user.phone, `EduConnect: ${body}`);
   }
 }
 

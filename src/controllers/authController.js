@@ -86,7 +86,7 @@ async function register(req, res) {
     if (role === 'SCHOOL_ADMIN') {
       if (process.env.ALLOW_PUBLIC_SCHOOL_REGISTER === 'false') {
         return res.render('auth/register', {
-          error: 'Les inscriptions écoles sont temporairement fermées. Contactez EduPay CI.',
+          error: 'Les inscriptions écoles sont temporairement fermées. Contactez EduConnect.',
           role,
         });
       }

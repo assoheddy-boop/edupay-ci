@@ -13,7 +13,7 @@ const CONSENT_HINTS = {
   DATA_PROCESSING: 'Autoriser l\'école à traiter les informations nécessaires au suivi scolaire.',
   PHOTOS: 'Autoriser la publication de photos de vos enfants dans le cadre scolaire.',
   HEALTH: 'Autoriser le partage des signalements de santé avec l\'établissement.',
-  MARKETING: 'Recevoir des informations, rappels et offres d\'EduPay CI.',
+  MARKETING: 'Recevoir des informations, rappels et offres d\'EduConnect.',
 };
 
 function normalizeType(type) {

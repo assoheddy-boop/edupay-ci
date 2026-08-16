@@ -54,7 +54,7 @@ async function sendNotification(userId, type, message) {
   if (meta.sms) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user?.phone) {
-      const text = `EduPay CI: ${meta.title} — ${message}`;
+      const text = `EduConnect: ${meta.title} — ${message}`;
       await sendSms(user.phone, text);
       await sendWhatsApp(user.phone, text);
     }

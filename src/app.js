@@ -46,7 +46,7 @@ app.use(currencyMiddleware);
 app.use(metricsMiddleware);
 
 app.use((req, res, next) => {
-  res.locals.appName = 'EduPay CI';
+  res.locals.appName = 'EduConnect';
   res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
   res.locals.showDemoAccounts = process.env.SHOW_DEMO_ACCOUNTS === 'true'
     || process.env.NODE_ENV !== 'production';
@@ -68,7 +68,7 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/api/health', apiLimiter, (_req, res) => {
-  res.json({ ok: true, app: 'EduPay CI', version: '1.2.0' });
+  res.json({ ok: true, app: 'EduConnect', version: '1.2.0' });
 });
 
 app.get('/metrics', metricsHandler);

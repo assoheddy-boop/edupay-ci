@@ -25,7 +25,7 @@ async function sendSms(phone, message) {
         body: JSON.stringify({
           outboundSMSMessageRequest: {
             address: `tel:+225${phone.replace(/\D/g, '').slice(-10)}`,
-            senderAddress: process.env.ORANGE_SMS_SENDER || 'EduPayCI',
+            senderAddress: process.env.ORANGE_SMS_SENDER || 'EduConnect',
             outboundSMSTextMessage: { message },
           },
         }),

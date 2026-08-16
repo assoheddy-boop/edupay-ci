@@ -1,4 +1,4 @@
-# EduPay CI
+# EduConnect
 
 Gestion scolaire moderne pour la Côte d'Ivoire — Node/Express, EJS, Prisma, PostgreSQL.
 

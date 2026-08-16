@@ -68,7 +68,7 @@ function writePdf(filepath, render) {
 function drawFooter(doc, school) {
   doc.moveDown(2);
   doc.fontSize(9).fillColor('#999').text(
-    `Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${school?.name || 'EduPay CI'}`,
+    `Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${school?.name || 'EduConnect'}`,
     { align: 'center' },
   );
 }
@@ -102,7 +102,7 @@ async function generateBulletinPDF(studentId) {
     }),
   ]);
 
-  const school = student.school || student.class?.school || { name: 'EduPay CI' };
+  const school = student.school || student.class?.school || { name: 'EduConnect' };
   const average = computeAverage(grades);
 
   ensureDir(BULLETINS_DIR);
@@ -411,7 +411,7 @@ async function generateStatsExcel(schoolId) {
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'EduPay CI';
+  workbook.creator = 'EduConnect';
   workbook.created = new Date();
 
   const wsStudents = workbook.addWorksheet('Élèves');
@@ -535,7 +535,7 @@ async function generateGenderStatsExcel(schoolId) {
   if (!data.ok) return data;
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'EduPay CI';
+  workbook.creator = 'EduConnect';
   workbook.created = new Date();
 
   const ws = workbook.addWorksheet('Par classe');
@@ -621,7 +621,7 @@ async function generateClassGenderStatsExcel({ schoolId, classId } = {}) {
   } = require('./ClassService');
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'EduPay CI';
+  workbook.creator = 'EduConnect';
   workbook.created = new Date();
 
   if (classId) {
@@ -720,7 +720,7 @@ async function generateClassGenderStatsPdf({ schoolId, classId } = {}) {
       y += 20;
     });
     doc.y = y + 12;
-    drawFooter(doc, { name: 'EduPay CI' });
+    drawFooter(doc, { name: 'EduConnect' });
   });
 
   return {
@@ -1015,7 +1015,7 @@ async function generateGroupRedoublementCausesPDF(groupId, schoolYear) {
       });
     }
     doc.y = y + 12;
-    doc.fontSize(9).fillColor('#999').text('EduPay CI — export groupe', 50, doc.page.height - 40, { align: 'left' });
+    doc.fontSize(9).fillColor('#999').text('EduConnect — export groupe', 50, doc.page.height - 40, { align: 'left' });
   });
 
   return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
@@ -1130,7 +1130,7 @@ async function generateRedoublementByPlanPDF(schoolYear) {
       });
     }
     doc.y = y + 12;
-    doc.fontSize(9).fillColor('#999').text('EduPay CI — analyse redoublement par plan', 50, doc.page.height - 40, { align: 'left' });
+    doc.fontSize(9).fillColor('#999').text('EduConnect — analyse redoublement par plan', 50, doc.page.height - 40, { align: 'left' });
   });
 
   return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
@@ -1288,7 +1288,7 @@ async function generateTimetableExcel(classId) {
   const entries = result.entries || [];
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'EduPay CI';
+  workbook.creator = 'EduConnect';
   workbook.created = new Date();
 
   const ws = workbook.addWorksheet('Emploi du temps');

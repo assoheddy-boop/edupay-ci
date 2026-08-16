@@ -12,8 +12,8 @@ async function notifyUser(userId, { type, title, body, sms = false }) {
   if (shouldSms) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user?.phone) {
-      await sendSms(user.phone, `EduPay CI: ${title} — ${body}`);
-      await sendWhatsApp(user.phone, `EduPay CI: ${title} — ${body}`);
+      await sendSms(user.phone, `EduConnect: ${title} — ${body}`);
+      await sendWhatsApp(user.phone, `EduConnect: ${title} — ${body}`);
     }
   }
 }

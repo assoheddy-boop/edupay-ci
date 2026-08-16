@@ -21,7 +21,7 @@ io.on('connection', (socket) => {
 startCronJobs();
 
 server.listen(PORT, () => {
-  console.log(`EduPay CI — http://localhost:${PORT}`);
+  console.log(`EduConnect — http://localhost:${PORT}`);
 });
 
 module.exports = server;

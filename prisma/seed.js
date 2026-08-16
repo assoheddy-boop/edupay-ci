@@ -404,7 +404,7 @@ async function main() {
 
 
 
-  console.log('✅ Démo EduPay CI créée');
+  console.log('✅ Démo EduConnect créée');
 
   console.log('Admin site : admin@edupay.ci / demo1234');
 

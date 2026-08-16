@@ -20,7 +20,7 @@ async function main() {
 
   const results = await onboardSchools(EPV_SCHOOLS, { planSlug: 'premium' });
 
-  console.log(`\n✅ ${results.length} école(s) EPV dans EduPay\n`);
+  console.log(`\n✅ ${results.length} école(s) EPV dans EduConnect\n`);
   results.forEach((row) => {
     const mark = row.status === 'created' ? 'NEW' : row.status.toUpperCase();
     console.log(`- [${mark}] ${row.name}`);

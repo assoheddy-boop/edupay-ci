@@ -1,7 +1,7 @@
 {
   "name": "edupay-ci",
   "version": "1.0.0",
-  "description": "Gestion scolaire moderne & paiements simplifiés — Côte d'Ivoire",
+  "description": "EduConnect — Gestion scolaire moderne & paiements simplifiés — Côte d'Ivoire",
   "main": "src/server.js",
   "scripts": {
     "build": "prisma generate",

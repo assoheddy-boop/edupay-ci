@@ -1,6 +1,6 @@
 {
-  "name": "EduPay CI",
-  "short_name": "EduPay",
+  "name": "EduConnect",
+  "short_name": "EduConnect",
   "description": "Gestion scolaire & paiements simplifiés — Côte d'Ivoire",
   "start_url": "/",
   "display": "standalone",

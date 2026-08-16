@@ -90,7 +90,7 @@ function drawDocumentHeader(doc, school, { title, subtitle, y = 45, logoWidth = 
     || [school?.address, school?.city].filter(Boolean).join(' — ')
     || null;
 
-  doc.fontSize(hasLogo ? 16 : 20).fillColor('#0052CC').text(school?.name || 'EduPay CI', textX, textY, {
+  doc.fontSize(hasLogo ? 16 : 20).fillColor('#0052CC').text(school?.name || 'EduConnect', textX, textY, {
     width: 500 - (textX - x),
   });
 

@@ -1,5 +1,5 @@
 /**
- * Vérification complète EduPay CI — node scripts/verify-all.js
+ * Vérification complète EduConnect — node scripts/verify-all.js
  */
 require('dotenv/config');
 const http = require('http');
@@ -87,7 +87,7 @@ async function checkRoute(path, cookie) {
 }
 
 async function main() {
-  console.log('=== EduPay CI — Vérification complète ===\n');
+  console.log('=== EduConnect — Vérification complète ===\n');
   console.log('URL:', BASE);
 
   const health = await request('GET', '/api/health');
