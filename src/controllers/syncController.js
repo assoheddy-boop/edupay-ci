@@ -71,7 +71,7 @@ async function syncBatch(req, res) {
       }
       results.push(row);
     } catch (err) {
-      console.error('[sync]', clientId, item.type, err);
+      console.error('[sync]', clientId, item.type, err?.message || err);
       results.push({
         id_local,
         status: 'error',
@@ -116,7 +116,7 @@ async function resolveConflict(req, res) {
       merged: Boolean(result.merged),
     });
   } catch (err) {
-    console.error('[sync:resolve]', err);
+    console.error('[sync:resolve]', err?.message || err);
     return jsonError(res, 500, 'server');
   }
 }

@@ -8,7 +8,7 @@ jest.mock('../src/config/database', () => ({
     delete: jest.fn(),
   },
   parentStudent: { findMany: jest.fn() },
-  teacherClass: { findMany: jest.fn() },
+  teacherClass: { findMany: jest.fn(), findFirst: jest.fn() },
 }));
 
 jest.mock('../services/NotificationService', () => ({
@@ -49,6 +49,7 @@ describe('submitAttendance', () => {
     prisma.parentStudent.findMany.mockResolvedValue([
       { parent: { userId: 'user-parent-1' } },
     ]);
+    prisma.teacherClass.findFirst.mockResolvedValue({ teacherId: 'teach-1', classId: 'class-1' });
   });
 
   test('records late and absence, skips present, notifies parents', async () => {

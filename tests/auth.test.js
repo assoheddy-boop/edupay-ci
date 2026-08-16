@@ -49,6 +49,16 @@ describe('JWT cookie options', () => {
     expect(opts.sameSite).toBe('strict');
     expect(opts.secure).toBe(process.env.NODE_ENV === 'production');
   });
+
+  test('cookie is secure and httpOnly in production', () => {
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const opts = getCookieOptions();
+    process.env.NODE_ENV = prev;
+    expect(opts.httpOnly).toBe(true);
+    expect(opts.secure).toBe(true);
+    expect(opts.sameSite).toBe('strict');
+  });
 });
 
 describe('checkRole', () => {

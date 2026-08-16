@@ -49,4 +49,24 @@ describe('EduConnect API', () => {
     expect(res.status).toBe(200);
     expect(res.text).not.toMatch(/demo1234/);
   });
+
+  test('hides demo accounts on login in production', async () => {
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const res = await request(app).get('/auth/login');
+    process.env.NODE_ENV = prev;
+    expect(res.status).toBe(200);
+    expect(res.text).not.toMatch(/demo1234/);
+    expect(res.text).not.toMatch(/parent@demo\.ci/);
+  });
+
+  test('production error pages do not include stack traces', async () => {
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const res = await request(app).get('/definitely-missing-page-xyz');
+    process.env.NODE_ENV = prev;
+    expect(res.status).toBe(404);
+    expect(res.text).not.toMatch(/at\s+\S+\s+\(/);
+    expect(res.text).not.toMatch(/Error:/);
+  });
 });

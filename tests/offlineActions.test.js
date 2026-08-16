@@ -43,6 +43,8 @@ const {
   applyItem,
   applyClass,
   applyStudent,
+  applyAttendance,
+  applyGrade,
   resolveTeacherConflict,
 } = require('../src/services/offlineActions');
 
@@ -106,6 +108,19 @@ describe('offlineActions teacher conflict', () => {
     expect(result).toMatchObject({ ok: true, status: 'synced', serverId: 'teach-1', merged: true });
   });
 
+  test('refuses merge of a teacher from another school', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'u-2',
+      teacher: { id: 'teach-2', schoolId: 'sch-other' },
+    });
+    const result = await resolveTeacherConflict({
+      user: { role: 'SCHOOL_ADMIN', school: { id: 'sch-1' } },
+      action: 'merge',
+      existing: { id: 'u-2' },
+    });
+    expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'teacher' });
+  });
+
   test('cancel resolve drops the invite', async () => {
     const result = await resolveTeacherConflict({
       user: { role: 'SCHOOL_ADMIN', school: { id: 'sch-1' } },
@@ -159,5 +174,34 @@ describe('offlineActions temp ids on sync', () => {
       payload: { name: 'CM2', level: 'CM2' },
     });
     expect(result.error).toBe('forbidden');
+  });
+});
+
+describe('offlineActions teacher class scope', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects attendance for a class the teacher does not teach', async () => {
+    prisma.teacherClass.findFirst.mockResolvedValue(null);
+    const result = await applyAttendance({
+      user: { role: 'TEACHER', teacher: { id: 't1' } },
+      payload: { classId: 'class-other', date: '2026-08-16', statuses: { 'stu-1': 'absent' } },
+    });
+    expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'attendance' });
+    expect(prisma.student.findMany).not.toHaveBeenCalled();
+  });
+
+  test('rejects bulk grades for a class the teacher does not teach', async () => {
+    prisma.teacherClass.findFirst.mockResolvedValue(null);
+    const result = await applyGrade({
+      user: { role: 'TEACHER', teacher: { id: 't1' } },
+      payload: {
+        classId: 'class-other',
+        subject: 'Maths',
+        period: 'T1',
+        grades: { 'stu-1': '12' },
+      },
+    });
+    expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'grade' });
+    expect(prisma.grade.create).not.toHaveBeenCalled();
   });
 });

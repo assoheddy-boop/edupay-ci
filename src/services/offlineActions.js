@@ -105,6 +105,11 @@ async function applyAttendance({ user, payload = {} }) {
     return { ok: false, error: 'unknown_id', entity: 'attendance' };
   }
 
+  const ownedClass = await prisma.teacherClass.findFirst({
+    where: { teacherId: teacher.id, classId },
+  });
+  if (!ownedClass) return forbidden('attendance');
+
   const statuses = statusesFromBody(payload);
   for (const studentId of Object.keys(statuses)) {
     if (isTempId(studentId) || !resolveEntityId(studentId)) {
@@ -182,6 +187,10 @@ async function applyGrade({ user, payload = {} }) {
   if (isBulk && payload.classId) {
     const classId = resolveEntityId(payload.classId);
     if (!classId || isTempId(classId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
+    const ownedClass = await prisma.teacherClass.findFirst({
+      where: { teacherId: teacher.id, classId },
+    });
+    if (!ownedClass) return forbidden('grade');
     for (const studentId of Object.keys(bulkGrades)) {
       if (isTempId(studentId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
     }
@@ -559,10 +568,10 @@ async function resolveTeacherConflict({ user, action, existing }) {
     include: { teacher: true },
   });
   const teacherId = existingUser?.teacher?.id;
-  if (teacherId && existingUser.teacher.schoolId === school.id) {
-    return { ok: true, status: 'synced', serverId: teacherId, merged: true };
+  if (!teacherId || existingUser.teacher.schoolId !== school.id) {
+    return forbidden('teacher');
   }
-  return { ok: true, status: 'synced', serverId: teacherId || existingId, merged: true };
+  return { ok: true, status: 'synced', serverId: teacherId, merged: true };
 }
 
 module.exports = {

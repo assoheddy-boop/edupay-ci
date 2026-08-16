@@ -31,6 +31,9 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 app.set('trust proxy', process.env.VERCEL ? 2 : 1);
 
+// CSP stays off: FullCalendar + Chart.js load from cdn.jsdelivr.net, and PWA /
+// several dashboards use inline scripts. A strict CSP would break calendars,
+// charts, and offline.js until those assets are self-hosted with nonces.
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -48,8 +51,7 @@ app.use(metricsMiddleware);
 app.use((req, res, next) => {
   res.locals.appName = 'EduConnect';
   res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
-  res.locals.showDemoAccounts = process.env.SHOW_DEMO_ACCOUNTS === 'true'
-    || process.env.NODE_ENV !== 'production';
+  res.locals.showDemoAccounts = process.env.NODE_ENV !== 'production';
   next();
 });
 
@@ -99,8 +101,11 @@ app.use((_req, res) => {
   res.status(404).render('error', { message: 'Page introuvable', user: null });
 });
 
-app.use((err, _req, res, _next) => {
-  console.error(err);
+app.use((err, req, res, _next) => {
+  console.error('[error]', err?.message || 'Erreur serveur');
+  if (req.originalUrl?.startsWith('/api/')) {
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
   res.status(500).render('error', { message: 'Erreur serveur', user: null });
 });
 

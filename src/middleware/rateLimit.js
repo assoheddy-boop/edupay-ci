@@ -26,4 +26,11 @@ const apiLimiter = rateLimit({
   ...vercelSafe,
 });
 
-module.exports = { authLimiter, uploadLimiter, apiLimiter };
+const syncLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { ok: false, error: 'rate' },
+  ...vercelSafe,
+});
+
+module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter };
