@@ -6,6 +6,8 @@ const { parseGender } = require('../../services/ClassService');
 const { storeMulterFile } = require('../../services/StorageService');
 const { logAudit } = require('../utils/audit');
 const { isTempId, resolveEntityId, mapPayloadIds, payloadHasUnresolvedTempId } = require('../utils/offlineQueue');
+const { hasEffectiveRole } = require('../utils/adminAssist');
+const { isDangerousUpload } = require('../utils/uploadSafety');
 const {
   buildHomeworkCreateData,
   hasHomeworkContent,
@@ -39,15 +41,21 @@ function gradesFromBody(body = {}) {
 
 function fileFromSyncPayload(file) {
   if (!file) return null;
-  if (file.buffer && Buffer.isBuffer(file.buffer)) return file;
-  if (!file.data) return null;
-  const buffer = Buffer.from(file.data, 'base64');
-  return {
-    buffer,
-    originalname: file.name || file.originalname || 'file.bin',
-    mimetype: file.type || file.mimetype || 'application/octet-stream',
-    size: buffer.length,
-  };
+  let decoded = null;
+  if (file.buffer && Buffer.isBuffer(file.buffer)) {
+    decoded = file;
+  } else if (file.data) {
+    const buffer = Buffer.from(file.data, 'base64');
+    decoded = {
+      buffer,
+      originalname: file.name || file.originalname || 'file.bin',
+      mimetype: file.type || file.mimetype || 'application/octet-stream',
+      size: buffer.length,
+    };
+  }
+  if (!decoded) return null;
+  if (isDangerousUpload(decoded)) return null;
+  return decoded;
 }
 
 function assertFileSize(file) {
@@ -70,7 +78,7 @@ function requireTeacher(user) {
 
 function requireSchoolAdmin(user) {
   if (!user?.school?.id) return null;
-  if (user.role && user.role !== 'SCHOOL_ADMIN') return null;
+  if (!hasEffectiveRole(user, 'SCHOOL_ADMIN')) return null;
   return user.school;
 }
 
@@ -475,6 +483,20 @@ async function applyPayment({ user, payload = {}, file = null }) {
   const sizeCheck = assertFileSize(file);
   if (!sizeCheck.ok) return { ...sizeCheck, entity: 'payment' };
 
+  let feeTypeId = payload.feeTypeId || null;
+  if (feeTypeId) {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { schoolId: true },
+    });
+    if (!student) return { ok: false, error: 'child', entity: 'payment' };
+    const fee = await prisma.feeType.findFirst({
+      where: { id: String(feeTypeId), schoolId: student.schoolId },
+    });
+    if (!fee) return { ok: false, error: 'data', entity: 'payment' };
+    feeTypeId = fee.id;
+  }
+
   let proofUrl = null;
   let proofId = null;
 
@@ -489,7 +511,7 @@ async function applyPayment({ user, payload = {}, file = null }) {
     data: {
       studentId,
       amount,
-      feeTypeId: payload.feeTypeId || null,
+      feeTypeId,
       reference: payload.reference,
       proofUrl,
       status: 'PENDING',

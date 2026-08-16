@@ -33,6 +33,16 @@ function getPrefsCookieOptions() {
   };
 }
 
+function safeInternalPath(value, fallback = '/') {
+  if (!value || typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/')) return fallback;
+  if (trimmed.startsWith('//') || trimmed.startsWith('/\\')) return fallback;
+  if (trimmed.includes('\\') || trimmed.includes('\0')) return fallback;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return fallback;
+  return trimmed;
+}
+
 function safeBack(req) {
   const fallback = '/';
   const referer = req.get('referer');
@@ -41,7 +51,7 @@ function safeBack(req) {
     const url = new URL(referer);
     const host = req.hostname;
     if (url.hostname !== host) return fallback;
-    return `${url.pathname}${url.search}` || fallback;
+    return safeInternalPath(`${url.pathname}${url.search}`, fallback);
   } catch {
     return fallback;
   }
@@ -60,4 +70,5 @@ module.exports = {
   getPrefsCookieOptions,
   clearAssistCookie,
   safeBack,
+  safeInternalPath,
 };

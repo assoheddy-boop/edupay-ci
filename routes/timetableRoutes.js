@@ -45,6 +45,12 @@ async function assertClassAccess(user, classId) {
   const cls = await prisma.class.findUnique({ where: { id: classId }, select: { schoolId: true } });
   if (!cls) return { ok: false, status: 404, error: 'Classe introuvable.' };
   if (await assertSchoolOwnership(user, cls.schoolId)) return { ok: true, class: cls };
+  if (user?.role === 'TEACHER' && user.teacher?.id) {
+    const link = await prisma.teacherClass.findFirst({
+      where: { teacherId: user.teacher.id, classId },
+    });
+    if (link) return { ok: true, class: cls };
+  }
   return { ok: false, status: 403, error: 'Accès refusé.' };
 }
 
@@ -113,16 +119,23 @@ async function loadDashboardData(user, query) {
   let students = [];
 
   if (schoolId) {
+    const teacherScoped = user?.role === 'TEACHER' && user.teacher?.id;
+    const classWhere = teacherScoped
+      ? { schoolId, teachers: { some: { teacherId: user.teacher.id } } }
+      : { schoolId };
+    const studentWhere = teacherScoped
+      ? { schoolId, class: { teachers: { some: { teacherId: user.teacher.id } } } }
+      : { schoolId };
     [classes, teachers, subjects, students] = await Promise.all([
-      prisma.class.findMany({ where: { schoolId }, orderBy: { name: 'asc' } }),
+      prisma.class.findMany({ where: classWhere, orderBy: { name: 'asc' } }),
       prisma.teacher.findMany({
-        where: { schoolId },
+        where: teacherScoped ? { id: user.teacher.id } : { schoolId },
         include: { user: true },
         orderBy: { user: { lastName: 'asc' } },
       }),
       listSubjectsForSchool(schoolId),
       prisma.student.findMany({
-        where: { schoolId },
+        where: studentWhere,
         include: { class: true },
         orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
       }),
@@ -130,11 +143,17 @@ async function loadDashboardData(user, query) {
   }
 
   if (viewMode === 'teacher' && filterTeacherId) {
-    const result = await getTeacherTimetable(filterTeacherId);
-    entries = result.entries || [];
+    const access = await assertTeacherAccess(user, filterTeacherId);
+    if (access.ok) {
+      const result = await getTeacherTimetable(filterTeacherId);
+      entries = result.entries || [];
+    }
   } else if (filterClassId) {
-    const result = await getClassTimetable(filterClassId);
-    entries = result.entries || [];
+    const access = await assertClassAccess(user, filterClassId);
+    if (access.ok) {
+      const result = await getClassTimetable(filterClassId);
+      entries = result.entries || [];
+    }
   }
 
   if (filterSubjectId) {

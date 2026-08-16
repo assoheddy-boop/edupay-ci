@@ -1,14 +1,22 @@
 const multer = require('multer');
 const path = require('path');
 const { storeMulterFile, collectMulterFiles } = require('../../services/StorageService');
+const { isDangerousUpload } = require('../utils/uploadSafety');
 
 const memory = multer.memoryStorage();
+
+function acceptUpload(file, extOk, mimeOk) {
+  if (isDangerousUpload(file)) return false;
+  return Boolean(extOk || mimeOk);
+}
 
 const fileFilter = (_req, file, cb) => {
   const allowed = /jpeg|jpg|png|pdf|webp|mp3|wav|m4a/;
   const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowed.test(file.mimetype) || file.mimetype.startsWith('audio/') || file.mimetype.startsWith('image/');
-  cb(null, ext || mime);
+  const mime = allowed.test(file.mimetype)
+    || /^audio\/(mpeg|mp3|wav|x-wav|mp4|m4a)$/i.test(file.mimetype)
+    || /^image\/(jpeg|png|webp)$/i.test(file.mimetype);
+  cb(null, acceptUpload(file, ext, mime));
 };
 
 const upload = multer({
@@ -33,9 +41,9 @@ const logoUpload = multer({
   storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ok = /jpeg|jpg|png|webp/i.test(path.extname(file.originalname))
-      || /^image\/(jpeg|png|webp)$/i.test(file.mimetype);
-    cb(null, ok);
+    const extOk = /jpeg|jpg|png|webp/i.test(path.extname(file.originalname));
+    const mimeOk = /^image\/(jpeg|png|webp)$/i.test(file.mimetype);
+    cb(null, acceptUpload(file, extOk, mimeOk));
   },
 });
 
@@ -43,10 +51,10 @@ const hrDocUpload = multer({
   storage: memory,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ok = /jpeg|jpg|png|webp|pdf/i.test(path.extname(file.originalname))
-      || file.mimetype.startsWith('image/')
+    const extOk = /jpeg|jpg|png|webp|pdf/i.test(path.extname(file.originalname));
+    const mimeOk = /^image\/(jpeg|png|webp)$/i.test(file.mimetype)
       || file.mimetype === 'application/pdf';
-    cb(null, ok);
+    cb(null, acceptUpload(file, extOk, mimeOk));
   },
 });
 
@@ -56,11 +64,12 @@ const chatUpload = multer({
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const allowedExt = /\.(jpe?g|png|webp|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|mp3|wav|m4a|ogg)$/i;
-    const mimeOk = /^(image|audio)\//.test(file.mimetype)
+    const mimeOk = /^image\/(jpeg|png|webp|gif)$/i.test(file.mimetype)
+      || /^audio\/(mpeg|mp3|wav|x-wav|mp4|m4a|ogg)$/i.test(file.mimetype)
       || file.mimetype === 'application/pdf'
       || file.mimetype === 'text/plain'
       || /officedocument|msword|ms-excel|ms-powerpoint/.test(file.mimetype);
-    cb(null, allowedExt.test(ext) || mimeOk);
+    cb(null, acceptUpload(file, allowedExt.test(ext), mimeOk));
   },
 });
 

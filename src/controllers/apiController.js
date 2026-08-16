@@ -6,12 +6,30 @@ function getSchoolIdForUser(user) {
   return null;
 }
 
+function studentWhereForUser(user) {
+  const schoolId = getSchoolIdForUser(user);
+  if (!schoolId) return null;
+  if (user.role === 'TEACHER' && user.teacher?.id) {
+    return { schoolId, class: { teachers: { some: { teacherId: user.teacher.id } } } };
+  }
+  return { schoolId };
+}
+
+function classWhereForUser(user) {
+  const schoolId = getSchoolIdForUser(user);
+  if (!schoolId) return null;
+  if (user.role === 'TEACHER' && user.teacher?.id) {
+    return { schoolId, teachers: { some: { teacherId: user.teacher.id } } };
+  }
+  return { schoolId };
+}
+
 async function listStudents(req, res) {
-  const schoolId = getSchoolIdForUser(req.user);
-  if (!schoolId) return res.status(403).json({ error: 'Accès école requis' });
+  const where = studentWhereForUser(req.user);
+  if (!where) return res.status(403).json({ error: 'Accès école requis' });
 
   const students = await prisma.student.findMany({
-    where: { schoolId },
+    where,
     include: { class: { select: { id: true, name: true, level: true } } },
     orderBy: { lastName: 'asc' },
   });
@@ -20,9 +38,10 @@ async function listStudents(req, res) {
 }
 
 async function getStudent(req, res) {
-  const schoolId = getSchoolIdForUser(req.user);
+  const where = studentWhereForUser(req.user);
+  if (!where) return res.status(403).json({ error: 'Accès école requis' });
   const student = await prisma.student.findFirst({
-    where: { id: req.params.id, schoolId },
+    where: { ...where, id: req.params.id },
     include: { class: true },
   });
   if (!student) return res.status(404).json({ error: 'Élève introuvable' });
@@ -30,11 +49,11 @@ async function getStudent(req, res) {
 }
 
 async function listClasses(req, res) {
-  const schoolId = getSchoolIdForUser(req.user);
-  if (!schoolId) return res.status(403).json({ error: 'Accès école requis' });
+  const where = classWhereForUser(req.user);
+  if (!where) return res.status(403).json({ error: 'Accès école requis' });
 
   const classes = await prisma.class.findMany({
-    where: { schoolId },
+    where,
     include: { _count: { select: { students: true } } },
     orderBy: { name: 'asc' },
   });
@@ -66,4 +85,6 @@ module.exports = {
   listClasses,
   listNotifications,
   markNotificationRead,
+  studentWhereForUser,
+  classWhereForUser,
 };

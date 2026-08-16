@@ -349,11 +349,14 @@ async function inviteAdmin(req, res) {
   if (!organization) return;
   const { email, firstName, lastName, phone, password } = req.body;
   if (!email || !firstName || !lastName) return res.redirect('/group/settings?error=data');
+  if (!password || String(password).length < 8) {
+    return res.redirect('/group/settings?error=password');
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return res.redirect('/group/settings?error=email');
 
-  const hashed = await hashPassword(password || 'demo1234');
+  const hashed = await hashPassword(password);
   await prisma.user.create({
     data: {
       email,

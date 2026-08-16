@@ -226,7 +226,7 @@
     },
   });
 
-  const repeatersByClass = <%- JSON.stringify(stats.repeatersByClass || []) %>;
+  const repeatersByClass = <%- safeJson(stats.repeatersByClass || []) %>;
   new Chart(document.getElementById('repeatersByClassChart'), {
     type: 'bar',
     data: {
@@ -245,7 +245,7 @@
   });
 
   <% if (stats.historicalRepeatRate && stats.historicalRepeatRate.length > 1) { %>
-  const historical = <%- JSON.stringify(stats.historicalRepeatRate) %>;
+  const historical = <%- safeJson(stats.historicalRepeatRate) %>;
   new Chart(document.getElementById('historicalChart'), {
     type: 'line',
     data: {
@@ -273,7 +273,7 @@
   <% } %>
 
   <% if (causes.length) { %>
-  const causeCounts = <%- JSON.stringify(causeCounts) %>;
+  const causeCounts = <%- safeJson(causeCounts) %>;
   const causeLabels = Object.keys(causeCounts).filter(function(k) { return causeCounts[k] > 0; });
   const causeData = causeLabels.map(function(k) { return causeCounts[k]; });
   const causeColors = {
@@ -309,7 +309,7 @@
     });
   }
 
-  const absCmp = <%- JSON.stringify(absCmp) %>;
+  const absCmp = <%- safeJson(absCmp) %>;
   if (document.getElementById('absencesCompareChart')) {
     new Chart(document.getElementById('absencesCompareChart'), {
       type: 'bar',
@@ -330,7 +330,7 @@
   }
 
   <% if (causeStats.genderByCause && Object.keys(causeStats.genderByCause).length) { %>
-  const genderByCause = <%- JSON.stringify(causeStats.genderByCause) %>;
+  const genderByCause = <%- safeJson(causeStats.genderByCause) %>;
   const genderCauseLabels = Object.keys(genderByCause);
   if (document.getElementById('genderCauseChart')) {
     new Chart(document.getElementById('genderCauseChart'), {
@@ -351,7 +351,7 @@
   <% } %>
 
   <% if (causeStats.historicalCauses && causeStats.historicalCauses.length > 1) { %>
-  const historicalCauses = <%- JSON.stringify(causeStats.historicalCauses) %>;
+  const historicalCauses = <%- safeJson(causeStats.historicalCauses) %>;
   const histCauseKeys = ['Absences élevées', 'Notes faibles', 'Mixte', 'Autre'];
   if (document.getElementById('historicalCausesChart')) {
     new Chart(document.getElementById('historicalCausesChart'), {

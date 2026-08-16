@@ -20,8 +20,11 @@ function getDriver() {
 
 function uniqueFilename(originalName = '') {
   const ext = path.extname(originalName).toLowerCase();
+  const safeExt = /^\.(jpe?g|png|webp|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|mp3|wav|m4a|ogg)$/i.test(ext)
+    ? ext
+    : '';
   const unique = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-  return `${unique}${ext}`;
+  return `${unique}${safeExt}`;
 }
 
 function localUrl(folder, filename) {

@@ -5,14 +5,18 @@ const extras = require('../controllers/extrasController');
 const teacherHrController = require('../controllers/teacherHrController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
+const { attachUnreadNotifications } = require('../middleware/unreadNotifications');
 const upload = require('../middleware/upload');
 const { persistUpload } = upload;
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('teacher'), attachModules);
+router.use(requireAuth, checkRole('teacher'), attachModules, attachUnreadNotifications);
 
 router.get('/dashboard', teacherController.dashboard);
+router.get('/notifications', teacherController.notificationsPage);
+router.post('/notifications/:id/read', teacherController.markNotificationRead);
+router.post('/notifications/read-all', teacherController.markAllNotificationsRead);
 router.get('/students', teacherController.students);
 router.get('/grades', requireModule('grades'), teacherController.grades);
 router.post('/grades', requireModule('grades'), teacherController.createGrade);

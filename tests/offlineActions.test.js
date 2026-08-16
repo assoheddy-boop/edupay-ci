@@ -1,5 +1,6 @@
 jest.mock('../src/config/database', () => ({
-  student: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+  student: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+  feeType: { findFirst: jest.fn() },
   absence: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
   parentStudent: { findFirst: jest.fn(), findMany: jest.fn() },
   grade: { create: jest.fn() },
@@ -203,5 +204,44 @@ describe('offlineActions teacher class scope', () => {
     });
     expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'grade' });
     expect(prisma.grade.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('offlineActions school admin vs assist', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('SUPER_ADMIN without assist cannot create a class', async () => {
+    const result = await applyClass({
+      user: { role: 'SUPER_ADMIN', school: { id: 'sch-1', currentSchoolYear: '2025-2026' } },
+      payload: { name: 'CM2', level: 'CM2' },
+    });
+    expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'class' });
+    expect(prisma.class.create).not.toHaveBeenCalled();
+  });
+
+  test('SUPER_ADMIN assisting a school can create a class', async () => {
+    prisma.class.create.mockResolvedValue({ id: 'cl-assist' });
+    const result = await applyClass({
+      user: {
+        role: 'SUPER_ADMIN',
+        school: { id: 'sch-1', currentSchoolYear: '2025-2026' },
+        adminAssist: { type: 'school', schoolId: 'sch-1' },
+      },
+      payload: { name: 'CM2', level: 'CM2' },
+    });
+    expect(result.ok).toBe(true);
+    expect(prisma.class.create).toHaveBeenCalled();
+  });
+
+  test('PARENT cannot create a class even with a school object attached', async () => {
+    const result = await applyClass({
+      user: {
+        role: 'PARENT',
+        school: { id: 'sch-1' },
+        adminAssist: { type: 'school', schoolId: 'sch-1' },
+      },
+      payload: { name: 'CM2', level: 'CM2' },
+    });
+    expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'class' });
   });
 });

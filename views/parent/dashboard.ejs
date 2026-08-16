@@ -24,6 +24,8 @@
 
   <% if (error === 'eleve') { %><div class="alert alert-error">Aucun élève trouvé avec ce matricule dans cette école.</div><% } %>
 
+  <% if (error === 'nom') { %><div class="alert alert-error">Le nom de famille ne correspond pas à cet élève.</div><% } %>
+
   <% if (error === 'deja') { %><div class="alert alert-error">Cet enfant est déjà lié à votre compte.</div><% } %>
 
   <% if (success === '1') { %><div class="alert alert-success">Enfant lié avec succès.</div><% } %>
@@ -35,7 +37,7 @@
 
     <h2>Ajouter un enfant</h2>
 
-    <p class="page-sub">Saisissez le code école et le matricule fournis par l'établissement.</p>
+    <p class="page-sub">Saisissez le code école, le matricule et le nom de famille fournis par l'établissement.</p>
 
     <form method="POST" action="/parent/children" class="form">
 
@@ -54,6 +56,14 @@
           <label for="matricule">Matricule de l'élève</label>
 
           <input type="text" id="matricule" name="matricule" placeholder="Ex: ETOILE-001" required>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="lastName">Nom de famille de l'élève</label>
+
+          <input type="text" id="lastName" name="lastName" placeholder="Ex: Kouassi" required>
 
         </div>
 

@@ -15,6 +15,11 @@ const { generatePayrollPDF } = require('../../services/export');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { putObject } = require('../../services/StorageService');
 
+async function assertOwnedTeacher(teacherId, schoolId) {
+  if (!teacherId || !schoolId) return null;
+  return prisma.teacher.findFirst({ where: { id: teacherId, schoolId } });
+}
+
 async function dashboard(req, res) {
   const schoolId = req.user.school.id;
   const now = new Date();
@@ -131,6 +136,9 @@ async function uploadStaffDocument(req, res) {
 
   if (!req.file) return res.redirect(`/school/hr/staff/${teacherId}?error=file`);
 
+  const teacher = await prisma.teacher.findFirst({ where: { id: teacherId, schoolId } });
+  if (!teacher) return res.redirect('/school/hr/staff');
+
   const ext = path.extname(req.file.originalname).toLowerCase() || '.pdf';
   const filename = `${teacherId}-${Date.now()}${ext}`;
   const stored = await putObject({
@@ -237,6 +245,8 @@ async function attendancePage(req, res) {
 async function updateAttendance(req, res) {
   const schoolId = req.user.school.id;
   const { teacherId, date, status, note, checkIn, checkOut } = req.body;
+  const teacher = await assertOwnedTeacher(teacherId, schoolId);
+  if (!teacher) return res.redirect('/school/hr/attendance?error=1');
   const attendanceDate = new Date(date);
 
   await prisma.staffAttendance.upsert({
@@ -306,6 +316,8 @@ async function generatePayrollAction(req, res) {
   const period = `${year}-${String(month).padStart(2, '0')}`;
 
   if (teacherId) {
+    const teacher = await assertOwnedTeacher(teacherId, schoolId);
+    if (!teacher) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=teacher`);
     const result = await generateTeacherPayroll(teacherId, period);
     if (!result.ok) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=${result.error}`);
     await logAudit({
@@ -447,6 +459,9 @@ async function evaluationsPage(req, res) {
 async function saveEvaluation(req, res) {
   const schoolId = req.user.school.id;
   const { teacherId, period, punctuality, pedagogy, discipline, teamwork, comment } = req.body;
+
+  const teacherRow = await assertOwnedTeacher(teacherId, schoolId);
+  if (!teacherRow) return res.redirect('/school/hr/evaluations?error=1');
 
   await prisma.staffEvaluation.upsert({
     where: { teacherId_period: { teacherId, period } },

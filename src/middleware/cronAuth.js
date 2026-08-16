@@ -1,6 +1,7 @@
 function requireCronSecret(req, res, next) {
   const expected = process.env.CRON_SECRET;
-  if (process.env.NODE_ENV === 'production' && !expected) {
+  const deployed = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  if (deployed && !expected) {
     return res.status(403).json({ error: 'Non autorisé' });
   }
   if (!expected) return next();

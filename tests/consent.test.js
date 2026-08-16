@@ -3,6 +3,7 @@ jest.mock('../src/config/database', () => ({
     findMany: jest.fn(),
     upsert: jest.fn(),
     count: jest.fn(),
+    findUnique: jest.fn(),
   },
 }));
 
@@ -16,6 +17,7 @@ const {
   isConsentPromptEnabled,
   hasConsentRecords,
   needsFirstLoginConsent,
+  allowsMarketingMessages,
 } = require('../services/ConsentService');
 
 describe('ConsentService', () => {
@@ -129,5 +131,21 @@ describe('first-login consent prompt', () => {
     prisma.consent.count.mockResolvedValue(0);
     expect(await needsFirstLoginConsent('u1')).toBe(false);
     expect(prisma.consent.count).not.toHaveBeenCalled();
+  });
+});
+
+describe('marketing channel consent', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('allows outbound when no marketing row exists', async () => {
+    prisma.consent.findUnique.mockResolvedValue(null);
+    expect(await allowsMarketingMessages('u1')).toBe(true);
+  });
+
+  test('blocks outbound when marketing is revoked', async () => {
+    prisma.consent.findUnique.mockResolvedValue({ status: 'REVOKED' });
+    expect(await allowsMarketingMessages('u1')).toBe(false);
   });
 });

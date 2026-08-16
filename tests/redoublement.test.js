@@ -30,6 +30,7 @@ const prisma = require('../src/config/database');
 const { analyzeRedoublementCauses, getReinscriptionStats } = require('../services/ReinscriptionService');
 const {
   getRedoublementCausesByPlan,
+  hidePeerSchools,
   NO_PLAN_LABEL,
   causeRatesFromStats,
 } = require('../services/RedoublementService');
@@ -154,5 +155,22 @@ describe('redoublement routes upgrade response', () => {
     const payload = { error: 'upgrade', message: 'Disponible en plan supérieur' };
     expect(payload.error).toBe('upgrade');
     expect(payload.message).toMatch(/plan supérieur/i);
+  });
+});
+
+describe('hidePeerSchools', () => {
+  test('keeps only the caller school in plan school lists', () => {
+    const scoped = hidePeerSchools([
+      {
+        planName: 'Premium',
+        schools: [
+          { schoolId: 'mine', schoolName: 'Moi', repeatRate: 0.1 },
+          { schoolId: 'peer', schoolName: 'Concurrent', repeatRate: 0.2 },
+        ],
+      },
+    ], 'mine');
+    expect(scoped[0].schools).toEqual([
+      { schoolId: 'mine', schoolName: 'Moi', repeatRate: 0.1 },
+    ]);
   });
 });

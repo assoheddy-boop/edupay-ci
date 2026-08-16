@@ -3,12 +3,13 @@ jest.mock('../src/jobs/cron', () => ({
   weeklyParentSummary: jest.fn().mockResolvedValue(undefined),
   dailyBackup: jest.fn().mockResolvedValue({ ok: true, driver: 'neon' }),
   homeworkReminders: jest.fn().mockResolvedValue({ ok: true, sent: 0 }),
+  notificationJobs: jest.fn().mockResolvedValue({ ok: true, scanned: 0, sent: 0, skipped: 0, failed: 0 }),
   startCronJobs: jest.fn(),
 }));
 
 const request = require('supertest');
 const app = require('../src/app');
-const { paymentReminders, dailyBackup, homeworkReminders } = require('../src/jobs/cron');
+const { paymentReminders, dailyBackup, homeworkReminders, notificationJobs } = require('../src/jobs/cron');
 
 describe('internal cron routes', () => {
   const prevEnv = process.env.NODE_ENV;
@@ -78,5 +79,43 @@ describe('internal cron routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.job).toBe('homework-reminders');
     expect(homeworkReminders).toHaveBeenCalled();
+  });
+
+  test('closes on Vercel without CRON_SECRET', async () => {
+    const prevVercel = process.env.VERCEL;
+    process.env.VERCEL = '1';
+    delete process.env.CRON_SECRET;
+    const res = await request(app).get('/api/internal/cron/payments');
+    if (prevVercel === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = prevVercel;
+    expect(res.status).toBe(403);
+    expect(paymentReminders).not.toHaveBeenCalled();
+  });
+
+  test('closes notifications cron without a matching secret', async () => {
+    process.env.CRON_SECRET = 'cron-secret';
+    const res = await request(app).get('/api/internal/cron/notifications');
+    expect(res.status).toBe(401);
+    expect(notificationJobs).not.toHaveBeenCalled();
+  });
+
+  test('dedicated notifications route runs the worker', async () => {
+    process.env.CRON_SECRET = 'cron-secret';
+    const res = await request(app)
+      .get('/api/internal/cron/notifications')
+      .set('Authorization', 'Bearer cron-secret');
+    expect(res.status).toBe(200);
+    expect(res.body.job).toBe('notifications');
+    expect(notificationJobs).toHaveBeenCalled();
+  });
+
+  test('daily job also drains the notification queue', async () => {
+    process.env.CRON_SECRET = 'cron-secret';
+    const res = await request(app)
+      .get('/api/internal/cron/daily')
+      .set('Authorization', 'Bearer cron-secret');
+    expect(res.status).toBe(200);
+    expect(notificationJobs).toHaveBeenCalled();
+    expect(res.body.result.notifications).toMatchObject({ ok: true });
   });
 });

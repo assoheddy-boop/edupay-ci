@@ -154,6 +154,8 @@ describe('TimetableService', () => {
       prisma.timetable.findUnique.mockResolvedValue(existing);
       prisma.timetable.findMany.mockResolvedValue([]);
       prisma.class.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      prisma.teacher.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      prisma.subject.findUnique.mockResolvedValue({ schoolId: 'school-1' });
       prisma.timetable.update.mockResolvedValue({
         ...existing,
         startTime: '09:00',
@@ -175,6 +177,9 @@ describe('TimetableService', () => {
 
     test('returns conflict when teacher slot overlaps', async () => {
       prisma.timetable.findUnique.mockResolvedValue(existing);
+      prisma.class.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      prisma.teacher.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      prisma.subject.findUnique.mockResolvedValue({ schoolId: 'school-1' });
       prisma.timetable.findMany.mockResolvedValue([
         {
           id: 'other',
@@ -204,6 +209,17 @@ describe('TimetableService', () => {
       const result = await updateTimetableEntry('missing', { startTime: '09:00', endTime: '10:00' });
       expect(result.ok).toBe(false);
       expect(result.error).toBe('not_found');
+    });
+
+    test('refuses to move a slot onto another school class', async () => {
+      prisma.timetable.findUnique.mockResolvedValue(existing);
+      prisma.class.findUnique.mockResolvedValue({ schoolId: 'school-other' });
+      prisma.teacher.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      prisma.subject.findUnique.mockResolvedValue({ schoolId: 'school-1' });
+      const result = await updateTimetableEntry('tt-1', { classId: 'class-foreign' });
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe('school');
+      expect(prisma.timetable.update).not.toHaveBeenCalled();
     });
   });
 

@@ -26,6 +26,9 @@ function inspectProofFile(file) {
   const extOk = ALLOWED_EXTENSIONS.has(ext);
 
   if (!mimeOk && !extOk) return { ok: false, error: 'mime' };
+  if (mime.includes('svg') || ext === '.svg' || ext === '.svgz' || ext === '.html' || ext === '.js') {
+    return { ok: false, error: 'mime' };
+  }
 
   const size = Number(file.size);
   if (!Number.isFinite(size) || size <= 0) return { ok: false, error: 'file' };

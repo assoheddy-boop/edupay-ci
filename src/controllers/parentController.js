@@ -115,7 +115,7 @@ async function grades(req, res) {
 }
 
 async function addChild(req, res) {
-  const { schoolCode, matricule } = req.body;
+  const { schoolCode, matricule, lastName } = req.body;
   try {
     const school = await findSchoolByCode(schoolCode);
     if (!school) {
@@ -131,6 +131,12 @@ async function addChild(req, res) {
 
     if (!student) {
       return res.redirect('/parent/dashboard?error=eleve');
+    }
+
+    const expected = String(student.lastName || '').trim().toLowerCase();
+    const given = String(lastName || '').trim().toLowerCase();
+    if (!expected || expected !== given) {
+      return res.redirect('/parent/dashboard?error=nom');
     }
 
     const existing = await prisma.parentStudent.findUnique({
@@ -168,11 +174,13 @@ async function addChild(req, res) {
 async function selectSchool(req, res) {
   const { schoolId } = req.body;
   const { getParentSchoolIds } = require('../middleware/modules');
+  const { getPrefsCookieOptions, safeBack } = require('../utils/cookies');
   const allowed = await getParentSchoolIds(req.user.parentProfile.id);
   if (allowed.includes(schoolId)) {
-    res.cookie('selectedSchoolId', schoolId, { maxAge: 30 * 24 * 60 * 60 * 1000 });
+    res.cookie('selectedSchoolId', schoolId, getPrefsCookieOptions());
   }
-  res.redirect(req.get('Referer') || '/parent/dashboard');
+  const back = safeBack(req);
+  res.redirect(back && back !== '/' ? back : '/parent/dashboard');
 }
 
 async function notificationsPage(req, res) {

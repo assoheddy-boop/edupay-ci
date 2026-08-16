@@ -1,4 +1,6 @@
 const prisma = require('../config/database');
+const { sendNotification } = require('../../services/NotificationService');
+const { formatMoney } = require('../middleware/currency');
 const { logAudit } = require('../utils/audit');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { getPendingPayments } = require('../../services/PaymentService');
@@ -359,19 +361,6 @@ async function validatePayment(req, res) {
     const { delCache } = require('../../services/cache');
     await delCache(`stats:school:${req.user.school.id}`);
 
-    const parents = await prisma.parentStudent.findMany({
-      where: { studentId: payment.studentId },
-      include: { parent: { include: { user: true } } },
-    });
-    const { sendNotification } = require('../../services/NotificationService');
-    for (const ps of parents) {
-      await sendNotification(
-        ps.parent.userId,
-        'payment_validated',
-        `${payment.amount.toLocaleString('fr-FR')} FCFA confirmés pour ${payment.student.firstName}. Reçu disponible.`,
-      );
-    }
-
     const { isEnabled, getModuleMap, initFinanceDefaults } = require('../utils/modules');
     const mods = await getModuleMap(req.user.school.id);
     if (isEnabled(mods, 'accounting')) {
@@ -382,6 +371,19 @@ async function validatePayment(req, res) {
         payment,
       });
     }
+  }
+
+  const parents = await prisma.parentStudent.findMany({
+    where: { studentId: payment.studentId },
+    include: { parent: { include: { user: true } } },
+  });
+  const amountLabel = formatMoney(payment.amount);
+  const kind = status === 'VALIDATED' ? 'payment_validated' : 'payment_refused';
+  const message = status === 'VALIDATED'
+    ? `${amountLabel} confirmés pour ${payment.student.firstName}. Reçu disponible.`
+    : `Paiement de ${amountLabel} refusé pour ${payment.student.firstName}. Vérifiez la preuve ou contactez l'école.`;
+  for (const ps of parents) {
+    await sendNotification(ps.parent.userId, kind, message);
   }
 
   res.redirect('/school/payments');
@@ -508,6 +510,11 @@ async function assignTeacherClass(req, res) {
       where: { id: teacherId, schoolId: req.user.school.id },
     });
     if (!teacher) return res.redirect('/school/teachers?error=1');
+
+    const cls = await prisma.class.findFirst({
+      where: { id: classId, schoolId: req.user.school.id },
+    });
+    if (!cls) return res.redirect('/school/teachers?error=1');
 
     await prisma.teacherClass.upsert({
       where: { teacherId_classId: { teacherId, classId } },

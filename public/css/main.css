@@ -1388,6 +1388,36 @@ code {
   gap: 0.75rem;
 }
 
+.nav-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.nav-bell-count {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.15rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--danger, #c62828);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .app-navbar-user {
   font-size: 0.9rem;
   color: var(--gray-light);
@@ -1753,3 +1783,452 @@ h1 .hint, h2 .hint, h3 .hint, .stat-label .hint {
 .offline-page { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
 .offline-card { max-width: 32rem; text-align: center; padding: 2rem 1.5rem; }
 .offline-status-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+/* --------------------------------------------------------------------------
+   Site-wide responsive (EduConnect)
+   Breakpoints: 320 (floor) / 768 (tablet) / 1024 (desktop).
+   Progressive only — desktop ≥1024 keeps the existing shell (sidebar + navbar).
+   -------------------------------------------------------------------------- */
+
+/* Media: keep wide images/video inside the viewport without a new design system. */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+iframe, canvas, audio {
+  max-width: 100%;
+}
+
+/* Media: stop the whole page from scrolling sideways; drawers still use their own overflow. */
+html {
+  overflow-x: clip;
+}
+body {
+  max-width: 100%;
+}
+
+/* Layout: timetable filters and button clusters used in views but previously unstyled. */
+.grid-3,
+.form.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-overlay {
+  display: none;
+}
+
+.sidebar-toolbar {
+  display: none;
+}
+
+.sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 0.85rem;
+  margin: 0 0.6rem 0.75rem;
+  border: 1px solid #d6e0f0;
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--gray);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.menu-open,
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Phone + tablet (≤1023px): drawer sidebar instead of a persistent 240px column.
+   Desktop ≥1024 is unchanged (sidebar stays in the flow). */
+@media (max-width: 1023px) {
+  .app-navbar .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+
+  .app-sidebar-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .app-navbar-inner {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    gap: 0.5rem;
+  }
+
+  .app-navbar-user-name { display: none; }
+
+  .app-sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    z-index: 98;
+    width: min(20rem, 88vw);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow);
+    overflow-y: auto;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+
+  .app-sidebar.is-open { transform: translateX(0); }
+
+  .sidebar-toolbar {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .app-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 64px 0 0 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 97;
+  }
+
+  .app-sidebar-overlay[hidden] { display: none; }
+
+  .app-content { padding-top: 1.25rem; }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Keep row actions on one line so they are not clipped by the scrollport. */
+  .table td .btn,
+  .table td .inline-form,
+  .table td .btn-group {
+    white-space: nowrap;
+  }
+
+  .grid-3,
+  .form.grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-modules-layout { grid-template-columns: 1fr; }
+  .chat-layout { grid-template-columns: 1fr; }
+  .chat-placeholder { display: none; }
+
+  #calendar,
+  .hw-calendar {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Public header (login, register, legal): same drawer as mobile, so tablet
+     does not overflow when the user is logged in and the nav has many links. */
+  .header .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+
+  .header .nav {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 0;
+    border-bottom: 1px solid #e8ecf0;
+    box-shadow: var(--shadow);
+    transform: translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    z-index: 99;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .header .nav.nav-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .header .nav a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .header .nav a.btn {
+    margin-top: 0.5rem;
+    justify-content: center;
+  }
+
+  .nav-overlay {
+    display: block;
+    position: fixed;
+    inset: 64px 0 0 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 98;
+  }
+
+  .nav-overlay[hidden] { display: none; }
+}
+
+/* Phone (≤767px, including 320–430): stacked layout, 44px targets, full-width fields. */
+@media (max-width: 767px) {
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+
+  .nav-overlay {
+    display: block;
+    position: fixed;
+    inset: 64px 0 0 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 98;
+  }
+  .nav-overlay[hidden] { display: none; }
+
+  .header-inner {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .nav {
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .logo-text { display: none; }
+
+  .navbar-school-name { display: none; }
+
+  .app-navbar-end .btn {
+    min-height: 44px;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .nav-bell {
+    width: 44px;
+    height: 44px;
+  }
+
+  .container {
+    padding-left: max(0.85rem, env(safe-area-inset-left));
+    padding-right: max(0.85rem, env(safe-area-inset-right));
+  }
+
+  main.container,
+  .app-content.container {
+    padding-top: 1.1rem;
+    padding-bottom: 2rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-header h1 { font-size: 1.35rem; }
+  .page-header .btn,
+  .page-header-actions .btn,
+  .export-links .btn {
+    min-height: 44px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-value { font-size: 1.35rem; }
+
+  .grid-2,
+  .grid-3,
+  .form.grid-3,
+  .hero-features,
+  .modules-grid,
+  .activities-grid,
+  .pricing-grid,
+  .campus-compare,
+  .group-modules,
+  .group-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card { padding: 1rem; }
+
+  .auth-page { padding: 1rem 0 2rem; }
+  .auth-card { padding: 1.25rem 1rem; }
+
+  .form-row { grid-template-columns: 1fr; }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .form select,
+  .form textarea {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  .form > .btn,
+  .form > button[type="submit"],
+  .auth-card .btn-block {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .form.grid-3 > label,
+  .form > label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .form.grid-3 > label input,
+  .form.grid-3 > label select,
+  .form > label input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  .form > label select {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  .role-tabs {
+    flex-wrap: wrap;
+  }
+  .role-tabs a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 1rem;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .legal-nav a,
+  .hr-subnav a,
+  .footer-links a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Compact footer: keep legal links + editor, less vertical padding. */
+  .footer {
+    padding: 1rem 0 1.15rem;
+  }
+  .footer-inner { padding-left: 0.5rem; padding-right: 0.5rem; }
+  .footer-links {
+    gap: 0.15rem 0.85rem;
+    margin: 0.55rem 0 0.25rem;
+  }
+
+  .attendance-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .attendance-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.35rem;
+  }
+  .attendance-choice span {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.25rem;
+    font-size: 0.82rem;
+  }
+
+  .chat-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .chat-input-row .btn { width: 100%; }
+  .chat-bubble { max-width: 92%; }
+  .chat-audio-row {
+    flex-wrap: wrap;
+  }
+  .chat-audio-row .btn {
+    min-height: 44px;
+  }
+
+  .hw-calendar { min-height: 280px; }
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .fc .fc-toolbar-title { font-size: 1rem; }
+  .fc .fc-button {
+    min-height: 44px;
+  }
+
+  .payment-card { padding: 1.25rem 1rem; }
+
+  .hint-tip {
+    max-width: min(16rem, 75vw);
+  }
+
+  .consent-banner-actions .btn {
+    min-height: 44px;
+  }
+}
+
+/* Very narrow phones (~320px): one-column stats so figures are not squeezed. */
+@media (max-width: 359px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .attendance-choices { grid-template-columns: 1fr; }
+  .navbar-school { display: none; }
+}

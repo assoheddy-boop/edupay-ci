@@ -6,6 +6,8 @@ const { REFRESH_COOKIE } = require('../utils/cookies');
 const { generateUniqueSchoolSlug, findSchoolByCode } = require('../utils/schoolCode');
 const { logAudit } = require('../utils/audit');
 const { createTeacherProfile } = require('../../services/HRService');
+const { isPublicSchoolRegisterOpen, isPublicTeacherRegisterOpen } = require('../utils/registerFlags');
+const { safeInternalPath } = require('../utils/cookies');
 
 function dashboardRedirect(role) {
   const map = {
@@ -84,7 +86,7 @@ async function register(req, res) {
     const hashed = await hashPassword(password);
 
     if (role === 'SCHOOL_ADMIN') {
-      if (process.env.ALLOW_PUBLIC_SCHOOL_REGISTER === 'false') {
+      if (!isPublicSchoolRegisterOpen()) {
         return res.render('auth/register', {
           error: 'Les inscriptions écoles sont temporairement fermées. Contactez EduConnect.',
           role,
@@ -144,6 +146,12 @@ async function register(req, res) {
     }
 
     if (role === 'TEACHER') {
+      if (!isPublicTeacherRegisterOpen()) {
+        return res.render('auth/register', {
+          error: 'L\'inscription enseignants est fermée. Demandez une invitation à votre établissement.',
+          role,
+        });
+      }
       const school = await findSchoolByCode(schoolCode);
 
       if (!school) {
@@ -200,13 +208,14 @@ async function refresh(req, res) {
   }
 
   if (req.xhr || req.headers.accept?.includes('application/json') || req.originalUrl.startsWith('/api/')) {
-    return res.json({ ok: true, token: rotated.accessToken });
+    return res.json({ ok: true });
   }
   return res.redirect(dashboardRedirect(rotated.user.role));
 }
 
 async function uploadPhoto(req, res) {
-  const back = req.body.redirectTo || req.get('referer') || dashboardRedirect(req.user.role);
+  const fallback = dashboardRedirect(req.user.role);
+  const back = safeInternalPath(req.body.redirectTo, fallback);
   try {
     if (req.body.removePhoto === 'on') {
       const { removePersonPhoto } = require('../utils/media');

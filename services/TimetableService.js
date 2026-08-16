@@ -346,7 +346,23 @@ async function updateTimetableEntry(id, {
   const timeCheck = validateTimes(next.startTime, next.endTime);
   if (!timeCheck.ok) return timeCheck;
 
-  const schoolId = await resolveSchoolId(next.classId);
+  const [cls, teacher, subject] = await Promise.all([
+    prisma.class.findUnique({ where: { id: next.classId } }),
+    prisma.teacher.findUnique({ where: { id: next.teacherId } }),
+    prisma.subject.findUnique({ where: { id: next.subjectId } }),
+  ]);
+  if (!cls) return { ok: false, error: 'class', message: 'Classe introuvable.' };
+  if (!teacher) return { ok: false, error: 'teacher', message: 'Enseignant introuvable.' };
+  if (!subject) return { ok: false, error: 'subject', message: 'Matière introuvable.' };
+  if (
+    cls.schoolId !== existing.schoolId
+    || teacher.schoolId !== existing.schoolId
+    || subject.schoolId !== existing.schoolId
+  ) {
+    return { ok: false, error: 'school', message: 'Classe, enseignant et matière doivent appartenir à la même école.' };
+  }
+
+  const schoolId = cls.schoolId;
 
   const conflict = await findConflicts({
     classId: next.classId,

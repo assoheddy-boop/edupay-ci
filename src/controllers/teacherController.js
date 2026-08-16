@@ -76,6 +76,15 @@ async function absences(req, res) {
 async function createAbsence(req, res) {
   const { studentId, date, type, reason } = req.body;
   try {
+    const student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        class: { teachers: { some: { teacherId: req.user.teacher.id } } },
+      },
+      include: { parents: { include: { parent: true } } },
+    });
+    if (!student) return res.redirect('/teacher/absences?error=1');
+
     await prisma.absence.create({
       data: {
         studentId,
@@ -86,15 +95,10 @@ async function createAbsence(req, res) {
       },
     });
 
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: { parents: { include: { parent: true } } },
-    });
-
-    for (const link of student?.parents || []) {
+    for (const link of student.parents || []) {
       await sendNotification(
         link.parent.userId,
-        'absence_reported',
+        type === 'LATE' ? 'late_reported' : 'absence_reported',
         `${student.firstName} ${student.lastName} — ${type === 'LATE' ? 'retard' : 'absence'} : ${reason || 'Sans motif'}.`,
       );
     }
@@ -189,6 +193,11 @@ async function schedulePage(req, res) {
 async function createSchedule(req, res) {
   const { classId, dayOfWeek, startTime, endTime, subject, room } = req.body;
   try {
+    const owned = await prisma.teacherClass.findFirst({
+      where: { teacherId: req.user.teacher.id, classId },
+    });
+    if (!owned) return res.redirect('/teacher/schedule?error=1');
+
     await prisma.schedule.create({
       data: {
         teacherId: req.user.teacher.id,
@@ -270,6 +279,38 @@ async function submitBulkGrades(req, res) {
   }
 }
 
+async function notificationsPage(req, res) {
+  const notifications = await prisma.notification.findMany({
+    where: { userId: req.user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  });
+
+  res.render('teacher/notifications', {
+    user: req.user,
+    notifications,
+    success: req.query.success || null,
+  });
+}
+
+async function markNotificationRead(req, res) {
+  const { id } = req.params;
+  await prisma.notification.updateMany({
+    where: { id, userId: req.user.id },
+    data: { readAt: new Date() },
+  });
+  if (req.accepts('json')) return res.json({ ok: true });
+  res.redirect('/teacher/notifications?success=1');
+}
+
+async function markAllNotificationsRead(req, res) {
+  await prisma.notification.updateMany({
+    where: { userId: req.user.id, readAt: null },
+    data: { readAt: new Date() },
+  });
+  res.redirect('/teacher/notifications?success=all');
+}
+
 module.exports = {
   dashboard,
   students,
@@ -287,4 +328,7 @@ module.exports = {
   attendanceTypeFromStatus,
   bulkGradesPage,
   submitBulkGrades,
+  notificationsPage,
+  markNotificationRead,
+  markAllNotificationsRead,
 };

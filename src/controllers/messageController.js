@@ -68,14 +68,8 @@ async function chat(req, res) {
   const messages = await getConversation(req.user.id, partnerId);
   const partners = await getPartnersForUser(req.user);
   const partnerInfo = partners.find((p) => p.user.id === partnerId);
-  const { signToken } = require('../utils/jwt');
 
-  let students = [];
-  if (req.user.role === 'PARENT' && req.user.parentProfile) {
-    students = partnerInfo?.students || [];
-  } else if (req.user.role === 'SCHOOL_ADMIN' || req.user.role === 'TEACHER') {
-    students = partnerInfo?.students || [];
-  }
+  const students = partnerInfo?.students || [];
 
   res.render('messages/chat', {
     user: req.user,
@@ -84,7 +78,6 @@ async function chat(req, res) {
     partnerInfo,
     messages,
     students,
-    socketToken: signToken({ userId: req.user.id }, { expiresIn: '12h' }),
     error: null,
   });
 }
@@ -114,6 +107,15 @@ async function send(req, res) {
     return res.status(403).render('error', { message: 'Conversation non autorisée', user: req.user });
   }
 
+  let linkedStudentId = null;
+  if (studentId) {
+    const partners = await getPartnersForUser(req.user);
+    const info = partners.find((p) => p.user.id === partnerId);
+    if ((info?.students || []).some((s) => s.id === studentId)) {
+      linkedStudentId = studentId;
+    }
+  }
+
   if (!content && !audioUrl && !fileUrl) {
     return res.redirect(`${basePath}/messages/${partnerId}?error=empty`);
   }
@@ -126,7 +128,7 @@ async function send(req, res) {
       audioUrl,
       fileUrl,
       fileName,
-      studentId: studentId || null,
+      studentId: linkedStudentId,
     },
     include: {
       sender: { select: { firstName: true, lastName: true } },

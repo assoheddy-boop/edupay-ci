@@ -147,13 +147,19 @@
 
 
     let html = '';
-    if (m.student) html += `<small class="chat-student">Re: ${m.student.firstName}</small>`;
-    if (m.audioUrl) html += `<audio controls src="${m.audioUrl}" class="chat-audio"></audio>`;
+    const esc = (v) => String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const safeUrl = (v) => {
+      const s = String(v || '');
+      if (/^(https?:|\/uploads\/)/i.test(s) && !s.toLowerCase().includes('javascript:')) return esc(s);
+      return '';
+    };
+    if (m.student) html += `<small class="chat-student">Re: ${esc(m.student.firstName)}</small>`;
+    if (m.audioUrl) html += `<audio controls src="${safeUrl(m.audioUrl)}" class="chat-audio"></audio>`;
     if (m.fileUrl) {
-      const name = (m.fileName || 'Fichier').replace(/</g, '&lt;');
-      html += `<a class="chat-file" href="${m.fileUrl}" target="_blank" rel="noopener">📎 ${name}</a>`;
+      html += `<a class="chat-file" href="${safeUrl(m.fileUrl)}" target="_blank" rel="noopener">📎 ${esc(m.fileName || 'Fichier')}</a>`;
     }
-    if (m.content) html += `<p>${String(m.content).replace(/</g, '&lt;')}</p>`;
+    if (m.content) html += `<p>${esc(m.content)}</p>`;
 
     const d = new Date(m.createdAt);
 
@@ -169,8 +175,6 @@
 
 
 
-  <% if (typeof socketToken !== 'undefined') { %>
-
   (function() {
 
     const s = document.createElement('script');
@@ -179,7 +183,7 @@
 
     s.onload = function() {
 
-      const socket = io({ auth: { token: '<%= socketToken %>' } });
+      const socket = io({ withCredentials: true });
       socket.emit('subscribe', userId);
 
       socket.on('new_message', (m) => {
@@ -255,8 +259,6 @@
     document.body.appendChild(s);
 
   })();
-
-  <% } %>
 
 </script>
 </div>

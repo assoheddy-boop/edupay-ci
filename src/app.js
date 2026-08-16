@@ -14,6 +14,7 @@ const apiV1Routes = require('./routes/api/v1');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { metricsMiddleware, metricsHandler } = require('./middleware/metrics');
 const { getPlansForLanding } = require('./config/plans');
+const { safeJson } = require('./utils/safeJson');
 const { i18nMiddleware, setLocale } = require('./middleware/i18n');
 const { currencyMiddleware, setCurrency } = require('./middleware/currency');
 const hrRoutes = require('../modules/hr/routes/hrRoutes');
@@ -38,10 +39,16 @@ app.set('trust proxy', process.env.VERCEL ? 2 : 1);
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/js', express.static(path.join(__dirname, '../node_modules/chart.js/dist')));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+const { blockedUploadPath } = require('./utils/uploadSafety');
+app.use('/uploads', (req, res, next) => {
+  if (blockedUploadPath(req.path)) return res.status(404).end();
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
 app.use(express.urlencoded({ extended: true, limit: '8mb' }));
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
@@ -53,6 +60,8 @@ app.use((req, res, next) => {
   res.locals.appName = 'EduConnect';
   res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
   res.locals.showDemoAccounts = process.env.NODE_ENV !== 'production';
+  res.locals.safeJson = safeJson;
+  res.locals.unreadNotifications = 0;
   next();
 });
 

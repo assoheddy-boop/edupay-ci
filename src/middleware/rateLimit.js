@@ -33,4 +33,13 @@ const syncLimiter = rateLimit({
   ...vercelSafe,
 });
 
-module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter };
+const childLinkLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Trop de tentatives de liaison. Réessayez dans 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...vercelSafe,
+});
+
+module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter, childLinkLimiter };

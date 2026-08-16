@@ -272,17 +272,26 @@ async function createLostItem(req, res) {
   const photoUrl = req.file ? (req.file.url || `/uploads/lost-items/${req.file.filename}`) : null;
 
   try {
+    let ownedStudentId = null;
+    if (studentId) {
+      const student = await prisma.student.findFirst({
+        where: { id: studentId, schoolId: req.user.school.id },
+      });
+      if (!student) return res.redirect('/school/lost-items?error=1');
+      ownedStudentId = student.id;
+    }
+
     const item = await prisma.lostItem.create({
       data: {
         schoolId: req.user.school.id,
         description,
-        studentId: studentId || null,
+        studentId: ownedStudentId,
         photoUrl,
       },
     });
 
-    if (studentId) {
-      await notifyStudentParents(studentId, {
+    if (ownedStudentId) {
+      await notifyStudentParents(ownedStudentId, {
         type: 'GENERAL',
         title: 'Objet retrouvé',
         body: `Un objet a été retrouvé à l'école : ${description}. Passez récupérer.`,
@@ -298,7 +307,7 @@ async function createLostItem(req, res) {
 
 async function claimLostItem(req, res) {
   const { id } = req.params;
-  await prisma.lostItem.update({
+  await prisma.lostItem.updateMany({
     where: { id, schoolId: req.user.school.id },
     data: { claimed: true },
   });
@@ -482,8 +491,14 @@ async function enrollActivity(req, res) {
   try {
     const link = await prisma.parentStudent.findFirst({
       where: { parentId: req.user.parentProfile.id, studentId },
+      include: { student: true },
     });
     if (!link) return res.redirect('/parent/activities?error=1');
+
+    const activity = await prisma.extracurricular.findFirst({
+      where: { id: activityId, schoolId: link.student.schoolId, isActive: true },
+    });
+    if (!activity) return res.redirect('/parent/activities?error=1');
 
     await prisma.extracurricularEnrollment.create({ data: { studentId, activityId } });
     res.redirect('/parent/activities?success=1');

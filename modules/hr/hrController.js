@@ -104,7 +104,7 @@ async function leavePage(req, res) {
 async function createLeave(req, res) {
   const schoolId = resolveSchoolId(req);
   const teacherId = resolveTeacherId(req);
-  const { startDate, endDate, status } = req.body;
+  const { startDate, endDate } = req.body;
   const teacher = await assertTeacherInSchool(teacherId, schoolId);
   if (!teacher) return res.redirect('/hr/leave?error=teacher');
 
@@ -116,7 +116,7 @@ async function createLeave(req, res) {
       teacherId,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      status: status || 'PENDING',
+      status: 'PENDING',
     },
   });
 

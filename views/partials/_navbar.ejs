@@ -1,6 +1,6 @@
 <header class="app-navbar">
   <div class="app-navbar-inner">
-    <button type="button" class="nav-toggle" id="sidebarToggle" aria-label="Menu" aria-expanded="false">
+    <button type="button" class="nav-toggle" id="sidebarToggle" aria-label="Menu" aria-expanded="false" aria-controls="appSidebar">
       <span></span><span></span><span></span>
     </button>
     <a href="/" class="logo">
@@ -15,6 +15,17 @@
     <% } %>
     <div class="app-navbar-end">
       <% if (typeof user !== 'undefined' && user) { %>
+        <% const unread = typeof unreadNotifications !== 'undefined' ? unreadNotifications : 0; %>
+        <% if (user.role === 'PARENT' || user.role === 'TEACHER') { %>
+          <a
+            href="<%= user.role === 'PARENT' ? '/parent/notifications' : '/teacher/notifications' %>"
+            class="nav-bell"
+            aria-label="Notifications<%= unread > 0 ? ` (${unread} non lues)` : '' %>"
+          >
+            <span aria-hidden="true">🔔</span>
+            <% if (unread > 0) { %><span class="nav-bell-count"><%= unread > 99 ? '99+' : unread %></span><% } %>
+          </a>
+        <% } %>
         <span class="app-navbar-user">
           <%- include('_avatar', { src: user.photoUrl, firstName: user.firstName, lastName: user.lastName, size: 'sm' }) %>
           <span class="app-navbar-user-name"><%= user.firstName %> <%= user.lastName %></span>

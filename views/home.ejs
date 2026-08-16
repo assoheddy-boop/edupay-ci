@@ -5,13 +5,17 @@
       <span class="home-logo-mark" aria-hidden="true">🎓</span>
       <span>Edu<strong>Connect</strong></span>
     </a>
-    <nav class="home-links" aria-label="Navigation principale">
+    <button type="button" class="nav-toggle home-nav-toggle" id="homeNavToggle" aria-label="Menu" aria-expanded="false" aria-controls="homeNav">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="home-links" id="homeNav" aria-label="Navigation principale">
       <a href="#tarifs">Offres</a>
       <a href="#contact">Contact</a>
       <a href="/auth/login">Connexion</a>
       <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary">Demander une démo</a>
     </nav>
   </header>
+  <div class="home-nav-overlay" id="homeNavOverlay" hidden></div>
 
   <section class="home-hero">
     <div class="home-hero-inner">

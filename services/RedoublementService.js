@@ -212,8 +212,17 @@ async function getRedoublementCausesByPlan(schoolYear) {
   }
 }
 
+function hidePeerSchools(plans, schoolId) {
+  if (!Array.isArray(plans) || !schoolId) return [];
+  return plans.map((plan) => ({
+    ...plan,
+    schools: (plan.schools || []).filter((row) => row.schoolId === schoolId),
+  }));
+}
+
 module.exports = {
   getRedoublementCausesByPlan,
+  hidePeerSchools,
   NO_PLAN_LABEL,
   analyzeSchoolRedoublement,
   causeRatesFromStats,

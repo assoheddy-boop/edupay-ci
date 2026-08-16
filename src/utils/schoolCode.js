@@ -22,12 +22,11 @@ async function generateUniqueSchoolSlug(name) {
 }
 
 async function findSchoolByCode(code) {
-  if (!code) return null;
-  const trimmed = code.trim();
+  if (!code || typeof code !== 'string') return null;
+  const trimmed = code.trim().toLowerCase();
+  if (!trimmed || trimmed.length > 64) return null;
   return prisma.school.findFirst({
-    where: {
-      OR: [{ slug: trimmed.toLowerCase() }, { id: trimmed }],
-    },
+    where: { slug: trimmed },
   });
 }
 

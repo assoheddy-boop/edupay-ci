@@ -206,7 +206,7 @@
   });
 
   <% if (Object.keys(causeCounts).some(function(k) { return causeCounts[k] > 0; })) { %>
-  const causeCounts = <%- JSON.stringify(causeCounts) %>;
+  const causeCounts = <%- safeJson(causeCounts) %>;
   const causeLabels = Object.keys(causeCounts).filter(function(k) { return causeCounts[k] > 0; });
   const causeData = causeLabels.map(function(k) { return causeCounts[k]; });
   const causeColors = {

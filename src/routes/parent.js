@@ -10,25 +10,20 @@ const { requireAuth, checkRole } = require('../middleware/auth');
 
 const { attachModules, requireModule } = require('../middleware/modules');
 const { attachConsentPrompt } = require('../middleware/consentPrompt');
-
+const { attachUnreadNotifications } = require('../middleware/unreadNotifications');
+const { childLinkLimiter } = require('../middleware/rateLimit');
 const { addChildRules, handleValidationErrors } = require('../middleware/validators');
 
 const upload = require('../middleware/upload');
 const { chatUpload, persistUpload } = upload;
 
-
-
 const router = express.Router();
 
-
-
-router.use(requireAuth, checkRole('parent'), attachModules, attachConsentPrompt);
-
-
+router.use(requireAuth, checkRole('parent'), attachModules, attachConsentPrompt, attachUnreadNotifications);
 
 router.get('/dashboard', parentController.dashboard);
 
-router.post('/children', addChildRules, handleValidationErrors, parentController.addChild);
+router.post('/children', childLinkLimiter, addChildRules, handleValidationErrors, parentController.addChild);
 
 router.post('/select-school', parentController.selectSchool);
 

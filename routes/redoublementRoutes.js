@@ -3,7 +3,7 @@ const { requireAuth } = require('../src/middleware/auth');
 const { resolveSchoolId } = require('../src/middleware/modules');
 const { getSchoolPlan, planIncludesFeature } = require('../src/utils/plans');
 const { MODULES } = require('../src/config/modules');
-const { getRedoublementCausesByPlan } = require('../services/RedoublementService');
+const { getRedoublementCausesByPlan, hidePeerSchools } = require('../services/RedoublementService');
 
 const MODULE_KEY = 'redoublementAnalysis';
 const UPGRADE_MESSAGE = 'Disponible en plan supérieur';
@@ -61,9 +61,12 @@ router.get('/plans/:schoolYear', requireAuth, requireRedoublementAnalysis, async
       return res.status(400).json({ ok: false, error: result.error || 'stats' });
     }
 
-    if (req.user?.role !== 'SUPER_ADMIN' && req.redoublementPlan) {
-      const planName = req.redoublementPlan.name;
-      result.plans = result.plans.filter((p) => p.planName === planName);
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      if (req.redoublementPlan) {
+        const planName = req.redoublementPlan.name;
+        result.plans = result.plans.filter((p) => p.planName === planName);
+      }
+      result.plans = hidePeerSchools(result.plans, req.redoublementSchoolId);
     }
 
     return res.json(result);

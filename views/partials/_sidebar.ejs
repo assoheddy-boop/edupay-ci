@@ -7,6 +7,9 @@
 <% const showSchoolNav = (assist && assist.type === 'school') || (currentUser && currentUser.role === 'SCHOOL_ADMIN'); %>
 <% const showGroupNav = (assist && assist.type === 'group') || (currentUser && currentUser.role === 'ORGANIZATION_ADMIN' && !showSchoolNav); %>
 <aside class="app-sidebar" id="appSidebar">
+  <div class="sidebar-toolbar">
+    <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Fermer le menu">Fermer</button>
+  </div>
   <% if (brandOrg && showGroupNav) { %>
     <div class="sidebar-brand">
       <%- include('_logo', { logoUrl: brandOrg.logoUrl, logoBase64: brandOrg.logoBase64, slug: brandOrg.slug, name: brandOrg.name, size: 'sm' }) %>
@@ -77,11 +80,12 @@
       <% if (on('homeworks')) { %><a href="/parent/homeworks">Devoirs & contrôles</a><% } %>
       <a href="/parent/timeline">Historique</a>
       <a href="/transfer">Transfert d'école</a>
-      <a href="/parent/notifications">Notifications</a>
+      <a href="/parent/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
       <a href="/parent/privacy">Confidentialité</a>
       <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
     <% } else if (currentUser && currentUser.role === 'TEACHER') { %>
       <a href="/teacher/dashboard">Accueil</a>
+      <a href="/teacher/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
       <a href="/teacher/students">Élèves</a>
       <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
       <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>

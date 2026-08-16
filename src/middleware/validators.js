@@ -1,4 +1,5 @@
 const { body, validationResult } = require('express-validator');
+const { safeBack } = require('../utils/cookies');
 
 function handleValidationErrors(req, res, next) {
   const errors = validationResult(req);
@@ -12,7 +13,7 @@ function handleValidationErrors(req, res, next) {
       if (req.path.includes('login')) {
         return res.status(400).render('auth/login', { error: message, role });
       }
-      const back = req.get('Referer') || '/';
+      const back = safeBack(req);
       return res.redirect(`${back}${back.includes('?') ? '&' : '?'}error=${encodeURIComponent(message)}`);
     }
     return res.status(400).json({ error: message, details: errors.array() });
@@ -27,7 +28,7 @@ const loginRules = [
 
 const registerRules = [
   body('email').trim().isEmail().withMessage('Email invalide'),
-  body('password').isLength({ min: 6 }).withMessage('Mot de passe : 6 caractères minimum'),
+  body('password').isLength({ min: 8 }).withMessage('Mot de passe : 8 caractères minimum'),
   body('firstName').trim().notEmpty().withMessage('Prénom requis'),
   body('lastName').trim().notEmpty().withMessage('Nom requis'),
   body('role').isIn(['SCHOOL_ADMIN', 'PARENT', 'TEACHER']).withMessage('Rôle invalide'),
@@ -60,6 +61,7 @@ const feeRules = [
 const addChildRules = [
   body('schoolCode').trim().notEmpty().withMessage('Code école requis'),
   body('matricule').trim().notEmpty().withMessage('Matricule requis'),
+  body('lastName').trim().notEmpty().withMessage('Nom de famille de l\'élève requis'),
 ];
 
 const teacherInviteRules = [

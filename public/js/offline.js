@@ -16,6 +16,14 @@
     payment: 'Paiement',
   };
 
+  function escHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   function uuid() {
     if (crypto.randomUUID) return crypto.randomUUID();
     return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/x/g, () =>
@@ -343,7 +351,7 @@
 
     const conflictBlocks = conflicts.map((item) => {
       const who = item.existing
-        ? `${item.existing.firstName || ''} ${item.existing.lastName || ''} (${item.existing.email || item.existing.phone || ''})`.trim()
+        ? `${escHtml(item.existing.firstName)} ${escHtml(item.existing.lastName)} (${escHtml(item.existing.email || item.existing.phone)})`.trim()
         : '';
       return `<div class="offline-conflict">
         <strong>⚠️ Professeur déjà existant, fusionner ou annuler</strong>

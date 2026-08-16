@@ -1,7 +1,8 @@
 const prisma = require('../config/database');
+const { hasEffectiveRole } = require('./adminAssist');
 
 async function getPartnersForUser(user) {
-  if (user.role === 'SCHOOL_ADMIN' && user.school) {
+  if (hasEffectiveRole(user, 'SCHOOL_ADMIN') && user.school) {
     const links = await prisma.parentStudent.findMany({
       where: { student: { class: { schoolId: user.school.id } } },
       include: {

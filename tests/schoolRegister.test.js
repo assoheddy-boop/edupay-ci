@@ -33,15 +33,22 @@ jest.mock('../services/HRService', () => ({
 }));
 
 const prisma = require('../src/config/database');
+const { findSchoolByCode } = require('../src/utils/schoolCode');
+const { createTeacherProfile } = require('../services/HRService');
 const { register } = require('../src/controllers/authController');
 
 describe('public school register flag', () => {
   const prev = process.env.ALLOW_PUBLIC_SCHOOL_REGISTER;
+  const prevTeacher = process.env.ALLOW_PUBLIC_TEACHER_REGISTER;
+  const prevEnv = process.env.NODE_ENV;
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env.NODE_ENV = prevEnv;
     if (prev === undefined) delete process.env.ALLOW_PUBLIC_SCHOOL_REGISTER;
     else process.env.ALLOW_PUBLIC_SCHOOL_REGISTER = prev;
+    if (prevTeacher === undefined) delete process.env.ALLOW_PUBLIC_TEACHER_REGISTER;
+    else process.env.ALLOW_PUBLIC_TEACHER_REGISTER = prevTeacher;
   });
 
   test('blocks SCHOOL_ADMIN signup when ALLOW_PUBLIC_SCHOOL_REGISTER=false', async () => {
@@ -66,5 +73,50 @@ describe('public school register flag', () => {
       expect.objectContaining({ error: expect.stringMatching(/fermées/) }),
     );
     expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  test('blocks SCHOOL_ADMIN signup in production by default', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.ALLOW_PUBLIC_SCHOOL_REGISTER;
+    prisma.user.findUnique.mockResolvedValue(null);
+    const res = { render: jest.fn(), redirect: jest.fn() };
+    await register({
+      body: {
+        email: 'new@school.ci',
+        password: 'secret12',
+        firstName: 'Awa',
+        lastName: 'Kone',
+        role: 'SCHOOL_ADMIN',
+        schoolName: 'EPV Test',
+      },
+    }, res);
+    expect(res.render).toHaveBeenCalledWith(
+      'auth/register',
+      expect.objectContaining({ error: expect.stringMatching(/fermées/) }),
+    );
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  test('blocks TEACHER self-signup in production by default', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.ALLOW_PUBLIC_TEACHER_REGISTER;
+    prisma.user.findUnique.mockResolvedValue(null);
+    const res = { render: jest.fn(), redirect: jest.fn() };
+    await register({
+      body: {
+        email: 'prof@new.ci',
+        password: 'secret12',
+        firstName: 'Awa',
+        lastName: 'Kone',
+        role: 'TEACHER',
+        schoolCode: 'ecole-les-etoiles',
+      },
+    }, res);
+    expect(res.render).toHaveBeenCalledWith(
+      'auth/register',
+      expect.objectContaining({ error: expect.stringMatching(/invitation/) }),
+    );
+    expect(findSchoolByCode).not.toHaveBeenCalled();
+    expect(createTeacherProfile).not.toHaveBeenCalled();
   });
 });

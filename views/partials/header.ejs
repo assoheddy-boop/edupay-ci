@@ -5,11 +5,11 @@
       <span class="logo-text">Edu<strong>Connect</strong></span>
     </a>
 
-    <button type="button" class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+    <button type="button" class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false" aria-controls="mainNav">
       <span></span><span></span><span></span>
     </button>
 
-    <nav class="nav" id="mainNav">
+    <nav class="nav" id="mainNav" aria-label="Navigation">
       <% if (user) { %>
         <% if (user.role === 'SUPER_ADMIN') { %>
           <a href="/admin/dashboard">Tableau de bord</a>
@@ -59,3 +59,4 @@
     </nav>
   </div>
 </header>
+<div class="nav-overlay" id="navOverlay" hidden></div>

@@ -16,6 +16,7 @@ const {
   beginGroupAssist,
   stopAssist,
 } = require('../utils/adminAssist');
+const { safeInternalPath } = require('../utils/cookies');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -144,7 +145,7 @@ async function updateSchoolModules(req, res) {
     ip: req.ip,
   });
 
-  const redirectTo = req.body.redirect || `/admin/schools/${id}/modules`;
+  const redirectTo = safeInternalPath(req.body.redirect, `/admin/schools/${id}/modules`);
   res.redirect(`${redirectTo}?success=1`);
 }
 
@@ -232,8 +233,11 @@ async function createOrgAdmin(req, res) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.redirect('/admin/organizations?error=email');
+    if (!password || String(password).length < 8) {
+      return res.redirect('/admin/organizations?error=password');
+    }
 
-    const hashed = await hashPassword(password || 'demo1234');
+    const hashed = await hashPassword(password);
     await prisma.user.create({
       data: {
         email,

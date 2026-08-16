@@ -2,7 +2,17 @@ const jwt = require('jsonwebtoken');
 
 const ACCESS_TTL = process.env.JWT_ACCESS_TTL || '15m';
 
+function assertProductionJwtSecret() {
+  if (process.env.NODE_ENV !== 'production') return;
+  if (process.env.JEST_WORKER_ID && process.env.FORCE_JWT_PROD_CHECK !== '1') return;
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret === 'dev-secret') {
+    throw new Error('JWT_SECRET manquant ou trop faible en production');
+  }
+}
+
 function getJwtSecrets() {
+  assertProductionJwtSecret();
   if (process.env.JWT_SECRETS) {
     return process.env.JWT_SECRETS.split(',').map((s) => s.trim()).filter(Boolean);
   }
@@ -49,6 +59,7 @@ module.exports = {
   verifyToken,
   getJwtSecret,
   getJwtSecrets,
+  assertProductionJwtSecret,
   JWT_SECRET,
   ACCESS_TTL,
 };

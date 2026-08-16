@@ -160,7 +160,8 @@ model User {
   organizationAdmin OrganizationAdmin?
   sentMessages Message[]      @relation("SentMessages")
   receivedMessages Message[]  @relation("ReceivedMessages")
-  notifications Notification[]
+  notifications      Notification[]
+  notificationJobs   NotificationJob[]
   requestedTransfers TransferRequest[]
   auditTrails        AuditTrail[]
   consents           Consent[]
@@ -525,6 +526,25 @@ model Notification {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationJob {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolId    String?
+  channel     String
+  eventType   String
+  payload     Json
+  status      String    @default("pending")
+  error       String?
+  attempts    Int       @default(0)
+  scheduledAt DateTime  @default(now())
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, scheduledAt])
+  @@index([userId])
 }
 
 model HealthIncident {

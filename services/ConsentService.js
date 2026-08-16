@@ -63,6 +63,20 @@ async function needsFirstLoginConsent(parentId) {
   return !has;
 }
 
+async function allowsMarketingMessages(userId) {
+  if (!userId) return false;
+  try {
+    const row = await prisma.consent.findUnique({
+      where: { parentId_type: { parentId: userId, type: 'MARKETING' } },
+    });
+    if (!row) return true;
+    return row.status !== 'REVOKED';
+  } catch (err) {
+    console.error('[consent] marketing check:', err?.message || err);
+    return true;
+  }
+}
+
 async function upsertConsent(parentId, type, status) {
   const consentType = normalizeType(type);
   const consentStatus = status === 'GRANTED' || status === 'REVOKED' || status === 'PENDING'
@@ -91,4 +105,5 @@ module.exports = {
   isConsentPromptEnabled,
   hasConsentRecords,
   needsFirstLoginConsent,
+  allowsMarketingMessages,
 };
