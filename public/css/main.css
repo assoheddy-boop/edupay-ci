@@ -886,6 +886,41 @@ code {
 
 .homework-late { border-left-color: var(--warning); opacity: 0.85; }
 
+.homework-test { border-left-color: var(--danger); }
+
+.hw-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+.hw-badge-homework { background: var(--blue); color: #fff; }
+.hw-badge-test { background: var(--danger); color: #fff; }
+
+.hw-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.hw-subject { color: var(--gray-light); font-size: 0.9rem; margin: 0.25rem 0; }
+
+.hw-calendar-card { margin-top: 1.5rem; }
+.hw-calendar { min-height: 380px; }
+.hw-calendar .fc-toolbar-title { font-size: 1.05rem; }
+.hw-calendar .fc-event { cursor: pointer; font-size: 0.82rem; }
+
+@media (max-width: 640px) {
+  .hw-calendar { min-height: 320px; }
+  .page-header .export-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+}
+
 .homework-header {
   display: flex;
   justify-content: space-between;

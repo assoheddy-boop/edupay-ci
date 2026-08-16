@@ -6,6 +6,11 @@ const { parseGender } = require('../../services/ClassService');
 const { storeMulterFile } = require('../../services/StorageService');
 const { logAudit } = require('../utils/audit');
 const { isTempId, resolveEntityId, mapPayloadIds, payloadHasUnresolvedTempId } = require('../utils/offlineQueue');
+const {
+  buildHomeworkCreateData,
+  hasHomeworkContent,
+  parentPublishMessage,
+} = require('./homeworkService');
 
 const MAX_PROOF_SIZE = PROOF_LIMIT || 5 * 1024 * 1024;
 
@@ -242,8 +247,7 @@ async function applyHomework({ user, payload = {}, file = null }) {
   if (!teacher) return forbidden('homework');
 
   const classId = resolveEntityId(payload.classId);
-  const { title, description, dueDate } = payload;
-  if (!classId || isTempId(classId) || !title || !dueDate) {
+  if (!classId || isTempId(classId) || !payload.dueDate || !hasHomeworkContent(payload)) {
     return { ok: false, error: classId && isTempId(classId) ? 'unknown_id' : 'data', entity: 'homework' };
   }
 
@@ -265,16 +269,14 @@ async function applyHomework({ user, payload = {}, file = null }) {
     }
   }
 
-  const homework = await prisma.homework.create({
-    data: {
-      classId,
-      teacherId: teacher.id,
-      title,
-      description,
-      dueDate: new Date(dueDate),
-      attachmentUrl,
-    },
+  const data = buildHomeworkCreateData({
+    classId,
+    teacherId: teacher.id,
+    payload,
+    attachmentUrl,
   });
+
+  const homework = await prisma.homework.create({ data });
 
   const students = await prisma.student.findMany({
     where: { classId },
@@ -286,7 +288,13 @@ async function applyHomework({ user, payload = {}, file = null }) {
       await sendNotification(
         ps.parent.userId,
         'new_homework',
-        `${title} — à rendre le ${new Date(dueDate).toLocaleDateString('fr-FR')} (${student.firstName}).`,
+        parentPublishMessage({
+          kind: data.kind,
+          subject: data.subject,
+          title: data.title,
+          dueDate: data.dueDate,
+          studentName: student.firstName,
+        }),
       );
     }
     await prisma.homeworkSubmission.create({

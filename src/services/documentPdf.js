@@ -73,11 +73,12 @@ function generateHomeworkPdf({ homework, studentClass, school }) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    drawDocumentHeader(doc, school, { title: `Devoir — ${homework.title}` });
+    drawDocumentHeader(doc, school, { title: `${homework.kind === 'TEST' ? 'Contrôle' : 'Devoir'} — ${homework.title}` });
 
     doc.fontSize(11).fillColor('#333');
     doc.text(`Classe : ${studentClass}`);
-    doc.text(`À rendre le : ${new Date(homework.dueDate).toLocaleDateString('fr-FR')}`);
+    if (homework.subject) doc.text(`Matière : ${homework.subject}`);
+    doc.text(`${homework.kind === 'TEST' ? 'Date' : 'À rendre le'} : ${new Date(homework.dueDate).toLocaleDateString('fr-FR')}`);
     doc.moveDown();
     if (homework.description) doc.text(homework.description);
     doc.moveDown();

@@ -1,0 +1,69 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('homeworks', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Devoirs & contrôles' }) %>
+<% } else { %>
+<div class="page-header">
+    <h1>Devoirs & contrôles</h1>
+    <p class="page-sub">Pilotage direction — volumes par matière, exports mur / partage</p>
+    <div class="export-links">
+      <a href="/school/homeworks/export.pdf" class="btn btn-outline btn-sm">Export PDF mural</a>
+      <a href="/school/homeworks/export.xlsx" class="btn btn-outline btn-sm">Export Excel</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-value"><%= stats.total %></span><span class="stat-label">Publications</span></div>
+    <div class="stat-card"><span class="stat-value"><%= stats.homework %></span><span class="stat-label">Devoirs</span></div>
+    <div class="stat-card stat-card-warning"><span class="stat-value"><%= stats.test %></span><span class="stat-label">Contrôles</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Par matière</h2>
+    <% if (stats.bySubject.length === 0) { %>
+      <p class="empty">Aucune publication pour le moment.</p>
+    <% } else { %>
+      <table class="table">
+        <thead><tr><th>Matière</th><th>Devoirs</th><th>Contrôles</th><th>Total</th></tr></thead>
+        <tbody>
+          <% stats.bySubject.forEach(row => { %>
+            <tr>
+              <td><%= row.subject %></td>
+              <td><%= row.homework %></td>
+              <td><%= row.test %></td>
+              <td><%= row.total %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="card hw-calendar-card">
+    <h2>Calendrier de l'école</h2>
+    <div id="homeworkCalendar" class="hw-calendar"></div>
+  </div>
+
+  <div class="card">
+    <h2>Liste</h2>
+    <% if (homeworkList.length === 0) { %>
+      <p class="empty">Aucun devoir ni contrôle.</p>
+    <% } else { %>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Type</th><th>Matière</th><th>Classe</th><th>Titre</th></tr></thead>
+        <tbody>
+          <% homeworkList.forEach(h => { %>
+            <tr>
+              <td><%= new Date(h.dueDate).toLocaleDateString('fr-FR') %></td>
+              <td><span class="hw-badge <%= h.kind === 'TEST' ? 'hw-badge-test' : 'hw-badge-homework' %>"><%= h.kind === 'TEST' ? 'Contrôle' : 'Devoir' %></span></td>
+              <td><%= h.subject || '—' %></td>
+              <td><%= h.class.name %></td>
+              <td><%= h.title %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <%- include('../partials/_homeworkCalendar', { eventsJson: calendarEventsJson, eventsUrl: '' }) %>
+<% } %>

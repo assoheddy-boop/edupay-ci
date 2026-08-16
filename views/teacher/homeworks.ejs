@@ -1,13 +1,14 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('homeworks', { _inLayout: true }); %>
-<%- include('../layouts/teacherLayout', { body: content, title: 'Devoirs' }) %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Devoirs & contrôles' }) %>
 <% } else { %>
 <div class="page-header">
-    <h1>Publier un devoir</h1>
-    <p class="page-sub">Les parents seront notifiés automatiquement</p>
+    <h1>Devoirs & contrôles</h1>
+    <p class="page-sub">Les parents sont notifiés tout de suite (SMS + application). Un rappel optionnel part la veille.</p>
   </div>
 
-  <% if (success) { %><div class="alert alert-success">Devoir publié — parents notifiés.</div><% } %>
+  <% if (success) { %><div class="alert alert-success">Publié — parents notifiés.</div><% } %>
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error">Impossible de publier. Vérifiez la classe et les champs.</div><% } %>
 
   <div class="grid-2">
     <div class="card">
@@ -22,40 +23,68 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="title">Titre</label>
-          <input type="text" id="title" name="title" required placeholder="Ex: Exercices page 42">
+          <label for="subject">Matière</label>
+          <input type="text" id="subject" name="subject" required placeholder="Ex: Mathématiques">
+        </div>
+        <div class="form-group">
+          <label for="kind">Type</label>
+          <select id="kind" name="kind" required>
+            <option value="HOMEWORK">Devoir</option>
+            <option value="TEST">Contrôle</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="title">Titre (optionnel)</label>
+          <input type="text" id="title" name="title" placeholder="Ex: Exercices page 42">
         </div>
         <div class="form-group">
           <label for="description">Description / consignes</label>
           <textarea id="description" name="description" rows="3" placeholder="Détails pour les parents…"></textarea>
         </div>
         <div class="form-group">
-          <label for="dueDate">Date limite</label>
+          <label for="dueDate">Date</label>
           <input type="date" id="dueDate" name="dueDate" required>
+        </div>
+        <div class="form-group">
+          <label class="hw-check">
+            <input type="checkbox" name="remindEvening" value="1" checked>
+            Rappel la veille au soir (18h Abidjan)
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="remindAt">Rappel personnalisé (optionnel)</label>
+          <input type="datetime-local" id="remindAt" name="remindAt">
         </div>
         <div class="form-group">
           <label for="attachment">Fiche PDF (optionnel)</label>
           <input type="file" id="attachment" name="attachment" accept=".pdf,image/*">
         </div>
-        <button type="submit" class="btn btn-primary btn-lg">Publier le devoir</button>
+        <button type="submit" class="btn btn-primary btn-lg">Publier</button>
       </form>
     </div>
 
     <div class="card">
-      <h2>Devoirs publiés</h2>
+      <h2>Dernières publications</h2>
       <% if (homeworkList.length === 0) { %>
-        <p class="empty">Aucun devoir.</p>
+        <p class="empty">Aucun devoir ni contrôle.</p>
       <% } else { %>
         <ul class="list">
           <% homeworkList.forEach(h => { %>
             <li class="list-item">
-              <strong><%= h.title %></strong>
-              <span><%= h.class.name %> — <%= new Date(h.dueDate).toLocaleDateString('fr-FR') %></span>
-              <small><%= h._count.submissions %> élève(s)</small>
+              <strong><span class="hw-badge <%= h.kind === 'TEST' ? 'hw-badge-test' : 'hw-badge-homework' %>"><%= h.kind === 'TEST' ? 'Contrôle' : 'Devoir' %></span> <%= h.title %></strong>
+              <span><%= h.subject || '' %> · <%= h.class.name %> — <%= new Date(h.dueDate).toLocaleDateString('fr-FR') %></span>
+              <small><%= h._count.submissions %> élève(s)<% if (h.remindAt && !h.remindedAt) { %> · rappel prévu<% } %></small>
             </li>
           <% }) %>
         </ul>
       <% } %>
     </div>
   </div>
+
+  <div class="card hw-calendar-card">
+    <h2>Calendrier</h2>
+    <div id="homeworkCalendar" class="hw-calendar"></div>
+  </div>
+
+  <%- include('../partials/_homeworkCalendar', { eventsJson: calendarEventsJson, eventsUrl: '/teacher/homeworks/events' }) %>
 <% } %>

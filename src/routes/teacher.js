@@ -19,6 +19,7 @@ router.post('/grades', requireModule('grades'), teacherController.createGrade);
 router.get('/absences', requireModule('absences'), teacherController.absences);
 router.post('/absences', requireModule('absences'), teacherController.createAbsence);
 router.get('/homeworks', requireModule('homeworks'), teacherController.homeworks);
+router.get('/homeworks/events', requireModule('homeworks'), teacherController.homeworkEvents);
 router.post('/homeworks', requireModule('homeworks'), upload.single('attachment'), persistUpload('homeworks'), teacherController.createHomework);
 router.get('/schedule', teacherController.schedulePage);
 router.post('/schedule', teacherController.createSchedule);

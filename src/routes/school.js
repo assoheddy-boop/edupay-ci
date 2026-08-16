@@ -59,6 +59,11 @@ router.post('/school-year/promote', schoolController.promoteClass);
 
 router.get('/timetable', (_req, res) => res.redirect('/timetable'));
 
+router.get('/homeworks', requireModule('homeworks'), schoolController.homeworksPage);
+router.get('/homeworks/export.xlsx', requireModule('homeworks'), schoolController.exportHomeworksExcel);
+router.get('/homeworks/export.pdf', requireModule('homeworks'), schoolController.exportHomeworksPdf);
+router.get('/assessments', requireModule('homeworks'), schoolController.homeworksPage);
+
 router.get('/fees', statsController.feesPage);
 router.post('/fees', feeRules, handleValidationErrors, statsController.createFee);
 router.post('/fees/:id/update', feeRules, handleValidationErrors, statsController.updateFee);

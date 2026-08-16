@@ -23,7 +23,7 @@ const ROUTES_BY_ROLE = {
     '/school/classes', '/school/students', '/school/students/import/template', '/school/payments', '/school/fees',
     '/school/stats', '/school/bulletins', '/school/messages', '/school/canteen',
     '/school/pickup', '/school/settings', '/school/modules', '/school/accounting',
-    '/school/teachers', '/school/school-year',
+    '/school/teachers', '/school/school-year', '/school/homeworks',
   ],
   Parent: [
     '/parent/payments', '/parent/grades', '/parent/homeworks', '/parent/suivi',

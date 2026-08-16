@@ -247,10 +247,11 @@ async function main() {
   if (hwCount < 3) {
     const cm2a = classes['CM2 A'];
     const homeworks = [
-      { title: 'Exercices fractions p.42-43', description: 'À rendre pour vendredi', days: 3 },
-      { title: 'Rédaction : Mon héros', description: 'Minimum 15 lignes', days: 5 },
-      { title: 'Leçon vocabulaire unité 4', description: 'Apprendre par cœur', days: 2 },
-      { title: 'Exercices sciences : le cycle de l\'eau', description: null, days: 7 },
+      { title: 'Exercices fractions p.42-43', description: 'À rendre pour vendredi', days: 3, kind: 'HOMEWORK', subject: 'Mathématiques' },
+      { title: 'Contrôle de vocabulaire unité 4', description: 'Révisions unités 1 à 4', days: 5, kind: 'TEST', subject: 'Français' },
+      { title: 'Rédaction : Mon héros', description: 'Minimum 15 lignes', days: 5, kind: 'HOMEWORK', subject: 'Français' },
+      { title: 'Leçon vocabulaire unité 4', description: 'Apprendre par cœur', days: 2, kind: 'HOMEWORK', subject: 'Français' },
+      { title: 'Exercices sciences : le cycle de l\'eau', description: null, days: 7, kind: 'HOMEWORK', subject: 'Sciences' },
     ];
     for (const hw of homeworks) {
       const homework = await prisma.homework.create({
@@ -260,6 +261,8 @@ async function main() {
           dueDate: daysAgo(-hw.days),
           classId: cm2a.id,
           teacherId: mainTeacher.teacher.id,
+          kind: hw.kind || 'HOMEWORK',
+          subject: hw.subject || null,
         },
       });
       const classStudents = students.filter((s) => s.classId === cm2a.id);

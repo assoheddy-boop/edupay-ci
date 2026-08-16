@@ -7,6 +7,7 @@ const {
   attendanceTypeFromStatus,
   statusesFromBody,
 } = require('../services/offlineActions');
+const { calendarEventsJson } = require('../services/homeworkService');
 
 async function dashboard(req, res) {
   const teacher = req.user.teacher;
@@ -123,8 +124,21 @@ async function homeworks(req, res) {
     teacher,
     classLinks,
     homeworkList,
+    calendarEventsJson: calendarEventsJson(homeworkList),
     success: req.query.success || null,
+    error: req.query.error || null,
   });
+}
+
+async function homeworkEvents(req, res) {
+  const teacher = req.user.teacher;
+  if (!teacher) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const homeworkList = await prisma.homework.findMany({
+    where: { teacherId: teacher.id },
+    include: { class: true },
+    orderBy: { dueDate: 'asc' },
+  });
+  res.json({ ok: true, events: JSON.parse(calendarEventsJson(homeworkList)) });
 }
 
 async function createHomework(req, res) {
@@ -264,6 +278,7 @@ module.exports = {
   absences,
   createAbsence,
   homeworks,
+  homeworkEvents,
   createHomework,
   schedulePage,
   createSchedule,

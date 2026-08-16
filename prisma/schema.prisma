@@ -25,6 +25,11 @@ enum AbsenceType {
   LATE
 }
 
+enum HomeworkKind {
+  HOMEWORK
+  TEST
+}
+
 enum NotificationType {
   ABSENCE
   LATE
@@ -474,12 +479,16 @@ model Message {
 }
 
 model Homework {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   title         String
   description   String?
   dueDate       DateTime
   attachmentUrl String?
-  createdAt     DateTime @default(now())
+  kind          HomeworkKind @default(HOMEWORK)
+  subject       String?
+  remindAt      DateTime?
+  remindedAt    DateTime?
+  createdAt     DateTime     @default(now())
 
   classId   String
   class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
@@ -487,6 +496,9 @@ model Homework {
   teacher   Teacher @relation(fields: [teacherId], references: [id])
 
   submissions HomeworkSubmission[]
+
+  @@index([remindAt, remindedAt])
+  @@index([dueDate])
 }
 
 model HomeworkSubmission {

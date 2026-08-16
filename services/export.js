@@ -1310,6 +1310,136 @@ async function generateTimetableExcel(classId) {
   };
 }
 
+const HOMEWORK_COLUMNS = [
+  { header: 'Date', key: 'date', width: 14 },
+  { header: 'Type', key: 'kind', width: 12 },
+  { header: 'Matière', key: 'subject', width: 20 },
+  { header: 'Titre', key: 'title', width: 28 },
+  { header: 'Classe', key: 'className', width: 16 },
+  { header: 'Enseignant', key: 'teacher', width: 24 },
+  { header: 'Consignes', key: 'description', width: 40 },
+];
+
+function homeworkExportRows(list) {
+  const { homeworkExportRows: rowsFromList } = require('../src/services/homeworkService');
+  return rowsFromList(list);
+}
+
+async function loadSchoolHomeworks(schoolId) {
+  if (!schoolId) return { ok: false, error: 'school' };
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { ok: false, error: 'school' };
+  const list = await prisma.homework.findMany({
+    where: { class: { schoolId } },
+    include: {
+      class: true,
+      teacher: { include: { user: true } },
+    },
+    orderBy: { dueDate: 'asc' },
+  });
+  return { ok: true, school, list };
+}
+
+/**
+ * Calendrier devoirs / contrôles — PDF affichage mural.
+ */
+async function generateHomeworkCalendarPDF(schoolId) {
+  const loaded = await loadSchoolHomeworks(schoolId);
+  if (!loaded.ok) return loaded;
+  const { school, list } = loaded;
+  const { summarizeHomeworkStats } = require('../src/services/homeworkService');
+  const stats = summarizeHomeworkStats(list);
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `devoirs-controles-${schoolId.slice(0, 8)}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, school, { title: 'Devoirs & contrôles' });
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`${stats.total} publication(s) — ${stats.homework} devoir(s), ${stats.test} contrôle(s)`);
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Date', 50, tableTop);
+    doc.text('Type', 120, tableTop);
+    doc.text('Matière', 190, tableTop);
+    doc.text('Classe', 310, tableTop);
+    doc.text('Titre', 390, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
+
+    let y = tableTop + 25;
+    const rows = homeworkExportRows(list);
+    if (!rows.length) {
+      doc.fontSize(11).fillColor('#666').text('Aucun devoir ni contrôle.', 50, y);
+    } else {
+      rows.forEach((row) => {
+        if (y > 720) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.fontSize(11).fillColor('#333');
+        doc.text(row.date, 50, y, { width: 65 });
+        doc.text(row.kind, 120, y, { width: 65 });
+        doc.text(row.subject, 190, y, { width: 115 });
+        doc.text(row.className, 310, y, { width: 75 });
+        doc.text(row.title, 390, y, { width: 160 });
+        y += 22;
+      });
+    }
+    doc.y = y + 12;
+    drawFooter(doc, school);
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
+/**
+ * Calendrier devoirs / contrôles — Excel (partage direction).
+ */
+async function generateHomeworkCalendarExcel(schoolId) {
+  const loaded = await loadSchoolHomeworks(schoolId);
+  if (!loaded.ok) return loaded;
+  const { list } = loaded;
+  const { summarizeHomeworkStats } = require('../src/services/homeworkService');
+  const stats = summarizeHomeworkStats(list);
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EduConnect';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('Devoirs et contrôles');
+  ws.columns = HOMEWORK_COLUMNS;
+  homeworkExportRows(list).forEach((row) => ws.addRow(row));
+  ws.getRow(1).font = { bold: true };
+
+  const statsSheet = workbook.addWorksheet('Statistiques');
+  statsSheet.columns = [
+    { header: 'Matière', key: 'subject', width: 24 },
+    { header: 'Devoirs', key: 'homework', width: 12 },
+    { header: 'Contrôles', key: 'test', width: 12 },
+    { header: 'Total', key: 'total', width: 10 },
+  ];
+  stats.bySubject.forEach((row) => statsSheet.addRow(row));
+  statsSheet.addRow({ subject: 'TOTAL', homework: stats.homework, test: stats.test, total: stats.total });
+  statsSheet.getRow(1).font = { bold: true };
+
+  ensureDir(EXPORTS_DIR);
+  const filename = `devoirs-controles-${schoolId.slice(0, 8)}-${Date.now()}.xlsx`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+  await workbook.xlsx.writeFile(filepath);
+
+  return {
+    ok: true,
+    filepath,
+    filename,
+    url: `/uploads/exports/${filename}`,
+    workbook,
+    stats,
+  };
+}
+
 module.exports = {
   generateBulletinPDF,
   generatePayrollPDF,
@@ -1329,4 +1459,7 @@ module.exports = {
   parseMonth,
   generateTimetablePDF,
   generateTimetableExcel,
+  generateHomeworkCalendarPDF,
+  generateHomeworkCalendarExcel,
+  homeworkExportRows,
 };

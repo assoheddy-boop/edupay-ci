@@ -2,7 +2,9 @@ const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { getPendingPayments } = require('../../services/PaymentService');
-const { generateBulletinPDF } = require('../../services/export');
+const { generateBulletinPDF, generateHomeworkCalendarPDF, generateHomeworkCalendarExcel } = require('../../services/export');
+const { sendExcel } = require('../services/exportExcel');
+const { summarizeHomeworkStats, calendarEventsJson } = require('../services/homeworkService');
 const { parseGender } = require('../../services/ClassService');
 const { applyClass, applyStudent, applyTeacher } = require('../services/offlineActions');
 const {
@@ -629,6 +631,45 @@ async function promoteClass(req, res) {
   }
 }
 
+async function homeworksPage(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+
+  const homeworkList = await prisma.homework.findMany({
+    where: { class: { schoolId: school.id } },
+    include: {
+      class: true,
+      teacher: { include: { user: true } },
+      _count: { select: { submissions: true } },
+    },
+    orderBy: { dueDate: 'desc' },
+  });
+
+  res.render('school/homeworks', {
+    user: req.user,
+    school,
+    homeworkList,
+    stats: summarizeHomeworkStats(homeworkList),
+    calendarEventsJson: calendarEventsJson(homeworkList),
+  });
+}
+
+async function exportHomeworksExcel(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+  const result = await generateHomeworkCalendarExcel(school.id);
+  if (!result.ok) return res.redirect('/school/homeworks');
+  await sendExcel(res, result.filename, result.workbook);
+}
+
+async function exportHomeworksPdf(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+  const result = await generateHomeworkCalendarPDF(school.id);
+  if (!result.ok) return res.redirect('/school/homeworks');
+  res.download(result.filepath, result.filename);
+}
+
 module.exports = {
   dashboard,
   settings,
@@ -657,4 +698,7 @@ module.exports = {
   updateSchoolYear,
   promoteClass,
   LEVEL_ORDER,
+  homeworksPage,
+  exportHomeworksExcel,
+  exportHomeworksPdf,
 };

@@ -2,12 +2,13 @@ jest.mock('../src/jobs/cron', () => ({
   paymentReminders: jest.fn().mockResolvedValue(undefined),
   weeklyParentSummary: jest.fn().mockResolvedValue(undefined),
   dailyBackup: jest.fn().mockResolvedValue({ ok: true, driver: 'neon' }),
+  homeworkReminders: jest.fn().mockResolvedValue({ ok: true, sent: 0 }),
   startCronJobs: jest.fn(),
 }));
 
 const request = require('supertest');
 const app = require('../src/app');
-const { paymentReminders, dailyBackup } = require('../src/jobs/cron');
+const { paymentReminders, dailyBackup, homeworkReminders } = require('../src/jobs/cron');
 
 describe('internal cron routes', () => {
   const prevEnv = process.env.NODE_ENV;
@@ -57,7 +58,7 @@ describe('internal cron routes', () => {
     expect(res.body.result).toEqual({ ok: true, driver: 'neon' });
   });
 
-  test('daily job runs payments and backup', async () => {
+  test('daily job runs payments, homework reminders and backup', async () => {
     process.env.CRON_SECRET = 'cron-secret';
     const res = await request(app)
       .get('/api/internal/cron/daily')
@@ -65,6 +66,17 @@ describe('internal cron routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.job).toBe('daily');
     expect(paymentReminders).toHaveBeenCalled();
+    expect(homeworkReminders).toHaveBeenCalled();
     expect(dailyBackup).toHaveBeenCalled();
+  });
+
+  test('dedicated homework-reminders route runs the job', async () => {
+    process.env.CRON_SECRET = 'cron-secret';
+    const res = await request(app)
+      .get('/api/internal/cron/homework-reminders')
+      .set('Authorization', 'Bearer cron-secret');
+    expect(res.status).toBe(200);
+    expect(res.body.job).toBe('homework-reminders');
+    expect(homeworkReminders).toHaveBeenCalled();
   });
 });

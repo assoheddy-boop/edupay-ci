@@ -4,7 +4,7 @@ const MODULES = {
   absences: { label: 'Absences', description: 'Suivi absences et retards', default: true },
   bulletins: { label: 'Bulletins PDF', description: 'Génération automatique des bulletins', default: true },
   chat: { label: 'Messages', description: 'Chat école, parents, enseignants', default: true },
-  homeworks: { label: 'Devoirs', description: 'Publication devoirs pour les parents', default: true },
+  homeworks: { label: 'Devoirs & contrôles', description: 'Publication devoirs et contrôles, calendrier, rappels parents', default: true },
   transport: { label: 'Transport', description: 'Suivi bus et trajets', default: true },
   canteen: { label: 'Cantine', description: 'Menus et présences repas', default: true },
   behavior: { label: 'Badges & comportement', description: 'Récompenses et discipline', default: true },

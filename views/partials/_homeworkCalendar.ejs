@@ -1,0 +1,54 @@
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/fr.global.min.js"></script>
+<script>
+(function () {
+  const calendarEl = document.getElementById('homeworkCalendar');
+  if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+  let events = [];
+  try {
+    events = <%- typeof eventsJson !== 'undefined' && eventsJson ? eventsJson : '[]' %>;
+    if (!Array.isArray(events)) events = [];
+  } catch (err) {
+    events = [];
+  }
+
+  const eventsUrl = '<%= typeof eventsUrl !== "undefined" ? eventsUrl : "" %>';
+  const narrow = window.innerWidth < 700;
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    locale: 'fr',
+    firstDay: 1,
+    initialView: narrow ? 'listWeek' : 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: narrow ? 'listWeek,dayGridMonth' : 'dayGridWeek,dayGridMonth,listWeek',
+    },
+    height: 'auto',
+    events: eventsUrl
+      ? function (fetchInfo, successCallback, failureCallback) {
+          fetch(eventsUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (!data.ok) {
+                successCallback(events);
+                return;
+              }
+              successCallback(data.events || events);
+            })
+            .catch(function () { successCallback(events); });
+        }
+      : events,
+    eventClick: function (info) {
+      const p = info.event.extendedProps || {};
+      const lines = [info.event.title];
+      if (p.className) lines.push('Classe : ' + p.className);
+      if (p.description) lines.push(p.description);
+      alert(lines.join('\n'));
+    },
+  });
+  calendar.render();
+}());
+</script>

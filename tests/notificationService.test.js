@@ -6,6 +6,9 @@ describe('NotificationService', () => {
     expect(NOTIFICATION_TYPES).toHaveProperty('absence_reported');
     expect(NOTIFICATION_TYPES).toHaveProperty('late_reported');
     expect(NOTIFICATION_TYPES).toHaveProperty('new_homework');
+    expect(NOTIFICATION_TYPES).toHaveProperty('homework_reminder');
+    expect(NOTIFICATION_TYPES.homework_reminder.sms).toBe(true);
+    expect(NOTIFICATION_TYPES.new_homework.sms).toBe(true);
   });
 
   test('rejects unknown type', async () => {

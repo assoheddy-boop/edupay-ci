@@ -4,6 +4,9 @@ const {
   generateStatsExcel,
   generateGenderStatsExcel,
   generateGenderStatsPDF,
+  generateTimetablePDF,
+  generateHomeworkCalendarPDF,
+  generateHomeworkCalendarExcel,
   parseMonth,
 } = require('../services/export');
 
@@ -36,5 +39,13 @@ describe('export service guards', () => {
 
   test('generateGenderStatsPDF rejects missing schoolId', async () => {
     await expect(generateGenderStatsPDF()).resolves.toEqual({ ok: false, error: 'school' });
+  });
+
+  test('generateHomeworkCalendarPDF rejects missing schoolId', async () => {
+    await expect(generateHomeworkCalendarPDF()).resolves.toEqual({ ok: false, error: 'school' });
+  });
+
+  test('generateHomeworkCalendarExcel rejects missing schoolId', async () => {
+    await expect(generateHomeworkCalendarExcel()).resolves.toEqual({ ok: false, error: 'school' });
   });
 });

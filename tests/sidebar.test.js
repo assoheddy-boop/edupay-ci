@@ -18,4 +18,8 @@ describe('sidebar missing links (Vague 3)', () => {
   test('teacher nav includes behavior when the module is on', () => {
     expect(sidebar).toMatch(/on\('behavior'\)[\s\S]*\/teacher\/behavior/);
   });
+
+  test('school nav includes homeworks when the module is on', () => {
+    expect(sidebar).toMatch(/on\('homeworks'\)[\s\S]*\/school\/homeworks/);
+  });
 });

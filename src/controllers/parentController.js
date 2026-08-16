@@ -2,6 +2,7 @@ const prisma = require('../config/database');
 const { findSchoolByCode } = require('../utils/schoolCode');
 const { logAudit } = require('../utils/audit');
 const { applyPayment } = require('../services/offlineActions');
+const { calendarEventsJson, kindLabel } = require('../services/homeworkService');
 
 async function dashboard(req, res) {
   const parent = req.user.parentProfile;
@@ -228,7 +229,34 @@ async function homeworks(req, res) {
       })
     : [];
 
-  res.render('parent/homeworks', { user: req.user, children });
+  const flat = (children || []).flatMap((link) =>
+    (link.student.homeworks || []).map((sub) => sub.homework),
+  );
+
+  res.render('parent/homeworks', {
+    user: req.user,
+    children,
+    calendarEventsJson: calendarEventsJson(flat),
+  });
+}
+
+async function homeworkEvents(req, res) {
+  const parent = req.user.parentProfile;
+  if (!parent) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const children = await prisma.parentStudent.findMany({
+    where: { parentId: parent.id },
+    include: {
+      student: {
+        include: {
+          homeworks: {
+            include: { homework: { include: { class: true } } },
+          },
+        },
+      },
+    },
+  });
+  const flat = children.flatMap((link) => (link.student.homeworks || []).map((sub) => sub.homework));
+  res.json({ ok: true, events: JSON.parse(calendarEventsJson(flat)) });
 }
 
 async function timeline(req, res) {
@@ -270,7 +298,7 @@ async function timeline(req, res) {
     ...health.map((h) => ({ type: 'health', date: h.createdAt, studentId: h.studentId, text: `${h.type}: ${h.description}` })),
     ...badges.map((b) => ({ type: 'badge', date: b.awardedAt, studentId: b.studentId, text: `Badge: ${b.label}` })),
     ...behavior.map((b) => ({ type: 'behavior', date: b.createdAt, studentId: b.studentId, text: b.message })),
-    ...homeworks.map((h) => ({ type: 'homework', date: h.homework.createdAt, studentId: h.studentId, text: `Devoir: ${h.homework.title}` })),
+    ...homeworks.map((h) => ({ type: 'homework', date: h.homework.createdAt, studentId: h.studentId, text: `${kindLabel(h.homework.kind)}: ${h.homework.title}` })),
     ...notifications.map((n) => ({ type: 'notif', date: n.createdAt, studentId: null, text: `${n.title} — ${n.body}` })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -332,6 +360,7 @@ module.exports = {
   markNotificationRead,
   markAllNotificationsRead,
   homeworks,
+  homeworkEvents,
   timeline,
   privacyPage,
   updateConsent,

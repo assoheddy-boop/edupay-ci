@@ -45,6 +45,8 @@ router.post('/payments', requireModule('payments'), upload.single('proof'), pare
 router.get('/grades', requireModule('grades'), parentController.grades);
 
 router.get('/homeworks', requireModule('homeworks'), parentController.homeworks);
+router.get('/homeworks/events', requireModule('homeworks'), parentController.homeworkEvents);
+router.get('/calendar', requireModule('homeworks'), parentController.homeworks);
 
 router.get('/timeline', parentController.timeline);
 

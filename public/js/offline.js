@@ -9,7 +9,7 @@
   const TYPE_LABELS = {
     attendance: 'Appel',
     grade: 'Notes',
-    homework: 'Devoir',
+    homework: 'Devoir / contrôle',
     class: 'Classe',
     student: 'Élève',
     teacher: 'Enseignant',
@@ -219,6 +219,10 @@
         title: raw.title,
         description: raw.description,
         dueDate: raw.dueDate,
+        kind: raw.kind,
+        subject: raw.subject,
+        remindAt: raw.remindAt,
+        remindEvening: raw.remindEvening,
       };
     }
 

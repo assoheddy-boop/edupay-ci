@@ -1,12 +1,14 @@
 const prisma = require('../src/config/database');
 const { getIo } = require('../src/config/socket');
 const { sendSms, sendWhatsApp } = require('../src/services/sms');
+const { sendWebPush } = require('../src/services/webPush');
 
 const NOTIFICATION_TYPES = {
   payment_validated: { prisma: 'PAYMENT', title: 'Paiement validé', sms: true },
   absence_reported: { prisma: 'ABSENCE', title: 'Absence signalée', sms: true },
   late_reported: { prisma: 'LATE', title: 'Retard signalé', sms: true },
-  new_homework: { prisma: 'HOMEWORK', title: 'Nouveau devoir', sms: false },
+  new_homework: { prisma: 'HOMEWORK', title: 'Nouveau devoir', sms: true },
+  homework_reminder: { prisma: 'HOMEWORK', title: 'Rappel devoir', sms: true },
   new_message: { prisma: 'GENERAL', title: 'Nouveau message', sms: false },
   payment_overdue: { prisma: 'PAYMENT', title: 'Paiement en retard', sms: true },
   transfer_requested: { prisma: 'TRANSFER', title: 'Demande de transfert', sms: false },
@@ -59,6 +61,8 @@ async function sendNotification(userId, type, message) {
       await sendWhatsApp(user.phone, text);
     }
   }
+
+  await sendWebPush(userId, { title: meta.title, body: message, type });
 
   return { ok: true, notification };
 }
