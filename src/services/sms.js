@@ -1,11 +1,12 @@
-async function sendSms(phone, message) {
+async function sendSms(phone, message, options = {}) {
   if (!phone) return { ok: false, reason: 'no_phone' };
 
   const provider = process.env.SMS_PROVIDER || 'console';
+  const sender = String(options.sender || process.env.ORANGE_SMS_SENDER || 'EduConnect').trim() || 'EduConnect';
 
   if (provider === 'console' || process.env.NODE_ENV === 'development') {
-    console.log(`[SMS → ${phone}] ${message}`);
-    return { ok: true, provider: 'console' };
+    console.log(`[SMS ${sender} → ${phone}] ${message}`);
+    return { ok: true, provider: 'console', sender };
   }
 
   if (provider === 'orange') {
@@ -25,16 +26,23 @@ async function sendSms(phone, message) {
         body: JSON.stringify({
           outboundSMSMessageRequest: {
             address: `tel:+225${phone.replace(/\D/g, '').slice(-10)}`,
-            senderAddress: process.env.ORANGE_SMS_SENDER || 'EduConnect',
+            senderAddress: sender,
             outboundSMSTextMessage: { message },
           },
         }),
       });
-      return { ok: res.ok, provider: 'orange' };
+      return { ok: res.ok, provider: 'orange', sender };
     } catch (err) {
       console.error('[SMS Orange]', err.message);
       return { ok: false, reason: err.message };
     }
+  }
+
+  // Optional aggregators: same `sender` maps to Twilio `from` / Africa's Talking `from`.
+  // Not wired to live accounts — keep ORANGE_* (or SMS_PROVIDER=console) for the HTTP send.
+  if (provider === 'twilio' || provider === 'africastalking') {
+    console.warn(`[SMS] ${provider} non branché — utilisez SMS_PROVIDER=orange ou console`);
+    return { ok: false, reason: 'not_configured', sender };
   }
 
   return { ok: false, reason: 'unknown_provider' };

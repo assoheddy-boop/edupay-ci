@@ -56,6 +56,7 @@
       <a href="/reinscription/dashboard">Réinscriptions</a>
       <a href="/timetable">Emploi du temps</a>
       <a href="/school/settings">Paramètres</a>
+      <% if (on('sms_official')) { %><a href="/school/sms">SMS officiels</a><% } %>
     <% } else if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
       <a href="/admin/dashboard">Tableau de bord</a>
       <a href="/admin/plans">Plans</a>

@@ -692,6 +692,9 @@ a.admin-hub-card {
 .badge-pending { background: #fff3e0; color: var(--warning); }
 .badge-validated { background: #e8f5e9; color: var(--green-dark); }
 .badge-rejected { background: #fdecea; color: var(--danger); }
+.badge-sent { background: #e8f5e9; color: var(--green-dark); }
+.badge-error { background: #fdecea; color: var(--danger); }
+.badge-skipped { background: #eceff1; color: var(--gray); }
 
 /* Payment */
 .payment-card {

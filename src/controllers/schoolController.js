@@ -2,6 +2,14 @@ const prisma = require('../config/database');
 const { sendNotification } = require('../../services/NotificationService');
 const { formatMoney } = require('../middleware/currency');
 const { logAudit } = require('../utils/audit');
+const {
+  SMS_OFFICIAL_MODULE,
+  sanitizeSmsSenderId,
+  smsPreviewExample,
+  canAccessSchoolJobs,
+} = require('../utils/officialSms');
+const { getModuleMap, isEnabled } = require('../utils/modules');
+const { bypassPlanAndModules } = require('../utils/adminAssist');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { getPendingPayments } = require('../../services/PaymentService');
 const { generateBulletinPDF, generateHomeworkCalendarPDF, generateHomeworkCalendarExcel } = require('../../services/export');
@@ -60,13 +68,24 @@ async function dashboard(req, res) {
 
 async function settings(req, res) {
   const success = req.query.success === 'photo' ? 'Photo de profil mise à jour' : null;
-  res.render('school/settings', { user: req.user, school: req.user.school, success, error: null });
+  const mods = await getModuleMap(req.user.school.id);
+  res.render('school/settings', {
+    user: req.user,
+    school: req.user.school,
+    success,
+    error: null,
+    smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+    smsPreview: smsPreviewExample(req.user.school.name),
+  });
 }
 
 async function updateSettings(req, res) {
-  const { waveNumber, omNumber, name, address, city, removeLogo } = req.body;
+  const { waveNumber, omNumber, name, address, city, removeLogo, smsSenderId } = req.body;
   try {
     const data = { waveNumber, omNumber, name, address, city };
+    if (smsSenderId !== undefined) {
+      data.smsSenderId = sanitizeSmsSenderId(smsSenderId);
+    }
 
     if (removeLogo === 'on') {
       const { removeSchoolLogoFiles } = require('../utils/schoolLogo');
@@ -88,12 +107,110 @@ async function updateSettings(req, res) {
     });
     req.user.school = school;
     await logAudit({ action: 'school_settings_update', entity: 'School', entityId: school.id, user: req.user, ip: req.ip });
-    res.render('school/settings', { user: req.user, school, success: 'Paramètres mis à jour', error: null });
+    const mods = await getModuleMap(school.id);
+    res.render('school/settings', {
+      user: req.user,
+      school,
+      success: 'Paramètres mis à jour',
+      error: null,
+      smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+      smsPreview: smsPreviewExample(school.name),
+    });
   } catch (err) {
     console.error(err);
     const message = err.message?.includes('Format') ? err.message : 'Erreur de mise à jour';
-    res.render('school/settings', { user: req.user, school: req.user.school, success: null, error: message });
+    const mods = await getModuleMap(req.user.school.id);
+    res.render('school/settings', {
+      user: req.user,
+      school: req.user.school,
+      success: null,
+      error: message,
+      smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+      smsPreview: smsPreviewExample(req.user.school.name),
+    });
   }
+}
+
+function parseSmsDate(value, endOfDay) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) date.setHours(23, 59, 59, 999);
+  else date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+async function smsDashboard(req, res) {
+  const school = req.user.school;
+  if (!school?.id) return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+
+  const requestedSchoolId = req.query.schoolId || school.id;
+  if (!canAccessSchoolJobs(req.user, requestedSchoolId)) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const mods = await getModuleMap(school.id);
+  if (!isEnabled(mods, SMS_OFFICIAL_MODULE) && !bypassPlanAndModules(req.user)) {
+    return res.status(403).render('school/module-disabled', {
+      user: req.user,
+      moduleKey: SMS_OFFICIAL_MODULE,
+      moduleLabel: 'SMS officiel',
+      school,
+    });
+  }
+
+  const channel = req.query.channel || 'SMS';
+  const status = req.query.status || '';
+  const from = parseSmsDate(req.query.from, false);
+  const to = parseSmsDate(req.query.to, true);
+
+  const where = { schoolId: school.id };
+  if (channel && channel !== 'all') where.channel = channel;
+  if (status) where.status = status;
+  if (from || to) {
+    where.createdAt = {};
+    if (from) where.createdAt.gte = from;
+    if (to) where.createdAt.lte = to;
+  }
+
+  const jobs = await prisma.notificationJob.findMany({
+    where,
+    include: { user: { select: { firstName: true, lastName: true, phone: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 150,
+  });
+
+  const wantsJson = req.query.format === 'json' || req.headers.accept?.includes('application/json');
+  if (wantsJson) {
+    return res.json({
+      ok: true,
+      schoolId: school.id,
+      count: jobs.length,
+      jobs: jobs.map((job) => ({
+        id: job.id,
+        channel: job.channel,
+        eventType: job.eventType,
+        status: job.status,
+        senderId: job.senderId,
+        error: job.error,
+        createdAt: job.createdAt,
+        sentAt: job.sentAt,
+      })),
+    });
+  }
+
+  res.render('school/sms', {
+    user: req.user,
+    school,
+    jobs,
+    filters: {
+      channel,
+      status,
+      from: req.query.from || '',
+      to: req.query.to || '',
+    },
+    smsPreview: smsPreviewExample(school.name),
+  });
 }
 
 async function listClasses(req, res) {
@@ -383,7 +500,7 @@ async function validatePayment(req, res) {
     ? `${amountLabel} confirmés pour ${payment.student.firstName}. Reçu disponible.`
     : `Paiement de ${amountLabel} refusé pour ${payment.student.firstName}. Vérifiez la preuve ou contactez l'école.`;
   for (const ps of parents) {
-    await sendNotification(ps.parent.userId, kind, message);
+    await sendNotification(ps.parent.userId, kind, message, { schoolId: req.user.school.id });
   }
 
   res.redirect('/school/payments');
@@ -691,4 +808,5 @@ module.exports = {
   homeworksPage,
   exportHomeworksExcel,
   exportHomeworksPdf,
+  smsDashboard,
 };

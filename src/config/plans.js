@@ -14,7 +14,7 @@ const PLANS = {
     cta: 'Créer mon école',
     ctaHref: '/auth/register?role=SCHOOL_ADMIN&plan=essentiel',
     limits: 'Jusqu\'à 150 élèves · 1 campus',
-    modules: ['payments', 'grades', 'absences', 'homeworks', 'chat', 'bulletins'],
+    modules: ['payments', 'grades', 'absences', 'homeworks', 'chat', 'bulletins', 'sms_official'],
   },
   premium: {
     id: 'premium',
@@ -31,7 +31,7 @@ const PLANS = {
     modules: [
       'payments', 'grades', 'absences', 'homeworks', 'chat', 'bulletins',
       'transport', 'canteen', 'behavior', 'health', 'pickup', 'activities',
-      'lost_items', 'stats', 'redoublementAnalysis',
+      'lost_items', 'stats', 'redoublementAnalysis', 'sms_official',
     ],
   },
   pro: {

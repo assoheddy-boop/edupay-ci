@@ -17,6 +17,11 @@ const MODULES = {
   accounting: { label: 'Comptabilité avancée', description: 'Trésorerie, dépenses, rapports financiers', default: true },
   multi_campus: { label: 'Multi-campus', description: 'Vue groupe et campus multiples', default: true },
   hr: { label: 'Ressources humaines', description: 'Dossiers personnel, paie, congés, présence et évaluations', default: true },
+  sms_official: {
+    label: 'SMS officiel',
+    description: 'SMS aux parents avec l’identité de l’école (identifiant expéditeur ou numéro SMS dédié — pas Wave / Orange Money)',
+    default: false,
+  },
 };
 
 const MODULE_KEYS = Object.keys(MODULES);

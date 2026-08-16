@@ -123,8 +123,9 @@ describe('homework reminder job idempotency', () => {
     remindAt: new Date('2026-08-16T18:00:00Z'),
     remindedAt: null,
     class: {
+      schoolId: 'sch-1',
       students: [
-        { firstName: 'Awa', parents: [{ parent: { userId: 'parent-1' } }] },
+        { firstName: 'Awa', schoolId: 'sch-1', parents: [{ parent: { userId: 'parent-1' } }] },
       ],
     },
   };
@@ -141,6 +142,7 @@ describe('homework reminder job idempotency', () => {
       'parent-1',
       'homework_reminder',
       expect.stringContaining('Rappel'),
+      { schoolId: 'sch-1' },
     );
     expect(prisma.homework.updateMany).toHaveBeenCalledWith({
       where: { id: 'hw-1', remindedAt: null },

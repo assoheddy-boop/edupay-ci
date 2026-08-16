@@ -19,7 +19,7 @@ describe('sidebar missing links (Vague 3)', () => {
     expect(sidebar).toMatch(/on\('behavior'\)[\s\S]*\/teacher\/behavior/);
   });
 
-  test('school nav includes homeworks when the module is on', () => {
-    expect(sidebar).toMatch(/on\('homeworks'\)[\s\S]*\/school\/homeworks/);
+  test('school nav includes official SMS when the module is on', () => {
+    expect(sidebar).toMatch(/on\('sms_official'\)[\s\S]*\/school\/sms/);
   });
 });

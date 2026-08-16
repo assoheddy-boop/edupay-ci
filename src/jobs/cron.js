@@ -36,10 +36,10 @@ async function overduePaymentsForSchool(schoolId) {
       if (student.payments.length > 0) continue;
       const message = `Paiement en retard : ${fee.name} (${fee.amount.toLocaleString('fr-FR')} FCFA) pour ${student.firstName}. Échéance dépassée (jour ${fee.dueDay}).`;
       for (const ps of student.parents) {
-        await sendNotification(ps.parent.userId, 'payment_overdue', message);
+        await sendNotification(ps.parent.userId, 'payment_overdue', message, { schoolId });
       }
       if (school?.adminId) {
-        await sendNotification(school.adminId, 'payment_overdue', `${student.firstName} ${student.lastName} — ${fee.name} en retard.`);
+        await sendNotification(school.adminId, 'payment_overdue', `${student.firstName} ${student.lastName} — ${fee.name} en retard.`, { schoolId });
       }
     }
   }
@@ -82,6 +82,17 @@ async function weeklyParentSummaryForSchool(schoolId) {
     byParent.get(link.parentId).students.push(link.student);
   }
 
+  const { getModuleMap, isEnabled } = require('../utils/modules');
+  const { prefixSmsBody, resolveSmsSender, SMS_OFFICIAL_MODULE } = require('../utils/officialSms');
+  const mods = await getModuleMap(schoolId);
+  const smsOn = isEnabled(mods, SMS_OFFICIAL_MODULE);
+  const schoolRow = smsOn
+    ? await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, smsSenderId: true },
+    })
+    : null;
+
   for (const { parent, students } of byParent.values()) {
     const parts = students.map((s) =>
       `${s.firstName}: ${s.grades.length} note(s), ${s.absences.length} absence(s), ${s.homeworks.length} devoir(s), ${s.badges.length} badge(s)`,
@@ -90,7 +101,13 @@ async function weeklyParentSummaryForSchool(schoolId) {
     await prisma.notification.create({
       data: { userId: parent.userId, type: 'GENERAL', title: 'Résumé hebdomadaire', body },
     });
-    if (parent.user.phone) await sendSms(parent.user.phone, `EduConnect: ${body}`);
+    if (parent.user.phone && smsOn) {
+      await sendSms(
+        parent.user.phone,
+        prefixSmsBody(schoolRow?.name, body),
+        { sender: resolveSmsSender({ school: schoolRow }) },
+      );
+    }
   }
 }
 

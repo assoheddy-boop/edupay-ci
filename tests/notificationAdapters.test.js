@@ -6,7 +6,7 @@ describe('notification adapters without credentials', () => {
   const prev = {};
 
   beforeEach(() => {
-    ['SMS_PROVIDER', 'ORANGE_SMS_URL', 'ORANGE_SMS_TOKEN', 'SMTP_HOST', 'SMTP_FROM',
+    ['SMS_PROVIDER', 'ORANGE_SMS_URL', 'ORANGE_SMS_TOKEN', 'ORANGE_SMS_SENDER', 'SMTP_HOST', 'SMTP_FROM',
       'SMTP_USER', 'SMTP_PASS', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY',
       'WHATSAPP_TOKEN', 'WHATSAPP_PHONE_ID'].forEach((key) => {
       prev[key] = process.env[key];
@@ -32,12 +32,20 @@ describe('notification adapters without credentials', () => {
     await expect(sendSms(null, 'EduConnect test')).resolves.toMatchObject({ ok: false, reason: 'no_phone' });
   });
 
-  test('Orange without URL/token does not throw', async () => {
+  test('Orange uses per-school sender, not the global default only', async () => {
     process.env.SMS_PROVIDER = 'orange';
-    await expect(sendSms('0700000000', 'EduConnect test')).resolves.toMatchObject({
-      ok: false,
-      reason: 'not_configured',
+    process.env.ORANGE_SMS_URL = 'https://example.test/sms';
+    process.env.ORANGE_SMS_TOKEN = 'token';
+    process.env.ORANGE_SMS_SENDER = 'EduConnect';
+    const prevFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({ ok: true });
+    await expect(sendSms('0700000000', "École ECEME : test", { sender: 'ECEME' })).resolves.toMatchObject({
+      ok: true,
+      sender: 'ECEME',
     });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.outboundSMSMessageRequest.senderAddress).toBe('ECEME');
+    global.fetch = prevFetch;
   });
 
   test('WhatsApp without token does not throw', async () => {

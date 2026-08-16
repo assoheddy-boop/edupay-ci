@@ -100,6 +100,7 @@ async function createAbsence(req, res) {
         link.parent.userId,
         type === 'LATE' ? 'late_reported' : 'absence_reported',
         `${student.firstName} ${student.lastName} — ${type === 'LATE' ? 'retard' : 'absence'} : ${reason || 'Sans motif'}.`,
+        { schoolId: student.schoolId || req.user.teacher?.schoolId },
       );
     }
 

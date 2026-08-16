@@ -23,6 +23,7 @@ async function notifyHomeworkParents(homework, type, messageFn) {
           dueDate: homework.dueDate,
           studentName: student.firstName,
         }),
+        { schoolId: homework.class?.schoolId || student.schoolId },
       );
       count += 1;
     }

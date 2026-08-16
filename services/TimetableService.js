@@ -232,7 +232,7 @@ async function notifyClassTimetableChanged(classId) {
   let notified = 0;
   for (const userId of parentUserIds) {
     try {
-      const result = await sendNotification(userId, 'timetable_updated', message);
+      const result = await sendNotification(userId, 'timetable_updated', message, { schoolId: students[0]?.class?.schoolId || students[0]?.schoolId });
       if (result.ok) notified += 1;
     } catch (err) {
       logger.warn('Class timetable notification failed', { userId, classId, err: err?.message });
@@ -516,7 +516,7 @@ async function notifyParentsTimetable(studentId) {
     const userId = link.parent?.user?.id;
     if (!userId) continue;
     try {
-      const result = await sendNotification(userId, 'timetable_updated', baseMessage);
+      const result = await sendNotification(userId, 'timetable_updated', baseMessage, { schoolId: student.schoolId || student.class?.schoolId });
       if (result.ok) notified.push(userId);
     } catch (err) {
       logger.warn('Parent timetable notification failed', { userId, err: err?.message });

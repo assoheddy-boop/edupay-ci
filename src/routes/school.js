@@ -31,6 +31,7 @@ router.get('/dashboard', schoolController.dashboard);
 router.get('/analyse', schoolAnalyseController.analysePage);
 router.get('/settings', schoolController.settings);
 router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
+router.get('/sms', schoolController.smsDashboard);
 
 router.get('/classes', schoolController.listClasses);
 router.post('/classes', classRules, handleValidationErrors, auditMiddleware('class_create', 'Class'), schoolController.createClass);

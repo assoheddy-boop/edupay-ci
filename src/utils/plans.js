@@ -6,6 +6,7 @@ const { setModule, initSchoolModules } = require('./modules');
 function planIncludesFeature(plan, moduleKey) {
   if (!plan) return true;
   if (MODULES[moduleKey]?.core) return true;
+  if (moduleKey === 'sms_official') return true;
   const features = plan.features || [];
   return features.includes(moduleKey);
 }
@@ -54,6 +55,7 @@ async function syncSchoolModulesToPlan(schoolId, plan) {
   await initSchoolModules(schoolId);
   const features = new Set(plan?.features || []);
   for (const key of MODULE_KEYS) {
+    if (key === 'sms_official') continue;
     const enabled = MODULES[key].core || features.has(key);
     await setModule(schoolId, key, { enabled, locked: true });
   }

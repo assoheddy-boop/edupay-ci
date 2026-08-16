@@ -41,14 +41,27 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label for="waveNumber">Numéro Wave</label>
+          <label for="waveNumber">Numéro Wave / OM (paiements)</label>
           <input type="text" id="waveNumber" name="waveNumber" value="<%= school.waveNumber || '' %>" placeholder="07 XX XX XX XX">
+          <p class="form-hint">Numéro Wave pour recevoir les paiements des parents. Il n'envoie pas de SMS.</p>
         </div>
         <div class="form-group">
-          <label for="omNumber">Numéro Orange Money</label>
+          <label for="omNumber">Numéro Orange Money (paiements)</label>
           <input type="text" id="omNumber" name="omNumber" value="<%= school.omNumber || '' %>" placeholder="07 XX XX XX XX">
+          <p class="form-hint">Numéro Orange Money pour recevoir les paiements. Il n'envoie pas de SMS.</p>
         </div>
       </div>
+      <% if (typeof smsOfficialEnabled !== 'undefined' && smsOfficialEnabled) { %>
+      <div class="form-group">
+        <label for="smsSenderId">Identifiant SMS officiel (nom ou numéro dédié)</label>
+        <input type="text" id="smsSenderId" name="smsSenderId" value="<%= school.smsSenderId || '' %>" placeholder="Ex. ECEME ou 07 XX XX XX XX" maxlength="20">
+        <p class="form-hint">Nom d'expéditeur (ex. ECEME) ou numéro SMS dédié, déclaré auprès de l'agrégateur. Ce n'est pas le numéro Wave ou Orange Money.</p>
+        <p class="form-hint"><strong>Aperçu :</strong> <%= typeof smsPreview !== 'undefined' ? smsPreview : ('École ' + school.name + ' : votre enfant est absent aujourd\'hui.') %></p>
+        <p class="form-hint">Tant que cet identifiant n'est pas enregistré chez l'opérateur, le téléphone peut afficher « EduConnect », mais le texte commence toujours par le nom de l'école.</p>
+      </div>
+      <% } else { %>
+      <p class="form-hint">Le module <strong>SMS officiel</strong> n'est pas activé. Les parents reçoivent toujours les alertes dans l'application (et e-mail / notification push le cas échéant). Demandez à EduConnect d'activer le module pour envoyer des SMS au nom de l'école.</p>
+      <% } %>
       <button type="submit" class="btn btn-primary">Enregistrer</button>
     </form>
   </div>

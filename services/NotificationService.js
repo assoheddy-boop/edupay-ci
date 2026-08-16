@@ -4,6 +4,12 @@ const { sendSms, sendWhatsApp } = require('../src/services/sms');
 const { sendWebPush } = require('../src/services/webPush');
 const { sendEmail } = require('../src/services/email');
 const { allowsMarketingMessages } = require('./ConsentService');
+const { getModuleMap, isEnabled } = require('../src/utils/modules');
+const {
+  SMS_OFFICIAL_MODULE,
+  prefixSmsBody,
+  resolveSmsSender,
+} = require('../src/utils/officialSms');
 
 const CHANNELS = {
   IN_APP: 'IN_APP',
@@ -30,6 +36,7 @@ const SKIP_REASONS = new Set([
   'not_configured',
   'consent_revoked',
   'no_content',
+  'module_off',
 ]);
 
 const NOTIFICATION_TYPES = {
@@ -138,6 +145,34 @@ function shouldKickWorker() {
   return true;
 }
 
+async function isOfficialSmsEnabled(schoolId) {
+  if (!schoolId) return false;
+  try {
+    const map = await getModuleMap(schoolId);
+    return isEnabled(map, SMS_OFFICIAL_MODULE);
+  } catch {
+    return false;
+  }
+}
+
+async function loadSchoolForSms(schoolId) {
+  if (!schoolId || !prisma.school?.findUnique) return null;
+  try {
+    return await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { id: true, name: true, smsSenderId: true },
+    });
+  } catch {
+    return null;
+  }
+}
+
+function extrasSchoolId(extras) {
+  if (!extras) return null;
+  if (typeof extras === 'string') return extras;
+  return extras.schoolId || null;
+}
+
 function kickWorker() {
   if (!shouldKickWorker()) return;
   if (kickWorker.running) return;
@@ -159,13 +194,22 @@ async function enqueue({ userId, schoolId = null, eventType, payload = {}, chann
   const body = payload.body || payload.message;
   if (!body) return { ok: false, error: 'data' };
 
-  const list = channels || channelsFor(meta);
+  const school = await loadSchoolForSms(schoolId);
+  const smsEnabled = school ? await isOfficialSmsEnabled(school.id) : false;
+  const senderSnapshot = smsEnabled ? resolveSmsSender({ school }) : null;
+  const smsBody = school ? prefixSmsBody(school.name, body) : body;
+
+  let list = channels || channelsFor(meta);
+  if (!smsEnabled) list = list.filter((channel) => channel !== CHANNELS.SMS);
+
   const jobPayload = {
     ...payload,
     title: payload.title || meta?.title || 'EduConnect',
     body,
     prismaType: payload.prismaType || meta?.prisma || 'GENERAL',
     type: payload.type || eventType,
+    schoolName: school?.name || payload.schoolName || null,
+    smsBody,
   };
 
   const jobs = [];
@@ -173,9 +217,10 @@ async function enqueue({ userId, schoolId = null, eventType, payload = {}, chann
     const job = await prisma.notificationJob.create({
       data: {
         userId,
-        schoolId: schoolId || null,
+        schoolId: school?.id || schoolId || null,
         channel,
         eventType,
+        senderId: channel === CHANNELS.SMS ? senderSnapshot : null,
         payload: jobPayload,
         status: 'pending',
       },
@@ -191,7 +236,7 @@ async function enqueue({ userId, schoolId = null, eventType, payload = {}, chann
   return { ok: true, jobs };
 }
 
-async function sendNotification(userId, type, message) {
+async function sendNotification(userId, type, message, extras = {}) {
   const meta = assertType(type);
   if (!userId || !message) {
     return { ok: false, error: 'data' };
@@ -203,6 +248,7 @@ async function sendNotification(userId, type, message) {
   try {
     return await enqueue({
       userId,
+      schoolId: extrasSchoolId(extras),
       eventType: meta.eventType,
       payload: {
         type,
@@ -227,7 +273,6 @@ async function deliver(job) {
   const payload = job.payload || {};
   const title = payload.title || 'EduConnect';
   const body = payload.body || payload.message || '';
-  const text = `EduConnect: ${title} — ${body}`;
 
   if (job.channel === CHANNELS.IN_APP) {
     const notification = await prisma.notification.create({
@@ -258,9 +303,18 @@ async function deliver(job) {
   const user = await prisma.user.findUnique({ where: { id: job.userId } });
 
   if (job.channel === CHANNELS.SMS) {
+    if (job.schoolId && !(await isOfficialSmsEnabled(job.schoolId))) {
+      return { ok: false, reason: 'module_off', skip: true };
+    }
     if (!user?.phone) return { ok: false, reason: 'no_phone', skip: true };
-    const result = await sendSms(user.phone, text);
-    await sendWhatsApp(user.phone, text).catch(() => ({ ok: false }));
+    const school = job.schoolId ? await loadSchoolForSms(job.schoolId) : null;
+    const smsText = prefixSmsBody(
+      payload.schoolName || school?.name,
+      payload.smsBody || body,
+    );
+    const sender = resolveSmsSender({ snapshot: job.senderId, school });
+    const result = await sendSms(user.phone, smsText, { sender });
+    await sendWhatsApp(user.phone, smsText).catch(() => ({ ok: false }));
     if (result.ok) return result;
     if (SKIP_REASONS.has(result.reason)) return { ...result, skip: true };
     return result;
@@ -354,8 +408,10 @@ module.exports = {
   processPendingJobs,
   processJob,
   kickWorker,
+  isOfficialSmsEnabled,
   NOTIFICATION_TYPES,
   CHANNELS,
   MAX_ATTEMPTS,
   CRITICAL_EVENTS,
+  SMS_OFFICIAL_MODULE,
 };

@@ -36,9 +36,9 @@ describe('attendanceTypeFromStatus', () => {
 
 describe('submitAttendance', () => {
   const students = [
-    { id: 'stu-present', firstName: 'Awa', lastName: 'Kone' },
-    { id: 'stu-late', firstName: 'Koffi', lastName: 'Yao' },
-    { id: 'stu-absent', firstName: 'Aminata', lastName: 'Traore' },
+    { id: 'stu-present', firstName: 'Awa', lastName: 'Kone', schoolId: 'sch-1' },
+    { id: 'stu-late', firstName: 'Koffi', lastName: 'Yao', schoolId: 'sch-1' },
+    { id: 'stu-absent', firstName: 'Aminata', lastName: 'Traore', schoolId: 'sch-1' },
   ];
 
   beforeEach(() => {
@@ -78,11 +78,13 @@ describe('submitAttendance', () => {
       'user-parent-1',
       'late_reported',
       expect.stringContaining('Koffi'),
+      { schoolId: 'sch-1' },
     );
     expect(sendNotification).toHaveBeenCalledWith(
       'user-parent-1',
       'absence_reported',
       expect.stringContaining('Aminata'),
+      { schoolId: 'sch-1' },
     );
     expect(res.redirect).toHaveBeenCalledWith('/teacher/attendance?success=1');
   });

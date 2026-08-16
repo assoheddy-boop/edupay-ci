@@ -99,7 +99,7 @@ async function notifyAttendance(student, date, type) {
     ? `${student.firstName} en retard le ${day}.`
     : `${student.firstName} absent le ${day}.`;
   for (const ps of parents) {
-    await sendNotification(ps.parent.userId, kind, message);
+    await sendNotification(ps.parent.userId, kind, message, { schoolId: student.schoolId });
   }
 }
 
@@ -312,6 +312,7 @@ async function applyHomework({ user, payload = {}, file = null }) {
           dueDate: data.dueDate,
           studentName: student.firstName,
         }),
+        { schoolId: student.schoolId || teacher.schoolId },
       );
     }
     await prisma.homeworkSubmission.create({

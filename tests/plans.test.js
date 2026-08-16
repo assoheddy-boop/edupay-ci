@@ -14,6 +14,7 @@ describe('Plans config', () => {
     expect(essentiel.price).toBe(0);
     expect(essentiel.modules).toContain('payments');
     expect(essentiel.modules).toContain('grades');
+    expect(essentiel.modules).toContain('sms_official');
     expect(essentiel.modules).not.toContain('accounting');
   });
 

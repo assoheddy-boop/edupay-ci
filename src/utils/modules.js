@@ -4,10 +4,12 @@ const { PREMIUM_PLANS } = require('../middleware/premium');
 
 async function initSchoolModules(schoolId) {
   const existing = await prisma.schoolModule.findMany({ where: { schoolId } });
-  if (existing.length > 0) return;
+  const have = new Set(existing.map((row) => row.moduleKey));
+  const missing = MODULE_KEYS.filter((key) => !have.has(key));
+  if (!missing.length) return;
 
   await prisma.schoolModule.createMany({
-    data: MODULE_KEYS.map((key) => ({
+    data: missing.map((key) => ({
       schoolId,
       moduleKey: key,
       enabled: MODULES[key].default,

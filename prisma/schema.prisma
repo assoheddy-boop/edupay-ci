@@ -177,6 +177,7 @@ model School {
   campusLabel       String?
   waveNumber        String?
   omNumber          String?
+  smsSenderId       String?
   logoUrl           String?
   logoBase64        String?  @db.Text
   subscription      String   @default("premium")
@@ -220,6 +221,7 @@ model School {
   studentYearRecords   StudentYearRecord[]
   subjects             Subject[]
   timetables           Timetable[]
+  notificationJobs     NotificationJob[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -533,9 +535,11 @@ model NotificationJob {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   schoolId    String?
+  school      School?   @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   channel     String
   eventType   String
   payload     Json
+  senderId    String?
   status      String    @default("pending")
   error       String?
   attempts    Int       @default(0)
@@ -545,6 +549,7 @@ model NotificationJob {
 
   @@index([status, scheduledAt])
   @@index([userId])
+  @@index([schoolId, createdAt])
 }
 
 model HealthIncident {

@@ -8,6 +8,13 @@ jest.mock('../src/config/database', () => ({
   notification: { create: jest.fn() },
   user: { findUnique: jest.fn() },
   consent: { findUnique: jest.fn() },
+  school: { findUnique: jest.fn() },
+  schoolModule: { findMany: jest.fn(), createMany: jest.fn() },
+}));
+
+jest.mock('../src/utils/modules', () => ({
+  getModuleMap: jest.fn(),
+  isEnabled: jest.fn((map, key) => !!(map && map[key] && map[key].enabled)),
 }));
 
 jest.mock('../src/config/socket', () => ({
@@ -34,6 +41,7 @@ const prisma = require('../src/config/database');
 const { sendSms } = require('../src/services/sms');
 const { sendEmail } = require('../src/services/email');
 const { sendWebPush } = require('../src/services/webPush');
+const { getModuleMap } = require('../src/utils/modules');
 const {
   sendNotification,
   enqueue,
@@ -42,6 +50,8 @@ const {
   CHANNELS,
   MAX_ATTEMPTS,
 } = require('../services/NotificationService');
+
+const ECEME = { id: 'sch-eceme', name: 'ECEME', smsSenderId: 'ECEME' };
 
 function jobFromCreate(data, id) {
   return {
@@ -103,10 +113,12 @@ describe('enqueue', () => {
       email: 'parent@educonnect-ci.com',
     });
     prisma.consent.findUnique.mockResolvedValue(null);
+    prisma.school.findUnique.mockResolvedValue(ECEME);
+    getModuleMap.mockResolvedValue({ sms_official: { enabled: true } });
   });
 
   test('creates pending jobs per channel and sends in-app immediately', async () => {
-    const result = await sendNotification('u1', 'absence_reported', 'Awa absente le 16/08/2026.');
+    const result = await sendNotification('u1', 'absence_reported', 'Awa absente le 16/08/2026.', { schoolId: ECEME.id });
     expect(result.ok).toBe(true);
     const channels = prisma.notificationJob.create.mock.calls.map((call) => call[0].data.channel);
     expect(channels).toEqual([
@@ -146,6 +158,38 @@ describe('enqueue', () => {
       error: 'type',
     });
   });
+
+  test('skips SMS jobs when official SMS module is off', async () => {
+    getModuleMap.mockResolvedValue({ sms_official: { enabled: false } });
+    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: ECEME.id });
+    const channels = prisma.notificationJob.create.mock.calls.map((call) => call[0].data.channel);
+    expect(channels).toEqual([CHANNELS.IN_APP, CHANNELS.EMAIL, CHANNELS.PUSH]);
+  });
+
+  test('snapshots school sender and prefixes SMS body when module is on', async () => {
+    await sendNotification('u1', 'absence_reported', "votre enfant est absent aujourd'hui.", { schoolId: ECEME.id });
+    const smsJob = prisma.notificationJob.create.mock.calls
+      .map((call) => call[0].data)
+      .find((data) => data.channel === CHANNELS.SMS);
+    expect(smsJob).toMatchObject({
+      schoolId: ECEME.id,
+      senderId: 'ECEME',
+    });
+    expect(smsJob.payload.smsBody).toBe("École ECEME : votre enfant est absent aujourd'hui.");
+  });
+
+  test('falls back to ORANGE_SMS_SENDER when school has no smsSenderId', async () => {
+    prisma.school.findUnique.mockResolvedValue({ id: ECEME.id, name: 'ECEME', smsSenderId: null });
+    const prev = process.env.ORANGE_SMS_SENDER;
+    process.env.ORANGE_SMS_SENDER = 'EduConnect';
+    await sendNotification('u1', 'payment_validated', '25 000 FCFA confirmés.', { schoolId: ECEME.id });
+    const smsJob = prisma.notificationJob.create.mock.calls
+      .map((call) => call[0].data)
+      .find((data) => data.channel === CHANNELS.SMS);
+    expect(smsJob.senderId).toBe('EduConnect');
+    if (prev === undefined) delete process.env.ORANGE_SMS_SENDER;
+    else process.env.ORANGE_SMS_SENDER = prev;
+  });
 });
 
 describe('worker status transitions', () => {
@@ -159,6 +203,8 @@ describe('worker status transitions', () => {
       email: 'parent@educonnect-ci.com',
     });
     prisma.consent.findUnique.mockResolvedValue(null);
+    prisma.school.findUnique.mockResolvedValue(ECEME);
+    getModuleMap.mockResolvedValue({ sms_official: { enabled: true } });
   });
 
   test('pending SMS becomes sent', async () => {
@@ -265,6 +311,52 @@ describe('worker status transitions', () => {
     expect(sendEmail).not.toHaveBeenCalled();
     expect(prisma.notificationJob.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'skipped', error: 'consent_revoked' }),
+    }));
+  });
+
+  test('SMS worker uses school prefix and sender, not Wave/OM numbers', async () => {
+    sendSms.mockResolvedValueOnce({ ok: true, provider: 'console' });
+    prisma.notificationJob.findMany.mockResolvedValue([{
+      id: 'sms-school',
+      userId: 'u1',
+      schoolId: ECEME.id,
+      senderId: 'ECEME',
+      channel: 'SMS',
+      eventType: 'ABSENCE',
+      payload: { title: 'Absence signalée', body: "votre enfant est absent aujourd'hui.", schoolName: 'ECEME' },
+      status: 'pending',
+      attempts: 0,
+      scheduledAt: new Date(),
+    }]);
+
+    const result = await processPendingJobs();
+    expect(result.sent).toBe(1);
+    expect(sendSms).toHaveBeenCalledWith(
+      '0700000000',
+      "École ECEME : votre enfant est absent aujourd'hui.",
+      { sender: 'ECEME' },
+    );
+  });
+
+  test('SMS worker skips when module is turned off after enqueue', async () => {
+    getModuleMap.mockResolvedValue({ sms_official: { enabled: false } });
+    prisma.notificationJob.findMany.mockResolvedValue([{
+      id: 'sms-off',
+      userId: 'u1',
+      schoolId: ECEME.id,
+      channel: 'SMS',
+      eventType: 'ABSENCE',
+      payload: { title: 'Absence signalée', body: 'Awa absente.' },
+      status: 'pending',
+      attempts: 0,
+      scheduledAt: new Date(),
+    }]);
+
+    const result = await processPendingJobs();
+    expect(result.skipped).toBe(1);
+    expect(sendSms).not.toHaveBeenCalled();
+    expect(prisma.notificationJob.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'skipped', error: 'module_off' }),
     }));
   });
 });
