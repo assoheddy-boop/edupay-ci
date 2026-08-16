@@ -19,9 +19,17 @@ npm run db:seed
 npm run dev
 ```
 
-Application : http://localhost:3000
+Application (local) : http://localhost:3000  
+Production : https://educonnect-assoheddy-boops-projects.vercel.app
 
-## Comptes démo (mot de passe : `demo1234`)
+`npm run db:seed` ne crée **pas** les comptes `@demo.ci` par défaut. En local / tests :
+
+```bash
+# PowerShell
+$env:SEED_DEMO='true'; npm run db:seed
+```
+
+## Comptes démo (uniquement si `SEED_DEMO=true`, mot de passe : `demo1234`)
 
 | Rôle | Email |
 |------|-------|
@@ -42,7 +50,7 @@ Application : http://localhost:3000
 | `npm test` | Tests Jest |
 | `npm run verify` | Vérification routes + DB (serveur requis) |
 | `npm run db:push` | Sync schéma Prisma |
-| `npm run db:seed` | Données démo |
+| `npm run db:seed` | Seed (comptes `@demo.ci` seulement si `SEED_DEMO=true`) |
 | `npm run db:migrate` | Migrations Prisma |
 
 ## API REST (`/api/v1`)

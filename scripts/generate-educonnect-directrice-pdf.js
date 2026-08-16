@@ -39,7 +39,7 @@ const BUREAU = path.join(
 );
 const BUREAU_V3 = BUREAU.replace(/\.pdf$/i, '-v3.pdf');
 
-const URL = 'https://edupay-ci.vercel.app';
+const URL = 'https://educonnect-assoheddy-boops-projects.vercel.app';
 const CONTACT = 'contact@edupay.ci';
 const DOC_DATE = 'Août 2026';
 const FOOTER_LABEL = 'EduConnect — Présentation à l\'attention de la direction — août 2026';
