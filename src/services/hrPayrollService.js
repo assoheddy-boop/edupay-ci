@@ -81,8 +81,9 @@ async function markPayrollPaid({ schoolId, payrollRunId, accountId }) {
       }
     }
 
-    await tx.financeTransaction.create({
-      data: {
+    if (payrollRun.totalNet > 0) {
+      const { recordMovement } = require('../../services/AccountingService');
+      const movement = await recordMovement({
         schoolId,
         type: 'EXPENSE',
         amount: payrollRun.totalNet,
@@ -91,13 +92,10 @@ async function markPayrollPaid({ schoolId, payrollRunId, accountId }) {
         description: `Paie ${payrollRun.month}/${payrollRun.year} — ${payrollRun.payslips.length} bulletin(s)`,
         reference: payrollRun.id,
         payrollRunId: payrollRun.id,
-      },
-    });
-
-    await tx.financeAccount.update({
-      where: { id: account.id },
-      data: { balance: { decrement: payrollRun.totalNet } },
-    });
+        source: 'PAYROLL',
+      }, tx);
+      if (!movement.ok) throw new Error(movement.error || 'accounting');
+    }
 
     await tx.payrollRun.update({
       where: { id: payrollRun.id },

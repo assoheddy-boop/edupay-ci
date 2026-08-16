@@ -376,28 +376,11 @@ async function validatePayment(req, res) {
     const mods = await getModuleMap(req.user.school.id);
     if (isEnabled(mods, 'accounting')) {
       await initFinanceDefaults(req.user.school.id);
-      const waveAccount = await prisma.financeAccount.findFirst({
-        where: { schoolId: req.user.school.id, type: 'WAVE' },
+      const { recordValidatedPayment } = require('../../services/AccountingService');
+      await recordValidatedPayment({
+        schoolId: req.user.school.id,
+        payment,
       });
-      if (waveAccount) {
-        await prisma.$transaction(async (tx) => {
-          await tx.financeTransaction.create({
-            data: {
-              schoolId: req.user.school.id,
-              type: 'INCOME',
-              amount: payment.amount,
-              accountId: waveAccount.id,
-              description: `Paiement ${payment.student.firstName} ${payment.student.lastName}`,
-              reference: payment.reference,
-              paymentId: payment.id,
-            },
-          });
-          await tx.financeAccount.update({
-            where: { id: waveAccount.id },
-            data: { balance: { increment: payment.amount } },
-          });
-        });
-      }
     }
   }
 

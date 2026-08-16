@@ -580,6 +580,18 @@ a.admin-hub-card {
 }
 
 /* Table */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.accounting-filter { margin-bottom: 1.5rem; }
+.accounting-filter .btn { margin-top: 0.25rem; }
+@media (max-width: 600px) {
+  .accounting-form .btn,
+  .accounting-filter .btn { width: 100%; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -732,7 +744,92 @@ code {
 }
 
 .footer-inner { text-align: center; }
+.footer-brand {
+  font-weight: 600;
+  color: #fff;
+  font-size: 1.05rem;
+}
+.footer-entity {
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 1.15rem;
+  margin: 0.85rem 0 0.4rem;
+}
+.footer-links a {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.footer-links a:hover,
+.footer-links a:focus {
+  text-decoration: underline;
+  color: #fff;
+}
 .footer-sub { font-size: 0.85rem; opacity: 0.75; margin-top: 0.25rem; }
+
+/* Public legal pages */
+.legal-page { max-width: 800px; }
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.legal-nav a {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--blue);
+  text-decoration: none;
+  font-size: 0.88rem;
+  border: 1px solid #d6e0f0;
+}
+.legal-nav a:hover,
+.legal-nav a.is-active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+.legal-card h1 {
+  color: var(--blue);
+  font-size: 1.6rem;
+  margin-bottom: 0.35rem;
+}
+.legal-updated {
+  color: var(--gray-light);
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.legal-card h2 {
+  color: var(--blue);
+  font-size: 1.08rem;
+  margin: 1.35rem 0 0.5rem;
+}
+.legal-card p { margin-bottom: 0.85rem; }
+.legal-card ul {
+  margin: 0 0 1rem 1.2rem;
+}
+.legal-card li { margin-bottom: 0.35rem; }
+.legal-card a { color: var(--blue); }
+.auth-legal {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: var(--gray-light);
+  line-height: 1.45;
+  text-align: center;
+}
+.auth-legal a { color: var(--blue); }
+
+@media (max-width: 640px) {
+  .legal-card h1 { font-size: 1.3rem; }
+  .footer { padding: 1.25rem 0 1.5rem; }
+}
 
 .error-page {
   text-align: center;

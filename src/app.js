@@ -24,6 +24,7 @@ const reinscriptionRoutes = require('../routes/reinscriptionRoutes');
 const redoublementRoutes = require('../routes/redoublementRoutes');
 const timetableRoutes = require('../routes/timetableRoutes');
 const cronRoutes = require('./routes/cron');
+const legalRoutes = require('./routes/legal');
 
 const app = express();
 
@@ -61,6 +62,8 @@ app.get('/prefs/currency/:code', setCurrency);
 app.get('/offline', (_req, res) => {
   res.render('offline', { user: null, title: 'Hors ligne' });
 });
+
+app.use(legalRoutes);
 
 app.get('/', (_req, res) => {
   const { plans, moduleList } = getPlansForLanding();

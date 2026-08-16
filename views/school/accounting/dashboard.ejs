@@ -2,117 +2,186 @@
 <% const content = include('dashboard', { _inLayout: true }); %>
 <%- include('../../layouts/schoolLayout', { body: content, title: 'Comptabilité' }) %>
 <% } else { %>
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const typeLabel = typeof accountTypeLabel === 'function' ? accountTypeLabel : function(t) { return t; }; %>
+<% const incomeCats = categories.filter(function(c) { return c.kind === 'INCOME'; }); %>
+<% const expenseCats = categories.filter(function(c) { return c.kind !== 'INCOME'; }); %>
 <div class="page-header">
     <div>
       <h1>Comptabilité</h1>
-      <p class="page-sub">Trésorerie et mouvements financiers — <%= school.name %></p>
+      <p class="page-sub">Trésorerie Wave, Orange Money, caisse et banque — <%= school.name %></p>
     </div>
-    <a href="/school/accounting/report" class="btn btn-outline">Rapport mensuel</a>
+    <div class="export-links">
+      <a href="/school/accounting/report<%= periodQs %>" class="btn btn-outline">Rapport</a>
+      <a href="/school/accounting/report.xlsx<%= periodQs %>" class="btn btn-outline">Excel</a>
+      <a href="/school/accounting/report.pdf<%= periodQs %>" class="btn btn-outline">PDF</a>
+    </div>
   </div>
 
-  <% if (success) { %><div class="alert alert-success">Transaction enregistrée.</div><% } %>
+  <% if (success) { %><div class="alert alert-success">Opération enregistrée.</div><% } %>
+  <% if (error === 'amount') { %><div class="alert alert-error">Montant invalide.</div><% } %>
+  <% if (error === 'account') { %><div class="alert alert-error">Compte introuvable.</div><% } %>
+  <% if (error === 'type') { %><div class="alert alert-error">Type d'opération invalide.</div><% } %>
+  <% if (error === 'data') { %><div class="alert alert-error">Données incomplètes.</div><% } %>
+
+  <form method="GET" action="/school/accounting" class="card accounting-filter">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="view">Période</label>
+        <select id="view" name="view">
+          <option value="month" <%= period.view !== 'year' ? 'selected' : '' %>>Mois</option>
+          <option value="year" <%= period.view === 'year' ? 'selected' : '' %>>Année scolaire</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="month">Mois</label>
+        <input type="month" id="month" name="month" value="<%= period.month || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="schoolYear">Année scolaire</label>
+        <input type="text" id="schoolYear" name="schoolYear" value="<%= period.schoolYear || school.currentSchoolYear %>" placeholder="2025-2026">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Filtrer</button>
+  </form>
 
   <div class="stats-grid">
     <div class="stat-card">
-      <span class="stat-value"><%= stats.totalBalance.toLocaleString('fr-FR') %></span>
-      <span class="stat-label">Solde total (FCFA)</span>
+      <span class="stat-value"><%= money(stats.totalBalance) %></span>
+      <span class="stat-label">Solde des comptes</span>
     </div>
     <div class="stat-card stat-card-success">
-      <span class="stat-value"><%= stats.monthIncome.toLocaleString('fr-FR') %></span>
-      <span class="stat-label">Entrées ce mois</span>
+      <span class="stat-value"><%= money(stats.periodIncome) %></span>
+      <span class="stat-label">Recettes — <%= period.label %></span>
     </div>
     <div class="stat-card stat-card-warning">
-      <span class="stat-value"><%= stats.monthExpense.toLocaleString('fr-FR') %></span>
-      <span class="stat-label">Sorties ce mois</span>
+      <span class="stat-value"><%= money(stats.periodExpense) %></span>
+      <span class="stat-label">Dépenses — <%= period.label %></span>
     </div>
     <div class="stat-card">
-      <span class="stat-value"><%= stats.paymentsTotal.toLocaleString('fr-FR') %></span>
-      <span class="stat-label">Paiements scolarité validés</span>
+      <span class="stat-value"><%= money(stats.paymentsTotal) %></span>
+      <span class="stat-label">Scolarité validée (période)</span>
     </div>
   </div>
 
   <div class="grid-2">
     <div class="card">
       <div class="card-header"><h2>Comptes</h2></div>
+      <div class="table-scroll">
       <table class="table">
         <thead><tr><th>Compte</th><th>Type</th><th>Solde</th></tr></thead>
         <tbody>
           <% accounts.forEach(function(a) { %>
             <tr>
               <td><%= a.name %></td>
-              <td><%= a.type %></td>
-              <td><%= a.balance.toLocaleString('fr-FR') %> FCFA</td>
+              <td><%= typeLabel(a.type) %></td>
+              <td><%= money(a.balance) %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div class="card">
       <div class="card-header"><h2>Nouvelle opération</h2></div>
-      <form method="POST" action="/school/accounting/transaction" class="form" style="padding:1rem">
+      <form method="POST" action="/school/accounting/transaction" class="form accounting-form">
         <div class="form-group">
-          <label>Type</label>
-          <select name="type" required>
-            <option value="INCOME">Entrée</option>
+          <label for="type">Type</label>
+          <select id="type" name="type" required>
+            <option value="INCOME">Recette</option>
             <option value="EXPENSE">Dépense</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Montant (FCFA)</label>
-          <input type="number" name="amount" required min="1">
+          <label for="amount">Montant (FCFA)</label>
+          <input type="number" id="amount" name="amount" required min="1" inputmode="numeric">
         </div>
         <div class="form-group">
-          <label>Compte</label>
-          <select name="accountId" required>
+          <label for="accountId">Compte</label>
+          <select id="accountId" name="accountId" required>
             <% accounts.forEach(function(a) { %>
-              <option value="<%= a.id %>"><%= a.name %></option>
+              <option value="<%= a.id %>"><%= a.name %> — <%= typeLabel(a.type) %></option>
             <% }) %>
           </select>
         </div>
         <div class="form-group">
-          <label>Catégorie (dépenses)</label>
-          <select name="categoryId">
+          <label for="categoryId">Catégorie</label>
+          <select id="categoryId" name="categoryId">
             <option value="">—</option>
-            <% categories.forEach(function(c) { %>
-              <option value="<%= c.id %>"><%= c.name %></option>
-            <% }) %>
+            <% if (incomeCats.length) { %>
+            <optgroup label="Recettes">
+              <% incomeCats.forEach(function(c) { %>
+                <option value="<%= c.id %>"><%= c.name %></option>
+              <% }) %>
+            </optgroup>
+            <% } %>
+            <% if (expenseCats.length) { %>
+            <optgroup label="Dépenses">
+              <% expenseCats.forEach(function(c) { %>
+                <option value="<%= c.id %>"><%= c.name %></option>
+              <% }) %>
+            </optgroup>
+            <% } %>
           </select>
         </div>
         <div class="form-group">
-          <label>Description</label>
-          <input type="text" name="description" required>
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" required maxlength="500" placeholder="Ex: Fournitures rentrée">
         </div>
         <div class="form-group">
-          <label>Référence</label>
-          <input type="text" name="reference">
+          <label for="reference">Référence</label>
+          <input type="text" id="reference" name="reference" maxlength="120" placeholder="Ex: WAVE-123, facture">
         </div>
         <button type="submit" class="btn btn-primary">Enregistrer</button>
       </form>
     </div>
   </div>
 
+  <% if (byCategory && byCategory.length) { %>
   <div class="card">
-    <div class="card-header"><h2>Derniers mouvements</h2></div>
+    <div class="card-header"><h2>Par catégorie — <%= period.label %></h2></div>
+    <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th>Catégorie</th><th>Type</th><th>Montant</th></tr></thead>
+      <tbody>
+        <% byCategory.forEach(function(c) { %>
+          <tr>
+            <td><%= c.name %></td>
+            <td><%= c.kind === 'INCOME' ? 'Recette' : 'Dépense' %></td>
+            <td><%= money(c.amount) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-header"><h2>Derniers mouvements — <%= period.label %></h2></div>
     <% if (!transactions.length) { %>
-      <p class="empty">Aucune transaction.</p>
+      <p class="empty">Aucune opération sur cette période.</p>
     <% } else { %>
+      <div class="table-scroll">
       <table class="table">
         <thead>
-          <tr><th>Date</th><th>Type</th><th>Description</th><th>Compte</th><th>Montant</th></tr>
+          <tr><th>Date</th><th>Type</th><th>Description</th><th>Catégorie</th><th>Compte</th><th>Montant</th></tr>
         </thead>
         <tbody>
           <% transactions.forEach(function(t) { %>
             <tr>
               <td><%= new Date(t.createdAt).toLocaleDateString('fr-FR') %></td>
-              <td><%= t.type === 'INCOME' ? 'Entrée' : 'Dépense' %></td>
+              <td><%= t.type === 'INCOME' ? 'Recette' : 'Dépense' %></td>
               <td><%= t.description %></td>
-              <td><%= t.account.name %></td>
-              <td><%= t.amount.toLocaleString('fr-FR') %> FCFA</td>
+              <td><%= t.category ? t.category.name : '—' %></td>
+              <td><%= t.account ? t.account.name : '—' %></td>
+              <td><%= money(t.amount) %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
+      </div>
     <% } %>
   </div>
 <% } %>

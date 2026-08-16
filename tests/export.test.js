@@ -48,4 +48,9 @@ describe('export service guards', () => {
   test('generateHomeworkCalendarExcel rejects missing schoolId', async () => {
     await expect(generateHomeworkCalendarExcel()).resolves.toEqual({ ok: false, error: 'school' });
   });
+
+  test('generateAccountingReportPdf rejects missing school', async () => {
+    const { generateAccountingReportPdf } = require('../services/export');
+    await expect(generateAccountingReportPdf()).resolves.toEqual({ ok: false, error: 'school' });
+  });
 });

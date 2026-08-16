@@ -1,0 +1,10 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { user: typeof user !== 'undefined' ? user : null }) %>
+<main class="container legal-page">
+  <%- include('../legal/_nav') %>
+  <article class="card legal-card">
+    <%- body %>
+  </article>
+</main>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

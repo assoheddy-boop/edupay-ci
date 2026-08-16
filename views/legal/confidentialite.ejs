@@ -1,0 +1,100 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('confidentialite', { _inLayout: true }); %>
+<%- include('../layouts/legalLayout', { body: content, title: typeof title !== 'undefined' ? title : 'Politique de confidentialité' }) %>
+<% } else { %>
+<h1>Politique de confidentialité</h1>
+<p class="legal-updated">Dernière mise à jour : <%= typeof lastUpdated !== 'undefined' ? lastUpdated : '16 août 2026' %></p>
+
+<p>
+  Cette politique décrit comment <strong>EduConnect</strong>, édité par
+  <strong>Alliance Digitale Internationale</strong> (Côte d'Ivoire),
+  traite les données personnelles dans le cadre de la plateforme
+  <a href="https://educonnect-ci.com">educonnect-ci.com</a>.
+</p>
+<p>
+  Le cadre applicable en Côte d'Ivoire est notamment la loi n° 2013-450 du 19 juin 2013
+  relative à la protection des données à caractère personnel. L'autorité de contrôle
+  est l'ARTCI.
+</p>
+
+<h2>Responsable de traitement</h2>
+<p>
+  Pour les comptes, l'hébergement de la plateforme et le fonctionnement du service :
+  <strong>Alliance Digitale Internationale</strong>, éditeur d'EduConnect —
+  <a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a>.
+</p>
+<p>
+  Pour les dossiers scolaires d'un établissement (élèves, notes, absences, frais, photos, etc.),
+  l'école (ou le groupe scolaire) est responsable des données qu'elle saisit et qu'elle demande
+  aux familles. EduConnect agit comme prestataire technique de cette école.
+</p>
+
+<h2>Données collectées</h2>
+<p>Selon le rôle (école, enseignant, parent) et les modules activés par l'établissement :</p>
+<ul>
+  <li><strong>Comptes</strong> : nom, prénom, e-mail, téléphone, mot de passe (stocké de façon hachée).</li>
+  <li><strong>Élèves</strong> : identité, classe, année scolaire, informations de suivi pédagogique.</li>
+  <li><strong>Parents</strong> : coordonnées, lien avec le ou les enfants, messages, consentements.</li>
+  <li><strong>Enseignants / RH</strong> : affectation aux classes, congés, éléments de paie si le module RH est actif.</li>
+  <li><strong>Notes, absences, devoirs, bulletins</strong> : données nécessaires au suivi scolaire.</li>
+  <li><strong>Photos et médias</strong> : uniquement si l'école les utilise et, pour les photos d'enfants, sous réserve du consentement parent (espace parent).</li>
+  <li><strong>Santé</strong> : signalements éventuellement saisis par l'école ; le parent peut accorder ou révoquer ce consentement.</li>
+  <li><strong>Paiements</strong> : montant, type de frais, canal (Wave ou Orange Money), statut de validation, preuve éventuellement téléversée (capture). EduConnect ne collecte pas les codes secrets Wave / Orange Money et n'est pas l'opérateur du paiement mobile.</li>
+</ul>
+
+<h2>Finalités</h2>
+<ul>
+  <li>Fournir le service de gestion scolaire à l'établissement et aux familles.</li>
+  <li>Permettre l'appel, les notes, les bulletins et l'information des parents.</li>
+  <li>Suivre les frais et les preuves de paiement mobile.</li>
+  <li>Assurer la sécurité des comptes (connexion, session).</li>
+  <li>Fonctionner hors ligne sur l'appareil puis synchroniser lorsque le réseau revient.</li>
+  <li>Envoyer des notifications (application, e-mail ou SMS selon la configuration de l'école), avec un consentement distinct pour les communications commerciales.</li>
+</ul>
+
+<h2>Destinataires</h2>
+<p>
+  Les données d'une école ne sont accessibles qu'aux utilisateurs autorisés de cette école
+  (direction, enseignants concernés, parents des élèves concernés) et, le cas échéant,
+  à l'administration du groupe scolaire. Alliance Digitale Internationale n'utilise pas
+  ces dossiers pour de la publicité tierce.
+</p>
+<p>
+  Des prestataires techniques (hébergement cloud, envoi d'SMS le cas échéant) peuvent
+  traiter des données pour le seul fonctionnement du service.
+</p>
+
+<h2>Durée de conservation</h2>
+<p>
+  Les données sont conservées le temps de la relation avec l'établissement et des obligations
+  de suivi scolaire ou comptable. Un établissement peut demander la suppression ou l'export
+  de ses dossiers. Les comptes inactifs peuvent être purgés selon les procédures internes
+  (par exemple les comptes de démonstration).
+</p>
+
+<h2>Vos droits</h2>
+<p>
+  Vous pouvez demander l'accès, la rectification ou la suppression de vos données,
+  et gérer les consentements parents (traitement, photos, santé, communications)
+  depuis l'espace parent. Écrivez à
+  <a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a>
+  ou contactez d'abord l'établissement concerné pour un dossier scolaire.
+</p>
+<p>
+  Vous pouvez également saisir l'ARTCI (Autorité de régulation des télécommunications de Côte d'Ivoire)
+  si vous estimez que vos droits ne sont pas respectés.
+</p>
+
+<h2>Mineurs et photos</h2>
+<p>
+  EduConnect s'adresse aux établissements. Les élèves n'ont pas d'espace propre.
+  Les photos d'enfants et les données de santé ne doivent être utilisées qu'avec
+  l'accord du parent, via les consentements prévus dans l'application.
+</p>
+
+<h2>Cookies et stockage local</h2>
+<p>
+  Voir la <a href="/cookies">page Cookies</a> : cookies de session et de préférence,
+  plus un stockage local pour le mode hors ligne. Pas de publicité tierce, pas de pixel de suivi.
+</p>
+<% } %>

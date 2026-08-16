@@ -224,6 +224,7 @@
       <div>
         <p class="home-footer-brand">Edu<strong>Connect</strong></p>
         <p>Gestion scolaire et paiements Wave / Orange Money, Côte d'Ivoire.</p>
+        <p class="home-footer-entity">Éditeur : Alliance Digitale Internationale</p>
       </div>
       <div>
         <h3>Contact</h3>
@@ -231,12 +232,16 @@
         <p><a href="/auth/login">Connexion</a> · <a href="/auth/register">Inscription</a></p>
       </div>
       <div>
-        <h3>Mentions légales</h3>
-        <p>EduConnect est une plateforme de gestion scolaire destinée aux établissements, enseignants et parents en Côte d'Ivoire. Les données saisies sont utilisées pour le suivi pédagogique, administratif et financier de l'école.</p>
-        <p>Hébergement de l'application : infrastructure cloud (Vercel). Pour toute demande relative aux données ou à un établissement : <a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a>.</p>
+        <h3>Informations légales</h3>
+        <ul class="home-footer-links">
+          <li><a href="/mentions-legales">Mentions légales</a></li>
+          <li><a href="/confidentialite">Politique de confidentialité</a></li>
+          <li><a href="/cgu">Conditions générales d'utilisation</a></li>
+          <li><a href="/cookies">Cookies</a></li>
+        </ul>
       </div>
     </div>
-    <p class="home-footer-copy">© <%= new Date().getFullYear() %> EduConnect — Simple, professionnel, ivoirien.</p>
+    <p class="home-footer-copy">© <%= new Date().getFullYear() %> EduConnect — Alliance Digitale Internationale. Simple, professionnel, ivoirien.</p>
   </footer>
 </div>
 <%- include('partials/scripts') %>

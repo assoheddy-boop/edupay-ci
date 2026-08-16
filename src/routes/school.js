@@ -93,6 +93,8 @@ router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePre
 router.get('/accounting', requireModule('accounting'), accountingController.dashboard);
 router.post('/accounting/transaction', requireModule('accounting'), accountingController.addTransaction);
 router.get('/accounting/report', requireModule('accounting'), accountingController.report);
+router.get('/accounting/report.xlsx', requireModule('accounting'), accountingController.exportExcel);
+router.get('/accounting/report.pdf', requireModule('accounting'), accountingController.exportPdf);
 
 router.get('/canteen', requireModule('canteen'), extras.schoolCanteenPage);
 router.post('/canteen', requireModule('canteen'), extras.createCanteenMenu);

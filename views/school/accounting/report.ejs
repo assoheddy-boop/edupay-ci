@@ -2,71 +2,140 @@
 <% const content = include('report', { _inLayout: true }); %>
 <%- include('../../layouts/schoolLayout', { body: content, title: 'Rapport comptable' }) %>
 <% } else { %>
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const typeLabel = typeof accountTypeLabel === 'function' ? accountTypeLabel : function(t) { return t; }; %>
 <div class="page-header">
     <div>
-      <h1>Rapport — <%= period %></h1>
-      <p class="page-sub"><%= school.name %></p>
+      <h1>Rapport — <%= period.label %></h1>
+      <p class="page-sub"><%= school.name %> · EduConnect</p>
     </div>
-    <a href="/school/accounting" class="btn btn-outline">← Comptabilité</a>
+    <div class="export-links">
+      <a href="/school/accounting<%= periodQs %>" class="btn btn-outline">← Comptabilité</a>
+      <a href="/school/accounting/report.xlsx<%= periodQs %>" class="btn btn-outline">Excel</a>
+      <a href="/school/accounting/report.pdf<%= periodQs %>" class="btn btn-outline">PDF</a>
+    </div>
   </div>
 
-  <form method="GET" action="/school/accounting/report" class="card" style="padding:1rem;margin-bottom:1.5rem">
+  <form method="GET" action="/school/accounting/report" class="card accounting-filter">
     <div class="form-row">
       <div class="form-group">
-        <label>Mois (AAAA-MM)</label>
-        <input type="month" name="month" value="<%= month %>">
+        <label for="view">Période</label>
+        <select id="view" name="view">
+          <option value="month" <%= period.view !== 'year' ? 'selected' : '' %>>Mois</option>
+          <option value="year" <%= period.view === 'year' ? 'selected' : '' %>>Année scolaire</option>
+        </select>
       </div>
-      <button type="submit" class="btn btn-primary">Afficher</button>
+      <div class="form-group">
+        <label for="month">Mois</label>
+        <input type="month" id="month" name="month" value="<%= period.month || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="schoolYear">Année scolaire</label>
+        <input type="text" id="schoolYear" name="schoolYear" value="<%= period.schoolYear || school.currentSchoolYear %>" placeholder="2025-2026">
+      </div>
     </div>
+    <button type="submit" class="btn btn-primary">Afficher</button>
   </form>
 
   <div class="stats-grid">
     <div class="stat-card stat-card-success">
-      <span class="stat-value"><%= totals.totalIn.toLocaleString('fr-FR') %></span>
-      <span class="stat-label">Entrées</span>
+      <span class="stat-value"><%= money(totals.totalIn) %></span>
+      <span class="stat-label">Recettes</span>
     </div>
     <div class="stat-card stat-card-warning">
-      <span class="stat-value"><%= totals.totalOut.toLocaleString('fr-FR') %></span>
+      <span class="stat-value"><%= money(totals.totalOut) %></span>
       <span class="stat-label">Dépenses</span>
     </div>
     <div class="stat-card">
-      <span class="stat-value"><%= totals.net.toLocaleString('fr-FR') %></span>
+      <span class="stat-value"><%= money(totals.net) %></span>
       <span class="stat-label">Résultat net</span>
     </div>
   </div>
 
+  <% if (byAccount && byAccount.length) { %>
+  <div class="card">
+    <div class="card-header"><h2>Par compte (Wave / OM / caisse / banque)</h2></div>
+    <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th>Compte</th><th>Type</th><th>Recettes</th><th>Dépenses</th></tr></thead>
+      <tbody>
+        <% byAccount.forEach(function(a) { %>
+          <tr>
+            <td><%= a.name %></td>
+            <td><%= typeLabel(a.type) %></td>
+            <td><%= money(a.income) %></td>
+            <td><%= money(a.expense) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (byCategory && byCategory.length) { %>
+  <div class="card">
+    <div class="card-header"><h2>Par catégorie</h2></div>
+    <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th>Catégorie</th><th>Type</th><th>Montant</th></tr></thead>
+      <tbody>
+        <% byCategory.forEach(function(c) { %>
+          <tr>
+            <td><%= c.name %></td>
+            <td><%= c.kind === 'INCOME' ? 'Recette' : 'Dépense' %></td>
+            <td><%= money(c.amount) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <% } %>
+
   <div class="grid-2">
     <div class="card">
-      <div class="card-header"><h2>Entrées</h2></div>
+      <div class="card-header"><h2>Recettes</h2></div>
+      <div class="table-scroll">
       <table class="table">
-        <thead><tr><th>Date</th><th>Description</th><th>Compte</th><th>Montant</th></tr></thead>
+        <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Compte</th><th>Montant</th></tr></thead>
         <tbody>
+          <% if (!income.length) { %>
+            <tr><td colspan="5">Aucune recette.</td></tr>
+          <% } %>
           <% income.forEach(function(t) { %>
             <tr>
               <td><%= new Date(t.createdAt).toLocaleDateString('fr-FR') %></td>
               <td><%= t.description %></td>
-              <td><%= t.account.name %></td>
-              <td><%= t.amount.toLocaleString('fr-FR') %></td>
+              <td><%= t.category ? t.category.name : '—' %></td>
+              <td><%= t.account ? t.account.name : '—' %></td>
+              <td><%= money(t.amount) %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
+      </div>
     </div>
     <div class="card">
       <div class="card-header"><h2>Dépenses</h2></div>
+      <div class="table-scroll">
       <table class="table">
         <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th></tr></thead>
         <tbody>
+          <% if (!expense.length) { %>
+            <tr><td colspan="4">Aucune dépense.</td></tr>
+          <% } %>
           <% expense.forEach(function(t) { %>
             <tr>
               <td><%= new Date(t.createdAt).toLocaleDateString('fr-FR') %></td>
               <td><%= t.description %></td>
-              <td><%= t.category?.name || '—' %></td>
-              <td><%= t.amount.toLocaleString('fr-FR') %></td>
+              <td><%= t.category ? t.category.name : '—' %></td>
+              <td><%= money(t.amount) %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 <% } %>

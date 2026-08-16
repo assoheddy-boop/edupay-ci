@@ -1440,6 +1440,70 @@ async function generateHomeworkCalendarExcel(schoolId) {
   };
 }
 
+function fcfa(amount) {
+  return `${Number(amount || 0).toLocaleString('fr-FR')} FCFA`;
+}
+
+async function generateAccountingReportPdf({
+  school, periodLabel, totals, income, expense, byCategory,
+} = {}) {
+  if (!school) return { ok: false, error: 'school' };
+
+  ensureDir(EXPORTS_DIR);
+  const slug = String(periodLabel || 'periode').replace(/[^\wÀ-ÿ-]+/g, '-').slice(0, 40);
+  const filename = `comptabilite-educonnect-${slug}-${Date.now()}.pdf`;
+  const filepath = path.join(EXPORTS_DIR, filename);
+
+  await writePdf(filepath, (doc) => {
+    drawDocumentHeader(doc, school, {
+      title: 'Rapport comptable',
+      subtitle: periodLabel ? `${periodLabel} · EduConnect` : 'EduConnect',
+    });
+
+    doc.fontSize(11).fillColor('#333');
+    doc.text(`Recettes : ${fcfa(totals?.totalIn)}`);
+    doc.text(`Dépenses : ${fcfa(totals?.totalOut)}`);
+    doc.text(`Résultat net : ${fcfa(totals?.net)}`);
+    doc.moveDown();
+
+    if (byCategory?.length) {
+      doc.fontSize(12).fillColor('#0052CC').text('Par catégorie');
+      doc.moveDown(0.4);
+      byCategory.forEach((cat) => {
+        const kind = cat.kind === 'INCOME' ? 'Recette' : 'Dépense';
+        doc.fontSize(10).fillColor('#333').text(`${cat.name} (${kind}) — ${fcfa(cat.amount)}`);
+      });
+      doc.moveDown();
+    }
+
+    const writeLines = (title, rows) => {
+      doc.fontSize(12).fillColor('#0052CC').text(title);
+      doc.moveDown(0.3);
+      if (!rows?.length) {
+        doc.fontSize(10).fillColor('#666').text('Aucune ligne.');
+        doc.moveDown();
+        return;
+      }
+      rows.slice(0, 40).forEach((row) => {
+        if (doc.y > 740) doc.addPage();
+        const date = row.createdAt ? new Date(row.createdAt).toLocaleDateString('fr-FR') : '';
+        const cat = row.category?.name || '';
+        doc.fontSize(9).fillColor('#333').text(
+          `${date}  ${row.description || ''}  ${cat}  ${fcfa(row.amount)}`,
+        );
+      });
+      doc.moveDown();
+    };
+
+    writeLines('Recettes', income);
+    writeLines('Dépenses', expense);
+
+    doc.fontSize(8).fillColor('#999').text('Document EduConnect — à usage interne de l\'établissement.', { align: 'center' });
+  });
+
+  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+}
+
 module.exports = {
   generateBulletinPDF,
   generatePayrollPDF,
@@ -1462,4 +1526,5 @@ module.exports = {
   generateHomeworkCalendarPDF,
   generateHomeworkCalendarExcel,
   homeworkExportRows,
+  generateAccountingReportPdf,
 };

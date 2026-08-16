@@ -63,28 +63,43 @@ async function setModule(schoolId, moduleKey, { enabled, locked }) {
   });
 }
 
+const DEFAULT_FINANCE_ACCOUNTS = [
+  { name: 'Caisse Wave', type: 'WAVE' },
+  { name: 'Orange Money', type: 'ORANGE_MONEY' },
+  { name: 'Espèces', type: 'CASH' },
+  { name: 'Banque', type: 'BANK' },
+];
+
+const DEFAULT_EXPENSE_CATEGORIES = [
+  'Salaires',
+  'Loyer & charges',
+  'Fournitures',
+  'Cantine',
+  'Transport',
+  'Autre',
+];
+
+const DEFAULT_INCOME_CATEGORIES = ['Scolarité', 'Cantine', 'Extras'];
+
 async function initFinanceDefaults(schoolId) {
-  const count = await prisma.financeAccount.count({ where: { schoolId } });
-  if (count > 0) return;
+  const existingAccounts = await prisma.financeAccount.findMany({ where: { schoolId } });
+  const haveType = new Set(existingAccounts.map((a) => a.type));
+  const accountsToCreate = DEFAULT_FINANCE_ACCOUNTS
+    .filter((a) => !haveType.has(a.type))
+    .map((a) => ({ schoolId, name: a.name, type: a.type, balance: 0 }));
+  if (accountsToCreate.length) {
+    await prisma.financeAccount.createMany({ data: accountsToCreate });
+  }
 
-  await prisma.financeAccount.createMany({
-    data: [
-      { schoolId, name: 'Caisse Wave', type: 'WAVE', balance: 0 },
-      { schoolId, name: 'Orange Money', type: 'ORANGE_MONEY', balance: 0 },
-      { schoolId, name: 'Espèces', type: 'CASH', balance: 0 },
-    ],
-  });
-
-  await prisma.expenseCategory.createMany({
-    data: [
-      { schoolId, name: 'Salaires' },
-      { schoolId, name: 'Loyer & charges' },
-      { schoolId, name: 'Fournitures' },
-      { schoolId, name: 'Cantine' },
-      { schoolId, name: 'Transport' },
-      { schoolId, name: 'Autre' },
-    ],
-  });
+  const existingCats = await prisma.expenseCategory.findMany({ where: { schoolId } });
+  const haveCat = new Set(existingCats.map((c) => `${c.kind || 'EXPENSE'}::${c.name}`));
+  const catsToCreate = [
+    ...DEFAULT_EXPENSE_CATEGORIES.map((name) => ({ schoolId, name, kind: 'EXPENSE' })),
+    ...DEFAULT_INCOME_CATEGORIES.map((name) => ({ schoolId, name, kind: 'INCOME' })),
+  ].filter((c) => !haveCat.has(`${c.kind}::${c.name}`));
+  if (catsToCreate.length) {
+    await prisma.expenseCategory.createMany({ data: catsToCreate });
+  }
 }
 
 module.exports = {
@@ -94,5 +109,8 @@ module.exports = {
   isEnabled,
   setModule,
   initFinanceDefaults,
+  DEFAULT_FINANCE_ACCOUNTS,
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
   PREMIUM_PLANS,
 };

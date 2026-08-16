@@ -796,11 +796,14 @@ model FinanceAccount {
 model ExpenseCategory {
   id   String @id @default(cuid())
   name String
+  kind String @default("EXPENSE")
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   transactions FinanceTransaction[]
+
+  @@index([schoolId, kind])
 }
 
 model FinanceTransaction {
@@ -1038,12 +1041,17 @@ model AccountingEntry {
   description String
   date        DateTime                 @default(now())
   createdAt   DateTime                 @default(now())
+  category    String?
+  accountType FinanceAccountType?
+  paymentId   String?
+  source      String?
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId, date])
   @@index([schoolId, type])
+  @@index([schoolId, paymentId])
 }
 
 model Scholarship {

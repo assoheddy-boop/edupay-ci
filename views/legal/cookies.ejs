@@ -1,0 +1,61 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('cookies', { _inLayout: true }); %>
+<%- include('../layouts/legalLayout', { body: content, title: typeof title !== 'undefined' ? title : 'Cookies' }) %>
+<% } else { %>
+<h1>Cookies et stockage local</h1>
+<p class="legal-updated">Dernière mise à jour : <%= typeof lastUpdated !== 'undefined' ? lastUpdated : '16 août 2026' %></p>
+
+<p>
+  <strong>EduConnect</strong>, édité par <strong>Alliance Digitale Internationale</strong>,
+  n'utilise pas de cookies publicitaires ni d'outil d'audience tierce (pas de Google Analytics,
+  pas de pixel publicitaire). Cette page décrit ce qui est réellement déposé sur votre appareil.
+</p>
+<p>
+  Il n'y a pas de bandeau « tout accepter / tout refuser » : les cookies listés ci-dessous
+  sont nécessaires au fonctionnement du service (connexion, langue, devise, mode hors ligne).
+  Sans eux, l'application ne peut pas vous identifier ni mémoriser vos préférences.
+</p>
+
+<h2>Cookies de session (connexion)</h2>
+<ul>
+  <li><strong>token</strong> — jeton d'accès, cookie HTTPOnly, durée limitée. Permet de rester connecté.</li>
+  <li><strong>refreshToken</strong> — jeton de renouvellement, cookie HTTPOnly. Permet de prolonger la session sans renvoyer le mot de passe.</li>
+</ul>
+<p>Ces cookies ne sont lus que par le serveur. Ils ne servent pas à vous pister d'un site à l'autre.</p>
+
+<h2>Cookies de préférence</h2>
+<ul>
+  <li><strong>locale</strong> — langue d'affichage (français par défaut).</li>
+  <li><strong>currency</strong> — devise d'affichage des montants (FCFA par défaut).</li>
+  <li><strong>selectedSchoolId</strong> — école actuellement consultée, pour un parent rattaché à plusieurs établissements.</li>
+  <li><strong>consent_prompt_done</strong> — mémorise qu'un parent a déjà répondu au rappel de consentement à la première connexion.</li>
+</ul>
+
+<h2>Stockage local (hors ligne)</h2>
+<p>
+  Après une première connexion, EduConnect peut enregistrer sur l'appareil (IndexedDB / stockage local)
+  des saisies en attente de synchronisation : appel, notes, devoirs, classes, élèves, enseignants, preuves de paiement.
+  Un identifiant technique d'appareil peut aussi être conservé localement pour ce mécanisme.
+</p>
+<p>
+  Ces données restent sur le téléphone ou l'ordinateur jusqu'à l'envoi au serveur, ou jusqu'à ce que
+  vous vidiez les données du site dans le navigateur.
+</p>
+
+<h2>Consentements (autre chose que les cookies)</h2>
+<p>
+  Les parents peuvent accorder ou révoquer des consentements (traitement des données, photos, santé, communications)
+  dans leur <a href="/parent/privacy">espace confidentialité</a> une fois connectés.
+  Ce n'est pas un gestionnaire de cookies publicitaires.
+</p>
+
+<h2>Comment les supprimer</h2>
+<p>
+  Vous pouvez supprimer les cookies et le stockage du site depuis les paramètres de votre navigateur.
+  Vous serez alors déconnecté et le mode hors ligne ne conservera plus les saisies en attente.
+</p>
+<p>
+  Questions : <a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a>
+  — Alliance Digitale Internationale, Côte d'Ivoire.
+</p>
+<% } %>
