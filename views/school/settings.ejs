@@ -54,8 +54,8 @@
       <% if (typeof smsOfficialEnabled !== 'undefined' && smsOfficialEnabled) { %>
       <div class="form-group">
         <label for="smsSenderId">Identifiant SMS officiel (nom ou numéro dédié)</label>
-        <input type="text" id="smsSenderId" name="smsSenderId" value="<%= school.smsSenderId || '' %>" placeholder="Ex. ECEME ou 07 XX XX XX XX" maxlength="20">
-        <p class="form-hint">Nom d'expéditeur (ex. ECEME) ou numéro SMS dédié, déclaré auprès de l'agrégateur. Ce n'est pas le numéro Wave ou Orange Money.</p>
+        <input type="text" id="smsSenderId" name="smsSenderId" value="<%= school.smsSenderId || '' %>" placeholder="Ex. EduConnect ou 07 XX XX XX XX" maxlength="20">
+        <p class="form-hint">Nom d'expéditeur (ex. EduConnect) ou numéro SMS dédié, déclaré auprès de l'agrégateur. Ce n'est pas le numéro Wave ou Orange Money.</p>
         <p class="form-hint"><strong>Aperçu :</strong> <%= typeof smsPreview !== 'undefined' ? smsPreview : ('École ' + school.name + ' : votre enfant est absent aujourd\'hui.') %></p>
         <p class="form-hint">Tant que cet identifiant n'est pas enregistré chez l'opérateur, le téléphone peut afficher « EduConnect », mais le texte commence toujours par le nom de l'école.</p>
       </div>

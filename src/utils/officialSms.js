@@ -38,7 +38,7 @@ function canAccessSchoolJobs(user, schoolId) {
 }
 
 function smsPreviewExample(schoolName) {
-  return prefixSmsBody(schoolName || 'ECEME', "votre enfant est absent aujourd'hui.");
+  return prefixSmsBody(schoolName || '[nom de l’école]', "votre enfant est absent aujourd'hui.");
 }
 
 module.exports = {
