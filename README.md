@@ -20,7 +20,7 @@ npm run dev
 ```
 
 Application (local) : http://localhost:3000  
-Production : https://educonnect-assoheddy-boops-projects.vercel.app
+Production : https://educonnect-ci.com
 
 `npm run db:seed` ne crée **pas** les comptes `@demo.ci` par défaut. En local / tests :
 
