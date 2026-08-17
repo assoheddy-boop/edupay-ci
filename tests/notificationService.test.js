@@ -359,4 +359,25 @@ describe('worker status transitions', () => {
       data: expect.objectContaining({ status: 'skipped', error: 'module_off' }),
     }));
   });
+
+  test('invalid phone SMS is skipped rather than retried as error', async () => {
+    sendSms.mockResolvedValueOnce({ ok: false, reason: 'invalid_phone' });
+    prisma.notificationJob.findMany.mockResolvedValue([{
+      id: 'sms-bad',
+      userId: 'u1',
+      schoolId: SCHOOL.id,
+      channel: 'SMS',
+      eventType: 'ABSENCE',
+      payload: { title: 'Absence signalée', body: 'Awa absente.' },
+      status: 'pending',
+      attempts: 0,
+      scheduledAt: new Date(),
+    }]);
+
+    const result = await processPendingJobs();
+    expect(result.skipped).toBe(1);
+    expect(prisma.notificationJob.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'skipped', error: 'invalid_phone' }),
+    }));
+  });
 });

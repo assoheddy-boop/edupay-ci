@@ -13,8 +13,8 @@
     <h1>Gestion scolaire moderne &amp; paiements simplifiés</h1>
     <p class="hero-sub">Appel Présent / Retard / Absent, notes visibles par les parents, paiements Wave ou Orange Money.</p>
     <div class="hero-actions">
-      <a href="/auth/register?role=SCHOOL_ADMIN" class="btn btn-primary btn-lg">Créer mon école</a>
-      <a href="#tarifs" class="btn btn-outline btn-lg">Voir les offres</a>
+      <a href="/devis" class="btn btn-primary btn-lg">Obtenir un devis Pro</a>
+      <a href="#tarifs" class="btn btn-outline btn-lg">Voir l'offre</a>
       <a href="/auth/register?role=PARENT" class="btn btn-success btn-lg">Espace parent</a>
     </div>
   </div>
@@ -44,115 +44,23 @@
 
 <section class="pricing" id="tarifs">
   <div class="section-intro">
-    <h2>Plans d'adhésion</h2>
-    <p>Choisissez les modules dont votre établissement a besoin. Activez ou désactivez chaque module premium depuis votre espace — contrôlé par le Super Admin EduConnect.</p>
+    <h2>Offre Pro</h2>
+    <p>Un seul plan, complet et premium, adapté à votre école. Les modules sont activés par EduConnect.</p>
   </div>
 
   <div class="pricing-grid">
-    <% plans.filter(p => !p.isGroup).forEach(function(plan) { %>
-      <article class="pricing-card <%= plan.highlight ? 'pricing-card-featured' : '' %>">
-        <% if (plan.badge) { %><span class="pricing-badge"><%= plan.badge %></span><% } %>
-        <h3><%= plan.name %></h3>
-        <p class="pricing-tagline"><%= plan.tagline %></p>
-        <div class="pricing-price">
-          <span class="pricing-amount"><%= plan.priceLabel %></span>
-          <% if (plan.price !== null && plan.price > 0) { %>
-            <span class="pricing-period"><%= plan.period %></span>
-          <% } else if (plan.price === 0) { %>
-            <span class="pricing-period"><%= plan.period %></span>
-          <% } %>
-        </div>
-        <p class="pricing-limits"><%= plan.limits %></p>
-        <ul class="pricing-modules">
-          <% plan.moduleFlags.filter(m => m.included).slice(0, 8).forEach(function(m) { %>
-            <li><span class="check">✓</span> <%= m.label %></li>
-          <% }) %>
-          <% const extra = plan.moduleFlags.filter(m => m.included).length - 8; %>
-          <% if (extra > 0) { %>
-            <li class="pricing-more">+ <%= extra %> autre<%= extra > 1 ? 's' : '' %> module<%= extra > 1 ? 's' : '' %></li>
-          <% } %>
-        </ul>
-        <a href="<%= plan.ctaHref %>" class="btn <%= plan.highlight ? 'btn-primary' : 'btn-outline' %> btn-block"><%= plan.cta %></a>
-      </article>
-    <% }) %>
-  </div>
-</section>
-
-<section class="module-compare">
-  <div class="section-intro">
-    <h2>Modules par offre</h2>
-    <p>Comparez ce qui est inclus dans chaque plan. Les modules marqués <strong>—</strong> peuvent être ajoutés en passant à l'offre supérieure.</p>
-  </div>
-  <div class="compare-wrap">
-    <table class="compare-table">
-      <thead>
-        <tr>
-          <th>Module</th>
-          <% plans.filter(p => !p.isGroup).forEach(function(plan) { %>
-            <th><%= plan.name %></th>
-          <% }) %>
-        </tr>
-      </thead>
-      <tbody>
-        <% moduleList.forEach(function(mod) { %>
-          <% if (mod.key === 'multi_campus') return; %>
-          <tr>
-            <td>
-              <strong><%= mod.label %></strong>
-              <% if (mod.core) { %><span class="compare-core">Base</span><% } %>
-            </td>
-            <% plans.filter(p => !p.isGroup).forEach(function(plan) { %>
-              <% const included = plan.moduleFlags.find(m => m.key === mod.key)?.included; %>
-              <td class="compare-cell <%= included ? 'yes' : 'no' %>"><%= included ? '✓' : '—' %></td>
-            <% }) %>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section class="group-offer" id="groupe-scolaire">
-  <% const groupe = plans.find(p => p.isGroup); %>
-  <div class="group-layout">
-    <div class="group-content">
-      <span class="badge badge-group">🏛️ Groupes & réseaux</span>
-      <h2><%= groupe.name %></h2>
-      <p class="group-lead">Vous gérez plusieurs établissements ? EduConnect regroupe vos campus sous une même direction avec une vue consolidée et des modules activables campus par campus.</p>
-      <ul class="group-perks">
-        <% groupe.perks.forEach(function(perk) { %>
-          <li><span class="check">✓</span> <%= perk %></li>
-        <% }) %>
-      </ul>
-      <div class="group-price">
-        <strong><%= groupe.priceLabel %></strong>
-        <span><%= groupe.period %></span>
+    <% const plan = (typeof plans !== 'undefined' && plans[0]) ? plans[0] : { name: 'Pro', priceLabel: '500 000', period: 'FCFA / an', tagline: 'Un seul plan, complet et premium, adapté à votre école', limits: 'Tous les modules', cta: 'Obtenir un devis', ctaHref: '/devis', moduleFlags: [] }; %>
+    <article class="pricing-card pricing-card-featured">
+      <span class="pricing-badge">Offre unique</span>
+      <h3><%= plan.name %></h3>
+      <p class="pricing-tagline"><%= plan.tagline %></p>
+      <div class="pricing-price">
+        <span class="pricing-amount"><%= plan.priceLabel %></span>
+        <span class="pricing-period"><%= plan.period %></span>
       </div>
-      <div class="group-actions">
-        <a href="<%= groupe.ctaHref %>" class="btn btn-primary btn-lg"><%= groupe.cta %></a>
-        <a href="/auth/login" class="btn btn-outline">Déjà client groupe</a>
-      </div>
-      <% if (typeof showDemoAccounts !== 'undefined' && showDemoAccounts) { %>
-      <p class="group-demo">Compte démo : <code>groupe@demo.ci</code> / <code>demo1234</code></p>
-      <% } %>
-    </div>
-    <div class="group-visual card">
-      <h3>Vue consolidée</h3>
-      <div class="group-mock-stats">
-        <div class="group-mock-stat"><span>3</span><small>Campus</small></div>
-        <div class="group-mock-stat"><span>840</span><small>Élèves</small></div>
-        <div class="group-mock-stat"><span>12,4M</span><small>Recettes</small></div>
-      </div>
-      <table class="table table-compact">
-        <thead><tr><th>Campus</th><th>Élèves</th><th>RH</th><th>Compta</th></tr></thead>
-        <tbody>
-          <tr><td>Cocody</td><td>320</td><td>✓</td><td>✓</td></tr>
-          <tr><td>Yopougon</td><td>280</td><td>✓</td><td>—</td></tr>
-          <tr><td>Bingerville</td><td>240</td><td>—</td><td>✓</td></tr>
-        </tbody>
-      </table>
-      <p class="group-visual-note">Chaque campus garde son autonomie ; le groupe pilote la stratégie.</p>
-    </div>
+      <p class="pricing-limits"><%= plan.limits %></p>
+      <a href="/devis" class="btn btn-primary btn-block">Obtenir un devis</a>
+    </article>
   </div>
 </section>
 
@@ -164,7 +72,7 @@
       <ul>
         <li>Classes, élèves, enseignants</li>
         <li>Validation des paiements</li>
-        <li>Modules premium à la carte</li>
+        <li>Modules activés par EduConnect</li>
       </ul>
     </div>
     <div class="module-card">

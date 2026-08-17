@@ -94,7 +94,7 @@ async function register(req, res) {
       }
       const slug = await generateUniqueSchoolSlug(schoolName);
       const { findPlanBySlug, assignPlanToSchool } = require('../utils/plans');
-      const selectedPlan = await findPlanBySlug(plan || 'essentiel');
+      const selectedPlan = await findPlanBySlug(plan || 'pro');
 
       const user = await prisma.user.create({
         data: {
@@ -112,7 +112,7 @@ async function register(req, res) {
               city: city || 'Abidjan',
               waveNumber,
               omNumber,
-              subscription: plan || 'essentiel',
+              subscription: plan || 'pro',
               planId: selectedPlan?.id || null,
             },
           },

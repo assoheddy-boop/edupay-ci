@@ -1,0 +1,250 @@
+.devis-page {
+  --navy: #0b1f4a;
+  --orange: #e86a12;
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+.devis-hero {
+  padding: 1.5rem 1.25rem 0.5rem;
+}
+
+.devis-hero h1 {
+  color: var(--navy);
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0.35rem 0 0.6rem;
+}
+
+.devis-hero p {
+  color: var(--muted, #5c6b80);
+  margin: 0;
+}
+
+.devis-form,
+.devis-card,
+.devis-offer {
+  margin: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #dfe6ef;
+  border-radius: 16px;
+  padding: 1.25rem 1.15rem;
+}
+
+.devis-progress {
+  display: none;
+  list-style: none;
+  margin: 1rem 1.25rem 0;
+  padding: 0;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.devis-enhanced .devis-progress {
+  display: flex;
+}
+
+.devis-progress li {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8a97ab;
+  background: #eef2f8;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+}
+
+.devis-progress li.is-on {
+  color: #fff;
+  background: #0052CC;
+}
+
+.devis-panel {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+
+.devis-panel legend {
+  color: var(--navy);
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  padding: 0;
+}
+
+.devis-enhanced .devis-panel { display: none; }
+.devis-enhanced .devis-panel.is-active { display: block; }
+
+.devis-hint {
+  color: #5c6b80;
+  font-size: 0.92rem;
+  margin: 0 0 0.85rem;
+}
+
+.devis-alert { margin: 0 1.25rem 0.75rem; }
+
+.req { color: var(--orange); }
+
+.devis-counts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.devis-choice {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.devis-choice legend {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a2332;
+  margin-bottom: 0.45rem;
+}
+
+.devis-chip,
+.devis-check {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 48px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #dfe6ef;
+  border-radius: 12px;
+  background: #f7f9fc;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.devis-check { margin-bottom: 0.5rem; }
+
+.devis-chip:has(input:checked),
+.devis-check:has(input:checked) {
+  border-color: #0052CC;
+  background: #eef3fc;
+}
+
+.devis-chip input,
+.devis-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: #0052CC;
+}
+
+.devis-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.devis-enhanced .devis-prev,
+.devis-enhanced .devis-next { display: inline-flex; }
+.devis-enhanced .devis-submit { display: none; }
+.devis-enhanced .devis-nav.is-last .devis-submit { display: inline-flex; }
+.devis-enhanced .devis-nav.is-last .devis-next { display: none; }
+.devis-enhanced .devis-nav.is-first .devis-prev { visibility: hidden; }
+
+.devis-nav .home-btn {
+  min-height: 48px;
+  flex: 1 1 140px;
+  justify-content: center;
+}
+
+.devis-offer {
+  text-align: center;
+  border-color: #0052CC;
+  box-shadow: 0 10px 28px rgba(0, 82, 204, 0.12);
+}
+
+.devis-offer-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0052CC;
+  margin: 0 0 0.35rem;
+}
+
+.devis-offer h2 {
+  color: var(--navy);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.devis-offer-price strong {
+  display: block;
+  font-size: 2rem;
+  color: #0052CC;
+}
+
+.devis-offer-price span,
+.devis-offer-tag {
+  color: #5c6b80;
+}
+
+.devis-card h2 {
+  color: var(--navy);
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.devis-card h3 {
+  color: var(--navy);
+  font-size: 0.95rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.devis-dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.devis-dl div {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.5rem;
+}
+
+.devis-dl dt {
+  color: #5c6b80;
+  font-weight: 600;
+}
+
+.devis-dl dd { margin: 0; }
+
+.devis-mods {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.devis-mods li { margin: 0.25rem 0; }
+
+.devis-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.25rem;
+}
+
+.devis-actions .home-btn,
+.devis-actions form .home-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+}
+
+@media (min-width: 640px) {
+  .devis-counts { grid-template-columns: repeat(3, 1fr); }
+  .devis-actions { flex-direction: row; }
+  .devis-hero h1 { font-size: 2rem; }
+}

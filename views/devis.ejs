@@ -1,0 +1,206 @@
+<%- include('partials/head') %>
+<% const v = typeof values !== 'undefined' && values ? values : {}; %>
+<% function checked(name) { return v[name] ? 'checked' : ''; } %>
+<div class="home devis-page">
+  <header class="home-top">
+    <a href="/" class="home-logo">
+      <span class="home-logo-mark" aria-hidden="true">🎓</span>
+      <span>Edu<strong>Connect</strong></span>
+    </a>
+    <nav class="home-links" aria-label="Navigation">
+      <a href="/">Accueil</a>
+      <a href="/devis" aria-current="page">Devis</a>
+      <a href="/auth/login">Connexion</a>
+    </nav>
+  </header>
+
+  <section class="devis-hero">
+    <p class="home-kicker">Offre unique · Côte d'Ivoire</p>
+    <h1>Obtenez votre devis Pro</h1>
+    <p>Un questionnaire, un tarif clair : <strong>500 000 FCFA / an</strong>. Les réponses servent à préparer les modules de votre école — le prix ne change pas.</p>
+  </section>
+
+  <form id="devisForm" class="devis-form" method="POST" action="/devis" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <ol class="devis-progress" aria-hidden="true">
+      <li data-step="1" class="is-on">Établissement</li>
+      <li data-step="2">Effectifs</li>
+      <li data-step="3">Vie scolaire</li>
+      <li data-step="4">Administration</li>
+      <li data-step="5">Communication</li>
+      <li data-step="6">Historique</li>
+    </ol>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error devis-alert" role="alert"><%= error %></div>
+    <% } %>
+
+    <fieldset class="devis-panel is-active" data-step="1">
+      <legend>Établissement</legend>
+      <div class="form-group">
+        <label for="schoolName">Nom de l'établissement <span class="req">*</span></label>
+        <input type="text" id="schoolName" name="schoolName" required minlength="2" maxlength="160" autocomplete="organization" value="<%= v.schoolName || '' %>">
+      </div>
+      <div class="form-group">
+        <label for="city">Ville <span class="req">*</span></label>
+        <input type="text" id="city" name="city" required minlength="2" maxlength="80" autocomplete="address-level2" value="<%= v.city || '' %>">
+      </div>
+      <fieldset class="devis-choice">
+        <legend>Faites-vous partie d'un groupe scolaire ?</legend>
+        <label class="devis-chip"><input type="radio" name="isGroup" value="non" <%= v.isGroup !== 'oui' ? 'checked' : '' %>> Non</label>
+        <label class="devis-chip"><input type="radio" name="isGroup" value="oui" <%= v.isGroup === 'oui' ? 'checked' : '' %>> Oui</label>
+      </fieldset>
+      <div class="form-group" id="groupNameWrap" <%= v.isGroup === 'oui' ? '' : 'hidden' %>>
+        <label for="groupName">Nom du groupe</label>
+        <input type="text" id="groupName" name="groupName" maxlength="160" value="<%= v.groupName || '' %>">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="contactName">Personne à contacter</label>
+          <input type="text" id="contactName" name="contactName" maxlength="120" autocomplete="name" value="<%= v.contactName || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="contactEmail">Email</label>
+          <input type="email" id="contactEmail" name="contactEmail" maxlength="160" autocomplete="email" value="<%= v.contactEmail || '' %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="contactPhone">Téléphone</label>
+        <input type="tel" id="contactPhone" name="contactPhone" maxlength="40" autocomplete="tel" placeholder="07 XX XX XX XX" value="<%= v.contactPhone || '' %>">
+      </div>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="2">
+      <legend>Effectifs</legend>
+      <p class="devis-hint">Champs obligatoires — une estimation suffit.</p>
+      <div class="devis-counts">
+        <div class="form-group">
+          <label for="students">Élèves <span class="req">*</span></label>
+          <input type="number" id="students" name="students" required min="1" max="100000" inputmode="numeric" value="<%= v.students || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="teachers">Enseignants <span class="req">*</span></label>
+          <input type="number" id="teachers" name="teachers" required min="1" max="10000" inputmode="numeric" value="<%= v.teachers || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="classes">Classes <span class="req">*</span></label>
+          <input type="number" id="classes" name="classes" required min="1" max="5000" inputmode="numeric" value="<%= v.classes || '' %>">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="3">
+      <legend>Vie scolaire</legend>
+      <p class="devis-hint">Cochez ce que vous souhaitez suivre dans EduConnect.</p>
+      <label class="devis-check"><input type="checkbox" name="lifeCanteen" <%= checked('lifeCanteen') %>> Cantine</label>
+      <label class="devis-check"><input type="checkbox" name="lifeTransport" <%= checked('lifeTransport') %>> Transport</label>
+      <label class="devis-check"><input type="checkbox" name="lifeActivities" <%= checked('lifeActivities') %>> Activités extrascolaires</label>
+      <label class="devis-check"><input type="checkbox" name="lifeHealth" <%= checked('lifeHealth') %>> Santé scolaire</label>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="4">
+      <legend>Administration</legend>
+      <label class="devis-check"><input type="checkbox" name="adminAccounting" <%= checked('adminAccounting') %>> Comptabilité</label>
+      <label class="devis-check"><input type="checkbox" name="adminHr" <%= checked('adminHr') %>> Ressources humaines</label>
+      <label class="devis-check"><input type="checkbox" name="adminMulti" <%= checked('adminMulti') %>> Multi-école / groupe</label>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="5">
+      <legend>Communication</legend>
+      <label class="devis-check"><input type="checkbox" name="commSms" <%= checked('commSms') %>> SMS officiel</label>
+      <label class="devis-check"><input type="checkbox" name="commNotify" <%= checked('commNotify') %>> Notifications push et e-mail</label>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="6">
+      <legend>Historique</legend>
+      <p class="devis-hint">Optionnel — effectifs des 3 dernières années et budget digitalisation.</p>
+      <div class="devis-counts">
+        <div class="form-group">
+          <label for="historyYear1">Il y a 3 ans</label>
+          <input type="number" id="historyYear1" name="historyYear1" min="0" max="100000" inputmode="numeric" value="<%= v.historyYear1 || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="historyYear2">Il y a 2 ans</label>
+          <input type="number" id="historyYear2" name="historyYear2" min="0" max="100000" inputmode="numeric" value="<%= v.historyYear2 || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="historyYear3">Année dernière</label>
+          <input type="number" id="historyYear3" name="historyYear3" min="0" max="100000" inputmode="numeric" value="<%= v.historyYear3 || '' %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="digitalBudget">Budget digitalisation (FCFA / an, estimation)</label>
+        <input type="text" id="digitalBudget" name="digitalBudget" maxlength="80" value="<%= v.digitalBudget || '' %>">
+      </div>
+    </fieldset>
+
+    <div class="devis-nav">
+      <button type="button" class="home-btn home-btn-ghost devis-prev">Retour</button>
+      <button type="button" class="home-btn home-btn-primary devis-next">Continuer</button>
+      <button type="submit" class="home-btn home-btn-primary devis-submit">Voir mon devis Pro</button>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('devisForm');
+  if (!form) return;
+  form.classList.add('devis-enhanced');
+  var panels = Array.prototype.slice.call(form.querySelectorAll('.devis-panel'));
+  var steps = Array.prototype.slice.call(form.querySelectorAll('.devis-progress li'));
+  var nav = form.querySelector('.devis-nav');
+  var prev = form.querySelector('.devis-prev');
+  var next = form.querySelector('.devis-next');
+  var groupWrap = document.getElementById('groupNameWrap');
+  var index = 0;
+
+  function show(i) {
+    index = Math.max(0, Math.min(i, panels.length - 1));
+    panels.forEach(function (p, n) { p.classList.toggle('is-active', n === index); });
+    steps.forEach(function (s, n) { s.classList.toggle('is-on', n <= index); });
+    nav.classList.toggle('is-first', index === 0);
+    nav.classList.toggle('is-last', index === panels.length - 1);
+    var first = panels[index].querySelector('input:not([type="hidden"])');
+    if (first) first.focus({ preventScroll: true });
+    panels[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function validPanel() {
+    var fields = panels[index].querySelectorAll('input[required]');
+    for (var i = 0; i < fields.length; i++) {
+      if (!fields[i].checkValidity()) {
+        fields[i].reportValidity();
+        return false;
+      }
+    }
+    var groupOn = form.querySelector('input[name="isGroup"]:checked');
+    if (index === 0 && groupOn && groupOn.value === 'oui') {
+      var gn = document.getElementById('groupName');
+      if (gn && gn.value.trim().length < 2) {
+        gn.setCustomValidity('Indiquez le nom du groupe scolaire.');
+        gn.reportValidity();
+        gn.setCustomValidity('');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function syncGroup() {
+    if (!groupWrap) return;
+    var oui = form.querySelector('input[name="isGroup"][value="oui"]');
+    groupWrap.hidden = !(oui && oui.checked);
+  }
+  form.querySelectorAll('input[name="isGroup"]').forEach(function (r) {
+    r.addEventListener('change', syncGroup);
+  });
+  syncGroup();
+
+  next.addEventListener('click', function () { if (validPanel()) show(index + 1); });
+  prev.addEventListener('click', function () { show(index - 1); });
+  show(0);
+})();
+</script>
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

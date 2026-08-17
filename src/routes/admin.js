@@ -7,7 +7,9 @@ const router = express.Router();
 
 router.use(requireAuth, checkRole('admin'));
 
+router.get('/', (_req, res) => res.redirect('/admin/dashboard'));
 router.get('/dashboard', adminController.dashboard);
+router.post('/sms-test', adminController.sendTestSms);
 router.get('/modules', adminController.modulesHub);
 router.get('/schools/:id/modules', adminController.schoolModules);
 router.post('/schools/:id/modules', auditMiddleware('school_modules_update', 'SchoolModule'), adminController.updateSchoolModules);

@@ -17,6 +17,8 @@ const {
   stopAssist,
 } = require('../utils/adminAssist');
 const { safeInternalPath } = require('../utils/cookies');
+const { sendConnectivityTestSms, orangeConfigured } = require('../services/sms');
+const { resolveSmsSender } = require('../utils/officialSms');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -82,7 +84,41 @@ async function dashboard(req, res) {
     MODULE_KEYS,
     success: req.query.success || null,
     error: req.query.error || null,
+    smsConfigured: orangeConfigured(),
+    smsTest: req.query.smsTest || null,
+    smsReason: req.query.smsReason || null,
+    smsSender: req.query.smsSender || null,
   });
+}
+
+function smsTestStatus(result) {
+  if (result?.ok) return 'sent';
+  if (['not_configured', 'no_phone', 'invalid_phone'].includes(result?.reason)) return 'skipped';
+  return 'error';
+}
+
+async function sendTestSms(req, res) {
+  const phone = String(req.body?.phone || '').trim();
+  const schoolId = String(req.body?.schoolId || '').trim();
+  let school = null;
+  if (schoolId) {
+    try {
+      school = await prisma.school.findUnique({
+        where: { id: schoolId },
+        select: { id: true, name: true, smsSenderId: true },
+      });
+    } catch {
+      school = null;
+    }
+  }
+
+  const result = await sendConnectivityTestSms(phone, { school });
+  const params = new URLSearchParams({ smsTest: smsTestStatus(result) });
+  if (result?.reason) params.set('smsReason', String(result.reason).slice(0, 120));
+  if (result?.sender || school) {
+    params.set('smsSender', resolveSmsSender({ school }).slice(0, 20));
+  }
+  return res.redirect(`/admin/dashboard?${params.toString()}`);
 }
 
 async function modulesHub(req, res) {
@@ -372,6 +408,7 @@ async function exitAssist(req, res) {
 
 module.exports = {
   dashboard,
+  sendTestSms,
   modulesHub,
   schoolModules,
   updateSchoolModules,

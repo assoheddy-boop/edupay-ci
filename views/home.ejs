@@ -9,10 +9,11 @@
       <span></span><span></span><span></span>
     </button>
     <nav class="home-links" id="homeNav" aria-label="Navigation principale">
-      <a href="#tarifs">Offres</a>
+      <a href="#tarifs">Offre Pro</a>
+      <a href="/devis">Devis</a>
       <a href="#contact">Contact</a>
       <a href="/auth/login">Connexion</a>
-      <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary">Demander une démo</a>
+      <a href="/devis" class="home-btn home-btn-primary">Obtenir un devis</a>
     </nav>
   </header>
   <div class="home-nav-overlay" id="homeNavOverlay" hidden></div>
@@ -26,8 +27,8 @@
         Conçue pour les écoles ivoiriennes — pas seulement pour encaisser les frais.
       </p>
       <div class="home-hero-actions">
-        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary home-btn-xl">Demander une démo</a>
-        <a href="#tarifs" class="home-btn home-btn-ghost home-btn-xl">Voir les offres</a>
+        <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
+        <a href="#tarifs" class="home-btn home-btn-ghost home-btn-xl">Voir l'offre</a>
       </div>
     </div>
   </section>
@@ -181,44 +182,33 @@
   <section class="home-section" id="tarifs" aria-labelledby="tarifs-title">
     <div class="home-wrap">
       <header class="home-section-head">
-        <h2 id="tarifs-title">Des offres claires, en FCFA</h2>
-        <p>Activez les modules dont votre établissement a besoin. Le plan Groupe se discute selon le nombre de campus.</p>
+        <h2 id="tarifs-title">Un seul plan, en FCFA</h2>
+        <p>Un seul plan, complet et premium, adapté à votre école. Les modules sont activés par EduConnect.</p>
       </header>
-      <div class="home-plans">
-        <% plans.filter(function (p) { return !p.isGroup; }).forEach(function (plan) { %>
-          <article class="home-plan<%= plan.highlight ? ' is-featured' : '' %>">
-            <% if (plan.badge) { %><span class="home-plan-badge"><%= plan.badge %></span><% } %>
-            <h3><%= plan.name %></h3>
-            <p class="home-plan-tag"><%= plan.tagline %></p>
-            <p class="home-plan-price">
-              <strong><%= plan.priceLabel %></strong>
-              <% if (plan.period) { %><span><%= plan.period %></span><% } %>
-            </p>
-            <p class="home-plan-limits"><%= plan.limits %></p>
-            <a href="<%= plan.ctaHref %>" class="home-btn <%= plan.highlight ? 'home-btn-primary' : 'home-btn-outline' %>"><%= plan.cta %></a>
-          </article>
-        <% }) %>
+      <div class="home-plans home-plans-single">
+        <% const plan = (typeof plans !== 'undefined' && plans[0]) ? plans[0] : { name: 'Pro', priceLabel: '500 000', period: 'FCFA / an', tagline: 'Un seul plan, complet et premium, adapté à votre école', limits: 'Tous les modules · élèves illimités', cta: 'Obtenir un devis', ctaHref: '/devis', badge: 'Offre unique' }; %>
+        <article class="home-plan is-featured">
+          <% if (plan.badge) { %><span class="home-plan-badge"><%= plan.badge %></span><% } %>
+          <h3><%= plan.name %></h3>
+          <p class="home-plan-tag"><%= plan.tagline %></p>
+          <p class="home-plan-price">
+            <strong><%= plan.priceLabel %></strong>
+            <% if (plan.period) { %><span><%= plan.period %></span><% } %>
+          </p>
+          <p class="home-plan-limits"><%= plan.limits %></p>
+          <a href="<%= plan.ctaHref || '/devis' %>" class="home-btn home-btn-primary"><%= plan.cta || 'Obtenir un devis' %></a>
+        </article>
       </div>
-      <% const groupe = plans.find(function (p) { return p.isGroup; }); %>
-      <% if (groupe) { %>
-        <aside class="home-group">
-          <div>
-            <h3><%= groupe.name %></h3>
-            <p><%= groupe.tagline %> — <%= groupe.priceLabel %>, <%= groupe.period %>.</p>
-          </div>
-          <a href="<%= groupe.ctaHref %>" class="home-btn home-btn-primary"><%= groupe.cta %></a>
-        </aside>
-      <% } %>
     </div>
   </section>
 
   <section class="home-cta-band" id="contact">
     <div class="home-wrap">
       <h2>Parlons de votre établissement</h2>
-      <p>Une démo, un devis groupe, ou simplement une question. Pas de mot de passe de démonstration sur cette page : on vous ouvre un espace propre.</p>
+      <p>Un devis Pro, ou simplement une question. Pas de mot de passe de démonstration sur cette page : on vous ouvre un espace propre.</p>
       <div class="home-hero-actions">
-        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary home-btn-xl">Demander une démo</a>
-        <a href="mailto:contact@educonnect.ci?subject=Demande%20de%20d%C3%A9mo%20EduConnect" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@educonnect.ci</a>
+        <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
+        <a href="mailto:contact@educonnect.ci?subject=Offre%20Pro%20EduConnect" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@educonnect.ci</a>
       </div>
     </div>
   </section>
@@ -233,7 +223,7 @@
       <div>
         <h3>Contact</h3>
         <p><a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a></p>
-        <p><a href="/auth/login">Connexion</a> · <a href="/auth/register">Inscription</a></p>
+        <p><a href="/devis">Devis</a> · <a href="/auth/login">Connexion</a> · <a href="/auth/register">Inscription</a></p>
       </div>
       <div>
         <h3>Informations légales</h3>
@@ -242,6 +232,8 @@
           <li><a href="/confidentialite">Politique de confidentialité</a></li>
           <li><a href="/cgu">Conditions générales d'utilisation</a></li>
           <li><a href="/cookies">Cookies</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/devis">Devis · Offre Pro</a></li>
         </ul>
       </div>
     </div>

@@ -1,20 +1,18 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('upgrade', { _inLayout: true }); %>
-<%- include('../layouts/schoolLayout', { body: content, title: 'Premium' }) %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Offre Pro' }) %>
 <% } else { %>
 <div class="upgrade-page card">
-    <h1>⭐ Fonctionnalité Premium</h1>
-    <p><strong><%= feature %></strong> nécessite un abonnement EduConnect Premium.</p>
+    <h1>Fonctionnalité de l'offre Pro</h1>
+    <p><strong><%= feature %></strong> fait partie d'EduConnect Pro. Les modules sont activés par EduConnect.</p>
     <ul class="upgrade-list">
       <li>✓ Bulletins PDF automatiques</li>
       <li>✓ Chat école ↔ parents</li>
       <li>✓ Statistiques & exports Excel</li>
-      <li>✓ SMS & WhatsApp alertes</li>
+      <li>✓ SMS officiel</li>
     </ul>
-    <p class="page-sub">À partir de <strong>10 000 FCFA/mois</strong> — contactez EduConnect ou passez en premium dans les paramètres (démo).</p>
-    <form method="POST" action="/school/upgrade" class="form">
-      <button type="submit" class="btn btn-success btn-lg">Activer Premium (démo)</button>
-    </form>
+    <p class="page-sub">Offre unique : <strong>Pro — 500 000 FCFA / an</strong>.</p>
+    <a href="/devis" class="btn btn-primary btn-lg">Obtenir un devis</a>
     <a href="/school/dashboard" class="btn btn-outline">Retour</a>
   </div>
 <% } %>

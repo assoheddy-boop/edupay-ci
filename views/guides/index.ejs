@@ -1,0 +1,22 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('index', { _inLayout: true }); %>
+<%- include('../layouts/guideLayout', { body: content, title: typeof title !== 'undefined' ? title : 'Guides' }) %>
+<% } else { %>
+<h1>Guides EduConnect</h1>
+<p class="legal-updated">Mode d’emploi par rôle — à imprimer ou à envoyer sur WhatsApp.</p>
+<p>
+  EduConnect est édité par <strong>Alliance Digitale Internationale</strong>.
+  Site : <a href="https://educonnect-ci.com">https://educonnect-ci.com</a>.
+  Connexion : <a href="/auth/login">/auth/login</a>.
+</p>
+<ul class="guide-list">
+  <% guides.forEach(function (g) { %>
+    <li>
+      <a href="/guide/<%= g.slug %>"><strong><%= g.title %></strong></a>
+      — <%= g.audience %>
+      · <a href="/guide/<%= g.slug %>.pdf">PDF</a>
+    </li>
+  <% }) %>
+</ul>
+<p>Les menus visibles dans l’application dépendent des modules activés pour chaque école.</p>
+<% } %>

@@ -19,7 +19,7 @@ describe('EduConnect API', () => {
   test('GET / returns 200', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/Demander une démo/);
+    expect(res.text).toMatch(/Obtenir un devis/);
     expect(res.text).toMatch(/bien plus qu.un paiement scolaire/);
   });
 

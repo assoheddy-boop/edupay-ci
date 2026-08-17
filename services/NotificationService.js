@@ -28,6 +28,7 @@ const CRITICAL_EVENTS = new Set([
 
 const SKIP_REASONS = new Set([
   'no_phone',
+  'invalid_phone',
   'no_email',
   'no_smtp',
   'no_mailer',

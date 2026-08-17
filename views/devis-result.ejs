@@ -1,0 +1,91 @@
+<%- include('partials/head') %>
+<% const a = typeof answers !== 'undefined' && answers ? answers : {}; %>
+<% const life = a.life || {}; const admin = a.admin || {}; const comm = a.comm || {}; const hist = a.history || {}; %>
+<% const selected = summary && summary.selected ? summary.selected : []; %>
+<div class="home devis-page">
+  <header class="home-top">
+    <a href="/" class="home-logo">
+      <span class="home-logo-mark" aria-hidden="true">🎓</span>
+      <span>Edu<strong>Connect</strong></span>
+    </a>
+    <nav class="home-links" aria-label="Navigation">
+      <a href="/">Accueil</a>
+      <a href="/devis">Nouveau devis</a>
+      <a href="/auth/login">Connexion</a>
+    </nav>
+  </header>
+
+  <section class="devis-hero">
+    <p class="home-kicker">Devis n° <%= quote.id.slice(-8).toUpperCase() %></p>
+    <h1>Votre offre EduConnect Pro</h1>
+    <p>Un seul plan, complet et premium, adapté à votre école</p>
+  </section>
+
+  <% if (typeof activationMessage !== 'undefined' && activationMessage) { %>
+    <div class="alert alert-success devis-alert" role="status"><%= activationMessage %></div>
+  <% } %>
+
+  <article class="devis-offer">
+    <p class="devis-offer-kicker">Un seul plan</p>
+    <h2>Pro</h2>
+    <p class="devis-offer-price"><strong><%= amountLabel %></strong> <span>/ an</span></p>
+    <p class="devis-offer-tag">Complet · support prioritaire · formation · SMS officiel · comptabilité · RH · multi-école</p>
+  </article>
+
+  <section class="devis-card">
+    <h2>Votre établissement</h2>
+    <dl class="devis-dl">
+      <div><dt>Nom</dt><dd><%= a.schoolName || quote.schoolName %></dd></div>
+      <div><dt>Ville</dt><dd><%= a.city || quote.city %></dd></div>
+      <div><dt>Groupe scolaire</dt><dd><%= a.isGroup ? (a.groupName || 'Oui') : 'Non' %></dd></div>
+      <div><dt>Élèves</dt><dd><%= a.students %></dd></div>
+      <div><dt>Enseignants</dt><dd><%= a.teachers %></dd></div>
+      <div><dt>Classes</dt><dd><%= a.classes %></dd></div>
+    </dl>
+  </section>
+
+  <section class="devis-card">
+    <h2>Modules cochés</h2>
+    <% if (selected.length) { %>
+      <ul class="devis-mods">
+        <% selected.forEach(function (m) { %><li><%= m %></li><% }) %>
+      </ul>
+    <% } else { %>
+      <p class="devis-hint">Aucun module optionnel coché — le plan Pro couvre déjà le cœur pédagogique et le pilotage.</p>
+    <% } %>
+    <h3>Toujours inclus</h3>
+    <ul class="devis-mods devis-mods-core">
+      <% summary.core.forEach(function (m) { %><li><%= m %></li><% }) %>
+      <% summary.included.forEach(function (m) { %><li><%= m %></li><% }) %>
+    </ul>
+  </section>
+
+  <section class="devis-card">
+    <h2>Réponses</h2>
+    <dl class="devis-dl">
+      <div><dt>Cantine</dt><dd><%= life.canteen ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Transport</dt><dd><%= life.transport ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Activités</dt><dd><%= life.activities ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Santé</dt><dd><%= life.health ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Comptabilité</dt><dd><%= admin.accounting ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>RH</dt><dd><%= admin.hr ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Multi-école</dt><dd><%= admin.multiSchool ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>SMS officiel</dt><dd><%= comm.smsOfficial ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Push / e-mail</dt><dd><%= comm.pushEmail ? 'Oui' : 'Non' %></dd></div>
+      <div><dt>Effectifs N-3 / N-2 / N-1</dt><dd><%= [hist.year1, hist.year2, hist.year3].map(function (n) { return n == null ? '—' : n; }).join(' / ') %></dd></div>
+      <div><dt>Budget digitalisation</dt><dd><%= hist.digitalBudget || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <div class="devis-actions">
+    <a class="home-btn home-btn-primary home-btn-xl" href="/devis/<%= quote.id %>/pdf">Télécharger le devis PDF</a>
+    <% if (quote.status !== 'activation_requested' && !activationOk) { %>
+      <form method="POST" action="/devis/<%= quote.id %>/activer">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="home-btn home-btn-outline home-btn-xl">Demander activation</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

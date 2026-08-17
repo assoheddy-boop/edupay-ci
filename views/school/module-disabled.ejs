@@ -4,11 +4,11 @@
 <% } else { %>
 <div class="card" style="max-width:520px;margin:2rem auto;text-align:center">
     <% if (typeof upgrade !== 'undefined' && upgrade) { %>
-    <h1>Fonctionnalité premium</h1>
-    <p><%= typeof upgradeMessage !== 'undefined' ? upgradeMessage : 'Disponible en plan supérieur' %></p>
-    <p class="text-muted">Passez à une formule Premium, Pro ou Groupe pour accéder à l'analyse de redoublement par plan.</p>
+    <h1>Module Pro</h1>
+    <p><%= typeof upgradeMessage !== 'undefined' ? upgradeMessage : 'Inclus dans l\'offre Pro, activé par EduConnect.' %></p>
+    <p class="text-muted">Ce module fait partie d'EduConnect Pro. Contactez EduConnect pour l'activer.</p>
     <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
-      <a href="/school/upgrade" class="btn btn-primary">Voir les formules</a>
+      <a href="/devis" class="btn btn-primary">Voir l'offre Pro</a>
       <a href="/school/dashboard" class="btn btn-outline">Retour au tableau de bord</a>
     </div>
     <% } else { %>

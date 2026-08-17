@@ -363,10 +363,17 @@ function statusPills(ctx, pills) {
 function kvLine(ctx, key, value) {
   const { doc, fonts } = ctx;
   ensureSpace(ctx, 18);
+  const keyStr = t(`${key}  `, fonts);
   doc.fillColor(TEXT).font(fonts.bold).fontSize(10);
-  doc.text(t(`${key}  `, fonts), MARGIN, ctx.y, { continued: true, width: CONTENT_W });
+  const keyW = Math.min(doc.widthOfString(keyStr), CONTENT_W * 0.45);
+  doc.text(keyStr, MARGIN, ctx.y, { lineBreak: false, continued: false });
   doc.fillColor(GRAY).font(fonts.reg).fontSize(10);
-  doc.text(t(value, fonts), { lineGap: 2, width: CONTENT_W });
+  doc.text(t(value, fonts), MARGIN + keyW, ctx.y, {
+    width: CONTENT_W - keyW,
+    lineGap: 2.5,
+    lineBreak: true,
+    continued: false,
+  });
   ctx.y = doc.y + 5;
 }
 

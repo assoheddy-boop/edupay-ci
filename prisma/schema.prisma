@@ -1119,3 +1119,21 @@ model RefreshToken {
   @@index([expiresAt])
 }
 
+model QuoteRequest {
+  id                    String    @id @default(cuid())
+  status                String    @default("pending")
+  schoolName            String
+  city                  String
+  answers               Json
+  amount                Int       @default(500000)
+  contactName           String?
+  contactEmail          String?
+  contactPhone          String?
+  activationRequestedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+

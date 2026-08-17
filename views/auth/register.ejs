@@ -4,7 +4,7 @@
 <div class="auth-page">
   <div class="auth-card auth-card-wide">
     <h1>Inscription</h1>
-    <p class="auth-sub">Créez votre compte EduConnect</p>
+    <p class="auth-sub">Créez votre compte EduConnect. Offre unique : <strong>Pro — 500 000 FCFA / an</strong>. <a href="/devis">Obtenir un devis</a></p>
 
     <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
 
@@ -16,7 +16,7 @@
 
     <form method="POST" action="/auth/register" class="form">
       <input type="hidden" name="role" value="<%= role === 'parent' ? 'PARENT' : role %>">
-      <input type="hidden" name="plan" value="<%= typeof plan !== 'undefined' && plan ? plan : '' %>">
+      <input type="hidden" name="plan" value="<%= typeof plan !== 'undefined' && plan ? plan : 'pro' %>">
 
       <div class="form-row">
         <div class="form-group">

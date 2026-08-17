@@ -1,0 +1,11 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('show', { _inLayout: true }); %>
+<%- include('../layouts/guideLayout', { body: content, title: typeof title !== 'undefined' ? title : 'Guide' }) %>
+<% } else { %>
+<div class="guide-actions">
+  <a href="/guide/<%= slug %>.pdf" class="btn btn-primary btn-sm">Télécharger le PDF</a>
+  <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">Imprimer</button>
+</div>
+<%- html %>
+<p class="legal-updated">EduConnect — Alliance Digitale Internationale — Côte d’Ivoire · <a href="https://educonnect-ci.com">educonnect-ci.com</a></p>
+<% } %>

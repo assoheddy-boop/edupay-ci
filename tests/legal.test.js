@@ -42,6 +42,7 @@ describe('Public legal pages', () => {
     expect(res.text).toMatch(/href="\/confidentialite"/);
     expect(res.text).toMatch(/href="\/cgu"/);
     expect(res.text).toMatch(/href="\/cookies"/);
+    expect(res.text).toMatch(/href="\/guides"/);
     expect(res.text).not.toMatch(/EduPay SAS/i);
   });
 

@@ -17,7 +17,8 @@
     "db:onboard-epv": "node scripts/onboard-epv-schools.js",
     "db:onboard-extra": "node scripts/onboard-extra-schools.js",
     "db:studio": "prisma studio",
-    "verify": "node scripts/verify-all.js"
+    "verify": "node scripts/verify-all.js",
+    "docs:guides": "node scripts/generate-educonnect-guides-pdf.js"
   },
   "keywords": [
     "education",

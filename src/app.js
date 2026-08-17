@@ -26,6 +26,8 @@ const redoublementRoutes = require('../routes/redoublementRoutes');
 const timetableRoutes = require('../routes/timetableRoutes');
 const cronRoutes = require('./routes/cron');
 const legalRoutes = require('./routes/legal');
+const guideRoutes = require('./routes/guides');
+const devisRoutes = require('./routes/devis');
 
 const app = express();
 
@@ -73,6 +75,8 @@ app.get('/offline', (_req, res) => {
 });
 
 app.use(legalRoutes);
+app.use(guideRoutes);
+app.use(devisRoutes);
 
 app.get('/', (_req, res) => {
   const { plans, moduleList } = getPlansForLanding();

@@ -11,7 +11,7 @@ function denyModule(req, res, moduleKey, school) {
     moduleLabel: MODULES[moduleKey]?.label || moduleKey,
     school: school || req.user?.school || req.user?.teacher?.school || null,
     upgrade: isUpgrade,
-    upgradeMessage: isUpgrade ? 'Disponible en plan supérieur' : undefined,
+    upgradeMessage: isUpgrade ? 'Inclus dans l\'offre Pro, activé par EduConnect.' : undefined,
   });
 }
 

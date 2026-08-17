@@ -2,12 +2,22 @@ const { MODULES } = require('./modules');
 
 const PLAN_IDS = ['essentiel', 'premium', 'pro', 'groupe'];
 
+const COMMERCIAL_PLAN = {
+  id: 'pro',
+  name: 'Pro',
+  amount: 500000,
+  period: 'FCFA / an',
+  tagline: 'Un seul plan, complet et premium, adapté à votre école',
+};
+
 const PLANS = {
   essentiel: {
     id: 'essentiel',
     name: 'Essentiel',
+    displayName: 'Pro',
     tagline: 'Démarrer sans frais',
     price: 0,
+    displayPrice: COMMERCIAL_PLAN.amount,
     priceLabel: 'Gratuit',
     period: 'pour toujours',
     highlight: false,
@@ -19,12 +29,13 @@ const PLANS = {
   premium: {
     id: 'premium',
     name: 'Premium',
+    displayName: 'Pro',
     tagline: 'Vie scolaire complète',
     price: 15000,
+    displayPrice: COMMERCIAL_PLAN.amount,
     priceLabel: '15 000',
     period: 'FCFA / mois',
-    highlight: true,
-    badge: 'Populaire',
+    highlight: false,
     cta: 'Choisir Premium',
     ctaHref: '/auth/register?role=SCHOOL_ADMIN&plan=premium',
     limits: 'Élèves illimités · 1 campus',
@@ -37,21 +48,26 @@ const PLANS = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Pilotage & équipe',
-    price: 35000,
-    priceLabel: '35 000',
-    period: 'FCFA / mois',
-    highlight: false,
-    cta: 'Choisir Pro',
-    ctaHref: '/auth/register?role=SCHOOL_ADMIN&plan=pro',
-    limits: 'Élèves illimités · 1 campus',
-    modules: Object.keys(MODULES).filter((k) => k !== 'multi_campus'),
+    displayName: 'Pro',
+    tagline: COMMERCIAL_PLAN.tagline,
+    price: COMMERCIAL_PLAN.amount,
+    displayPrice: COMMERCIAL_PLAN.amount,
+    priceLabel: '500 000',
+    period: COMMERCIAL_PLAN.period,
+    highlight: true,
+    badge: 'Offre unique',
+    cta: 'Obtenir un devis',
+    ctaHref: '/devis',
+    limits: 'Tous les modules · élèves illimités · multi-école',
+    modules: Object.keys(MODULES),
   },
   groupe: {
     id: 'groupe',
     name: 'Groupe scolaire',
+    displayName: 'Pro',
     tagline: 'Multi-campus & direction groupe',
     price: null,
+    displayPrice: COMMERCIAL_PLAN.amount,
     priceLabel: 'Sur devis',
     period: 'à partir de 50 000 FCFA / mois',
     highlight: false,
@@ -78,19 +94,19 @@ function getPlansForLanding() {
     core: !!mod.core,
   }));
 
-  const plans = PLAN_IDS.map((id) => {
-    const plan = PLANS[id];
-    const moduleSet = new Set(plan.modules);
-    return {
+  const plan = PLANS.pro;
+  const moduleSet = new Set(plan.modules);
+  return {
+    plans: [{
       ...plan,
       moduleFlags: moduleList.map((m) => ({
         ...m,
         included: moduleSet.has(m.key),
       })),
-    };
-  });
-
-  return { plans, moduleList };
+    }],
+    moduleList,
+    commercialPlan: COMMERCIAL_PLAN,
+  };
 }
 
 const PLAN_NAME_BY_ID = Object.fromEntries(
@@ -98,7 +114,24 @@ const PLAN_NAME_BY_ID = Object.fromEntries(
 );
 
 function planSeedPrice(plan) {
-  return plan.price == null ? 50000 : plan.price;
+  return plan.price == null ? COMMERCIAL_PLAN.amount : plan.price;
 }
 
-module.exports = { PLANS, PLAN_IDS, PLAN_NAME_BY_ID, getPlansForLanding, planSeedPrice };
+function displayPlanName(nameOrSlug) {
+  const key = String(nameOrSlug || '').trim().toLowerCase();
+  if (!key) return COMMERCIAL_PLAN.name;
+  if (['essentiel', 'premium', 'pro', 'groupe', 'standard', 'basic', 'groupe scolaire'].includes(key)) {
+    return COMMERCIAL_PLAN.name;
+  }
+  return COMMERCIAL_PLAN.name;
+}
+
+module.exports = {
+  PLANS,
+  PLAN_IDS,
+  PLAN_NAME_BY_ID,
+  COMMERCIAL_PLAN,
+  getPlansForLanding,
+  planSeedPrice,
+  displayPlanName,
+};

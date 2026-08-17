@@ -1,6 +1,6 @@
 const prisma = require('../config/database');
 const { MODULES, MODULE_KEYS } = require('../config/modules');
-const { PLANS, PLAN_IDS, PLAN_NAME_BY_ID, planSeedPrice } = require('../config/plans');
+const { PLANS, PLAN_IDS, PLAN_NAME_BY_ID, planSeedPrice, displayPlanName } = require('../config/plans');
 const { setModule, initSchoolModules } = require('./modules');
 
 function planIncludesFeature(plan, moduleKey) {
@@ -115,4 +115,5 @@ module.exports = {
   syncSchoolModulesToPlan,
   assignPlanToSchool,
   updatePlanFeatures,
+  displayPlanName,
 };
