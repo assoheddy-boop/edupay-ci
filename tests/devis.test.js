@@ -64,7 +64,7 @@ describe('Public devis questionnaire', () => {
     const res = await request(app).get('/devis');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/devis Pro/i);
-    expect(res.text).toMatch(/500\s*000/);
+    expect(res.text).not.toMatch(/500\s*000/);
     expect(res.text).toMatch(/name="_csrf"/);
     expect(res.text).toMatch(/Établissement/);
     expect(res.text).toMatch(/SMS officiel/);
@@ -141,12 +141,26 @@ describe('Public devis questionnaire', () => {
     }));
   });
 
-  test('home HTML has no Premium plan name and links to /devis', async () => {
+  test('GET /devis/:id shows the Pro amount', async () => {
+    prisma.quoteRequest.findUnique.mockResolvedValue(sampleQuote());
+    const res = await request(app).get(`/devis/${QUOTE_ID}`);
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/500\s*000/);
+    expect(res.text).toMatch(/devis-offer-price/);
+  });
+
+  test('home HTML links to /devis without publishing the Pro price', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/href="\/devis"/);
-    expect(res.text).toMatch(/500\s*000/);
-    expect(res.text).toMatch(/>Pro</);
+    expect(res.text).toMatch(/Obtenir un devis/i);
+    expect(res.text).toMatch(/>Devis</);
+    expect(res.text).not.toMatch(/500\s*000/);
+    expect(res.text).not.toMatch(/Offre Pro/);
+    expect(res.text).not.toMatch(/Voir l'offre/);
+    expect(res.text).not.toMatch(/id="tarifs"/);
+    expect(res.text).not.toMatch(/href="#tarifs"/);
+    expect(res.text).not.toMatch(/href="#offre"/);
     expect(res.text).not.toMatch(/Choisir Premium/);
     expect(res.text).not.toMatch(/Essentiel/);
     expect(res.text).not.toMatch(/plan Standard/i);

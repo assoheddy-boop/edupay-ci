@@ -17,7 +17,7 @@ const {
   stopAssist,
 } = require('../utils/adminAssist');
 const { safeInternalPath } = require('../utils/cookies');
-const { sendConnectivityTestSms, orangeConfigured } = require('../services/sms');
+const { sendConnectivityTestSms, smsConfigured, smsProvider } = require('../services/sms');
 const { resolveSmsSender } = require('../utils/officialSms');
 
 async function loadSchoolsWithModules() {
@@ -84,7 +84,8 @@ async function dashboard(req, res) {
     MODULE_KEYS,
     success: req.query.success || null,
     error: req.query.error || null,
-    smsConfigured: orangeConfigured(),
+    smsConfigured: smsConfigured(),
+    smsProvider: smsProvider(),
     smsTest: req.query.smsTest || null,
     smsReason: req.query.smsReason || null,
     smsSender: req.query.smsSender || null,

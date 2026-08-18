@@ -498,73 +498,6 @@ body {
   justify-content: center;
 }
 
-.home-plans {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.home-plans-single {
-  max-width: 420px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.home-plan {
-  position: relative;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 1.4rem 1.2rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.home-plan.is-featured {
-  border-color: var(--blue);
-  box-shadow: 0 10px 28px rgba(0, 82, 204, 0.12);
-}
-
-.home-plan-badge {
-  align-self: flex-start;
-  background: var(--blue);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-}
-
-.home-plan h3 {
-  color: var(--navy);
-  font-size: 1.25rem;
-}
-
-.home-plan-tag,
-.home-plan-limits {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.home-plan-price strong {
-  display: block;
-  font-size: 1.85rem;
-  color: var(--blue);
-  line-height: 1.1;
-}
-
-.home-plan-price span {
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.home-plan .home-btn {
-  margin-top: 0.75rem;
-}
-
 .home-group {
   margin-top: 1.25rem;
   background: var(--navy);
@@ -687,8 +620,7 @@ body {
   }
 
   .home-pillars,
-  .home-figures,
-  .home-plans {
+  .home-figures {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -726,8 +658,7 @@ body {
   }
 
   .home-figures,
-  .home-quotes,
-  .home-plans {
+  .home-quotes {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -767,7 +698,7 @@ body {
   display: none;
 }
 
-/* Phone: hamburger drawer for Offres / Contact / Connexion — sticky bar stays one row. */
+/* Phone: hamburger drawer for Devis / Contact / Connexion — sticky bar stays one row. */
 @media (max-width: 767px) {
   .home-top {
     flex-wrap: nowrap;

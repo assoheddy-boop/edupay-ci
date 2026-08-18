@@ -9,7 +9,6 @@
       <span></span><span></span><span></span>
     </button>
     <nav class="home-links" id="homeNav" aria-label="Navigation principale">
-      <a href="#tarifs">Offre Pro</a>
       <a href="/devis">Devis</a>
       <a href="#contact">Contact</a>
       <a href="/auth/login">Connexion</a>
@@ -28,7 +27,6 @@
       </p>
       <div class="home-hero-actions">
         <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
-        <a href="#tarifs" class="home-btn home-btn-ghost home-btn-xl">Voir l'offre</a>
       </div>
     </div>
   </section>
@@ -179,36 +177,13 @@
     </div>
   </section>
 
-  <section class="home-section" id="tarifs" aria-labelledby="tarifs-title">
-    <div class="home-wrap">
-      <header class="home-section-head">
-        <h2 id="tarifs-title">Un seul plan, en FCFA</h2>
-        <p>Un seul plan, complet et premium, adapté à votre école. Les modules sont activés par EduConnect.</p>
-      </header>
-      <div class="home-plans home-plans-single">
-        <% const plan = (typeof plans !== 'undefined' && plans[0]) ? plans[0] : { name: 'Pro', priceLabel: '500 000', period: 'FCFA / an', tagline: 'Un seul plan, complet et premium, adapté à votre école', limits: 'Tous les modules · élèves illimités', cta: 'Obtenir un devis', ctaHref: '/devis', badge: 'Offre unique' }; %>
-        <article class="home-plan is-featured">
-          <% if (plan.badge) { %><span class="home-plan-badge"><%= plan.badge %></span><% } %>
-          <h3><%= plan.name %></h3>
-          <p class="home-plan-tag"><%= plan.tagline %></p>
-          <p class="home-plan-price">
-            <strong><%= plan.priceLabel %></strong>
-            <% if (plan.period) { %><span><%= plan.period %></span><% } %>
-          </p>
-          <p class="home-plan-limits"><%= plan.limits %></p>
-          <a href="<%= plan.ctaHref || '/devis' %>" class="home-btn home-btn-primary"><%= plan.cta || 'Obtenir un devis' %></a>
-        </article>
-      </div>
-    </div>
-  </section>
-
   <section class="home-cta-band" id="contact">
     <div class="home-wrap">
       <h2>Parlons de votre établissement</h2>
       <p>Un devis Pro, ou simplement une question. Pas de mot de passe de démonstration sur cette page : on vous ouvre un espace propre.</p>
       <div class="home-hero-actions">
         <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
-        <a href="mailto:contact@educonnect.ci?subject=Offre%20Pro%20EduConnect" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@educonnect.ci</a>
+        <a href="mailto:contact@educonnect.ci?subject=Devis%20EduConnect" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@educonnect.ci</a>
       </div>
     </div>
   </section>
@@ -233,7 +208,7 @@
           <li><a href="/cgu">Conditions générales d'utilisation</a></li>
           <li><a href="/cookies">Cookies</a></li>
           <li><a href="/guides">Guides</a></li>
-          <li><a href="/devis">Devis · Offre Pro</a></li>
+          <li><a href="/devis">Devis</a></li>
         </ul>
       </div>
     </div>

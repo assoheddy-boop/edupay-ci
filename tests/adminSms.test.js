@@ -13,6 +13,9 @@ jest.mock('../src/services/sms', () => ({
   sendWhatsApp: jest.fn(),
   sendConnectivityTestSms: jest.fn(),
   orangeConfigured: jest.fn().mockReturnValue(true),
+  twilioConfigured: jest.fn().mockReturnValue(false),
+  smsConfigured: jest.fn().mockReturnValue(true),
+  smsProvider: jest.fn().mockReturnValue('orange'),
   TEST_SMS_TEXT: 'EduConnect : test SMS Orange.',
 }));
 
@@ -109,5 +112,28 @@ describe('admin Orange SMS test', () => {
     expect(res.redirectTo).toMatch(/smsTest=error/);
     expect(res.redirectTo).toMatch(/Orange(\+|%20)HTTP(\+|%20)401/);
     expect(res.redirectTo).not.toMatch(/super-secret|access_token/i);
+  });
+
+  test('Twilio success redirects as sent on the admin dashboard', async () => {
+    sendConnectivityTestSms.mockResolvedValue({ ok: true, provider: 'twilio', sender: 'EduConnect' });
+    const req = { body: { phone: '0700000000' }, user: { role: 'SUPER_ADMIN' } };
+    const res = mockRes();
+    await sendTestSms(req, res);
+    expect(sendConnectivityTestSms).toHaveBeenCalledWith('0700000000', { school: null });
+    expect(res.redirectTo).toMatch(/\/admin\/dashboard/);
+    expect(res.redirectTo).toMatch(/smsTest=sent/);
+  });
+
+  test('Twilio HTTP failure redirects as error without leaking the auth token', async () => {
+    sendConnectivityTestSms.mockResolvedValue({
+      ok: false,
+      reason: 'Twilio HTTP 401 (Authenticate)',
+    });
+    const req = { body: { phone: '0700000000' }, user: { role: 'SUPER_ADMIN' } };
+    const res = mockRes();
+    await sendTestSms(req, res);
+    expect(res.redirectTo).toMatch(/smsTest=error/);
+    expect(res.redirectTo).toMatch(/Twilio(\+|%20)HTTP(\+|%20)401/);
+    expect(res.redirectTo).not.toMatch(/AuthToken|super-secret/i);
   });
 });

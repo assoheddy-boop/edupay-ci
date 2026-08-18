@@ -213,6 +213,8 @@ a.admin-hub-card {
 .section-intro h2 { color: var(--blue); margin-bottom: 0.75rem; }
 .section-intro p { color: var(--gray-light); }
 
+.landing-cta { padding: 3rem 0 2rem; text-align: center; }
+
 .pricing { padding: 3rem 0 2rem; }
 .pricing-grid {
   display: grid;

@@ -1,5 +1,7 @@
 const { sanitizeSmsSenderId } = require('../utils/officialSms');
 
+// SMS Côte d'Ivoire v2.0 (Client Credentials) — same contract as SMS Africa/ME 2.0.
+// Docs: https://developer.orange.com/apis/sms-ci/getting-started
 const DEFAULT_SENDER = 'EduConnect';
 const CI_SENDER_ADDRESS = 'tel:+2250000';
 const DEFAULT_TOKEN_URL = 'https://api.orange.com/oauth/v3/token';
@@ -48,21 +50,100 @@ function orangeConfigured() {
   return hasOauthCreds() || hasLegacyCreds();
 }
 
+function smsProvider() {
+  return String(process.env.SMS_PROVIDER || 'console').trim().toLowerCase() || 'console';
+}
+
+function twilioAccountSid() {
+  return String(process.env.TWILIO_ACCOUNT_SID || '').trim();
+}
+
+function twilioAuthToken() {
+  return String(process.env.TWILIO_AUTH_TOKEN || '').trim();
+}
+
+function twilioPhoneNumber() {
+  return String(process.env.TWILIO_PHONE_NUMBER || '').trim();
+}
+
+function twilioMessagingServiceSid() {
+  return String(process.env.TWILIO_MESSAGING_SERVICE_SID || '').trim();
+}
+
+function twilioAllowAlphanumeric() {
+  return String(process.env.TWILIO_ALLOW_ALPHANUMERIC || '').toLowerCase() === 'true';
+}
+
+function twilioConfigured() {
+  return Boolean(twilioAccountSid() && twilioAuthToken() && (twilioPhoneNumber() || twilioMessagingServiceSid()));
+}
+
+function smsConfigured() {
+  const provider = smsProvider();
+  if (provider === 'orange') return orangeConfigured();
+  if (provider === 'twilio') return twilioConfigured();
+  return false;
+}
+
+function normalizeCiE164(phone) {
+  const tel = normalizeCiMsisdn(phone);
+  return tel ? tel.replace(/^tel:/, '') : null;
+}
+
+function isAlphanumericSender(sender) {
+  const raw = String(sender || '').trim();
+  if (!raw) return false;
+  if (/^\+?\d[\d\s-]*$/.test(raw)) return false;
+  return /[A-Za-z]/.test(orangeSenderName(raw));
+}
+
+function resolveTwilioOrigin(sender) {
+  if (twilioAllowAlphanumeric() && isAlphanumericSender(sender)) {
+    return { From: orangeSenderName(sender) };
+  }
+  const messagingSid = twilioMessagingServiceSid();
+  if (messagingSid) return { MessagingServiceSid: messagingSid };
+  const from = twilioPhoneNumber();
+  if (from) return { From: from };
+  return null;
+}
+
+function twilioMessagesUrl(accountSid) {
+  return `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`;
+}
+
+function twilioErrorHint(bodyText) {
+  try {
+    const json = JSON.parse(bodyText);
+    return json.message || json.error_message || '';
+  } catch {
+    return '';
+  }
+}
+
+function safeTwilioMessage(status, bodyText) {
+  const hint = redactSecrets(twilioErrorHint(bodyText));
+  const code = status || 'error';
+  return hint ? `Twilio HTTP ${code} (${hint})` : `Twilio HTTP ${code}`;
+}
+
 function redactSecrets(value) {
   return String(value || '')
     .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
     .replace(/Basic\s+\S+/gi, 'Basic [redacted]')
     .replace(/access_token"\s*:\s*"[^"]+"/gi, 'access_token":"[redacted]"')
     .replace(/client_secret"\s*:\s*"[^"]+"/gi, 'client_secret":"[redacted]"')
+    .replace(/auth_token"\s*:\s*"[^"]+"/gi, 'auth_token":"[redacted]"')
+    .replace(/AuthToken["'\s:=]+[^\s"']+/gi, 'AuthToken [redacted]')
     .slice(0, 180);
 }
 
-function safeNetworkReason(err) {
-  const message = redactSecrets(err?.message || err || 'orange_network');
+function safeNetworkReason(err, fallback = 'sms_network') {
+  const message = redactSecrets(err?.message || err || fallback);
   if (!message || /token|secret|bearer|authorization/i.test(message) && /[A-Za-z0-9+/]{20,}/.test(message)) {
-    return 'orange_network';
+    return fallback;
   }
-  return message.slice(0, 180) || 'orange_network';
+  return message.slice(0, 180) || fallback;
 }
 
 function orangeErrorHint(bodyText) {
@@ -208,16 +289,71 @@ async function sendOrangeSms(phone, message, sender) {
 
     return { ok: true, provider: 'orange', sender, address };
   } catch (err) {
-    const reason = err?.safe ? err.message : safeNetworkReason(err);
+    const reason = err?.safe ? err.message : safeNetworkReason(err, 'orange_network');
     console.error('[SMS Orange]', reason);
     return { ok: false, reason, provider: 'orange', sender };
   }
 }
 
+async function sendTwilioSms(phone, message, sender) {
+  if (!twilioConfigured()) {
+    console.warn('[SMS] Twilio non configuré');
+    return { ok: false, reason: 'not_configured', sender };
+  }
+
+  const to = normalizeCiE164(phone);
+  if (!to) return { ok: false, reason: 'invalid_phone', sender };
+
+  const origin = resolveTwilioOrigin(sender);
+  if (!origin) {
+    console.warn('[SMS] Twilio non configuré');
+    return { ok: false, reason: 'not_configured', sender };
+  }
+
+  const accountSid = twilioAccountSid();
+  const url = twilioMessagesUrl(accountSid);
+  const body = new URLSearchParams();
+  body.set('To', to);
+  body.set('Body', message);
+  if (origin.MessagingServiceSid) body.set('MessagingServiceSid', origin.MessagingServiceSid);
+  else body.set('From', origin.From);
+
+  const basic = Buffer.from(`${accountSid}:${twilioAuthToken()}`).toString('base64');
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basic}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+      },
+      body: body.toString(),
+    });
+
+    if (!res.ok) {
+      const raw = await readResponseText(res);
+      const reason = safeTwilioMessage(res.status, raw);
+      console.error('[SMS Twilio]', reason);
+      return { ok: false, reason, provider: 'twilio', sender };
+    }
+
+    return { ok: true, provider: 'twilio', sender, address: to, from: origin.From || origin.MessagingServiceSid };
+  } catch (err) {
+    const reason = err?.safe ? err.message : safeNetworkReason(err, 'twilio_network');
+    console.error('[SMS Twilio]', reason);
+    return { ok: false, reason, provider: 'twilio', sender };
+  }
+}
+
+function connectivityTestSmsText() {
+  return smsProvider() === 'twilio' ? 'EduConnect : test SMS Twilio.' : TEST_SMS_TEXT;
+}
+
 async function sendSms(phone, message, options = {}) {
   if (!phone) return { ok: false, reason: 'no_phone' };
 
-  const provider = process.env.SMS_PROVIDER || 'console';
+  const provider = smsProvider();
   const sender = resolveSender(options);
 
   if (provider === 'console') {
@@ -229,10 +365,12 @@ async function sendSms(phone, message, options = {}) {
     return sendOrangeSms(phone, message, sender);
   }
 
-  // Optional aggregators: same `sender` maps to Twilio `from` / Africa's Talking `from`.
-  // Not wired to live accounts — keep ORANGE_* (or SMS_PROVIDER=console) for the HTTP send.
-  if (provider === 'twilio' || provider === 'africastalking') {
-    console.warn(`[SMS] ${provider} non branché — utilisez SMS_PROVIDER=orange ou console`);
+  if (provider === 'twilio') {
+    return sendTwilioSms(phone, message, sender);
+  }
+
+  if (provider === 'africastalking') {
+    console.warn('[SMS] africastalking non branché — utilisez SMS_PROVIDER=orange, twilio ou console');
     return { ok: false, reason: 'not_configured', sender };
   }
 
@@ -242,7 +380,7 @@ async function sendSms(phone, message, options = {}) {
 async function sendConnectivityTestSms(phone, { school } = {}) {
   const { resolveSmsSender } = require('../utils/officialSms');
   const sender = resolveSmsSender({ school });
-  return sendSms(phone, TEST_SMS_TEXT, { sender });
+  return sendSms(phone, connectivityTestSmsText(), { sender });
 }
 
 async function sendWhatsApp(phone, message) {
@@ -280,10 +418,15 @@ module.exports = {
   sendWhatsApp,
   sendConnectivityTestSms,
   orangeConfigured,
+  twilioConfigured,
+  smsConfigured,
+  smsProvider,
   normalizeCiMsisdn,
+  normalizeCiE164,
   resetOrangeTokenCache,
   TEST_SMS_TEXT,
   CI_SENDER_ADDRESS,
   DEFAULT_SEND_URL,
   DEFAULT_TOKEN_URL,
+  twilioMessagesUrl,
 };

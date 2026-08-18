@@ -13,8 +13,7 @@
     <h1>Gestion scolaire moderne &amp; paiements simplifiés</h1>
     <p class="hero-sub">Appel Présent / Retard / Absent, notes visibles par les parents, paiements Wave ou Orange Money.</p>
     <div class="hero-actions">
-      <a href="/devis" class="btn btn-primary btn-lg">Obtenir un devis Pro</a>
-      <a href="#tarifs" class="btn btn-outline btn-lg">Voir l'offre</a>
+      <a href="/devis" class="btn btn-primary btn-lg">Obtenir un devis</a>
       <a href="/auth/register?role=PARENT" class="btn btn-success btn-lg">Espace parent</a>
     </div>
   </div>
@@ -42,26 +41,12 @@
   </div>
 </section>
 
-<section class="pricing" id="tarifs">
+<section class="landing-cta">
   <div class="section-intro">
-    <h2>Offre Pro</h2>
-    <p>Un seul plan, complet et premium, adapté à votre école. Les modules sont activés par EduConnect.</p>
+    <h2>Un devis pour votre établissement</h2>
+    <p>Répondez au questionnaire : nous préparons les modules adaptés à votre école. Le tarif s'affiche à la fin, sur votre devis.</p>
   </div>
-
-  <div class="pricing-grid">
-    <% const plan = (typeof plans !== 'undefined' && plans[0]) ? plans[0] : { name: 'Pro', priceLabel: '500 000', period: 'FCFA / an', tagline: 'Un seul plan, complet et premium, adapté à votre école', limits: 'Tous les modules', cta: 'Obtenir un devis', ctaHref: '/devis', moduleFlags: [] }; %>
-    <article class="pricing-card pricing-card-featured">
-      <span class="pricing-badge">Offre unique</span>
-      <h3><%= plan.name %></h3>
-      <p class="pricing-tagline"><%= plan.tagline %></p>
-      <div class="pricing-price">
-        <span class="pricing-amount"><%= plan.priceLabel %></span>
-        <span class="pricing-period"><%= plan.period %></span>
-      </div>
-      <p class="pricing-limits"><%= plan.limits %></p>
-      <a href="/devis" class="btn btn-primary btn-block">Obtenir un devis</a>
-    </article>
-  </div>
+  <p><a href="/devis" class="btn btn-primary btn-lg">Obtenir un devis</a></p>
 </section>
 
 <section class="modules">

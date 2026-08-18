@@ -24,35 +24,44 @@
   <% if (typeof error !== 'undefined' && error === 'assist') { %>
     <div class="alert alert-error">Impossible de prendre la main — école ou groupe introuvable.</div>
   <% } %>
+  <% const smsGw = (typeof smsProvider !== 'undefined' && smsProvider) ? smsProvider : 'orange'; %>
+  <% const smsGwLabel = smsGw === 'twilio' ? 'Twilio' : (smsGw === 'orange' ? 'Orange' : smsGw); %>
   <% if (typeof smsTest !== 'undefined' && smsTest === 'sent') { %>
-    <div class="alert alert-success">SMS de test envoyé via Orange<%= typeof smsSender !== 'undefined' && smsSender ? ' (expéditeur ' + smsSender + ')' : '' %>.</div>
+    <div class="alert alert-success">SMS de test envoyé via <%= smsGwLabel %><%= typeof smsSender !== 'undefined' && smsSender ? ' (expéditeur ' + smsSender + ')' : '' %>.</div>
   <% } else if (typeof smsTest !== 'undefined' && smsTest === 'skipped') { %>
     <div class="alert alert-error">
       SMS de test ignoré
-      <% if (smsReason === 'not_configured') { %> — identifiants Orange absents sur Vercel (SMS_PROVIDER=orange + client_id/secret ou URL+token).<% } %>
+      <% if (smsReason === 'not_configured' && smsGw === 'twilio') { %> — identifiants Twilio absents sur Vercel (SMS_PROVIDER=twilio + TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN et TWILIO_PHONE_NUMBER ou TWILIO_MESSAGING_SERVICE_SID).<% } %>
+      <% if (smsReason === 'not_configured' && smsGw !== 'twilio') { %> — identifiants Orange absents sur Vercel (SMS_PROVIDER=orange + client_id/secret ou URL+token).<% } %>
       <% if (smsReason === 'invalid_phone' || smsReason === 'no_phone') { %> — numéro ivoirien invalide (ex. 07 00 00 00 00 ou +225…).<% } %>
       <% if (smsReason && smsReason !== 'not_configured' && smsReason !== 'invalid_phone' && smsReason !== 'no_phone') { %> — <%= smsReason %>.<% } %>
     </div>
   <% } else if (typeof smsTest !== 'undefined' && smsTest === 'error') { %>
-    <div class="alert alert-error">Échec Orange : <%= smsReason || 'erreur d\'envoi' %>. Vérifiez le bundle SMS et l'identifiant expéditeur whitelisté.</div>
+    <div class="alert alert-error">
+      Échec <%= smsGwLabel %> : <%= smsReason || 'erreur d\'envoi' %>.
+      <% if (smsGw === 'twilio') { %> Compte d'essai : seuls les numéros vérifiés reçoivent un SMS.<% } else { %> Vérifiez le bundle SMS et l'identifiant expéditeur whitelisté.<% } %>
+    </div>
   <% } %>
 
   <div class="card" style="margin-bottom:1.25rem">
     <div class="card-header">
-      <h2>Test SMS Orange</h2>
+      <h2>Test SMS <%= smsGwLabel %></h2>
       <p class="page-sub">
-        Contrôle de connexion Super Admin — envoie <strong>EduConnect : test SMS Orange.</strong>
+        Contrôle de connexion Super Admin — envoie <strong>EduConnect : test SMS <%= smsGwLabel %>.</strong>
         Ce test peut partir même si le module « SMS officiel » de l'école est désactivé.
         Les absences, devoirs et paiements, eux, restent soumis à ce module.
       </p>
     </div>
     <p class="form-hint">
-      Identifiants Orange :
+      Identifiants <%= smsGwLabel %> :
       <% if (typeof smsConfigured !== 'undefined' && smsConfigured) { %>
         <strong>détectés</strong> (aucune clé n'est affichée ici).
+      <% } else if (smsGw === 'twilio') { %>
+        <strong>non configurés</strong> — renseignez SMS_PROVIDER=twilio et les variables TWILIO_* sur Vercel.
       <% } else { %>
         <strong>non configurés</strong> — renseignez SMS_PROVIDER=orange et les variables ORANGE_SMS_* sur Vercel.
       <% } %>
+      <% if (smsGw === 'twilio') { %><br>Les parents peuvent voir un numéro international Twilio tant qu'un expéditeur alphanumérique n'est pas déclaré chez Twilio. Compte d'essai : SMS uniquement vers des numéros vérifiés.<% } %>
     </p>
     <form method="POST" action="/admin/sms-test" class="form">
       <div class="form-row">

@@ -3,18 +3,29 @@ const {
   sendWhatsApp,
   sendConnectivityTestSms,
   orangeConfigured,
+  twilioConfigured,
+  smsConfigured,
   normalizeCiMsisdn,
+  normalizeCiE164,
   resetOrangeTokenCache,
   TEST_SMS_TEXT,
   CI_SENDER_ADDRESS,
   DEFAULT_SEND_URL,
   DEFAULT_TOKEN_URL,
+  twilioMessagesUrl,
 } = require('../src/services/sms');
 
 const ORANGE_KEYS = [
   'SMS_PROVIDER', 'ORANGE_SMS_URL', 'ORANGE_SMS_TOKEN', 'ORANGE_SMS_SENDER',
   'ORANGE_SMS_CLIENT_ID', 'ORANGE_SMS_CLIENT_SECRET', 'ORANGE_SMS_TOKEN_URL',
 ];
+
+const TWILIO_KEYS = [
+  'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
+  'TWILIO_MESSAGING_SERVICE_SID', 'TWILIO_ALLOW_ALPHANUMERIC',
+];
+
+const SMS_ENV_KEYS = [...ORANGE_KEYS, ...TWILIO_KEYS];
 
 function jsonRes(ok, body, status = ok ? 200 : 400) {
   return {
@@ -31,10 +42,11 @@ describe('notification adapters without credentials', () => {
     ['SMS_PROVIDER', 'ORANGE_SMS_URL', 'ORANGE_SMS_TOKEN', 'ORANGE_SMS_SENDER', 'SMTP_HOST', 'SMTP_FROM',
       'SMTP_USER', 'SMTP_PASS', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY',
       'WHATSAPP_TOKEN', 'WHATSAPP_PHONE_ID',
-      'ORANGE_SMS_CLIENT_ID', 'ORANGE_SMS_CLIENT_SECRET', 'ORANGE_SMS_TOKEN_URL'].forEach((key) => {
+      'ORANGE_SMS_CLIENT_ID', 'ORANGE_SMS_CLIENT_SECRET', 'ORANGE_SMS_TOKEN_URL',
+      ...TWILIO_KEYS].forEach((key) => {
       prev[key] = process.env[key];
     });
-    ORANGE_KEYS.forEach((key) => delete process.env[key]);
+    SMS_ENV_KEYS.forEach((key) => delete process.env[key]);
     delete process.env.SMTP_HOST;
     delete process.env.SMTP_FROM;
     delete process.env.VAPID_PUBLIC_KEY;
@@ -115,7 +127,7 @@ describe('Orange SMS HTTP', () => {
   let prevFetch;
 
   beforeEach(() => {
-    ORANGE_KEYS.forEach((key) => {
+    SMS_ENV_KEYS.forEach((key) => {
       prev[key] = process.env[key];
       delete process.env[key];
     });
@@ -178,6 +190,14 @@ describe('Orange SMS HTTP', () => {
     expect(global.fetch.mock.calls[0][0]).toBe('https://example.test/oauth/token');
     expect(global.fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer cached-access');
     expect(global.fetch.mock.calls[2][1].headers.Authorization).toBe('Bearer cached-access');
+  });
+
+  test('defaults match SMS Côte d\'Ivoire v2.0 Client Credentials', () => {
+    expect(DEFAULT_TOKEN_URL).toBe('https://api.orange.com/oauth/v3/token');
+    expect(CI_SENDER_ADDRESS).toBe('tel:+2250000');
+    expect(DEFAULT_SEND_URL).toBe(
+      'https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B2250000/requests',
+    );
   });
 
   test('uses the default Orange URLs when only client credentials are set', async () => {
@@ -261,5 +281,133 @@ describe('CI MSISDN', () => {
     expect(normalizeCiMsisdn('2250700000000')).toBe('tel:+2250700000000');
     expect(normalizeCiMsisdn('12')).toBeNull();
     expect(normalizeCiMsisdn('abc')).toBeNull();
+  });
+
+  test('Twilio To is E.164 +225 without the tel: prefix', () => {
+    expect(normalizeCiE164('0700000000')).toBe('+2250700000000');
+    expect(normalizeCiE164('+225 07 00 00 00 00')).toBe('+2250700000000');
+    expect(normalizeCiE164('12')).toBeNull();
+  });
+});
+
+describe('Twilio SMS HTTP', () => {
+  const prev = {};
+  let prevFetch;
+
+  beforeEach(() => {
+    SMS_ENV_KEYS.forEach((key) => {
+      prev[key] = process.env[key];
+      delete process.env[key];
+    });
+    process.env.SMS_PROVIDER = 'twilio';
+    prevFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    Object.entries(prev).forEach(([key, value]) => {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    });
+    global.fetch = prevFetch;
+  });
+
+  function setTwilioCreds() {
+    process.env.TWILIO_ACCOUNT_SID = 'ACtestaccountsid000000000000000000';
+    process.env.TWILIO_AUTH_TOKEN = 'super-secret-twilio-token';
+    process.env.TWILIO_PHONE_NUMBER = '+15005550006';
+  }
+
+  test('sends a 201 with Basic auth and To=+225…', async () => {
+    setTwilioCreds();
+    global.fetch = jest.fn().mockResolvedValue(jsonRes(true, { sid: 'SM123', status: 'queued' }, 201));
+
+    await expect(sendSms('0700000000', 'École Sainte Marie : test', { sender: 'SteMarie' })).resolves.toMatchObject({
+      ok: true,
+      provider: 'twilio',
+      sender: 'SteMarie',
+      address: '+2250700000000',
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = global.fetch.mock.calls[0];
+    expect(url).toBe(twilioMessagesUrl('ACtestaccountsid000000000000000000'));
+    expect(url).toBe('https://api.twilio.com/2010-04-01/Accounts/ACtestaccountsid000000000000000000/Messages.json');
+    expect(opts.method).toBe('POST');
+    expect(opts.headers['Content-Type']).toBe('application/x-www-form-urlencoded');
+    const basic = opts.headers.Authorization.replace(/^Basic\s+/, '');
+    expect(Buffer.from(basic, 'base64').toString()).toBe(
+      'ACtestaccountsid000000000000000000:super-secret-twilio-token',
+    );
+    const form = new URLSearchParams(opts.body);
+    expect(form.get('To')).toBe('+2250700000000');
+    expect(form.get('To')).not.toMatch(/^tel:/);
+    expect(form.get('From')).toBe('+15005550006');
+    expect(form.get('Body')).toBe('École Sainte Marie : test');
+    expect(form.get('MessagingServiceSid')).toBeNull();
+  });
+
+  test('uses Messaging Service SID instead of From when set', async () => {
+    setTwilioCreds();
+    process.env.TWILIO_MESSAGING_SERVICE_SID = 'MGaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    global.fetch = jest.fn().mockResolvedValue(jsonRes(true, { sid: 'SM456' }, 201));
+
+    await sendSms('0700000000', 'Ping');
+    const form = new URLSearchParams(global.fetch.mock.calls[0][1].body);
+    expect(form.get('MessagingServiceSid')).toBe('MGaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    expect(form.get('From')).toBeNull();
+    expect(form.get('To')).toBe('+2250700000000');
+  });
+
+  test('alphanumeric From is used only when TWILIO_ALLOW_ALPHANUMERIC=true', async () => {
+    setTwilioCreds();
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 201 });
+
+    await sendSms('0700000000', 'Ping', { sender: 'SteMarie' });
+    expect(new URLSearchParams(global.fetch.mock.calls[0][1].body).get('From')).toBe('+15005550006');
+
+    process.env.TWILIO_ALLOW_ALPHANUMERIC = 'true';
+    await sendSms('0700000000', 'Ping', { sender: 'SteMarie' });
+    expect(new URLSearchParams(global.fetch.mock.calls[1][1].body).get('From')).toBe('SteMarie');
+  });
+
+  test('skips when Twilio is not configured', async () => {
+    global.fetch = jest.fn();
+    expect(twilioConfigured()).toBe(false);
+    expect(smsConfigured()).toBe(false);
+    await expect(sendSms('0700000000', 'test')).resolves.toMatchObject({
+      ok: false,
+      reason: 'not_configured',
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('Twilio HTTP error is honest and does not leak the auth token', async () => {
+    setTwilioCreds();
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    global.fetch = jest.fn().mockResolvedValue(jsonRes(false, {
+      code: 20003,
+      message: 'Authenticate',
+      auth_token: 'should-not-leak',
+    }, 401));
+
+    const result = await sendSms('0700000000', 'test');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/Twilio HTTP 401/);
+    expect(result.reason).toMatch(/Authenticate/);
+    expect(result.reason).not.toMatch(/super-secret-twilio-token/);
+    expect(result.reason).not.toMatch(/should-not-leak/);
+    expect(JSON.stringify(spy.mock.calls)).not.toMatch(/super-secret-twilio-token/);
+    expect(JSON.stringify(spy.mock.calls)).not.toMatch(/should-not-leak/);
+    spy.mockRestore();
+  });
+
+  test('connectivity test SMS uses the Twilio body', async () => {
+    setTwilioCreds();
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 201 });
+    await sendConnectivityTestSms('0700000000', { school: { smsSenderId: 'SteMarie' } });
+    const form = new URLSearchParams(global.fetch.mock.calls[0][1].body);
+    expect(form.get('Body')).toBe('EduConnect : test SMS Twilio.');
+    expect(form.get('To')).toBe('+2250700000000');
+    expect(form.get('From')).toBe('+15005550006');
   });
 });
