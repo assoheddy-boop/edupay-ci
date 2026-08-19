@@ -1,4 +1,7 @@
 <%- include('../partials/head') %>
+<% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
+<script type="application/ld+json"><%- jsonLdJson %></script>
+<% } %>
 <div class="portal">
   <header class="portal-top">
     <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
@@ -19,11 +22,22 @@
 
   <section class="portal-hero portal-hero-market">
     <div>
-      <p class="portal-kicker">Côte d’Ivoire · EduConnect</p>
-      <h1>Trouver une école</h1>
-      <p class="portal-lead">Annuaire des établissements qui ont publié leur page. Les notes, bulletins et classements restent dans l’espace parent.</p>
+      <p class="portal-kicker">Enseignement · Côte d’Ivoire · EduConnect</p>
+      <h1><%= typeof heading !== 'undefined' && heading ? heading : 'Écoles en Côte d’Ivoire' %></h1>
+      <p class="portal-lead"><%= typeof lead !== 'undefined' && lead ? lead : 'Annuaire des écoles, collèges et lycées en Côte d’Ivoire. Les notes, bulletins et classements restent dans l’espace parent.' %></p>
     </div>
   </section>
+
+  <nav class="portal-shortcuts" aria-label="Parcourir par cycle ou ville">
+    <a href="/ecoles">Toutes les écoles</a>
+    <a href="/ecoles?cycle=COLLEGE">Collèges</a>
+    <a href="/ecoles?cycle=LYCEE">Lycées</a>
+    <a href="/ecoles?cycle=PRIMAIRE">Primaires</a>
+    <a href="/ecoles?ville=Abidjan">Abidjan</a>
+    <a href="/ecoles?ville=Yopougon">Yopougon</a>
+    <a href="/ecoles?cycle=COLLEGE&amp;ville=Abidjan">Collèges à Abidjan</a>
+    <a href="/ecoles?cycle=LYCEE&amp;ville=Yopougon">Lycées à Yopougon</a>
+  </nav>
 
   <form class="card portal-filters" method="GET" action="/ecoles">
     <div class="form-row">
@@ -66,7 +80,7 @@
             <span>
               <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
               <strong><%= s.name %></strong>
-              <span class="portal-school-meta"><%= s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>
+              <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>
             </span>
           </a>
         </li>

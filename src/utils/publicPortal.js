@@ -5,6 +5,27 @@ const { parseMarketplaceTier, marketplaceBadge } = require('./marketplaceAddon')
 const SITE_ORIGIN = (process.env.APP_URL || 'https://educonnect-ci.com').replace(/\/$/, '');
 const CONTACT_INBOX = 'contact@educonnect.ci';
 
+const PUBLIC_ROBOTS = 'index, follow';
+const PRIVATE_ROBOTS = 'noindex, nofollow';
+const NOINDEX_PATH_PREFIXES = [
+  '/auth',
+  '/school',
+  '/parent',
+  '/teacher',
+  '/admin',
+  '/group',
+  '/hr',
+  '/api',
+  '/transfer',
+  '/class',
+  '/stats',
+  '/reinscription',
+  '/redoublement',
+  '/timetable',
+  '/offline',
+  '/metrics',
+];
+
 const PUBLIC_TYPE = {
   PRIVE: 'PRIVE',
   PUBLIC: 'PUBLIC',
@@ -307,9 +328,18 @@ function osmEmbedSrc(lat, lng) {
 }
 
 function osmSearchUrl(address, city) {
-  const q = [address, city, 'Côte d\'Ivoire'].filter(Boolean).join(', ');
-  if (!q) return null;
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(q)}`;
+  const parts = [];
+  const seen = new Set();
+  for (const raw of [address, city, 'Côte d\'Ivoire']) {
+    const value = String(raw || '').trim();
+    if (!value) continue;
+    const key = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (seen.has(key) || [...seen].some((item) => item.includes(key) || key.includes(item))) continue;
+    seen.add(key);
+    parts.push(value);
+  }
+  if (!parts.length) return null;
+  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(parts.join(', '))}`;
 }
 
 function osmDirectionsUrl(lat, lng) {
@@ -337,14 +367,134 @@ function newsTitlesFrom(posts) {
     .slice(0, 3);
 }
 
+function foldAscii(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function robotsForPath(pathname) {
+  const path = String(pathname || '').split('?')[0];
+  if (NOINDEX_PATH_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+    return PRIVATE_ROBOTS;
+  }
+  return PUBLIC_ROBOTS;
+}
+
+function schoolLegalName(school) {
+  const explicit = String(school?.legalName || '').trim();
+  if (explicit) return explicit;
+  try {
+    const { IGEST_SCHOOL } = require('../config/igestSchool');
+    if (school?.slug && IGEST_SCHOOL.slug && String(school.slug) === IGEST_SCHOOL.slug) {
+      return String(IGEST_SCHOOL.legalName || IGEST_SCHOOL.name || '').trim();
+    }
+  } catch {
+    /* config optional */
+  }
+  return String(school?.name || 'École').trim() || 'École';
+}
+
+function schoolHeading(school) {
+  const name = String(school?.name || '').trim();
+  const legal = schoolLegalName(school);
+  if (legal && name && legal.length > name.length) return legal;
+  return name || legal || 'École';
+}
+
+function schoolLocality(school) {
+  const campus = String(school?.campusLabel || '').trim();
+  const city = String(school?.city || '').trim();
+  if (campus && (!city || foldAscii(campus) !== foldAscii(city))) {
+    return { commune: campus, city: city || null };
+  }
+  return { commune: null, city: city || null };
+}
+
+function localityPhrase(school) {
+  const { commune, city } = schoolLocality(school);
+  const parts = [];
+  if (commune) parts.push(commune);
+  if (city && !parts.some((part) => {
+    const a = foldAscii(part);
+    const b = foldAscii(city);
+    return a === b || a.includes(b);
+  })) {
+    parts.push(city);
+  }
+  return parts.join(', ') || 'Côte d’Ivoire';
+}
+
+function primaryLocality(school) {
+  const { commune, city } = schoolLocality(school);
+  return commune || city || null;
+}
+
+function cycleListing(cycle) {
+  const value = cycle ? parseEducationCycle(cycle) : null;
+  if (value === 'PRIMAIRE') {
+    return { heading: 'Écoles primaires', one: 'école primaire', title: 'Primaire' };
+  }
+  if (value === 'COLLEGE') {
+    return { heading: 'Collèges', one: 'collège', title: 'Collège' };
+  }
+  if (value === 'LYCEE') {
+    return { heading: 'Lycées', one: 'lycée', title: 'Lycée' };
+  }
+  if (value === 'MIXTE') {
+    return { heading: 'Écoles (plusieurs cycles)', one: 'établissement', title: 'Établissement' };
+  }
+  return { heading: 'Écoles', one: 'établissement', title: 'Établissement' };
+}
+
+function cycleArticlePhrase(cycle) {
+  const value = parseEducationCycle(cycle);
+  if (value === 'PRIMAIRE') return 'une école primaire';
+  if (value === 'COLLEGE') return 'un collège';
+  if (value === 'LYCEE') return 'un lycée';
+  if (value === 'MIXTE') return 'un établissement (primaire et secondaire)';
+  return 'un établissement';
+}
+
+function publicCopyForSchool(school, extras = {}) {
+  const heading = schoolHeading(school);
+  const cycle = CYCLE_LABELS[parseEducationCycle(school?.educationCycle)] || 'établissement';
+  const type = PUBLIC_TYPE_LABELS[parsePublicType(school?.publicType) || PUBLIC_TYPE.PRIVE];
+  const locality = localityPhrase(school);
+  const fromDesc = String(school?.publicDescription || '').replace(/\s+/g, ' ').trim();
+  const presentation = fromDesc
+    || `${heading} est ${cycleArticlePhrase(school?.educationCycle)} à ${locality}, Côte d’Ivoire. Page publique EduConnect : présentation et contact. Les notes et bulletins restent dans l’espace parent.`;
+  const cycleBits = [`Cycle d’enseignement : ${cycle}`];
+  if (type) cycleBits.push(`Type : ${type}`);
+  if (extras.classCount != null) {
+    const n = Number(extras.classCount);
+    cycleBits.push(`${n} classe${n > 1 ? 's' : ''} (effectif anonymisé, sans noms d’élèves)`);
+  }
+  return {
+    presentation,
+    cycles: cycleBits.join(' · '),
+    activities: String(school?.publicLife || '').replace(/\s+/g, ' ').trim() || null,
+  };
+}
+
+function seoPlaceClause(school) {
+  const place = primaryLocality(school);
+  if (!place) return 'en Côte d’Ivoire';
+  return `à ${place}, Côte d’Ivoire`;
+}
+
 function seoForSchool(school, extras = {}) {
   const cycle = CYCLE_LABELS[parseEducationCycle(school?.educationCycle)] || 'établissement';
-  const city = school?.city || 'Côte d\'Ivoire';
-  const name = school?.name || 'École';
-  const title = `${name} — ${cycle} à ${city}`;
+  const name = String(school?.name || schoolHeading(school) || 'École').trim();
+  const legal = schoolLegalName(school);
+  const locality = localityPhrase(school);
+  const title = `${name} — ${cycle} ${seoPlaceClause(school)}`;
   const fromDesc = String(school?.publicDescription || '').replace(/\s+/g, ' ').trim();
   const news = newsTitlesFrom(extras.news || extras.newsTitles || extras.posts);
-  const base = fromDesc || `${name}, ${cycle} à ${city}. Page officielle sur EduConnect. Notes et bulletins dans l’espace parent.`;
+  const base = fromDesc
+    || `${legal}, ${String(cycle).toLowerCase()} à ${locality}, Côte d’Ivoire. Page officielle sur EduConnect. Notes et bulletins dans l’espace parent.`;
   const description = [base, news.length ? news.join(' · ') : '']
     .filter(Boolean)
     .join(' ')
@@ -358,45 +508,118 @@ function seoForSchool(school, extras = {}) {
     ogTitle: title,
     ogDescription: description,
     ogImage: image,
+    robots: PUBLIC_ROBOTS,
   };
 }
 
+function marketplacePath({ ville, cycle, type } = {}) {
+  const params = new URLSearchParams();
+  if (ville) params.set('ville', String(ville).trim());
+  if (cycle) params.set('cycle', String(cycle).trim().toUpperCase());
+  if (type) params.set('type', String(type).trim().toUpperCase());
+  const q = params.toString();
+  return q ? `/ecoles?${q}` : '/ecoles';
+}
+
 function seoForMarketplace({ ville, cycle, type } = {}) {
-  const cycleLabel = cycle ? CYCLE_LABELS[parseEducationCycle(cycle)] : null;
-  const typeLabel = type ? PUBLIC_TYPE_LABELS[parsePublicType(type) || type] : null;
-  const bits = ['Écoles EduConnect', ville, cycleLabel, typeLabel].filter(Boolean);
-  const title = bits.join(' — ');
-  const description = ville || cycleLabel || typeLabel
-    ? `Établissements EduConnect ${cycleLabel ? `(${cycleLabel})` : ''} ${typeLabel ? `· ${typeLabel}` : ''} ${ville ? `à ${ville}` : 'en Côte d’Ivoire'}. Pages publiques, sans notes ni bulletins en ligne.`
-        .replace(/\s+/g, ' ')
-        .trim()
-    : 'Annuaire des écoles EduConnect en Côte d’Ivoire. Chaque établissement publie sa page. Les résultats scolaires restent derrière connexion parent.';
+  const villeLabel = String(ville || '').trim();
+  const cycleKey = cycle && String(cycle).trim()
+    && parseEducationCycle(cycle) === String(cycle).trim().toUpperCase()
+    ? String(cycle).trim().toUpperCase()
+    : '';
+  const noun = cycleKey ? cycleListing(cycleKey) : null;
+  const parsedType = parsePublicType(type);
+  const typeLabel = parsedType ? PUBLIC_TYPE_LABELS[parsedType] : null;
+
+  let heading;
+  let title;
+  let lead;
+  if (noun && villeLabel) {
+    heading = `${noun.heading} à ${villeLabel}`;
+    title = `${noun.heading} à ${villeLabel} — Côte d’Ivoire`;
+    lead = `${noun.heading} à ${villeLabel}, Côte d’Ivoire. Pages publiques EduConnect ; notes et bulletins dans l’espace parent.`;
+  } else if (noun) {
+    heading = `${noun.heading} en Côte d’Ivoire`;
+    title = `${noun.heading} en Côte d’Ivoire — enseignement`;
+    lead = `${noun.heading} en Côte d’Ivoire, publiés sur EduConnect. Présentation et contact ; résultats scolaires derrière connexion parent.`;
+  } else if (villeLabel) {
+    heading = `Écoles à ${villeLabel}`;
+    title = `Écoles à ${villeLabel} — Côte d’Ivoire`;
+    lead = `Écoles, collèges et lycées à ${villeLabel}, Côte d’Ivoire. Annuaire EduConnect, sans notes nominatives.`;
+  } else {
+    heading = 'Écoles en Côte d’Ivoire';
+    title = 'Écoles en Côte d’Ivoire — collèges et lycées';
+    lead = 'Annuaire des écoles, collèges et lycées en Côte d’Ivoire. Chaque établissement publie sa page. Les résultats scolaires restent derrière connexion parent.';
+  }
+  if (typeLabel) heading = `${heading} · ${typeLabel}`;
+  const description = lead.replace(/\s+/g, ' ').trim().slice(0, 160);
   return {
     title,
-    metaDescription: description.slice(0, 160),
-    canonicalUrl: `${SITE_ORIGIN}/ecoles`,
+    heading,
+    lead,
+    metaDescription: description,
+    canonicalUrl: `${SITE_ORIGIN}${marketplacePath({ ville: villeLabel, cycle: cycleKey, type: parsedType || '' })}`,
     ogTitle: title,
-    ogDescription: description.slice(0, 160),
+    ogDescription: description,
     ogImage: `${SITE_ORIGIN}/icons/icon-192.png`,
+    robots: PUBLIC_ROBOTS,
   };
+}
+
+function seoForHome() {
+  const title = 'Gestion scolaire et écoles en Côte d’Ivoire';
+  const metaDescription =
+    'EduConnect : gestion scolaire et annuaire d’écoles, collèges et lycées en Côte d’Ivoire. Wave, Orange Money, portail public. Notes et bulletins dans l’espace parent.';
+  return {
+    title,
+    metaDescription,
+    canonicalUrl: `${SITE_ORIGIN}/`,
+    ogTitle: 'EduConnect — Gestion scolaire et écoles en Côte d’Ivoire',
+    ogDescription: metaDescription,
+    ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+    robots: PUBLIC_ROBOTS,
+  };
+}
+
+function jsonLdSameAs(school, extras = {}) {
+  const raw = extras.sameAs || school?.sameAs || school?.publicLinks;
+  const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  const out = [];
+  const seen = new Set();
+  for (const item of list) {
+    const url = String(item || '').trim();
+    if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
 }
 
 function jsonLdForSchool(school, extras = {}) {
   const seo = seoForSchool(school, extras);
+  const legal = schoolLegalName(school);
+  const shortName = String(school?.name || '').trim();
+  const { commune, city } = schoolLocality(school);
   const logo = absoluteAssetUrl(school?.logoUrl);
   const image = seo.ogImage || logo;
   const data = {
     '@context': 'https://schema.org',
-    '@type': 'EducationalOrganization',
-    name: school?.name || 'École',
+    '@type': ['School', 'EducationalOrganization'],
+    name: legal,
     url: portalUrl(school?.slug),
     description: seo.metaDescription,
     address: {
       '@type': 'PostalAddress',
-      addressLocality: school?.city || 'Abidjan',
       addressCountry: 'CI',
     },
   };
+  if (shortName && shortName !== legal) data.alternateName = shortName;
+  if (legal && shortName && legal !== shortName) data.legalName = legal;
+  const locality = commune || city;
+  if (locality) data.address.addressLocality = locality;
+  if (commune && city && foldAscii(commune) !== foldAscii(city)) {
+    data.address.addressRegion = city;
+  }
   if (school?.address) data.address.streetAddress = school.address;
   if (logo) data.logo = logo;
   if (image) data.image = image;
@@ -408,7 +631,43 @@ function jsonLdForSchool(school, extras = {}) {
       longitude: school.lng,
     };
   }
+  const sameAs = jsonLdSameAs(school, extras);
+  if (sameAs.length) data.sameAs = sameAs;
   return data;
+}
+
+function jsonLdForMarketplace(schools, seo = {}) {
+  const items = (Array.isArray(schools) ? schools : []).slice(0, 50);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: seo.heading || seo.title || 'Écoles en Côte d’Ivoire',
+    description: seo.metaDescription,
+    url: seo.canonicalUrl || `${SITE_ORIGIN}/ecoles`,
+    isPartOf: { '@type': 'WebSite', name: 'EduConnect', url: SITE_ORIGIN },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items.map((row, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: row.portalUrl || portalUrl(row.slug),
+        name: row.heading || row.name,
+      })),
+    },
+  };
+}
+
+function jsonLdForHome() {
+  const seo = seoForHome();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'EduConnect',
+    url: SITE_ORIGIN,
+    description: seo.metaDescription,
+    areaServed: { '@type': 'Country', name: 'Côte d’Ivoire' },
+  };
 }
 
 function sanitizeContact(body = {}) {
@@ -467,10 +726,16 @@ function publicSchoolView(school, extras = {}) {
   const type = parsePublicType(school.publicType) || PUBLIC_TYPE.PRIVE;
   const gallery = parseGallery(school.publicGallery);
   const banner = sanitizeImageUrl(school.publicBanner);
+  const locality = schoolLocality(school);
+  const classCount = extras.classCount != null ? extras.classCount : null;
   return {
     name: school.name,
+    heading: schoolHeading(school),
+    legalName: schoolLegalName(school),
     slug: school.slug,
     city: school.city,
+    commune: locality.commune,
+    localityLabel: localityPhrase(school),
     address: school.address,
     campusLabel: school.campusLabel,
     logoUrl: school.logoUrl,
@@ -490,9 +755,10 @@ function publicSchoolView(school, extras = {}) {
     marketplaceBadge: marketplaceBadge(school),
     lat: school.lat,
     lng: school.lng,
-    classCount: extras.classCount != null ? extras.classCount : null,
+    classCount,
+    copy: publicCopyForSchool(school, { classCount }),
     osmEmbedSrc: osmEmbedSrc(school.lat, school.lng),
-    osmSearchUrl: osmSearchUrl(school.address, school.city),
+    osmSearchUrl: osmSearchUrl(school.address || locality.commune, school.city),
     osmDirectionsUrl: osmDirectionsUrl(school.lat, school.lng),
     geoUrl: geoUrl(school.lat, school.lng),
     whatsappUrl: whatsappUrl(school.publicPhone),
@@ -543,6 +809,8 @@ module.exports = {
   PORTAL_POST_KIND,
   PORTAL_POST_KIND_OPTIONS,
   PORTAL_POST_KIND_LABELS,
+  PUBLIC_ROBOTS,
+  PRIVATE_ROBOTS,
   RESERVED_SLUGS,
   MAX_GALLERY,
   isReservedSlug,
@@ -565,9 +833,18 @@ module.exports = {
   geoUrl,
   cycleFilterOptions,
   typeFilterOptions,
+  robotsForPath,
+  schoolLegalName,
+  schoolHeading,
+  schoolLocality,
+  localityPhrase,
+  publicCopyForSchool,
   seoForSchool,
   seoForMarketplace,
+  seoForHome,
   jsonLdForSchool,
+  jsonLdForMarketplace,
+  jsonLdForHome,
   sanitizeContact,
   parsePortalPostInput,
   publicPostView,

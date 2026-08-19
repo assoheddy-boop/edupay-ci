@@ -5,7 +5,9 @@ const {
   sanitizeContact,
   publicSchoolView,
   seoForSchool,
+  seoForMarketplace,
   jsonLdForSchool,
+  robotsForPath,
   portalPath,
   sanitizeImageUrl,
   parseGallery,
@@ -58,17 +60,41 @@ describe('publicPortal helpers', () => {
     expect(view).not.toHaveProperty('admin');
     expect(view.marketplaceTier).toBe('NONE');
     expect(view.marketplaceBadge).toBeNull();
-    const seo = seoForSchool({ name: 'IGEST', slug: 'igest-yopougon-sideci', city: 'Abidjan', educationCycle: 'COLLEGE' });
+    expect(view.heading).toMatch(/Institut Général/);
+    expect(view.commune).toBeNull();
+    const seo = seoForSchool({
+      name: 'IGEST',
+      slug: 'igest-yopougon-sideci',
+      city: 'Abidjan',
+      campusLabel: 'Yopougon-Sideci',
+      educationCycle: 'COLLEGE',
+    });
     expect(seo.canonicalUrl).toMatch(/\/e\/igest-yopougon-sideci$/);
     expect(seo.title).toMatch(/IGEST/);
+    expect(seo.title).toMatch(/Yopougon-Sideci/);
+    expect(seo.title).toMatch(/Côte d’Ivoire/);
+    expect(seo.title).not.toMatch(/à Abidjan, Côte/);
     const jsonLd = jsonLdForSchool({
       name: 'IGEST',
       slug: 'igest-yopougon-sideci',
       city: 'Abidjan',
+      campusLabel: 'Yopougon-Sideci',
+      address: 'Yopougon-Sideci, Abidjan',
+      publicPhone: '05 45 47 48 29',
+      lat: 5.336,
+      lng: -4.086,
       educationCycle: 'COLLEGE',
     });
-    expect(jsonLd['@type']).toBe('EducationalOrganization');
+    expect(jsonLd['@type']).toEqual(['School', 'EducationalOrganization']);
+    expect(jsonLd.name).toMatch(/Institut Général/);
+    expect(jsonLd.alternateName).toBe('IGEST');
+    expect(jsonLd.address.addressLocality).toBe('Yopougon-Sideci');
+    expect(jsonLd.address.addressRegion).toBe('Abidjan');
+    expect(jsonLd.address.addressCountry).toBe('CI');
+    expect(jsonLd.telephone).toBe('05 45 47 48 29');
+    expect(jsonLd.geo.latitude).toBe(5.336);
     expect(jsonLd.url).toMatch(/\/e\/igest-yopougon-sideci$/);
+    expect(jsonLd).not.toHaveProperty('sameAs');
   });
 
   test('only SUPER_ADMIN can set featured from portal fields', () => {
@@ -111,5 +137,21 @@ describe('publicPortal helpers', () => {
       message: 'Je souhaite des informations sur les inscriptions.',
     });
     expect(good.ok).toBe(true);
+  });
+
+  test('marketplace SEO targets écoles CI and robots keep private areas out of the index', () => {
+    const all = seoForMarketplace({});
+    expect(all.title).toMatch(/Écoles en Côte d’Ivoire/);
+    expect(all.title).toMatch(/collèges et lycées/);
+    expect(all.heading).toBe('Écoles en Côte d’Ivoire');
+    const college = seoForMarketplace({ cycle: 'COLLEGE', ville: 'Abidjan' });
+    expect(college.heading).toBe('Collèges à Abidjan');
+    expect(college.canonicalUrl).toMatch(/\/ecoles\?ville=Abidjan&cycle=COLLEGE/);
+    expect(robotsForPath('/e/igest-yopougon-sideci')).toBe('index, follow');
+    expect(robotsForPath('/ecoles')).toBe('index, follow');
+    expect(robotsForPath('/auth/login')).toBe('noindex, nofollow');
+    expect(robotsForPath('/school/dashboard')).toBe('noindex, nofollow');
+    expect(robotsForPath('/parent/grades')).toBe('noindex, nofollow');
+    expect(robotsForPath('/admin/schools')).toBe('noindex, nofollow');
   });
 });

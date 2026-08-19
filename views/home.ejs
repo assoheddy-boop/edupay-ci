@@ -3,6 +3,9 @@
   const cycles = typeof cycleOptions !== 'undefined' && Array.isArray(cycleOptions) ? cycleOptions : [];
 %>
 <%- include('partials/head') %>
+<% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
+<script type="application/ld+json"><%- jsonLdJson %></script>
+<% } %>
 <div class="home">
   <header class="home-top">
     <a href="/" class="home-logo">
@@ -35,9 +38,9 @@
     <div class="home-hero-shade" aria-hidden="true"></div>
     <div class="home-hero-inner">
       <p class="home-kicker">Côte d’Ivoire · Alliance Digitale Internationale</p>
-      <h1 id="home-hero-title">EduConnect — Gestion scolaire et visibilité digitale des écoles</h1>
+      <h1 id="home-hero-title">EduConnect — Gestion scolaire et visibilité digitale des écoles en Côte d’Ivoire</h1>
       <p class="home-hero-lead">
-        Inscriptions, examens, finances, SMS et espace parent — plus une page publique pour que les familles trouvent votre établissement.
+        Inscriptions, examens, finances, SMS et espace parent — plus une page publique pour que les familles trouvent collèges, lycées et écoles en Côte d’Ivoire.
       </p>
       <div class="home-hero-actions">
         <a href="/ecoles" class="home-btn home-btn-primary home-btn-xl">Découvrir les écoles</a>
@@ -82,8 +85,8 @@
   <section class="home-section home-section-alt" id="ecoles" aria-labelledby="market-title">
     <div class="home-wrap">
       <header class="home-section-head">
-        <h2 id="market-title">Trouver une école</h2>
-        <p>Annuaire des établissements qui ont publié leur page. Les notes et bulletins restent derrière la connexion parent.</p>
+        <h2 id="market-title">Écoles en Côte d’Ivoire</h2>
+        <p>Annuaire des collèges, lycées et écoles qui ont publié leur page. Les notes et bulletins restent derrière la connexion parent.</p>
       </header>
 
       <form class="home-search" method="GET" action="/ecoles" role="search">
@@ -113,7 +116,7 @@
                 <%- include('partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
                 <span>
                   <strong><%= s.name %></strong>
-                  <span class="home-school-meta"><%= [s.city, s.cycleLabel].filter(Boolean).join(' · ') %></span>
+                  <span class="home-school-meta"><%= [s.localityLabel || s.city, s.cycleLabel].filter(Boolean).join(' · ') %></span>
                 </span>
               </a>
             </li>
@@ -122,7 +125,7 @@
       <% } %>
 
       <p class="home-section-cta">
-        <a href="/ecoles" class="home-btn home-btn-outline">Voir toutes les écoles</a>
+        <a href="/ecoles" class="home-btn home-btn-outline">Voir toutes les écoles en Côte d’Ivoire</a>
       </p>
     </div>
   </section>

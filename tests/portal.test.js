@@ -116,15 +116,22 @@ describe('Public school portal', () => {
     prisma.school.findFirst.mockResolvedValue(publishedSchool());
     const res = await request(app).get(`/e/${SLUG}`);
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/<title>[^<]*IGEST/);
+    expect(res.text).toMatch(/<title>[^<]*IGEST[^<]*Yopougon-Sideci[^<]*Côte d[’']Ivoire/);
+    expect(res.text).toMatch(/<h1>[^<]*Institut Général d(?:['’]|&#39;)Enseignement Secondaire \(IGEST\)/);
     expect(res.text).toMatch(/IGEST/);
     expect(res.text).toMatch(/Yopougon-Sideci/);
     expect(res.text).toMatch(/Collège/);
+    expect(res.text).toMatch(/name="robots" content="index, follow"/);
     expect(res.text).toMatch(/rel="canonical"/);
     expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
     expect(res.text).toMatch(/og:title/);
-    expect(res.text).toMatch(/EducationalOrganization/);
+    expect(res.text).toMatch(/"@type":\["School","EducationalOrganization"\]/);
+    expect(res.text).toMatch(/"addressLocality":"Yopougon-Sideci"/);
+    expect(res.text).toMatch(/"telephone":"05 45 47 48 29"/);
+    expect(res.text).toMatch(/"latitude":5\.33/);
+    expect(res.text).not.toMatch(/RCCM/i);
     expect(res.text).toMatch(/id="presentation"/);
+    expect(res.text).toMatch(/id="cycles"/);
     expect(res.text).toMatch(/id="actualites"/);
     expect(res.text).toMatch(/id="galerie"/);
     expect(res.text).toMatch(/id="vie-scolaire"/);
@@ -237,14 +244,23 @@ describe('Marketplace /ecoles', () => {
     ]);
     const res = await request(app).get('/ecoles').query({ ville: 'Abidjan', cycle: 'COLLEGE' });
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/Trouver une école/);
+    expect(res.text).toMatch(/Collèges à Abidjan/);
+    expect(res.text).toMatch(/<title>[^<]*Collèges à Abidjan[^<]*Côte d’Ivoire/);
+    expect(res.text).toMatch(/name="robots" content="index, follow"/);
     expect(res.text).toMatch(/IGEST/);
     expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci"/);
+    expect(res.text).toMatch(/href="\/ecoles\?cycle=COLLEGE"/);
+    expect(res.text).toMatch(/href="\/ecoles\?cycle=LYCEE"/);
+    expect(res.text).toMatch(/href="\/ecoles\?ville=Yopougon"/);
+    expect(res.text).toMatch(/Yopougon-Sideci/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
         publicPortalEnabled: true,
-        city: { contains: 'Abidjan', mode: 'insensitive' },
+        OR: expect.arrayContaining([
+          { city: { contains: 'Abidjan', mode: 'insensitive' } },
+          { campusLabel: { contains: 'Abidjan', mode: 'insensitive' } },
+        ]),
         educationCycle: 'COLLEGE',
       }),
     }));
@@ -269,6 +285,8 @@ describe('Marketplace /ecoles', () => {
     ]);
     const res = await request(app).get('/ecoles');
     expect(res.status).toBe(200);
+    expect(res.text).toMatch(/<title>[^<]*Écoles en Côte d’Ivoire[^<]*collèges et lycées/);
+    expect(res.text).toMatch(/"@type":"CollectionPage"/);
     expect(res.text.indexOf('École Alpha')).toBeGreaterThan(-1);
     expect(res.text.indexOf('École Alpha')).toBeLessThan(res.text.indexOf('École Zèbre'));
     expect(res.text).toMatch(/Premium/);
@@ -310,6 +328,22 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/>Partenaire</);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(res.text).not.toMatch(/18\/20/);
+  });
+
+  test('ville query matches campus so Yopougon can list IGEST', async () => {
+    prisma.school.findMany.mockResolvedValue([publishedSchool()]);
+    const res = await request(app).get('/ecoles').query({ ville: 'Yopougon' });
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Écoles à Yopougon/);
+    expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci"/);
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([
+          { campusLabel: { contains: 'Yopougon', mode: 'insensitive' } },
+          { address: { contains: 'Yopougon', mode: 'insensitive' } },
+        ]),
+      }),
+    }));
   });
 
   test('filters by establishment type', async () => {
@@ -395,5 +429,22 @@ describe('SEO sitemap and robots', () => {
     expect(res.text).toMatch(/sitemap\.xml/);
     expect(res.text).toMatch(/Disallow: \/school/);
     expect(res.text).toMatch(/Disallow: \/auth/);
+  });
+
+  test('auth and private areas are noindex; public school pages are indexable', async () => {
+    prisma.school.findFirst.mockResolvedValue(publishedSchool());
+    const school = await request(app).get(`/e/${SLUG}`);
+    expect(school.status).toBe(200);
+    expect(school.text).toMatch(/name="robots" content="index, follow"/);
+    expect(school.headers['x-robots-tag']).toMatch(/index,\s*follow/i);
+
+    const market = await request(app).get('/ecoles');
+    expect(market.status).toBe(200);
+    expect(market.text).toMatch(/name="robots" content="index, follow"/);
+
+    const login = await request(app).get('/auth/login');
+    expect(login.status).toBe(200);
+    expect(login.text).toMatch(/name="robots" content="noindex, nofollow"/);
+    expect(login.headers['x-robots-tag']).toMatch(/noindex/i);
   });
 });

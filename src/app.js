@@ -29,7 +29,13 @@ const guideRoutes = require('./routes/guides');
 const devisRoutes = require('./routes/devis');
 const portalRoutes = require('./routes/portal');
 const portalController = require('./controllers/portalController');
-const { SITE_ORIGIN, cycleFilterOptions } = require('./utils/publicPortal');
+const {
+  cycleFilterOptions,
+  robotsForPath,
+  seoForHome,
+  jsonLdForHome,
+  PRIVATE_ROBOTS,
+} = require('./utils/publicPortal');
 const { listFeaturedSchools } = require('./services/marketplace');
 
 const app = express();
@@ -75,6 +81,9 @@ app.use((req, res, next) => {
   const { cycleFlags, EDUCATION_CYCLE_OPTIONS } = require('./utils/educationCycle');
   res.locals.cycle = cycleFlags('COLLEGE');
   res.locals.educationCycleOptions = EDUCATION_CYCLE_OPTIONS;
+  const robots = robotsForPath(req.path);
+  res.locals.robots = robots;
+  res.setHeader('X-Robots-Tag', robots);
   next();
 });
 
@@ -93,18 +102,20 @@ app.use(portalRoutes);
 app.get('/', async (_req, res, next) => {
   try {
     const featuredSchools = await listFeaturedSchools(3);
-    const title = 'Gestion scolaire et visibilité digitale des écoles';
-    const metaDescription =
-      'EduConnect — gestion scolaire, communication parents et visibilité digitale des établissements en Côte d’Ivoire. Wave, Orange Money, portail public, marketplace des écoles.';
+    const seo = seoForHome();
+    const jsonLd = jsonLdForHome();
     res.render('home', {
       user: null,
       homeCss: true,
-      title,
-      metaDescription,
-      canonicalUrl: `${SITE_ORIGIN}/`,
-      ogTitle: 'EduConnect — Gestion scolaire et visibilité digitale des écoles',
-      ogDescription: metaDescription,
-      ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+      title: seo.title,
+      metaDescription: seo.metaDescription,
+      canonicalUrl: seo.canonicalUrl,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
+      robots: seo.robots,
+      jsonLd,
+      jsonLdJson: safeJson(jsonLd),
       featuredSchools,
       cycleOptions: cycleFilterOptions(),
     });
@@ -140,7 +151,12 @@ app.use('/timetable', timetableRoutes);
 app.get('/:slug', portalController.publicAlias);
 
 app.use((_req, res) => {
-  res.status(404).render('error', { message: 'Page introuvable', user: null });
+  res.setHeader('X-Robots-Tag', PRIVATE_ROBOTS);
+  res.status(404).render('error', {
+    message: 'Page introuvable',
+    user: null,
+    robots: PRIVATE_ROBOTS,
+  });
 });
 
 app.use((err, req, res, _next) => {
@@ -148,7 +164,12 @@ app.use((err, req, res, _next) => {
   if (req.originalUrl?.startsWith('/api/')) {
     return res.status(500).json({ error: 'Erreur serveur' });
   }
-  res.status(500).render('error', { message: 'Erreur serveur', user: null });
+  res.setHeader('X-Robots-Tag', PRIVATE_ROBOTS);
+  res.status(500).render('error', {
+    message: 'Erreur serveur',
+    user: null,
+    robots: PRIVATE_ROBOTS,
+  });
 });
 
 module.exports = app;

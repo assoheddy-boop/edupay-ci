@@ -5,11 +5,14 @@ const { safeJson } = require('../utils/safeJson');
 const {
   SITE_ORIGIN,
   CONTACT_INBOX,
+  PRIVATE_ROBOTS,
+  PUBLIC_ROBOTS,
   isPortalSlug,
   portalPath,
   seoForSchool,
   seoForMarketplace,
   jsonLdForSchool,
+  jsonLdForMarketplace,
   sanitizeContact,
   publicSchoolView,
   cycleFilterOptions,
@@ -26,10 +29,12 @@ const {
 const { publicSchoolStats } = require('../services/publicPortalStats');
 
 function renderMissing(res, status = 404) {
+  res.setHeader('X-Robots-Tag', PRIVATE_ROBOTS);
   return res.status(status).render('error', {
     message: 'Cette école n’a pas publié de page, ou le lien est incorrect.',
     user: null,
     title: 'Page introuvable',
+    robots: PRIVATE_ROBOTS,
   });
 }
 
@@ -54,6 +59,7 @@ async function schoolPageLocals(req, res, school, extra = {}) {
     ogImage: seo.ogImage,
     jsonLd,
     jsonLdJson: safeJson(jsonLd),
+    robots: PUBLIC_ROBOTS,
     portalCss: true,
     csrfToken: ensureCsrfToken(req, res),
     contactError: extra.contactError || null,
@@ -129,14 +135,21 @@ async function marketplace(req, res, next) {
     const type = parsePublicType(req.query.type) || '';
     const schools = await listPublishedSchools({ ville, cycle, type });
     const seo = seoForMarketplace({ ville, cycle, type });
+    const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
+    const jsonLd = jsonLdForMarketplace(views, seo);
     return res.render('portal/marketplace', {
       user: null,
       title: seo.title,
+      heading: seo.heading,
+      lead: seo.lead,
       metaDescription: seo.metaDescription,
       canonicalUrl: seo.canonicalUrl,
       ogTitle: seo.ogTitle,
       ogDescription: seo.ogDescription,
       ogImage: seo.ogImage,
+      jsonLd,
+      jsonLdJson: safeJson(jsonLd),
+      robots: PUBLIC_ROBOTS,
       portalCss: true,
       ville,
       cycle,
@@ -144,7 +157,7 @@ async function marketplace(req, res, next) {
       cycleOptions: cycleFilterOptions(),
       typeOptions: typeFilterOptions(),
       cycleLabels: CYCLE_LABELS,
-      schools: schools.map((row) => publicSchoolView(row, { includeBase64: false })),
+      schools: views,
     });
   } catch (err) {
     return next(err);

@@ -30,6 +30,7 @@
         <a href="/auth/login">Espace parent / Connexion</a>
         <a href="/devis">Devis</a>
         <a href="#presentation">Présentation</a>
+        <a href="#cycles">Cycles</a>
         <a href="#actualites">Actualités</a>
         <a href="#galerie">Galerie</a>
         <a href="#vie-scolaire">Vie scolaire</a>
@@ -45,8 +46,8 @@
       <div class="portal-hero-brand">
         <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'lg' }) %>
         <div>
-          <p class="portal-kicker"><%= school.cycleLabel %> · <%= school.typeLabel %> · <%= school.city %></p>
-          <h1><%= school.name %></h1>
+          <p class="portal-kicker"><%= school.cycleLabel %> · <%= school.typeLabel %> · <%= school.localityLabel || school.city %></p>
+          <h1><%= school.heading || school.name %></h1>
           <% if (school.campusLabel) { %>
             <p class="portal-campus"><%= school.campusLabel %></p>
           <% } %>
@@ -61,6 +62,7 @@
 
   <nav class="portal-subnav" aria-label="Sections de la page">
     <a href="#presentation">Présentation</a>
+    <a href="#cycles">Cycles</a>
     <a href="#actualites">Actualités</a>
     <a href="#galerie">Galerie</a>
     <a href="#vie-scolaire">Vie scolaire</a>
@@ -72,14 +74,12 @@
   <section class="portal-section" id="presentation">
     <article class="card portal-card">
       <h2>Présentation</h2>
-      <% if (school.publicDescription) { %>
-        <p class="portal-desc"><%= school.publicDescription %></p>
-      <% } else { %>
-        <p class="portal-desc"><%= school.name %> est un établissement EduConnect à <%= school.city %> (<%= school.cycleLabel %>).</p>
-      <% } %>
+      <p class="portal-desc"><%= (school.copy && school.copy.presentation) ? school.copy.presentation : (school.publicDescription || (school.heading || school.name) + ' est un établissement EduConnect.') %></p>
       <ul class="portal-meta">
         <% if (school.address) { %><li>Adresse : <%= school.address %></li><% } %>
+        <% if (school.commune) { %><li>Commune / quartier : <%= school.commune %></li><% } %>
         <li>Ville : <%= school.city %></li>
+        <li>Pays : Côte d’Ivoire</li>
         <li>Cycle : <%= school.cycleLabel %></li>
         <li>Type : <%= school.typeLabel %></li>
         <% if (school.publicPhone) { %><li>Téléphone : <%= school.publicPhone %></li><% } %>
@@ -108,6 +108,14 @@
       <% } else if (school.osmSearchUrl) { %>
         <p>Coordonnées GPS non renseignées. <a href="<%= school.osmSearchUrl %>" rel="noopener noreferrer" target="_blank">Rechercher l’adresse sur OpenStreetMap</a>.</p>
       <% } %>
+    </article>
+  </section>
+
+  <section class="portal-section" id="cycles">
+    <article class="card portal-card">
+      <h2>Cycles d’enseignement</h2>
+      <p class="portal-desc"><%= (school.copy && school.copy.cycles) ? school.copy.cycles : ('Cycle : ' + school.cycleLabel) %></p>
+      <p>Cet établissement figure dans l’annuaire <a href="/ecoles">des écoles en Côte d’Ivoire</a><% if (school.educationCycle === 'COLLEGE') { %> (collèges)<% } else if (school.educationCycle === 'LYCEE') { %> (lycées)<% } else if (school.educationCycle === 'PRIMAIRE') { %> (écoles primaires)<% } %>.</p>
     </article>
   </section>
 
@@ -153,10 +161,12 @@
   <section class="portal-section" id="vie-scolaire">
     <article class="card portal-card">
       <h2>Vie scolaire</h2>
-      <% if (school.publicLife) { %>
+      <% if (school.copy && school.copy.activities) { %>
+        <p class="portal-desc portal-pre"><%= school.copy.activities %></p>
+      <% } else if (school.publicLife) { %>
         <p class="portal-desc portal-pre"><%= school.publicLife %></p>
       <% } else { %>
-        <p class="portal-empty">La direction n’a pas encore publié de texte sur les clubs, la cantine ou les activités. Aucune liste d’élèves n’est affichée ici.</p>
+        <p class="portal-empty">La direction n’a pas encore publié de texte sur les clubs, la cantine ou les activités. Aucune liste d’élèves n’est affichée ici. Pour les inscriptions, utilisez le formulaire de contact.</p>
       <% } %>
     </article>
   </section>

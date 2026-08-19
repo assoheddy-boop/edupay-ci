@@ -308,6 +308,29 @@
 
 .portal-filters { margin-bottom: 1.25rem; }
 
+.portal-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.6rem;
+  margin: 0 0 1.15rem;
+}
+
+.portal-shortcuts a {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--portal-navy);
+  background: #eef3fb;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.portal-shortcuts a:hover {
+  background: #dce7f8;
+  color: var(--portal-blue);
+}
+
 .portal-list {
   list-style: none;
   padding: 0;

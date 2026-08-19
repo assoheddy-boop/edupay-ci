@@ -113,7 +113,11 @@ async function listPublishedSchools({ ville, cycle, type } = {}) {
   const city = String(ville || '').trim();
   const extra = {};
   if (city) {
-    extra.city = { contains: city, mode: 'insensitive' };
+    extra.OR = [
+      { city: { contains: city, mode: 'insensitive' } },
+      { campusLabel: { contains: city, mode: 'insensitive' } },
+      { address: { contains: city, mode: 'insensitive' } },
+    ];
   }
   if (cycle) {
     const parsed = parseEducationCycle(cycle);

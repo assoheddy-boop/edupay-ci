@@ -82,7 +82,9 @@ describe('Homepage', () => {
   test('GET / has unique SEO and Open Graph tags', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/<title>Gestion scolaire et visibilité digitale des écoles — EduConnect<\/title>/);
+    expect(res.text).toMatch(/<title>Gestion scolaire et écoles en Côte d’Ivoire — EduConnect<\/title>/);
+    expect(res.text).toMatch(/name="robots" content="index, follow"/);
+    expect(res.text).toMatch(/href="\/ecoles"/);
     expect(res.text).toMatch(/meta name="description"/);
     expect(res.text).toMatch(/property="og:title"/);
     expect(res.text).toMatch(/property="og:image"/);
