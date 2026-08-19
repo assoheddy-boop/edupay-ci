@@ -121,6 +121,7 @@ function pickSchoolFields(def, existing = {}) {
     waveNumber: def.waveNumber ?? existing.waveNumber ?? null,
     omNumber: def.omNumber ?? existing.omNumber ?? null,
     currentSchoolYear: def.currentSchoolYear || existing.currentSchoolYear || '2026-2027',
+    educationCycle: def.educationCycle || existing.educationCycle || 'COLLEGE',
   };
 }
 

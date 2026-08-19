@@ -68,6 +68,9 @@ app.use((req, res, next) => {
   res.locals.gradeKindLabel = require('./services/gradesAverage').gradeKindLabel;
   res.locals.seriesOptions = require('./services/series').SERIES_OPTIONS;
   res.locals.seriesLabel = require('./services/series').seriesLabel;
+  const { cycleFlags, EDUCATION_CYCLE_OPTIONS } = require('./utils/educationCycle');
+  res.locals.cycle = cycleFlags('COLLEGE');
+  res.locals.educationCycleOptions = EDUCATION_CYCLE_OPTIONS;
   next();
 });
 

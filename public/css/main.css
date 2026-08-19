@@ -1539,6 +1539,30 @@ code {
   font-weight: 600;
 }
 
+.nav-group-title {
+  margin: 0.85rem 0 0.15rem;
+  padding: 0.35rem 0.85rem 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.nav-cycle-label {
+  margin: 0.45rem 0 0.1rem;
+  padding: 0.4rem 0.85rem 0.1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--blue);
+  border-top: 1px dashed #dbe4ee;
+}
+
+.cycle-inline select {
+  max-width: 11rem;
+  font-size: 0.85rem;
+}
+
 .app-content {
   flex: 1;
   min-width: 0;

@@ -12,6 +12,7 @@ const IGEST_SCHOOL = {
   logoFile: 'public/img/schools/igest-yopougon-sideci.png',
   waveNumber: null,
   omNumber: null,
+  educationCycle: 'COLLEGE',
   admin: {
     email: 'igest@educonnect.ci',
     firstName: 'Affoua Valentine',

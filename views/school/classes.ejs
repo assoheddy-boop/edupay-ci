@@ -42,6 +42,7 @@
 
         </div>
 
+        <% if (typeof cycle === 'undefined' || cycle.hasLyceeSeries) { %>
         <div class="form-group">
           <label for="series">Série (lycée)</label>
           <select id="series" name="series">
@@ -52,6 +53,7 @@
           </select>
           <p class="form-hint">Lycée A / C / D : tous les élèves héritent. Collège : laissez vide.</p>
         </div>
+        <% } %>
 
         <button type="submit" class="btn btn-primary">Créer</button>
 
@@ -89,6 +91,7 @@
 
               <div class="form-group"><label>Année</label><input type="text" name="schoolYear" value="<%= c.schoolYear %>"></div>
 
+              <% if (typeof cycle === 'undefined' || cycle.hasLyceeSeries) { %>
               <div class="form-group">
                 <label>Série (lycée)</label>
                 <select name="series">
@@ -98,6 +101,7 @@
                   <% }) %>
                 </select>
               </div>
+              <% } %>
 
               <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
 

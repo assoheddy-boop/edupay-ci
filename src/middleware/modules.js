@@ -3,6 +3,7 @@ const { MODULES, MODULE_KEYS } = require('../config/modules');
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { getSchoolPlan, planIncludesFeature } = require('../utils/plans');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
+const { cycleFlags } = require('../utils/educationCycle');
 
 function enableAllModulesMap(map = {}) {
   const enabled = { ...map };
@@ -80,10 +81,24 @@ async function attachModules(req, res, next) {
         ? enableAllModulesMap(map)
         : await applyPlanMask(schoolId, map);
     } else {
-      res.locals.modules = {};
+        res.locals.modules = {};
     }
     res.locals.isModuleEnabled = (key) => isEnabled(res.locals.modules, key);
     res.locals.selectedSchoolId = req?.cookies?.selectedSchoolId || schoolId;
+
+    let cycleValue = req.user?.school?.educationCycle || req.user?.teacher?.school?.educationCycle || null;
+    if (!cycleValue && schoolId) {
+      try {
+        const row = await prisma.school.findUnique({
+          where: { id: schoolId },
+          select: { educationCycle: true },
+        });
+        cycleValue = row?.educationCycle || null;
+      } catch {
+        cycleValue = null;
+      }
+    }
+    res.locals.cycle = cycleFlags(cycleValue);
     next();
   } catch (err) {
     next(err);

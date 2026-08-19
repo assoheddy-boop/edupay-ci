@@ -10,7 +10,27 @@
     </div>
   </div>
 
-  <% if (success) { %><div class="alert alert-success">Modules mis à jour.</div><% } %>
+  <% if (success === 'cycle') { %><div class="alert alert-success">Cycle d’enseignement mis à jour.</div><% } else if (success) { %><div class="alert alert-success">Modules mis à jour.</div><% } %>
+
+  <form method="POST" action="/admin/schools/<%= school.id %>/cycle" class="card" style="margin-bottom:1.5rem">
+    <div class="card-header">
+      <h2>Cycle d’enseignement</h2>
+      <p class="page-sub">Primaire, collège, lycée ou mixte — le menu de l’école s’adapte (séries lycée, examen national, libellés).</p>
+    </div>
+    <input type="hidden" name="redirect" value="/admin/schools/<%= school.id %>/modules">
+    <div class="form-group">
+      <label for="educationCycle">Cycle</label>
+      <select id="educationCycle" name="educationCycle">
+        <% (typeof educationCycleOptions !== 'undefined' ? educationCycleOptions : []).forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= school.educationCycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+      <p class="form-hint">Mixte = primaire + collège, ou primaire + collège + lycée, avec menus séparés.</p>
+    </div>
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary">Enregistrer le cycle</button>
+    </div>
+  </form>
 
   <form method="POST" action="/admin/schools/<%= school.id %>/modules" class="card">
     <div class="card-header">

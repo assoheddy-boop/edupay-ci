@@ -10,6 +10,7 @@ const {
 } = require('../utils/officialSms');
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
+const { parseEducationCycle } = require('../utils/educationCycle');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
@@ -203,9 +204,18 @@ async function updateCoefficients(req, res) {
 }
 
 async function updateSettings(req, res) {
-  const { waveNumber, omNumber, name, address, city, removeLogo, smsSenderId } = req.body;
+  const { waveNumber, omNumber, name, address, city, removeLogo, smsSenderId, educationCycle } = req.body;
   try {
-    const data = { waveNumber, omNumber, name, address, city };
+    const data = {
+      waveNumber,
+      omNumber,
+      name,
+      address,
+      city,
+    };
+    if (educationCycle != null && String(educationCycle).trim() !== '') {
+      data.educationCycle = parseEducationCycle(educationCycle);
+    }
     if (smsSenderId !== undefined) {
       data.smsSenderId = sanitizeSmsSenderId(smsSenderId);
     }

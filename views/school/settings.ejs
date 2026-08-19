@@ -51,6 +51,15 @@
           <p class="form-hint">Numéro Orange Money pour recevoir les paiements. Il n'envoie pas de SMS.</p>
         </div>
       </div>
+      <div class="form-group">
+        <label for="educationCycle">Cycle d’enseignement</label>
+        <select id="educationCycle" name="educationCycle">
+          <% (typeof educationCycleOptions !== 'undefined' ? educationCycleOptions : []).forEach(function(opt) { %>
+            <option value="<%= opt.value %>" <%= school.educationCycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+          <% }) %>
+        </select>
+        <p class="form-hint">Détermine les menus : primaire (évaluations, convocations blanc), collège / lycée (délibérations, palmarès, examen national). Mixte = les deux, avec séparation Primaire / Secondaire. Les séries A / C / D n’apparaissent qu’en lycée ou mixte.</p>
+      </div>
       <% if (typeof smsOfficialEnabled !== 'undefined' && smsOfficialEnabled) { %>
       <div class="form-group">
         <label for="smsSenderId">Identifiant SMS officiel (nom ou numéro dédié)</label>

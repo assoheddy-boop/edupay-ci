@@ -51,6 +51,14 @@ enum SchoolSeries {
   AUTRE
 }
 
+/// Cycle d’enseignement. MIXTE = primaire + secondaire, menus séparés.
+enum EducationCycle {
+  PRIMAIRE
+  COLLEGE
+  LYCEE
+  MIXTE
+}
+
 enum NotificationType {
   ABSENCE
   LATE
@@ -203,6 +211,8 @@ model School {
   logoBase64        String?  @db.Text
   subscription      String   @default("premium")
   currentSchoolYear String   @default("2025-2026")
+  /// Collège par défaut : rien ne disparaît pour IGEST / écoles déjà en ligne.
+  educationCycle    EducationCycle @default(COLLEGE)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

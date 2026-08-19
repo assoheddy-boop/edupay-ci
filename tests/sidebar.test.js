@@ -1,10 +1,27 @@
 const fs = require('fs');
 const path = require('path');
+const ejs = require('ejs');
+const { cycleFlags } = require('../src/utils/educationCycle');
 
-const sidebar = fs.readFileSync(
-  path.join(__dirname, '../views/partials/_sidebar.ejs'),
-  'utf8',
-);
+const sidebarPath = path.join(__dirname, '../views/partials/_sidebar.ejs');
+const sidebar = fs.readFileSync(sidebarPath, 'utf8');
+
+function renderSchoolSidebar(cycleValue) {
+  return ejs.render(
+    sidebar,
+    {
+      user: {
+        role: 'SCHOOL_ADMIN',
+        school: { name: 'Test', slug: 'test', educationCycle: cycleValue },
+      },
+      modules: {},
+      adminAssist: null,
+      cycle: cycleFlags(cycleValue),
+      unreadNotifications: 0,
+    },
+    { filename: sidebarPath },
+  );
+}
 
 describe('sidebar missing links (Vague 3)', () => {
   test('school nav includes lost items when the module is on', () => {
@@ -41,5 +58,54 @@ describe('sidebar missing links (Vague 3)', () => {
 
   test('teacher nav includes palmarès next to conseil de classe', () => {
     expect(sidebar).toMatch(/\/teacher\/deliberations[\s\S]*\/teacher\/palmares/);
+  });
+});
+
+describe('sidebar grouped by dashboard categories', () => {
+  test('school nav lists the six dashboard categories', () => {
+    expect(sidebar).toMatch(/Administration scolaire/);
+    expect(sidebar).toMatch(/Vie scolaire/);
+    expect(sidebar).toMatch(/Examens &amp; Évaluations/);
+    expect(sidebar).toMatch(/Finances &amp; Comptabilité/);
+    expect(sidebar).toMatch(/Communication/);
+    expect(sidebar).toMatch(/Rapports &amp; Statistiques/);
+  });
+
+  test('keeps admin-assist exits at the top of the nav', () => {
+    expect(sidebar).toMatch(/assist[\s\S]*\/admin\/dashboard[\s\S]*\/admin\/assist\/exit/);
+  });
+});
+
+describe('sidebar by education cycle', () => {
+  test('primaire sidebar hides national exam', () => {
+    const html = renderSchoolSidebar('PRIMAIRE');
+    expect(html).toContain('Évaluations');
+    expect(html).not.toMatch(/Délibérations/);
+    expect(html).not.toMatch(/Palmarès/);
+    expect(html).not.toMatch(/national/i);
+    expect(html).toContain('Convocations (blanc)');
+    expect(html).toContain('/school/payments');
+    expect(html).toContain('/school/caisse');
+    expect(html).toContain('/school/justificatifs');
+    expect(html).toContain('/school/sms');
+  });
+
+  test('college sidebar shows deliberations', () => {
+    const html = renderSchoolSidebar('COLLEGE');
+    expect(html).toContain('Délibérations');
+    expect(html).toContain('Palmarès');
+    expect(html).toContain('Convocations (blanc + national)');
+    expect(html).not.toContain('>Évaluations<');
+    expect(html).not.toMatch(/nav-cycle-label">Primaire/);
+  });
+
+  test('mixte sidebar shows both Primaire and Secondaire sections', () => {
+    const html = renderSchoolSidebar('MIXTE');
+    expect(html).toMatch(/nav-cycle-label">Primaire/);
+    expect(html).toMatch(/nav-cycle-label">Secondaire/);
+    expect(html).toContain('Évaluations');
+    expect(html).toContain('Délibérations');
+    expect(html).toContain('Palmarès');
+    expect(html).toContain('Convocations (blanc + national)');
   });
 });

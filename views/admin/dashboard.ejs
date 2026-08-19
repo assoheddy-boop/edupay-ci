@@ -21,6 +21,9 @@
   <% if (success === 'premium') { %>
     <div class="alert alert-success">Plateforme passée en mode premium.</div>
   <% } %>
+  <% if (success === 'cycle') { %>
+    <div class="alert alert-success">Cycle d’enseignement mis à jour. Le menu de l’école s’adapte immédiatement.</div>
+  <% } %>
   <% if (typeof error !== 'undefined' && error === 'assist') { %>
     <div class="alert alert-error">Impossible de prendre la main — école ou groupe introuvable.</div>
   <% } %>
@@ -280,6 +283,7 @@
         <tr>
           <th>École</th>
           <th>Ville</th>
+          <th>Cycle</th>
           <th>Groupe</th>
           <th>Élèves</th>
           <th>Modules actifs</th>
@@ -295,6 +299,16 @@
               <small><%= s.admin?.email || '—' %></small>
             </td>
             <td><%= s.city %></td>
+            <td>
+              <form method="POST" action="/admin/schools/<%= s.id %>/cycle" class="form-inline cycle-inline">
+                <input type="hidden" name="redirect" value="/admin/dashboard">
+                <select name="educationCycle" aria-label="Cycle <%= s.name %>" onchange="this.form.submit()">
+                  <% (typeof educationCycleOptions !== 'undefined' ? educationCycleOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= s.educationCycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </td>
             <td><%= s.organization?.name || '—' %></td>
             <td><%= s._count.students %></td>
             <td>

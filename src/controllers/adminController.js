@@ -19,6 +19,7 @@ const {
 const { safeInternalPath } = require('../utils/cookies');
 const { sendConnectivityTestSms, smsConfigured, smsProvider } = require('../services/sms');
 const { resolveSmsSender } = require('../utils/officialSms');
+const { parseEducationCycle, EDUCATION_CYCLE_OPTIONS, CYCLE_LABELS } = require('../utils/educationCycle');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -89,6 +90,8 @@ async function dashboard(req, res) {
     smsTest: req.query.smsTest || null,
     smsReason: req.query.smsReason || null,
     smsSender: req.query.smsSender || null,
+    educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
+    educationCycleLabels: CYCLE_LABELS,
   });
 }
 
@@ -152,6 +155,7 @@ async function schoolModules(req, res) {
     modules,
     MODULE_KEYS,
     success: req.query.success || null,
+    educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
   });
 }
 
@@ -184,6 +188,31 @@ async function updateSchoolModules(req, res) {
 
   const redirectTo = safeInternalPath(req.body.redirect, `/admin/schools/${id}/modules`);
   res.redirect(`${redirectTo}?success=1`);
+}
+
+async function updateSchoolCycle(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/dashboard?error=school');
+
+  const educationCycle = parseEducationCycle(req.body.educationCycle);
+  await prisma.school.update({
+    where: { id },
+    data: { educationCycle },
+  });
+  await logAudit({
+    action: 'school_cycle_update',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    details: { educationCycle },
+    ip: req.ip,
+  });
+
+  const redirectTo = safeInternalPath(req.body.redirect, '/admin/dashboard');
+  const sep = redirectTo.includes('?') ? '&' : '?';
+  res.redirect(`${redirectTo}${sep}success=cycle`);
 }
 
 async function enableAllModules(req, res) {
@@ -426,4 +455,5 @@ module.exports = {
   startSchoolAssist,
   startGroupAssist,
   exitAssist,
+  updateSchoolCycle,
 };

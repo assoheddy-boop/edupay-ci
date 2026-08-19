@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Convocations d’examen</h1>
-    <p class="page-sub">Examen blanc ou examen national — une feuille par élève, avec les deux matricules</p>
+    <p class="page-sub"><%= (typeof cycle !== 'undefined' && cycle && !cycle.hasNationalExam) ? 'Examen blanc — une feuille par élève, matricule école' : 'Examen blanc ou examen national — une feuille par élève, avec les deux matricules' %></p>
   </div>
 </div>
 
@@ -66,7 +66,7 @@
     </div>
     <button type="submit" class="btn btn-primary">Générer</button>
   </form>
-  <p class="form-hint">Le type Examen blanc / Examen national figure sur chaque convocation, avec le matricule école et le matricule national.</p>
+  <p class="form-hint"><%= (typeof cycle !== 'undefined' && cycle && !cycle.hasNationalExam) ? 'En primaire, seules les convocations d’examen blanc (et les compositions) sont proposées.' : 'Le type Examen blanc / Examen national figure sur chaque convocation, avec le matricule école et le matricule national.' %></p>
 </div>
 
 <% if (!classes.length) { %>

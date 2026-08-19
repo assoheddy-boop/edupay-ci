@@ -1,7 +1,6 @@
 const prisma = require('../config/database');
 const { TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
-  EXAM_TYPES,
   todayIso,
   listSessions,
   getSession,
@@ -11,6 +10,7 @@ const {
   getParentPrintBundle,
   generateConvocationPdf,
 } = require('../services/convocationService');
+const { examTypesForCycle, allowsNationalExam } = require('../utils/educationCycle');
 
 function schoolOr403(req, res) {
   const school = req.user?.school;
@@ -61,7 +61,7 @@ async function convocationsPage(req, res) {
     room: String(req.query.room || ''),
     examType: String(req.query.examType || 'BLANC'),
     term: String(req.query.term || 'T1'),
-    examTypes: EXAM_TYPES,
+    examTypes: examTypesForCycle(school.educationCycle),
     terms: TERMS,
     formatTermLabel,
     error: req.query.error || null,
@@ -72,6 +72,11 @@ async function convocationsPage(req, res) {
 async function createConvocation(req, res) {
   const school = schoolOr403(req, res);
   if (!school) return;
+
+  if (String(req.body.examType || '').toUpperCase() === 'NATIONAL' && !allowsNationalExam(school.educationCycle)) {
+    const classId = encodeURIComponent(String(req.body.classId || ''));
+    return res.redirect(`/school/convocations?error=examType&classId=${classId}`);
+  }
 
   const result = await createSession({
     schoolId: school.id,
