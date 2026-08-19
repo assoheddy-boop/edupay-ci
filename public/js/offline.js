@@ -206,6 +206,7 @@
         subject: raw.subject,
         period: raw.period,
         maxValue: raw.maxValue,
+        coefficient: raw.coefficient,
         grades,
       };
     }
@@ -218,6 +219,7 @@
         maxValue: raw.maxValue,
         period: raw.period,
         comment: raw.comment,
+        coefficient: raw.coefficient,
       };
     }
 

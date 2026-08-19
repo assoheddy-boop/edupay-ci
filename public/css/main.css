@@ -2278,6 +2278,13 @@ body.sidebar-open {
   }
 }
 
+.caisse-row-selected td { background: #f0f6ff; }
+@media print {
+  .app-sidebar,
+  .sidebar-toolbar,
+  .ticket-actions { display: none !important; }
+}
+
 /* Very narrow phones (~320px): one-column stats so figures are not squeezed. */
 @media (max-width: 359px) {
   .stats-grid { grid-template-columns: 1fr; }

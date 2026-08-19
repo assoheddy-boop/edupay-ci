@@ -8,6 +8,15 @@ const {
   statusesFromBody,
 } = require('../services/offlineActions');
 const { calendarEventsJson } = require('../services/homeworkService');
+const { ENTRY_TERMS } = require('../services/academicTerms');
+const { loadSchoolCoefficients, COLLEGE_CI_SUBJECTS } = require('../services/gradesAverage');
+const { listSubjectsForSchool } = require('../../services/TimetableService');
+
+function collegeCoeffDefaults() {
+  const map = {};
+  COLLEGE_CI_SUBJECTS.forEach((s) => { map[s.name] = s.coefficient; });
+  return map;
+}
 
 async function dashboard(req, res) {
   const teacher = req.user.teacher;
@@ -44,12 +53,26 @@ async function students(req, res) {
 
 async function grades(req, res) {
   const teacher = req.user.teacher;
-  const classLinks = await prisma.teacherClass.findMany({
-    where: { teacherId: teacher.id },
-    include: { class: { include: { students: true } } },
-  });
+  const [classLinks, subjects] = await Promise.all([
+    prisma.teacherClass.findMany({
+      where: { teacherId: teacher.id },
+      include: { class: { include: { students: true } } },
+    }),
+    listSubjectsForSchool(teacher.schoolId),
+  ]);
+  const coeffMap = await loadSchoolCoefficients(teacher.schoolId);
 
-  res.render('teacher/grades', { user: req.user, teacher, classLinks, error: null, success: null });
+  res.render('teacher/grades', {
+    user: req.user,
+    teacher,
+    classLinks,
+    subjects,
+    coeffMap,
+    terms: ENTRY_TERMS,
+    collegeDefaults: collegeCoeffDefaults(),
+    error: null,
+    success: null,
+  });
 }
 
 async function createGrade(req, res) {
@@ -262,11 +285,24 @@ async function submitAttendance(req, res) {
 }
 
 async function bulkGradesPage(req, res) {
-  const classLinks = await prisma.teacherClass.findMany({
-    where: { teacherId: req.user.teacher.id },
-    include: { class: { include: { students: { orderBy: { lastName: 'asc' } } } } },
+  const teacher = req.user.teacher;
+  const [classLinks, subjects] = await Promise.all([
+    prisma.teacherClass.findMany({
+      where: { teacherId: teacher.id },
+      include: { class: { include: { students: { orderBy: { lastName: 'asc' } } } } },
+    }),
+    listSubjectsForSchool(teacher.schoolId),
+  ]);
+  const coeffMap = await loadSchoolCoefficients(teacher.schoolId);
+  res.render('teacher/bulk-grades', {
+    user: req.user,
+    classLinks,
+    subjects,
+    coeffMap,
+    terms: ENTRY_TERMS,
+    collegeDefaults: collegeCoeffDefaults(),
+    success: req.query.success || null,
   });
-  res.render('teacher/bulk-grades', { user: req.user, classLinks, success: req.query.success || null });
 }
 
 async function submitBulkGrades(req, res) {

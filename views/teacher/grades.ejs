@@ -20,11 +20,21 @@
       <div class="form-row">
         <div class="form-group">
           <label for="subject">Matière</label>
-          <input type="text" id="subject" name="subject" required placeholder="Ex: Mathématiques">
+          <input type="text" id="subject" name="subject" list="subjectList" required placeholder="Ex: Mathématiques">
+          <datalist id="subjectList">
+            <% (subjects || []).forEach(s => { %>
+              <option value="<%= s.name %>"></option>
+            <% }) %>
+          </datalist>
         </div>
         <div class="form-group">
           <label for="period">Période</label>
-          <input type="text" id="period" name="period" required placeholder="Ex: Trimestre 1">
+          <select id="period" name="period" required>
+            <option value="">— Choisir —</option>
+            <% (terms || []).forEach(t => { %>
+              <option value="<%= t.value %>"><%= t.label %></option>
+            <% }) %>
+          </select>
         </div>
       </div>
       <div class="form-row">
@@ -36,6 +46,11 @@
           <label for="maxValue">Sur</label>
           <input type="number" id="maxValue" name="maxValue" value="20" step="0.25" min="1">
         </div>
+        <div class="form-group">
+          <label for="coefficient">Coefficient</label>
+          <input type="number" id="coefficient" name="coefficient" min="0.5" step="0.5" placeholder="auto">
+          <p class="form-hint">Défaut de l'école — modifiable ici (Maths 4, Français 3…).</p>
+        </div>
       </div>
       <div class="form-group">
         <label for="comment">Commentaire</label>
@@ -44,4 +59,20 @@
       <button type="submit" class="btn btn-primary btn-lg">Enregistrer la note</button>
     </form>
   </div>
+  <script>
+    (function () {
+      const coeffs = <%- JSON.stringify(coeffMap || {}) %>;
+      const defaults = <%- JSON.stringify(collegeDefaults || {}) %>;
+      const input = document.getElementById('subject');
+      const coef = document.getElementById('coefficient');
+      if (!input || !coef) return;
+      function fill() {
+        const name = (input.value || '').trim();
+        if (coeffs[name] != null) coef.value = coeffs[name];
+        else if (defaults[name] != null) coef.value = defaults[name];
+      }
+      input.addEventListener('change', fill);
+      input.addEventListener('blur', fill);
+    })();
+  </script>
 <% } %>

@@ -1,6 +1,7 @@
 const prisma = require('../src/config/database');
 const logger = require('./logger');
 const { PASSING_RATIO } = require('./StatsService');
+const { computeAverage } = require('../src/services/gradesAverage');
 
 function round2(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
@@ -46,6 +47,8 @@ function computeGenderStats(students) {
   const absences = { boys: 0, girls: 0 };
   const gradeBoys = { total: 0, passing: 0, ratioSum: 0 };
   const gradeGirls = { total: 0, passing: 0, ratioSum: 0 };
+  const avgBoys = { sum: 0, n: 0 };
+  const avgGirls = { sum: 0, n: 0 };
 
   students.forEach((s) => {
     if (s.gender === 'M') boys += 1;
@@ -65,7 +68,23 @@ function computeGenderStats(students) {
       target.ratioSum += r;
       if (r >= PASSING_RATIO) target.passing += 1;
     });
+
+    if ((s.grades || []).length && (s.gender === 'M' || s.gender === 'F')) {
+      const avg = computeAverage(s.grades);
+      if (s.gender === 'M') {
+        avgBoys.sum += avg;
+        avgBoys.n += 1;
+      } else {
+        avgGirls.sum += avg;
+        avgGirls.n += 1;
+      }
+    }
   });
+
+  const boysSuccess = finishSuccess(gradeBoys);
+  const girlsSuccess = finishSuccess(gradeGirls);
+  boysSuccess.averageOn20 = avgBoys.n ? round2(avgBoys.sum / avgBoys.n) : 0;
+  girlsSuccess.averageOn20 = avgGirls.n ? round2(avgGirls.sum / avgGirls.n) : 0;
 
   return {
     boys,
@@ -74,8 +93,8 @@ function computeGenderStats(students) {
     unknown: students.length - boys - girls,
     absences,
     success: {
-      boys: finishSuccess(gradeBoys),
-      girls: finishSuccess(gradeGirls),
+      boys: boysSuccess,
+      girls: girlsSuccess,
     },
   };
 }
@@ -84,7 +103,7 @@ const studentGenderSelect = {
   id: true,
   gender: true,
   absences: { select: { id: true } },
-  grades: { select: { value: true, maxValue: true } },
+  grades: { select: { value: true, maxValue: true, subject: true } },
 };
 
 async function getClassGenderStats(classId) {
@@ -131,7 +150,7 @@ async function getGenderStatsBySchool(schoolId) {
         schoolId: true,
         school: { select: { id: true, name: true } },
         absences: { select: { id: true } },
-        grades: { select: { value: true, maxValue: true } },
+        grades: { select: { value: true, maxValue: true, subject: true } },
       },
     });
 
@@ -182,7 +201,7 @@ async function listClassGenderStats({ schoolId } = {}) {
           classId: true,
           gender: true,
           absences: { select: { id: true } },
-          grades: { select: { value: true, maxValue: true } },
+          grades: { select: { value: true, maxValue: true, subject: true } },
         },
       }),
     ]);

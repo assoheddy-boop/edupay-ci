@@ -3,6 +3,7 @@ const { findSchoolByCode } = require('../utils/schoolCode');
 const { logAudit } = require('../utils/audit');
 const { applyPayment } = require('../services/offlineActions');
 const { calendarEventsJson, kindLabel } = require('../services/homeworkService');
+const { getStudentFeeBalance, motifLabel, discountLabel } = require('../services/socialCaseService');
 
 async function dashboard(req, res) {
   const parent = req.user.parentProfile;
@@ -68,9 +69,25 @@ async function payments(req, res) {
       })
     : [];
 
+  const feeBalances = {};
+  await Promise.all(
+    children.map(async (link) => {
+      const schoolId = link.student?.class?.school?.id || link.student?.schoolId;
+      if (!schoolId || !link.student?.id) return;
+      const balance = await getStudentFeeBalance({
+        schoolId,
+        studentId: link.student.id,
+      });
+      if (balance.ok) feeBalances[link.student.id] = balance;
+    }),
+  );
+
   res.render('parent/payments', {
     user: req.user,
     children,
+    feeBalances,
+    motifLabel,
+    discountLabel,
     error: req.query.error || null,
     success: req.query.success || null,
   });

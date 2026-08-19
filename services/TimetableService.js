@@ -2,6 +2,7 @@ const prisma = require('../src/config/database');
 const logger = require('./logger');
 const { sendNotification } = require('./NotificationService');
 const { generateTimetablePDF } = require('./export');
+const { defaultCoefficientFor } = require('../src/services/gradesAverage');
 
 const VALID_DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -548,7 +549,7 @@ async function ensureSubject(schoolId, name) {
   const trimmed = name.trim();
   return prisma.subject.upsert({
     where: { schoolId_name: { schoolId, name: trimmed } },
-    create: { schoolId, name: trimmed },
+    create: { schoolId, name: trimmed, coefficient: defaultCoefficientFor(trimmed) },
     update: {},
   });
 }

@@ -6,6 +6,7 @@ const SENSITIVE_PREFIXES = [
   'plan_modules',
   'school_plan',
   'scholarship',
+  'social_case',
   'accounting',
   'transfer',
   'payroll',

@@ -2,6 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const { drawDocumentHeader, drawSchoolLogo } = require('../utils/schoolLogo');
+const { formatMoney } = require('../middleware/currency');
+
+const METHOD_LABELS = {
+  CASH: 'Espèces',
+  WAVE: 'Wave',
+  ORANGE_MONEY: 'Orange Money',
+  BANK: 'Banque',
+};
 
 const receiptsDir = path.join(__dirname, '../../uploads/receipts');
 
@@ -23,16 +31,20 @@ function generateReceiptPdf({ payment, student, school, feeType }) {
 
     doc.fontSize(11).fillColor('#333');
     doc.text(`Élève : ${student.firstName} ${student.lastName}`);
+    if (student.matricule) doc.text(`Matricule : ${student.matricule}`);
     doc.text(`Classe : ${student.class?.name || '—'}`);
     doc.moveDown();
-    doc.fontSize(14).fillColor('#00C853').text(`${payment.amount.toLocaleString('fr-FR')} FCFA`, { align: 'center' });
+    doc.fontSize(14).fillColor('#00C853').text(formatMoney(payment.amount), { align: 'center' });
     doc.fontSize(11).fillColor('#333');
     doc.text(`Type : ${feeType?.name || 'Frais scolaires'}`);
+    if (payment.method) {
+      doc.text(`Mode : ${METHOD_LABELS[payment.method] || payment.method}`);
+    }
     doc.text(`Référence : ${payment.reference || payment.id.slice(0, 12)}`);
     doc.text(`Statut : ${payment.status}`);
     doc.text(`Date validation : ${payment.validatedAt ? new Date(payment.validatedAt).toLocaleDateString('fr-FR') : '—'}`);
     doc.moveDown(2);
-    doc.fontSize(9).fillColor('#999').text(`Document officiel — ${school.name}`, { align: 'center' });
+    doc.fontSize(9).fillColor('#999').text(`Document officiel — ${school.name} — EduConnect`, { align: 'center' });
 
     doc.end();
     stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));

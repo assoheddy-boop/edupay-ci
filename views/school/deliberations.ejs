@@ -1,0 +1,121 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('deliberations', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Délibérations' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Conseil de classe</h1>
+    <p class="page-sub">Mentions et décisions — moyenne pondérée Σ(note × coef) / Σ(coef)</p>
+  </div>
+  <% if (classId) { %>
+    <div class="page-header-actions">
+      <a class="btn btn-outline" href="/school/deliberations/pv?classId=<%= classId %>&amp;term=<%= term %>">Imprimer le PV</a>
+      <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= classId %>&amp;term=<%= term %>">PDF</a>
+    </div>
+  <% } %>
+</div>
+
+<% if (success) { %><div class="alert alert-success">Délibérations enregistrées.</div><% } %>
+<% if (error === 'data') { %><div class="alert alert-error">Aucune ligne à enregistrer.</div><% } %>
+<% if (error === 'decision') { %><div class="alert alert-error">Décision invalide.</div><% } %>
+<% if (error === 'term') { %><div class="alert alert-error">Trimestre invalide (T1, T2 ou T3).</div><% } %>
+<% if (error === 'pdf') { %><div class="alert alert-error">Impossible de générer le PDF.</div><% } %>
+
+<div class="card" style="margin-bottom:1rem">
+  <form method="GET" action="/school/deliberations" class="form form-inline">
+    <div class="form-group">
+      <label for="classId">Classe</label>
+      <select id="classId" name="classId" required>
+        <% if (!classes.length) { %><option value="">Aucune classe</option><% } %>
+        <% classes.forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= classId === c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="term">Trimestre</label>
+      <select id="term" name="term">
+        <% terms.forEach(function(t) { %>
+          <option value="<%= t.value %>" <%= term === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Afficher</button>
+  </form>
+  <p class="form-hint">
+    Mentions suggérées : moins de 10 — aucune / Ajourné · 10–12 Passable · 12–14 Assez bien · 14–16 Bien · 16–18 Très bien · 18 et plus Excellent.
+    Décision auto : Admis dès 10/20. « Redouble » et « À surveiller » sont des choix de la direction.
+  </p>
+</div>
+
+<% if (!classes.length) { %>
+  <p class="empty">Créez d’abord une classe.</p>
+<% } else if (!rows.length) { %>
+  <p class="empty">Aucun élève dans cette classe.</p>
+<% } else { %>
+  <form method="POST" action="/school/deliberations" class="card" id="delibForm">
+    <input type="hidden" name="classId" value="<%= classId %>">
+    <input type="hidden" name="term" value="<%= term %>">
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Moyenne</th>
+            <th>Absences</th>
+            <th>Mention</th>
+            <th>Décision</th>
+            <th>Commentaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+            <tr>
+              <td>
+                <%= r.lastName %> <%= r.firstName %>
+                <br><small><%= r.matricule || '—' %><% if (r.suggestedDecision) { %> · suggéré : <%= r.suggestedMention || '—' %> / <%= r.suggestedDecision %><% } %></small>
+              </td>
+              <td><strong><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></strong></td>
+              <td><%= r.absences %></td>
+              <td>
+                <select name="rows[<%= r.studentId %>][mention]">
+                  <option value="" <%= !r.mention ? 'selected' : '' %>>—</option>
+                  <% mentions.forEach(function(m) { %>
+                    <option value="<%= m %>" <%= r.mention === m ? 'selected' : '' %>><%= m %></option>
+                  <% }) %>
+                </select>
+              </td>
+              <td>
+                <select name="rows[<%= r.studentId %>][decision]" required>
+                  <% decisions.forEach(function(d) { %>
+                    <option value="<%= d %>" <%= r.decision === d ? 'selected' : '' %>><%= d %></option>
+                  <% }) %>
+                </select>
+              </td>
+              <td>
+                <input type="text" name="rows[<%= r.studentId %>][comment]" value="<%= r.comment || '' %>" maxlength="500" placeholder="Appréciation">
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:1rem">
+      <button type="submit" class="btn btn-success" id="delibSubmit">Enregistrer le conseil</button>
+    </div>
+  </form>
+  <script>
+  (function () {
+    var form = document.getElementById('delibForm');
+    var btn = document.getElementById('delibSubmit');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function (ev) {
+      if (form.getAttribute('data-submitted') === '1') { ev.preventDefault(); return; }
+      form.setAttribute('data-submitted', '1');
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement…';
+    });
+  })();
+  </script>
+<% } %>
+<% } %>

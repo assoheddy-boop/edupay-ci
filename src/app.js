@@ -64,6 +64,7 @@ app.use((req, res, next) => {
   res.locals.showDemoAccounts = process.env.NODE_ENV !== 'production';
   res.locals.safeJson = safeJson;
   res.locals.unreadNotifications = 0;
+  res.locals.termLabel = require('./services/academicTerms').formatTermLabel;
   next();
 });
 

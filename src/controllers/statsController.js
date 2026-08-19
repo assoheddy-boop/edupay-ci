@@ -1,6 +1,6 @@
 const prisma = require('../config/database');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
-const { computeAverage } = require('../services/bulletinPdf');
+const { computeAverage, loadSchoolCoefficients } = require('../services/gradesAverage');
 const { logAudit } = require('../utils/audit');
 const { generateStatsExcel } = require('../../services/export');
 const { getCache, setCache } = require('../../services/cache');
@@ -12,7 +12,7 @@ async function loadSchoolStats(schoolId) {
   const cached = await getCache(cacheKey);
   if (cached?.stats && cached?.byClass) return cached;
 
-  const [students, payments, absences, grades, classes] = await Promise.all([
+  const [students, payments, absences, grades, classes, coeffMap] = await Promise.all([
     prisma.student.count({ where: { schoolId } }),
     prisma.payment.groupBy({
       by: ['status'],
@@ -26,13 +26,12 @@ async function loadSchoolStats(schoolId) {
       where: { schoolId },
       include: { _count: { select: { students: true } } },
     }),
+    loadSchoolCoefficients(schoolId),
   ]);
 
   const validated = payments.find((p) => p.status === 'VALIDATED');
   const pending = payments.find((p) => p.status === 'PENDING');
-  const avgGrade = grades.length
-    ? Math.round((grades.reduce((s, g) => s + (g.value / g.maxValue) * 20, 0) / grades.length) * 100) / 100
-    : 0;
+  const avgGrade = grades.length ? computeAverage(grades, coeffMap) : 0;
 
   const byClass = await Promise.all(
     classes.map(async (c) => {
@@ -45,7 +44,7 @@ async function loadSchoolStats(schoolId) {
       return {
         name: c.name,
         students: c._count.students,
-        avg: classGrades.length ? computeAverage(classGrades) : 0,
+        avg: classGrades.length ? computeAverage(classGrades, coeffMap) : 0,
         paymentsValidated: classPayments,
       };
     }),

@@ -1,0 +1,70 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('deliberations', { _inLayout: true }); %>
+<%- include('../layouts/teacherLayout', { body: content, title: 'Conseil de classe' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Conseil de classe</h1>
+    <p class="page-sub">Consultation — seule la direction enregistre les décisions</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form method="GET" action="/teacher/deliberations" class="form form-inline">
+    <div class="form-group">
+      <label for="classId">Classe</label>
+      <select id="classId" name="classId" required>
+        <% if (!classes.length) { %><option value="">Aucune classe</option><% } %>
+        <% classes.forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= classId === c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="term">Trimestre</label>
+      <select id="term" name="term">
+        <% terms.forEach(function(t) { %>
+          <option value="<%= t.value %>" <%= term === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Afficher</button>
+  </form>
+  <p class="form-hint">Moyenne pondérée. Mentions : &lt;10 aucune · 10–12 Passable · 12–14 Assez bien · 14–16 Bien · 16–18 Très bien · ≥18 Excellent.</p>
+</div>
+
+<% if (!classes.length) { %>
+  <p class="empty">Aucune classe affectée.</p>
+<% } else if (!rows.length) { %>
+  <p class="empty">Aucun élève dans cette classe.</p>
+<% } else { %>
+  <div class="card">
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Moyenne</th>
+            <th>Absences</th>
+            <th>Mention</th>
+            <th>Décision</th>
+            <th>Commentaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+            <tr>
+              <td><%= r.lastName %> <%= r.firstName %><br><small><%= r.matricule || '—' %></small></td>
+              <td><strong><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></strong></td>
+              <td><%= r.absences %></td>
+              <td><%= r.mention || '—' %></td>
+              <td><%= r.decision || '—' %></td>
+              <td><%= r.comment || '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+<% } %>

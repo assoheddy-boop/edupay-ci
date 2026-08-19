@@ -11,7 +11,30 @@ const {
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
+const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
+const {
+  COLLEGE_CI_SUBJECTS,
+  parseCoefficient,
+  defaultCoefficientFor,
+  upsertSubjectCoefficient,
+} = require('../services/gradesAverage');
 const { getPendingPayments } = require('../../services/PaymentService');
+const {
+  CAISSE_METHODS,
+  newIdempotencyKey,
+  methodLabel,
+  searchStudents,
+  getStudentForSchool,
+  listTodayTill,
+  createCaissePayment,
+  getCaisseTicket,
+} = require('../services/caisseService');
+const {
+  getStudentFeeBalance,
+  mapActiveCasesByStudent,
+  motifLabel,
+  discountLabel,
+} = require('../services/socialCaseService');
 const { generateBulletinPDF, generateHomeworkCalendarPDF, generateHomeworkCalendarExcel } = require('../../services/export');
 const { sendExcel } = require('../services/exportExcel');
 const { summarizeHomeworkStats, calendarEventsJson } = require('../services/homeworkService');
@@ -77,6 +100,88 @@ async function settings(req, res) {
     smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
     smsPreview: smsPreviewExample(req.user.school.name),
   });
+}
+
+async function coefficientsPage(req, res) {
+  const schoolId = req.user.school.id;
+  await syncSubjectsFromGrades(schoolId);
+  const subjects = await prisma.subject.findMany({
+    where: { schoolId },
+    orderBy: { name: 'asc' },
+  });
+  res.render('school/coefficients', {
+    user: req.user,
+    school: req.user.school,
+    subjects,
+    collegeDefaults: COLLEGE_CI_SUBJECTS,
+    defaultCoefficientFor,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function syncSubjectsFromGrades(schoolId) {
+  const existing = await prisma.subject.findMany({
+    where: { schoolId },
+    select: { name: true },
+  });
+  const known = new Set(existing.map((s) => s.name));
+  const grades = await prisma.grade.findMany({
+    where: { student: { schoolId } },
+    select: { subject: true },
+    distinct: ['subject'],
+  });
+  for (const row of grades) {
+    const name = String(row.subject || '').trim();
+    if (!name || known.has(name)) continue;
+    await upsertSubjectCoefficient(schoolId, name);
+    known.add(name);
+  }
+}
+
+async function updateCoefficients(req, res) {
+  const schoolId = req.user.school.id;
+  try {
+    if (req.body.applyDefaults === '1') {
+      for (const row of COLLEGE_CI_SUBJECTS) {
+        await prisma.subject.upsert({
+          where: { schoolId_name: { schoolId, name: row.name } },
+          create: { schoolId, name: row.name, coefficient: row.coefficient },
+          update: { coefficient: row.coefficient },
+        });
+      }
+      await logAudit({
+        action: 'coefficients_defaults',
+        entity: 'Subject',
+        user: req.user,
+        ip: req.ip,
+      });
+      return res.redirect('/school/coefficients?success=defaults');
+    }
+
+    const ids = [].concat(req.body.subjectId || []);
+    for (const id of ids) {
+      const raw = req.body[`coefficient_${id}`];
+      const coefficient = parseCoefficient(raw);
+      if (coefficient == null) continue;
+      await prisma.subject.updateMany({
+        where: { id, schoolId },
+        data: { coefficient },
+      });
+    }
+
+    const newName = String(req.body.newName || '').trim();
+    const newCoeff = parseCoefficient(req.body.newCoefficient);
+    if (newName) {
+      await upsertSubjectCoefficient(schoolId, newName, newCoeff != null ? newCoeff : defaultCoefficientFor(newName));
+    }
+
+    await logAudit({ action: 'coefficients_update', entity: 'Subject', user: req.user, ip: req.ip });
+    res.redirect('/school/coefficients?success=1');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/school/coefficients?error=1');
+  }
 }
 
 async function updateSettings(req, res) {
@@ -433,7 +538,18 @@ async function listPayments(req, res) {
     orderBy: { createdAt: 'desc' },
   });
   const payments = [...pending, ...others];
-  res.render('school/payments', { user: req.user, school: req.user.school, payments });
+  const socialCases = await mapActiveCasesByStudent(
+    schoolId,
+    payments.map((p) => p.studentId || p.student?.id),
+  );
+  res.render('school/payments', {
+    user: req.user,
+    school: req.user.school,
+    payments,
+    socialCases,
+    motifLabel,
+    discountLabel,
+  });
 }
 
 async function validatePayment(req, res) {
@@ -506,6 +622,107 @@ async function validatePayment(req, res) {
   res.redirect('/school/payments');
 }
 
+async function caissePage(req, res) {
+  const school = req.user.school;
+  if (!school?.id) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const q = String(req.query.q || '').trim();
+  const studentId = String(req.query.studentId || '').trim();
+  const [feeTypes, matches, selectedStudent, till] = await Promise.all([
+    prisma.feeType.findMany({
+      where: { schoolId: school.id, isActive: true },
+      orderBy: { name: 'asc' },
+    }),
+    searchStudents(school.id, q),
+    studentId ? getStudentForSchool(school.id, studentId) : Promise.resolve(null),
+    listTodayTill(school.id),
+  ]);
+
+  let feeBalance = null;
+  if (selectedStudent) {
+    feeBalance = await getStudentFeeBalance({
+      schoolId: school.id,
+      studentId: selectedStudent.id,
+    });
+    if (feeBalance.status === 403) {
+      return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+    }
+  }
+
+  const dueByFee = {};
+  if (feeBalance?.ok) {
+    for (const line of feeBalance.lines) dueByFee[line.feeTypeId] = line;
+  }
+
+  res.render('school/caisse', {
+    user: req.user,
+    school,
+    q,
+    feeTypes,
+    matches,
+    selectedStudent,
+    feeBalance: feeBalance?.ok ? feeBalance : null,
+    dueByFee,
+    motifLabel,
+    discountLabel,
+    tillPayments: till.payments,
+    tillTotals: till.totals,
+    methods: CAISSE_METHODS,
+    methodLabel,
+    idempotencyKey: newIdempotencyKey(),
+    error: req.query.error || null,
+    success: req.query.success || null,
+  });
+}
+
+async function createCaisseEntry(req, res) {
+  const school = req.user.school;
+  if (!school?.id) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const result = await createCaissePayment({ school, body: req.body || {} });
+  if (result.status === 403 || result.error === 'forbidden') {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+  if (!result.ok) {
+    const studentQs = req.body?.studentId ? `&studentId=${encodeURIComponent(req.body.studentId)}` : '';
+    return res.redirect(`/school/caisse?error=${result.error || 'data'}${studentQs}`);
+  }
+
+  await logAudit({
+    action: result.duplicate ? 'caisse_duplicate' : 'caisse_encaisser',
+    entity: 'Payment',
+    entityId: result.payment.id,
+    user: req.user,
+    ip: req.ip,
+  });
+
+  res.redirect(`/school/caisse/${result.payment.id}/ticket`);
+}
+
+async function caisseTicket(req, res) {
+  const school = req.user.school;
+  if (!school?.id) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const result = await getCaisseTicket(school.id, req.params.id);
+  if (!result.ok) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  return res.status(200).render('school/caisse-ticket', {
+    user: req.user,
+    school,
+    payment: result.payment,
+    methodLabel,
+    formatMoney,
+  });
+}
+
 async function listBulletins(req, res) {
   const schoolId = req.user.school.id;
   const [students, classes] = await Promise.all([
@@ -522,6 +739,8 @@ async function listBulletins(req, res) {
     school: req.user.school,
     students,
     classes,
+    terms: BULLETIN_TERMS,
+    formatTermLabel,
     success: req.query.success || null,
     error: req.query.error || null,
     bulkResult: req.query.bulk ? JSON.parse(decodeURIComponent(req.query.bulk)) : null,
@@ -781,6 +1000,8 @@ module.exports = {
   dashboard,
   settings,
   updateSettings,
+  coefficientsPage,
+  updateCoefficients,
   listClasses,
   createClass,
   updateClass,
@@ -793,6 +1014,9 @@ module.exports = {
   importStudents,
   listPayments,
   validatePayment,
+  caissePage,
+  createCaisseEntry,
+  caisseTicket,
   listBulletins,
   generateBulletin,
   generateBulkBulletin,

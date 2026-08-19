@@ -41,11 +41,15 @@
       <a href="/school/teachers">Enseignants</a>
       <a href="/school/fees">Frais</a>
       <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
+      <% if (on('payments')) { %><a href="/school/caisse">Caisse</a><% } %>
+      <a href="/school/cas-sociaux">Cas sociaux</a>
       <% if (on('canteen')) { %><a href="/school/canteen">Cantine</a><% } %>
       <% if (on('lost_items')) { %><a href="/school/lost-items">Objets perdus</a><% } %>
       <% if (on('activities')) { %><a href="/school/activities">Activités</a><% } %>
       <% if (on('pickup')) { %><a href="/school/pickup">Sortie école</a><% } %>
       <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
+      <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+      <a href="/school/coefficients">Coefficients</a>
       <% if (on('homeworks')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
       <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
       <% if (on('accounting')) { %><a href="/school/accounting">Comptabilité</a><% } %>
@@ -90,6 +94,7 @@
       <a href="/teacher/students">Élèves</a>
       <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
       <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
+      <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
       <% if (on('homeworks')) { %><a href="/teacher/homeworks">Devoirs & contrôles</a><% } %>
       <% if (on('transport')) { %><a href="/teacher/transport">Transport</a><% } %>
       <% if (on('canteen')) { %><a href="/teacher/canteen">Cantine</a><% } %>

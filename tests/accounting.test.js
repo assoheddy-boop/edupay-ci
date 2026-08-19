@@ -106,6 +106,13 @@ describe('accounting helpers (CI director)', () => {
     expect(inferAccountType({})).toBe('WAVE');
   });
 
+  test('inferAccountType prefers payment method over CAISSE reference', () => {
+    expect(inferAccountType({ method: 'CASH' })).toBe('CASH');
+    expect(inferAccountType({ method: 'WAVE', reference: 'CAISSE-abc' })).toBe('WAVE');
+    expect(inferAccountType({ method: 'ORANGE_MONEY' })).toBe('ORANGE_MONEY');
+    expect(inferAccountType({ method: 'BANK' })).toBe('BANK');
+  });
+
   test('inferIncomeCategory maps scolarité, cantine, extras', () => {
     expect(inferIncomeCategory('Scolarité T1')).toBe('Scolarité');
     expect(inferIncomeCategory('Cantine T1')).toBe('Cantine');
@@ -276,6 +283,37 @@ describe('AccountingService.recordValidatedPayment', () => {
         categoryId: 'cat-sco',
       }),
     }));
+  });
+
+  test('posts caisse espèces onto the CASH account', async () => {
+    prisma.financeAccount.findMany.mockResolvedValue([
+      { id: 'acc-wave', type: 'WAVE' },
+      { id: 'acc-cash', type: 'CASH' },
+    ]);
+    prisma.expenseCategory.findFirst.mockResolvedValue({ id: 'cat-sco', name: 'Scolarité', kind: 'INCOME' });
+    prisma.financeTransaction.findFirst.mockResolvedValue(null);
+    prisma.financeAccount.findFirst.mockResolvedValue({ id: 'acc-cash', schoolId: 'school-1', type: 'CASH' });
+    prisma.financeTransaction.create.mockResolvedValue({ id: 'tx-cash' });
+    prisma.financeAccount.update.mockResolvedValue({});
+    prisma.accountingEntry.create.mockResolvedValue({ id: 'ae-cash' });
+
+    const result = await recordValidatedPayment({
+      schoolId: 'school-1',
+      payment: {
+        id: 'pay-caisse',
+        amount: 25000,
+        method: 'CASH',
+        source: 'CAISSE',
+        reference: 'CAISSE-token',
+        feeType: { name: 'Scolarité T1' },
+        student: { firstName: 'Awa', lastName: 'Kouassi' },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(prisma.financeAccount.findFirst).toHaveBeenCalledWith({
+      where: { id: 'acc-cash', schoolId: 'school-1' },
+    });
   });
 });
 

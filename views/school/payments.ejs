@@ -2,15 +2,25 @@
 <% const content = include('payments', { _inLayout: true }); %>
 <%- include('../layouts/schoolLayout', { body: content, title: 'Paiements' }) %>
 <% } else { %>
+<% const casesByStudent = typeof socialCases !== 'undefined' && socialCases ? socialCases : {}; %>
+<% const labelOf = typeof motifLabel === 'function' ? motifLabel : function(v) { return v; }; %>
+<% const remiseOf = typeof discountLabel === 'function' ? discountLabel : function() { return ''; }; %>
 <div class="page-header">
-    <h1>Paiements</h1>
-    <p class="page-sub">Validez les preuves de paiement Wave / Orange Money</p>
+    <div>
+      <h1>Paiements</h1>
+      <p class="page-sub">Validez les preuves de paiement Wave / Orange Money</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="/school/caisse" class="btn btn-primary">Caisse secrétariat</a>
+      <a href="/school/cas-sociaux" class="btn btn-outline">Cas sociaux</a>
+    </div>
   </div>
 
   <div class="card">
     <% if (payments.length === 0) { %>
       <p class="empty">Aucun paiement reçu.</p>
     <% } else { %>
+      <div class="table-scroll">
       <table class="table">
         <thead>
           <tr>
@@ -23,8 +33,15 @@
         </thead>
         <tbody>
           <% payments.forEach(p => { %>
+            <% const sc = casesByStudent[p.studentId || (p.student && p.student.id)]; %>
             <tr>
-              <td><%= p.student.firstName %> <%= p.student.lastName %><br><small><%= p.student.class.name %></small></td>
+              <td>
+                <%= p.student.firstName %> <%= p.student.lastName %><br>
+                <small><%= p.student.class.name %></small>
+                <% if (sc) { %>
+                  <br><small>Cas social : <%= labelOf(sc.motif) %> — dû après remise (<%= remiseOf(sc) %>)</small>
+                <% } %>
+              </td>
               <td><strong><%= formatMoney(p.amount) %></strong></td>
               <td>
                 <% if (p.proofUrl) { %>
@@ -51,6 +68,7 @@
           <% }) %>
         </tbody>
       </table>
+      </div>
     <% } %>
   </div>
 <% } %>

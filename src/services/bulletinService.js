@@ -1,11 +1,19 @@
 const prisma = require('../config/database');
-const { generateBulletinPdf, computeAverage } = require('./bulletinPdf');
+const { generateBulletinPdf } = require('./bulletinPdf');
+const {
+  computeAverage,
+  computeAnnuelleAverage,
+  computeTermAverages,
+  loadSchoolCoefficients,
+} = require('./gradesAverage');
+const { normalizeTerm, formatTermLabel, filterGradesForBulletin } = require('./academicTerms');
 const { getCache, setCache } = require('../../services/cache');
 
 const BULLETIN_TTL = 60 * 60;
 
 async function generateBulletinForStudent({ studentId, period, school }) {
-  const cacheKey = `bulletin:${studentId}:${period}`;
+  const term = normalizeTerm(period);
+  const cacheKey = `bulletin:${studentId}:${term}:${String(period || '').trim()}`;
   const cached = await getCache(cacheKey);
   if (cached?.pdfUrl) {
     return {
@@ -23,13 +31,19 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   });
   if (!student) return { error: 'eleve' };
 
-  const grades = await prisma.grade.findMany({
-    where: { studentId, period },
+  const allGrades = await prisma.grade.findMany({
+    where: { studentId },
     orderBy: { subject: 'asc' },
   });
+  const grades = filterGradesForBulletin(allGrades, period);
   if (!grades.length) return { error: 'notes' };
 
-  const average = computeAverage(grades);
+  const coeffMap = await loadSchoolCoefficients(school.id);
+  const termAverages = computeTermAverages(allGrades, coeffMap);
+  const average = term === 'ANNUELLE'
+    ? computeAnnuelleAverage(allGrades, coeffMap)
+    : computeAverage(grades, coeffMap);
+
   const classmates = await prisma.student.findMany({
     where: { classId: student.classId },
     select: { id: true },
@@ -37,25 +51,37 @@ async function generateBulletinForStudent({ studentId, period, school }) {
 
   const classAverages = await Promise.all(
     classmates.map(async (c) => {
-      const gs = await prisma.grade.findMany({ where: { studentId: c.id, period } });
-      return { id: c.id, avg: gs.length ? computeAverage(gs) : 0 };
+      const gs = await prisma.grade.findMany({ where: { studentId: c.id } });
+      const filtered = filterGradesForBulletin(gs, period);
+      let avg = 0;
+      if (term === 'ANNUELLE') {
+        avg = filterGradesForBulletin(gs, 'ANNUELLE').length
+          ? computeAnnuelleAverage(gs, coeffMap)
+          : 0;
+      } else if (filtered.length) {
+        avg = computeAverage(filtered, coeffMap);
+      }
+      return { id: c.id, avg };
     }),
   );
   classAverages.sort((a, b) => b.avg - a.avg);
   const rank = classAverages.findIndex((c) => c.id === studentId) + 1;
 
+  const periodLabel = formatTermLabel(period);
   const { pdfUrl } = await generateBulletinPdf({
     student,
     school,
-    grades,
-    period,
+    grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
+    period: periodLabel,
     average,
     rank,
     classSize: classmates.length,
+    coeffMap,
+    termAverages: term === 'ANNUELLE' ? termAverages : null,
   });
 
   await prisma.bulletin.create({
-    data: { studentId, period, pdfUrl, average, rank },
+    data: { studentId, period: term === 'AUTRE' ? periodLabel : term, pdfUrl, average, rank },
   });
 
   const parents = await prisma.parentStudent.findMany({
@@ -69,7 +95,7 @@ async function generateBulletinForStudent({ studentId, period, school }) {
         userId: link.parent.userId,
         type: 'GENERAL',
         title: 'Bulletin disponible',
-        body: `Le bulletin de ${student.firstName} (${period}) est disponible.`,
+        body: `Le bulletin de ${student.firstName} (${periodLabel}) est disponible.`,
       },
     });
   }
@@ -95,9 +121,10 @@ async function generateBulkBulletins({ classId, period, schoolId, school }) {
 
   for (const student of students) {
     const grades = await prisma.grade.findMany({
-      where: { studentId: student.id, period },
+      where: { studentId: student.id },
     });
-    if (!grades.length) {
+    const filtered = filterGradesForBulletin(grades, period);
+    if (!filtered.length) {
       results.skipped += 1;
       results.errors.push({ student: `${student.firstName} ${student.lastName}`, reason: 'Aucune note' });
       continue;

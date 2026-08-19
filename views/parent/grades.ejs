@@ -26,7 +26,7 @@
               <tr>
                 <td><%= g.subject %></td>
                 <td><strong><%= g.value %>/<%= g.maxValue %></strong></td>
-                <td><%= g.period %></td>
+                <td><%= typeof termLabel === 'function' ? termLabel(g.period) : g.period %></td>
                 <td><%= g.comment || '—' %></td>
               </tr>
             <% }) %>
@@ -39,7 +39,7 @@
         <ul class="list">
           <% s.bulletins.forEach(b => { %>
             <li class="list-item">
-              <span><%= b.period %></span>
+              <span><%= typeof termLabel === 'function' ? termLabel(b.period) : b.period %></span>
               <% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" class="btn btn-sm btn-outline">Télécharger PDF</a><% } %>
             </li>
           <% }) %>

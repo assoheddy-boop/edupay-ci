@@ -4,7 +4,8 @@ const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 const prisma = require('../src/config/database');
 const { drawDocumentHeader } = require('../src/utils/schoolLogo');
-const { computeAverage, getCoefficient } = require('../src/services/bulletinPdf');
+const { computeAverage, getCoefficient, loadSchoolCoefficients } = require('../src/services/gradesAverage');
+const { formatTermLabel } = require('../src/services/academicTerms');
 const { calcNetPay, monthLabel } = require('../src/utils/hr');
 const { getCache, setCache } = require('./cache');
 
@@ -103,7 +104,8 @@ async function generateBulletinPDF(studentId) {
   ]);
 
   const school = student.school || student.class?.school || { name: 'EduConnect' };
-  const average = computeAverage(grades);
+  const coeffMap = await loadSchoolCoefficients(school.id);
+  const average = computeAverage(grades, coeffMap);
 
   ensureDir(BULLETINS_DIR);
   const filename = `bulletin-${student.id}-${Date.now()}.pdf`;
@@ -144,10 +146,10 @@ async function generateBulletinPDF(studentId) {
           doc.addPage();
           y = 50;
         }
-        const coef = getCoefficient(g.subject);
+        const coef = getCoefficient(g.subject, coeffMap);
         doc.fontSize(10).fillColor('#333');
         doc.text(g.subject, 50, y, { width: 120 });
-        doc.text(g.period || '—', 180, y, { width: 90 });
+        doc.text(formatTermLabel(g.period) || '—', 180, y, { width: 90 });
         doc.text(String(coef), 280, y);
         doc.text(`${g.value} / ${g.maxValue}`, 330, y);
         doc.text(g.comment || '—', 400, y, { width: 150 });
@@ -159,6 +161,8 @@ async function generateBulletinPDF(studentId) {
     doc.moveDown();
     doc.fontSize(12).fillColor('#0052CC');
     doc.text(`Moyenne générale : ${average.toFixed(2)} / 20`);
+    doc.fontSize(9).fillColor('#666');
+    doc.text('Moyenne pondérée : Σ (moyenne matière × coefficient) / Σ coefficients');
     doc.moveDown();
 
     doc.fontSize(13).fillColor('#0052CC').text('Absences');

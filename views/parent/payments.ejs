@@ -19,6 +19,18 @@
       <h2><%= s.firstName %> <%= s.lastName %></h2>
       <p class="school-name"><%= school.name %></p>
 
+      <% const bal = typeof feeBalances !== 'undefined' && feeBalances[s.id] ? feeBalances[s.id] : null; %>
+      <% if (bal && bal.hasRemise && bal.socialCase) { %>
+        <p class="form-hint">
+          Cas social (<%= typeof motifLabel === 'function' ? motifLabel(bal.socialCase.motif) : bal.socialCase.motif %>)
+          — remise <%= typeof discountLabel === 'function' ? discountLabel(bal.socialCase) : '' %>.
+          <strong>Dû après remise : <%= formatMoney(bal.totalDue) %></strong>
+          · reste <%= formatMoney(bal.totalRemaining) %>.
+        </p>
+      <% } else if (bal) { %>
+        <p class="form-hint">Dû <%= formatMoney(bal.totalDue) %> · reste <%= formatMoney(bal.totalRemaining) %>.</p>
+      <% } %>
+
       <div class="payment-info">
         <% if (school.waveNumber) { %>
           <div class="payment-method">

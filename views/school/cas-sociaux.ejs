@@ -1,0 +1,226 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('cas-sociaux', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Cas sociaux' }) %>
+<% } else { %>
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const labelOf = typeof motifLabel === 'function' ? motifLabel : function(v) { return v; }; %>
+<% const remiseOf = typeof discountLabel === 'function' ? discountLabel : function() { return '—'; }; %>
+<div class="page-header">
+  <div>
+    <h1>Cas sociaux</h1>
+    <p class="page-sub">Remises et échéanciers gérés par la direction — distincts des bourses plateforme. EduConnect</p>
+  </div>
+  <a href="/school/caisse" class="btn btn-outline">Caisse</a>
+</div>
+
+<% if (error === 'data') { %><div class="alert alert-error">Élève, motif ou remise invalide.</div><% } %>
+<% if (error === 'motif') { %><div class="alert alert-error">Précisez le motif (texte) lorsque vous choisissez « Autre ».</div><% } %>
+<% if (error === 'remise') { %><div class="alert alert-error">Remise : 1 à 100 % ou un montant fixe en FCFA.</div><% } %>
+<% if (error === 'exists') { %><div class="alert alert-error">Un dossier actif existe déjà pour cet élève. Clôturez-le avant d’en ouvrir un autre.</div><% } %>
+<% if (error && error !== 'data' && error !== 'motif' && error !== 'remise' && error !== 'exists') { %><div class="alert alert-error">Impossible d’enregistrer le dossier.</div><% } %>
+<% if (success === 'created') { %><div class="alert alert-success">Dossier cas social enregistré. La remise s’applique au dû.</div><% } %>
+<% if (success === 'closed') { %><div class="alert alert-success">Dossier clos. La remise ne s’applique plus.</div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouveau dossier</h2>
+    <form method="GET" action="/school/cas-sociaux" class="form" style="margin-bottom:1rem">
+      <div class="form-group">
+        <label for="casSearch">Rechercher un élève</label>
+        <input type="search" id="casSearch" name="q" value="<%= q || '' %>" placeholder="Nom, prénom ou matricule" autocomplete="off">
+      </div>
+      <% if (status) { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+      <button type="submit" class="btn btn-outline">Rechercher</button>
+    </form>
+
+    <% if (q && matches.length === 0) { %>
+      <p class="empty">Aucun élève trouvé pour « <%= q %> ».</p>
+    <% } %>
+    <% if (matches.length > 0) { %>
+      <div class="table-scroll" style="margin-bottom:1rem">
+        <table class="table">
+          <thead><tr><th>Élève</th><th>Matricule</th><th>Classe</th><th></th></tr></thead>
+          <tbody>
+            <% matches.forEach(function(s) { %>
+              <tr<%= selectedStudent && selectedStudent.id === s.id ? ' class="caisse-row-selected"' : '' %>>
+                <td><%= s.lastName %> <%= s.firstName %></td>
+                <td><%= s.matricule || '—' %></td>
+                <td><%= s.class ? s.class.name : '—' %></td>
+                <td><a class="btn btn-sm btn-primary" href="/school/cas-sociaux?studentId=<%= s.id %>&amp;q=<%= encodeURIComponent(q) %>">Choisir</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <% if (!selectedStudent) { %>
+      <p class="form-hint">Choisissez un élève pour ouvrir un dossier (orphelin, précarité, famille nombreuse…).</p>
+    <% } else { %>
+      <p><strong><%= selectedStudent.lastName %> <%= selectedStudent.firstName %></strong>
+        <br><small>Matricule <%= selectedStudent.matricule || '—' %> — <%= selectedStudent.class ? selectedStudent.class.name : '—' %></small>
+      </p>
+      <% if (feeBalance) { %>
+        <p class="form-hint">
+          Catalogue <%= money(feeBalance.totalCatalog) %>
+          <% if (feeBalance.hasRemise) { %> · <strong>dû après remise <%= money(feeBalance.totalDue) %></strong><% } else { %> · dû <%= money(feeBalance.totalDue) %><% } %>
+          · payé <%= money(feeBalance.totalPaid) %>
+          · reste <%= money(feeBalance.totalRemaining) %>
+        </p>
+        <% if (feeBalance.socialCase) { %>
+          <div class="alert alert-error">Dossier déjà actif : <%= labelOf(feeBalance.socialCase.motif) %> — remise <%= remiseOf(feeBalance.socialCase) %>. Clôturez-le pour en créer un autre.</div>
+        <% } %>
+      <% } %>
+
+      <% if (!feeBalance || !feeBalance.socialCase) { %>
+      <form method="POST" action="/school/cas-sociaux" class="form" id="casForm">
+        <input type="hidden" name="studentId" value="<%= selectedStudent.id %>">
+        <div class="form-group">
+          <label for="casMotif">Motif</label>
+          <select id="casMotif" name="motif" required>
+            <option value="">Choisir…</option>
+            <% motifs.forEach(function(m) { %>
+              <option value="<%= m.value %>"><%= m.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group" id="casMotifDetailGroup" hidden>
+          <label for="casMotifDetail">Précisez le motif</label>
+          <input type="text" id="casMotifDetail" name="motifDetail" maxlength="300" placeholder="Texte libre">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="casDiscountType">Type de remise</label>
+            <select id="casDiscountType" name="discountType">
+              <option value="PERCENT" selected>Pourcentage (%)</option>
+              <option value="FIXED">Montant fixe (FCFA)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="casDiscountValue">Valeur</label>
+            <input type="number" id="casDiscountValue" name="discountValue" required min="1" step="1" inputmode="numeric" placeholder="Ex. 50">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="casNotes">Notes (suivi social, optionnel)</label>
+          <textarea id="casNotes" name="notes" rows="2" maxlength="1000" placeholder="Ex. prise en charge oncle, suivi censeur"></textarea>
+        </div>
+        <fieldset class="form-group">
+          <legend>Échéancier (optionnel)</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="casInstallments">Nombre d’échéances</label>
+              <input type="number" id="casInstallments" name="installmentCount" min="2" max="12" step="1" inputmode="numeric" placeholder="Ex. 3">
+            </div>
+            <div class="form-group">
+              <label for="casFirstDue">Première échéance</label>
+              <input type="date" id="casFirstDue" name="firstDueDate">
+            </div>
+          </div>
+          <p class="form-hint">Les montants sont répartis à parts égales sur le dû après remise, une échéance par mois.</p>
+        </fieldset>
+        <button type="submit" class="btn btn-success btn-lg btn-block">Enregistrer le dossier</button>
+      </form>
+      <% } %>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Dossiers</h2>
+    <form method="GET" action="/school/cas-sociaux" class="form form-inline" style="margin-bottom:1rem">
+      <% if (q) { %><input type="hidden" name="q" value="<%= q %>"><% } %>
+      <div class="form-group">
+        <label for="casStatus">Statut</label>
+        <select id="casStatus" name="status" onchange="this.form.submit()">
+          <option value="" <%= !status ? 'selected' : '' %>>Tous</option>
+          <option value="actif" <%= status === 'actif' ? 'selected' : '' %>>Actifs</option>
+          <option value="clos" <%= status === 'clos' ? 'selected' : '' %>>Clos</option>
+        </select>
+      </div>
+    </form>
+    <% if (cases.length === 0) { %>
+      <p class="empty">Aucun dossier cas social.</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Motif</th>
+              <th>Remise</th>
+              <th>Échéancier</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% cases.forEach(function(c) { %>
+              <% const inst = Array.isArray(c.installments) ? c.installments : []; %>
+              <tr>
+                <td>
+                  <%= c.student.lastName %> <%= c.student.firstName %>
+                  <br><small><%= c.student.matricule || '—' %> · <%= c.student.class ? c.student.class.name : '—' %></small>
+                </td>
+                <td>
+                  <%= labelOf(c.motif) %>
+                  <% if (c.motifDetail) { %><br><small><%= c.motifDetail %></small><% } %>
+                </td>
+                <td><strong><%= remiseOf(c) %></strong></td>
+                <td>
+                  <% if (!inst.length) { %>—<% } else { %>
+                    <%= inst.length %> fois
+                    <br><small>
+                      <% inst.forEach(function(it, i) { %><% if (i) { %> · <% } %><%= it.dueDate || '—' %> (<%= money(it.amount) %>)<% }) %>
+                    </small>
+                  <% } %>
+                </td>
+                <td><span class="badge-status <%= c.status === 'actif' ? 'badge-validated' : 'badge-rejected' %>"><%= c.status === 'actif' ? 'Actif' : 'Clos' %></span></td>
+                <td>
+                  <% if (c.status === 'actif') { %>
+                    <form method="POST" action="/school/cas-sociaux/<%= c.id %>/close" class="inline-forms" onsubmit="return confirm('Clore ce dossier ? La remise ne s’appliquera plus.');">
+                      <button type="submit" class="btn btn-sm btn-outline">Clore</button>
+                    </form>
+                  <% } else { %>—<% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+<script>
+(function () {
+  var motif = document.getElementById('casMotif');
+  var detailGroup = document.getElementById('casMotifDetailGroup');
+  var detail = document.getElementById('casMotifDetail');
+  function syncMotif() {
+    var autre = motif && motif.value === 'autre';
+    if (detailGroup) detailGroup.hidden = !autre;
+    if (detail) detail.required = !!autre;
+  }
+  if (motif) {
+    motif.addEventListener('change', syncMotif);
+    syncMotif();
+  }
+  var typeSel = document.getElementById('casDiscountType');
+  var valueInput = document.getElementById('casDiscountValue');
+  function syncType() {
+    if (!typeSel || !valueInput) return;
+    if (typeSel.value === 'FIXED') {
+      valueInput.min = '100';
+      valueInput.placeholder = 'Ex. 25000';
+    } else {
+      valueInput.min = '1';
+      valueInput.max = '100';
+      valueInput.placeholder = 'Ex. 50';
+    }
+  }
+  if (typeSel) {
+    typeSel.addEventListener('change', syncType);
+    syncType();
+  }
+})();
+</script>
+<% } %>

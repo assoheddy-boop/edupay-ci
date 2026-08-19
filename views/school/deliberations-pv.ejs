@@ -1,0 +1,66 @@
+<% const label = typeof formatTermLabel === 'function' ? formatTermLabel(term) : term; %>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV conseil de classe — EduConnect</title>
+  <link rel="stylesheet" href="/css/main.css?v=9">
+  <style>
+    .pv-page { max-width: 52rem; margin: 1.25rem auto; padding: 0 1rem 2rem; }
+    .pv-head { text-align: center; margin-bottom: 1rem; }
+    .pv-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+    .pv-meta { text-align: center; color: #666; margin-bottom: 1rem; }
+    .pv-brand { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #666; }
+    @media print {
+      .pv-actions, .app-navbar, .app-sidebar { display: none !important; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+<main class="pv-page">
+  <div class="pv-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer</button>
+    <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= klass.id %>&amp;term=<%= term %>">PDF</a>
+    <a class="btn btn-outline" href="/school/deliberations?classId=<%= klass.id %>&amp;term=<%= term %>">Retour</a>
+  </div>
+  <header class="pv-head">
+    <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'md' }) %>
+    <h1><%= school.name %></h1>
+    <p class="page-sub">Procès-verbal — Conseil de classe</p>
+  </header>
+  <p class="pv-meta"><strong><%= klass.name %></strong> · <%= label %> · <%= schoolYear || '' %></p>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Élève</th>
+          <th>Matricule</th>
+          <th>Moyenne</th>
+          <th>Absences</th>
+          <th>Mention</th>
+          <th>Décision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(r) { %>
+          <tr>
+            <td><%= r.lastName %> <%= r.firstName %></td>
+            <td><%= r.matricule || '—' %></td>
+            <td><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></td>
+            <td><%= r.absences %></td>
+            <td><%= r.mention || '—' %></td>
+            <td><%= r.decision || '—' %></td>
+          </tr>
+          <% if (r.comment) { %>
+            <tr><td colspan="6"><small><%= r.comment %></small></td></tr>
+          <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="pv-brand">EduConnect</p>
+</main>
+</body>
+</html>

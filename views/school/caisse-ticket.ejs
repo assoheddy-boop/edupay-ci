@@ -1,0 +1,74 @@
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const labelOf = typeof methodLabel === 'function' ? methodLabel : function(m) { return m || 'Espèces'; }; %>
+<% const student = payment.student; %>
+<% const paidAt = payment.validatedAt || payment.createdAt; %>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket caisse — EduConnect</title>
+  <link rel="stylesheet" href="/css/main.css?v=9">
+  <style>
+    .caisse-ticket-page { max-width: 28rem; margin: 1.5rem auto; padding: 0 1rem 3rem; }
+    .caisse-ticket {
+      background: #fff;
+      border: 1px dashed #c5c5c5;
+      border-radius: 8px;
+      padding: 1.25rem 1.4rem;
+    }
+    .caisse-ticket-head { text-align: center; margin-bottom: 1rem; }
+    .caisse-ticket-head .brand-logo { margin: 0 auto 0.5rem; }
+    .caisse-ticket-head h1 { font-size: 1.1rem; margin: 0.25rem 0; }
+    .caisse-ticket-amount { text-align: center; font-size: 1.7rem; font-weight: 700; color: #00C853; margin: 0.75rem 0; }
+    .caisse-ticket dl { margin: 0; }
+    .caisse-ticket dt { font-size: 0.75rem; text-transform: uppercase; color: #888; margin-top: 0.65rem; }
+    .caisse-ticket dd { margin: 0.15rem 0 0; font-weight: 600; }
+    .caisse-ticket-brand { text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: #666; }
+    .ticket-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1.25rem 0; }
+    @media print {
+      .ticket-actions, .app-navbar, .app-sidebar, .sidebar-close, footer, .footer { display: none !important; }
+      body { background: #fff; }
+      .caisse-ticket { border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+<main class="caisse-ticket-page">
+  <div class="ticket-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer le ticket</button>
+    <% if (payment.receiptUrl) { %><a class="btn btn-success" href="<%= payment.receiptUrl %>" target="_blank" rel="noopener">Reçu PDF</a><% } %>
+    <a class="btn btn-outline" href="/school/caisse">Retour à la caisse</a>
+  </div>
+  <article class="caisse-ticket">
+    <header class="caisse-ticket-head">
+      <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'md' }) %>
+      <h1><%= school.name %></h1>
+      <p class="page-sub">Reçu de caisse</p>
+    </header>
+    <p class="caisse-ticket-amount"><%= money(payment.amount) %></p>
+    <dl>
+      <dt>Élève</dt>
+      <dd><%= student.lastName %> <%= student.firstName %></dd>
+      <dt>Matricule</dt>
+      <dd><%= student.matricule || '—' %></dd>
+      <dt>Classe</dt>
+      <dd><%= student.class && student.class.name ? student.class.name : '—' %></dd>
+      <dt>Type de frais</dt>
+      <dd><%= payment.feeType && payment.feeType.name ? payment.feeType.name : 'Frais scolaires' %></dd>
+      <dt>Mode</dt>
+      <dd><%= labelOf(payment.method) %></dd>
+      <dt>Date</dt>
+      <dd><%= new Date(paidAt).toLocaleString('fr-FR') %></dd>
+      <% if (payment.note) { %>
+        <dt>Note</dt>
+        <dd><%= payment.note %></dd>
+      <% } %>
+      <dt>Référence</dt>
+      <dd><%= payment.reference || payment.id.slice(0, 12) %></dd>
+    </dl>
+    <p class="caisse-ticket-brand">EduConnect</p>
+  </article>
+</main>
+</body>
+</html>

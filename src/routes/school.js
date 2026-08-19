@@ -7,6 +7,8 @@ const extras = require('../controllers/extrasController');
 const hrController = require('../controllers/hrController');
 const classController = require('../controllers/classController');
 const schoolAnalyseController = require('../controllers/schoolAnalyseController');
+const deliberationController = require('../controllers/deliberationController');
+const socialCaseController = require('../controllers/socialCaseController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
@@ -31,6 +33,8 @@ router.get('/dashboard', schoolController.dashboard);
 router.get('/analyse', schoolAnalyseController.analysePage);
 router.get('/settings', schoolController.settings);
 router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
+router.get('/coefficients', schoolController.coefficientsPage);
+router.post('/coefficients', auditMiddleware('coefficients_update', 'Subject'), schoolController.updateCoefficients);
 router.get('/sms', schoolController.smsDashboard);
 
 router.get('/classes', schoolController.listClasses);
@@ -72,10 +76,21 @@ router.post('/fees/:id/delete', statsController.deleteFee);
 
 router.get('/payments', requireModule('payments'), schoolController.listPayments);
 router.post('/payments/:id/validate', requireModule('payments'), auditMiddleware('payment_validate', 'Payment'), schoolController.validatePayment);
+router.get('/caisse', requireModule('payments'), schoolController.caissePage);
+router.post('/caisse', requireModule('payments'), auditMiddleware('caisse_encaisser', 'Payment'), schoolController.createCaisseEntry);
+router.get('/caisse/:id/ticket', requireModule('payments'), schoolController.caisseTicket);
+
+router.get('/cas-sociaux', socialCaseController.listPage);
+router.post('/cas-sociaux', auditMiddleware('social_case_create', 'SocialCase'), socialCaseController.createSocialCase);
+router.post('/cas-sociaux/:id/close', auditMiddleware('social_case_close', 'SocialCase'), socialCaseController.closeSocialCase);
 
 router.get('/bulletins', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.listBulletins);
 router.post('/bulletins/generate', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.generateBulletin);
 router.post('/bulletins/bulk', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.generateBulkBulletin);
+router.get('/deliberations', requireModule('bulletins'), deliberationController.deliberationsPage);
+router.post('/deliberations', requireModule('bulletins'), auditMiddleware('deliberation_save', 'Deliberation'), deliberationController.saveDeliberations);
+router.get('/deliberations/pv', requireModule('bulletins'), deliberationController.deliberationsPv);
+router.get('/deliberations/pv.pdf', requireModule('bulletins'), deliberationController.deliberationsPvPdf);
 
 router.get('/messages', requireModule('chat'), requirePremium('Chat'), messageController.inbox);
 router.get('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), messageController.chat);

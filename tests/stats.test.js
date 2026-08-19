@@ -107,7 +107,7 @@ describe('StatsService.getSuccessRate', () => {
     expect(result.total).toBe(3);
     expect(result.passing).toBe(2);
     expect(result.successRate).toBe(0.67);
-    expect(result.averageOn20).toBe(10.67);
+    expect(result.averageOn20).toBe(10.5);
     expect(result.bySubject).toEqual(expect.arrayContaining([
       expect.objectContaining({ subject: 'Maths', count: 2, averageOn20: 11, successRate: 0.5 }),
       expect.objectContaining({ subject: 'Français', count: 1, averageOn20: 10, successRate: 1 }),

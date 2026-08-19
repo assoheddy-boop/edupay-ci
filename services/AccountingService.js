@@ -89,12 +89,19 @@ function parsePeriod({ month, schoolYear, view } = {}) {
   };
 }
 
-function inferAccountType({ reference, note, description } = {}) {
+function inferAccountType({ reference, note, description, method } = {}) {
+  const methodKey = String(method || '').trim().toUpperCase().replace(/\s+/g, '_');
+  if (methodKey === 'CASH' || methodKey === 'ESPECES' || methodKey === 'ESPÈCES') return 'CASH';
+  if (methodKey === 'WAVE') return 'WAVE';
+  if (methodKey === 'ORANGE_MONEY' || methodKey === 'OM' || methodKey === 'ORANGE') return 'ORANGE_MONEY';
+  if (methodKey === 'BANK' || methodKey === 'BANQUE') return 'BANK';
+
   const text = `${reference || ''} ${note || ''} ${description || ''}`.toLowerCase();
   if (/\b(om|orange|orange\s*money)\b/.test(text) || text.includes('orange money')) return 'ORANGE_MONEY';
-  if (/esp[eè]ces?|caisse|\bcash\b/.test(text)) return 'CASH';
+  if (/esp[eè]ces?|\bcash\b/.test(text)) return 'CASH';
   if (/banque|\bbank\b|virement|ch[eè]que/.test(text)) return 'BANK';
   if (/\bwave\b/.test(text)) return 'WAVE';
+  if (/\bcaisse\b/.test(text) && !/\bwave\b|\bom\b|orange/.test(text)) return 'CASH';
   return 'WAVE';
 }
 

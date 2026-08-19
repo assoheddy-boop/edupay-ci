@@ -13,6 +13,7 @@ jest.mock('../src/config/database', () => ({
   paymentProof: { update: jest.fn() },
   school: { findFirst: jest.fn() },
   notification: { create: jest.fn() },
+  subject: { upsert: jest.fn(), findMany: jest.fn() },
 }));
 
 jest.mock('../services/NotificationService', () => ({

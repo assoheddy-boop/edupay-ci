@@ -222,6 +222,8 @@ model School {
   subjects             Subject[]
   timetables           Timetable[]
   notificationJobs     NotificationJob[]
+  deliberations        Deliberation[]
+  socialCases          SocialCase[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -251,6 +253,7 @@ model Class {
   teachers  TeacherClass[]
   homeworks Homework[]
   schedules Schedule[]
+  deliberations Deliberation[]
   incomingTransfers TransferRequest[]
   yearRecords StudentYearRecord[]
   timetables    Timetable[]
@@ -277,6 +280,7 @@ model Student {
   absences             Absence[]
   grades               Grade[]
   bulletins            Bulletin[]
+  deliberations        Deliberation[]
   messages             Message[]
   homeworks            HomeworkSubmission[]
   healthIncidents      HealthIncident[]
@@ -290,6 +294,7 @@ model Student {
   transferRequests     TransferRequest[]
   scholarships         Scholarship[]
   yearRecords          StudentYearRecord[]
+  socialCases          SocialCase[]
 
   @@unique([schoolId, matricule])
 }
@@ -398,6 +403,10 @@ model Payment {
   proofUrl    String?
   reference   String?
   note        String?
+  /// PARENT (preuve Wave/OM) ou CAISSE (guichet secrétariat)
+  source      String?
+  /// CASH | WAVE | ORANGE_MONEY | BANK
+  method      String?
   validatedAt DateTime?
   createdAt   DateTime      @default(now())
 
@@ -443,6 +452,7 @@ model Grade {
   value     Float
   maxValue  Float    @default(20)
   period    String
+  term      String?
   comment   String?
   createdAt DateTime @default(now())
 
@@ -450,6 +460,8 @@ model Grade {
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacherId String
   teacher   Teacher @relation(fields: [teacherId], references: [id])
+
+  @@index([studentId, term])
 }
 
 model Bulletin {
@@ -462,6 +474,27 @@ model Bulletin {
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+/// Conseil de classe (direction) : mention + décision par élève / trimestre.
+model Deliberation {
+  id         String   @id @default(cuid())
+  schoolId   String
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term       String
+  schoolYear String   @default("2025-2026")
+  mention    String?
+  decision   String
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([studentId, classId, term, schoolYear])
+  @@index([schoolId, classId, term])
 }
 
 model Message {
@@ -715,9 +748,10 @@ model Schedule {
 }
 
 model Subject {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  coefficient Float?
+  createdAt   DateTime @default(now())
 
   schoolId   String
   school     School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -1077,6 +1111,33 @@ model AccountingEntry {
   @@index([schoolId, date])
   @@index([schoolId, type])
   @@index([schoolId, paymentId])
+}
+
+enum SocialDiscountType {
+  PERCENT
+  FIXED
+}
+
+/// Dossier cas social (direction) : remise et échéancier. Distinct des bourses plateforme.
+model SocialCase {
+  id            String             @id @default(cuid())
+  motif         String
+  motifDetail   String?
+  discountType  SocialDiscountType
+  discountValue Int
+  notes         String?
+  status        String             @default("actif")
+  installments  Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, status])
+  @@index([studentId, status])
 }
 
 model Scholarship {

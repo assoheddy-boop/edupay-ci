@@ -6,7 +6,7 @@
 
     <h1>Bulletins PDF</h1>
 
-    <p class="page-sub">Génération automatique à partir des notes saisies</p>
+    <p class="page-sub">Génération à partir des notes — moyenne pondérée Σ(note × coef) / Σ(coef)</p>
 
   </div>
 
@@ -62,7 +62,17 @@
 
           <label for="period">Période</label>
 
-          <input type="text" id="period" name="period" required placeholder="Ex: Trimestre 1">
+          <select id="period" name="period" required>
+
+            <option value="">— Choisir —</option>
+
+            <% (terms || []).forEach(t => { %>
+
+              <option value="<%= t.value %>"><%= t.label %></option>
+
+            <% }) %>
+
+          </select>
 
         </div>
 
@@ -123,7 +133,17 @@
 
           <label>Période</label>
 
-          <input type="text" name="period" required placeholder="Ex: Trimestre 1">
+          <select name="period" required>
+
+            <option value="">— Choisir —</option>
+
+            <% (terms || []).forEach(t => { %>
+
+              <option value="<%= t.value %>"><%= t.label %></option>
+
+            <% }) %>
+
+          </select>
 
         </div>
 
@@ -159,7 +179,7 @@
 
                 <td><%= b.student.firstName %> <%= b.student.lastName %></td>
 
-                <td><%= b.period %></td>
+                <td><%= typeof formatTermLabel === 'function' ? formatTermLabel(b.period) : b.period %></td>
 
                 <td><strong><%= b.average?.toFixed(2) || '—' %></strong>/20</td>
 

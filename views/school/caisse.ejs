@@ -1,0 +1,197 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('caisse', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Caisse' }) %>
+<% } else { %>
+<% const money = typeof formatMoney === 'function' ? formatMoney : function(n) { return Number(n || 0).toLocaleString('fr-FR') + ' FCFA'; }; %>
+<% const labelOf = typeof methodLabel === 'function' ? methodLabel : function(m) { return m || 'Espèces'; }; %>
+<% const feesJson = JSON.stringify(feeTypes.map(function(f) {
+  const line = typeof dueByFee !== 'undefined' && dueByFee[f.id] ? dueByFee[f.id] : null;
+  return { id: f.id, amount: f.amount, due: line ? line.remaining : f.amount };
+})).replace(/</g, '\\u003c'); %>
+<% const labelRemise = typeof discountLabel === 'function' ? discountLabel : function() { return ''; }; %>
+<% const labelMotif = typeof motifLabel === 'function' ? motifLabel : function(v) { return v; }; %>
+<div class="page-header">
+  <div>
+    <h1>Caisse secrétariat</h1>
+    <p class="page-sub">Encaisser au guichet (espèces, Wave, Orange Money ou banque) et imprimer le ticket — EduConnect</p>
+  </div>
+  <a href="/school/payments" class="btn btn-outline">Preuves Wave / OM</a>
+</div>
+
+<% if (error === 'data') { %><div class="alert alert-error">Montant, élève ou type de frais invalide.</div><% } %>
+<% if (error === 'fee') { %><div class="alert alert-error">Type de frais introuvable pour cette école.</div><% } %>
+<% if (error && error !== 'data' && error !== 'fee') { %><div class="alert alert-error">Impossible d’enregistrer l’encaissement.</div><% } %>
+<% if (success) { %><div class="alert alert-success">Encaissement enregistré.</div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Nouvel encaissement</h2>
+    <form method="GET" action="/school/caisse" class="form" style="margin-bottom:1rem">
+      <div class="form-group">
+        <label for="caisseSearch">Rechercher un élève</label>
+        <input type="search" id="caisseSearch" name="q" value="<%= q || '' %>" placeholder="Nom, prénom ou matricule" autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-outline">Rechercher</button>
+    </form>
+
+    <% if (q && matches.length === 0) { %>
+      <p class="empty">Aucun élève trouvé pour « <%= q %> ».</p>
+    <% } %>
+    <% if (matches.length > 0) { %>
+      <div class="table-scroll" style="margin-bottom:1rem">
+        <table class="table">
+          <thead><tr><th>Élève</th><th>Matricule</th><th>Classe</th><th></th></tr></thead>
+          <tbody>
+            <% matches.forEach(function(s) { %>
+              <tr<%= selectedStudent && selectedStudent.id === s.id ? ' class="caisse-row-selected"' : '' %>>
+                <td><%= s.lastName %> <%= s.firstName %></td>
+                <td><%= s.matricule || '—' %></td>
+                <td><%= s.class ? s.class.name : '—' %></td>
+                <td><a class="btn btn-sm btn-primary" href="/school/caisse?studentId=<%= s.id %>&amp;q=<%= encodeURIComponent(q) %>">Choisir</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <% if (!selectedStudent) { %>
+      <p class="form-hint">Choisissez un élève pour encaisser.</p>
+    <% } else { %>
+      <form method="POST" action="/school/caisse" class="form" id="caisseForm" data-fees='<%- feesJson %>'>
+        <input type="hidden" name="studentId" value="<%= selectedStudent.id %>">
+        <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey %>">
+        <p><strong><%= selectedStudent.lastName %> <%= selectedStudent.firstName %></strong>
+          <br><small>Matricule <%= selectedStudent.matricule || '—' %> — <%= selectedStudent.class ? selectedStudent.class.name : '—' %></small>
+        </p>
+        <% if (typeof feeBalance !== 'undefined' && feeBalance) { %>
+          <p class="form-hint">
+            <% if (feeBalance.hasRemise && feeBalance.socialCase) { %>
+              Cas social : <%= labelMotif(feeBalance.socialCase.motif) %> — remise <%= labelRemise(feeBalance.socialCase) %>.
+              <strong>Dû après remise : <%= money(feeBalance.totalDue) %></strong>
+              (catalogue <%= money(feeBalance.totalCatalog) %>)
+              · reste <%= money(feeBalance.totalRemaining) %>.
+              <a href="/school/cas-sociaux?studentId=<%= selectedStudent.id %>">Dossier</a>
+            <% } else { %>
+              Dû <%= money(feeBalance.totalDue) %> · payé <%= money(feeBalance.totalPaid) %> · reste <%= money(feeBalance.totalRemaining) %>.
+            <% } %>
+          </p>
+        <% } %>
+        <% if (feeTypes.length === 0) { %>
+          <div class="alert alert-error">Aucun type de frais actif. Créez-en un dans <a href="/school/fees">Frais</a>.</div>
+        <% } else { %>
+          <div class="form-group">
+            <label for="feeTypeId">Type de frais</label>
+            <select id="feeTypeId" name="feeTypeId" required>
+              <option value="">Choisir…</option>
+              <% feeTypes.forEach(function(f) { %>
+                <% const line = typeof dueByFee !== 'undefined' && dueByFee[f.id] ? dueByFee[f.id] : null; %>
+                <% const dueAmt = line ? line.remaining : f.amount; %>
+                <option value="<%= f.id %>" data-amount="<%= f.amount %>" data-due="<%= dueAmt %>"><%= f.name %> — catalogue <%= money(f.amount) %><% if (line && line.due !== f.amount) { %> · dû <%= money(line.due) %><% } %><% if (line) { %> · reste <%= money(line.remaining) %><% } %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="caisseAmount">Montant (FCFA)</label>
+            <input type="number" id="caisseAmount" name="amount" required min="100" step="1" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label for="caisseMethod">Mode de paiement</label>
+            <select id="caisseMethod" name="method">
+              <option value="CASH" selected>Espèces</option>
+              <option value="WAVE">Wave</option>
+              <option value="ORANGE_MONEY">Orange Money</option>
+              <option value="BANK">Banque</option>
+            </select>
+            <p class="form-hint">Espèces par défaut. Wave / OM / Banque si le parent a déjà payé au bureau.</p>
+          </div>
+          <div class="form-group">
+            <label for="caisseNote">Note (optionnel)</label>
+            <input type="text" id="caisseNote" name="note" maxlength="500" placeholder="Ex. acompte T1">
+          </div>
+          <button type="submit" class="btn btn-success btn-lg btn-block" id="caisseSubmit">Encaisser et imprimer</button>
+        <% } %>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Encaissements du jour</h2>
+    <div class="stats-grid" style="margin-bottom:1rem">
+      <div class="stat-card">
+        <span class="stat-value"><%= money(tillTotals.total) %></span>
+        <span class="stat-label">Total du jour</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= tillTotals.count %></span>
+        <span class="stat-label">Tickets</span>
+      </div>
+    </div>
+    <p class="form-hint">
+      Espèces <%= money(tillTotals.byMethod.CASH || 0) %>
+      · Wave <%= money(tillTotals.byMethod.WAVE || 0) %>
+      · OM <%= money(tillTotals.byMethod.ORANGE_MONEY || 0) %>
+      · Banque <%= money(tillTotals.byMethod.BANK || 0) %>
+    </p>
+    <% if (tillPayments.length === 0) { %>
+      <p class="empty">Aucun encaissement caisse aujourd’hui.</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Heure</th>
+              <th>Élève</th>
+              <th>Frais</th>
+              <th>Montant</th>
+              <th>Mode</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tillPayments.forEach(function(p) { %>
+              <tr>
+                <td><%= new Date(p.validatedAt || p.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></td>
+                <td><%= p.student.lastName %> <%= p.student.firstName %><br><small><%= p.student.matricule || '—' %></small></td>
+                <td><%= p.feeType ? p.feeType.name : '—' %></td>
+                <td><strong><%= money(p.amount) %></strong></td>
+                <td><%= labelOf(p.method) %></td>
+                <td><a class="btn btn-sm btn-outline" href="/school/caisse/<%= p.id %>/ticket">Ticket</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('caisseForm');
+  if (!form) return;
+  var feeSelect = document.getElementById('feeTypeId');
+  var amountInput = document.getElementById('caisseAmount');
+  var submit = document.getElementById('caisseSubmit');
+  if (feeSelect && amountInput) {
+    feeSelect.addEventListener('change', function () {
+      var opt = feeSelect.options[feeSelect.selectedIndex];
+      var due = opt && opt.getAttribute('data-due');
+      var amt = opt && opt.getAttribute('data-amount');
+      if (due) amountInput.value = due;
+      else if (amt) amountInput.value = amt;
+    });
+  }
+  form.addEventListener('submit', function (ev) {
+    if (form.getAttribute('data-submitted') === '1') {
+      ev.preventDefault();
+      return;
+    }
+    form.setAttribute('data-submitted', '1');
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = 'Encaissement…';
+    }
+  });
+})();
+</script>
+<% } %>

@@ -13,6 +13,8 @@ const {
   hasHomeworkContent,
   parentPublishMessage,
 } = require('./homeworkService');
+const { canonicalPeriod, normalizeTerm } = require('./academicTerms');
+const { upsertSubjectCoefficient, parseCoefficient } = require('./gradesAverage');
 
 const MAX_PROOF_SIZE = PROOF_LIMIT || 5 * 1024 * 1024;
 
@@ -203,8 +205,12 @@ async function applyGrade({ user, payload = {} }) {
       if (isTempId(studentId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
     }
 
-    const { subject, period, maxValue } = payload;
+    const { subject, period, maxValue, coefficient } = payload;
     if (!subject || !period) return { ok: false, error: 'data', entity: 'grade' };
+
+    const term = normalizeTerm(period);
+    const storedPeriod = canonicalPeriod(period);
+    await upsertSubjectCoefficient(teacher.schoolId, subject, parseCoefficient(coefficient));
 
     const students = await prisma.student.findMany({
       where: { classId, class: { teachers: { some: { teacherId: teacher.id } } } },
@@ -219,7 +225,8 @@ async function applyGrade({ user, payload = {} }) {
           studentId: student.id,
           teacherId: teacher.id,
           subject,
-          period,
+          period: storedPeriod,
+          term,
           value: parseFloat(val),
           maxValue: parseFloat(maxValue || 20),
         },
@@ -232,7 +239,7 @@ async function applyGrade({ user, payload = {} }) {
   const studentId = resolveEntityId(payload.studentId);
   if (!studentId || isTempId(studentId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
 
-  const { subject, value, maxValue, period, comment } = payload;
+  const { subject, value, maxValue, period, comment, coefficient } = payload;
   if (!subject || value == null || value === '' || !period) {
     return { ok: false, error: 'data', entity: 'grade' };
   }
@@ -243,6 +250,10 @@ async function applyGrade({ user, payload = {} }) {
   });
   if (!owned) return { ok: false, error: 'forbidden', entity: 'grade' };
 
+  const term = normalizeTerm(period);
+  const storedPeriod = canonicalPeriod(period);
+  await upsertSubjectCoefficient(teacher.schoolId, subject, parseCoefficient(coefficient));
+
   const grade = await prisma.grade.create({
     data: {
       studentId,
@@ -250,7 +261,8 @@ async function applyGrade({ user, payload = {} }) {
       subject,
       value: parseFloat(value),
       maxValue: parseFloat(maxValue || 20),
-      period,
+      period: storedPeriod,
+      term,
       comment,
     },
   });

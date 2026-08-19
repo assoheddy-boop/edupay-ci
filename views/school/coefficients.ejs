@@ -1,0 +1,62 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('coefficients', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Coefficients' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Coefficients des matières</h1>
+  <p class="page-sub">La moyenne du bulletin est pondérée : Σ (note × coef) / Σ coef. Collège CI typique : Maths 4, Français 3, Anglais 2…</p>
+</div>
+
+<% if (success === 'defaults') { %><div class="alert alert-success">Coefficients collège CI appliqués.</div><% } %>
+<% if (success === '1') { %><div class="alert alert-success">Coefficients enregistrés.</div><% } %>
+<% if (error) { %><div class="alert alert-error">Impossible d'enregistrer les coefficients.</div><% } %>
+
+<div class="card">
+  <form method="POST" action="/school/coefficients" class="form">
+    <input type="hidden" name="applyDefaults" value="1">
+    <p class="form-hint">Remplit ou met à jour Maths (4), Français (3), Anglais (2), Histoire-Géo (2), SVT (2), Physique-Chimie (2), EPS (1), etc.</p>
+    <button type="submit" class="btn btn-outline">Appliquer les coefficients collège CI</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Coefficients de l'école</h2>
+  <form method="POST" action="/school/coefficients" class="form">
+    <% if (!subjects.length) { %>
+      <p class="empty">Aucune matière pour l'instant. Ajoutez-en ci-dessous ou appliquez les valeurs collège CI.</p>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Matière</th><th>Coefficient</th></tr></thead>
+          <tbody>
+            <% subjects.forEach(s => { %>
+              <tr>
+                <td>
+                  <%= s.name %>
+                  <input type="hidden" name="subjectId" value="<%= s.id %>">
+                </td>
+                <td>
+                  <input type="number" name="coefficient_<%= s.id %>" value="<%= s.coefficient != null ? s.coefficient : '' %>" min="0.5" step="0.5" placeholder="<%= typeof defaultCoefficientFor === 'function' ? defaultCoefficientFor(s.name) : 1 %>" style="max-width:6rem">
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <h3>Ajouter une matière</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="newName">Nom</label>
+        <input type="text" id="newName" name="newName" placeholder="Ex: ECM">
+      </div>
+      <div class="form-group">
+        <label for="newCoefficient">Coefficient</label>
+        <input type="number" id="newCoefficient" name="newCoefficient" min="0.5" step="0.5" placeholder="1">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+</div>
+<% } %>

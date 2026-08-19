@@ -1,5 +1,7 @@
 const prisma = require('../src/config/database');
 const logger = require('./logger');
+const { computeAverage, loadSchoolCoefficients } = require('../src/services/gradesAverage');
+const { filterGradesForBulletin } = require('../src/services/academicTerms');
 
 const PASSING_RATIO = 0.5;
 
@@ -113,10 +115,9 @@ async function getSuccessRate({ schoolId, classId, subject, period } = {}) {
     const where = {
       ...(student ? { student } : {}),
       ...(subject ? { subject } : {}),
-      ...(period ? { period } : {}),
     };
 
-    const grades = await prisma.grade.findMany({
+    const gradesRaw = await prisma.grade.findMany({
       where,
       include: {
         student: {
@@ -128,6 +129,8 @@ async function getSuccessRate({ schoolId, classId, subject, period } = {}) {
       },
       orderBy: { createdAt: 'desc' },
     });
+    const grades = period ? filterGradesForBulletin(gradesRaw, period) : gradesRaw;
+    const coeffMap = await loadSchoolCoefficients(schoolId);
 
     const byClassMap = {};
     const bySubjectMap = {};
@@ -198,9 +201,15 @@ async function getSuccessRate({ schoolId, classId, subject, period } = {}) {
       total,
       passing,
       averageRatio: round2(averageRatio),
-      averageOn20: round2(averageRatio * 20),
+      averageOn20: computeAverage(grades, coeffMap),
       successRate: total ? round2(passing / total) : 0,
-      byClass: Object.values(byClassMap).map(finish),
+      byClass: Object.values(byClassMap).map((bucket) => {
+        const classGrades = grades.filter((g) => (g.student?.classId || g.student?.class?.id || 'unknown') === bucket.classId);
+        return {
+          ...finish(bucket),
+          averageOn20: classGrades.length ? computeAverage(classGrades, coeffMap) : 0,
+        };
+      }),
       bySubject: Object.values(bySubjectMap).map(finish),
       rows,
     };
@@ -286,7 +295,7 @@ async function getGroupGenderStats(groupId) {
 const genderMetricsSelect = {
   gender: true,
   absences: { select: { id: true } },
-  grades: { select: { value: true, maxValue: true } },
+  grades: { select: { value: true, maxValue: true, subject: true } },
 };
 
 async function fetchStudentsForGenderMetrics({ classId, schoolId, groupId } = {}) {
