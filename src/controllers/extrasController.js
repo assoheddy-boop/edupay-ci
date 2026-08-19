@@ -398,6 +398,7 @@ async function getParentChildren(parentId) {
       student: {
         include: {
           class: { include: { school: true } },
+          absences: { orderBy: { date: 'desc' }, take: 10 },
           transportLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
           canteenRecords: { include: { menu: true }, orderBy: { menu: { date: 'desc' } }, take: 10 },
           badges: { orderBy: { awardedAt: 'desc' }, take: 10 },

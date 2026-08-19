@@ -1,0 +1,65 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('justificatifs', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Justificatifs' }) %>
+<% } else { %>
+<% const typeOf = typeof typeLabel === 'function' ? typeLabel : function(t) { return t === 'LATE' ? 'Retard' : 'Absence'; }; %>
+<% const stOf = typeof statusLabel === 'function' ? statusLabel : function(s) { return s || 'Non justifiée'; }; %>
+<div class="page-header">
+  <h1>Justificatifs d’absence</h1>
+  <p class="page-sub">Absences et retards de vos enfants — envoyez un motif et, si besoin, une photo ou un PDF.</p>
+</div>
+
+<% if (error === 'motif') { %><div class="alert alert-error">Indiquez un motif (500 caractères max).</div><% } %>
+<% if (error === 'mime' || error === 'file' || error === 'size') { %><div class="alert alert-error">Fichier refusé : photo JPEG/PNG/WebP ou PDF, 5 Mo max (pas de SVG).</div><% } %>
+<% if (error === 'accepted') { %><div class="alert alert-error">Cette absence est déjà justifiée.</div><% } %>
+<% if (error && error !== 'motif' && error !== 'mime' && error !== 'file' && error !== 'size' && error !== 'accepted') { %><div class="alert alert-error">Impossible d’envoyer le justificatif.</div><% } %>
+<% if (success) { %><div class="alert alert-success">Justificatif envoyé. La direction l’examinera.</div><% } %>
+
+<% if (!children || children.length === 0) { %>
+  <p class="empty-state">Liez un enfant depuis l’accueil pour voir les absences.</p>
+<% } %>
+
+<% (children || []).forEach(function(link) { const s = link.student; %>
+  <div class="child-card justificatif-card">
+    <div class="child-header">
+      <h2><%= s.firstName %> <%= s.lastName %></h2>
+      <span class="badge"><%= s.class ? s.class.name : '' %><% if (s.class && s.class.school) { %> — <%= s.class.school.name %><% } %></span>
+    </div>
+
+    <% if (!s.absences || s.absences.length === 0) { %>
+      <p class="empty-sm">Aucune absence ni retard.</p>
+    <% } %>
+
+    <% (s.absences || []).forEach(function(a) { %>
+      <% const last = (a.justifications && a.justifications[0]) || null; %>
+      <% const st = a.justificationStatus || (a.justified ? 'ACCEPTED' : (last ? last.status : 'NONE')); %>
+      <div class="justificatif-item">
+        <p>
+          <strong><%= typeOf(a.type) %></strong>
+          — <%= new Date(a.date).toLocaleDateString('fr-FR') %>
+          <span class="badge-status badge-<%= st === 'ACCEPTED' ? 'validated' : (st === 'REFUSED' ? 'rejected' : (st === 'PENDING' ? 'pending' : 'skipped')) %>"><%= stOf(st) %></span>
+        </p>
+        <% if (a.reason) { %><p class="form-hint">Motif école : <%= a.reason %></p><% } %>
+        <% if (last) { %>
+          <p class="form-hint">Votre motif : <%= last.motif %><% if (last.fileUrl) { %> — <a href="<%= last.fileUrl %>" target="_blank" rel="noopener">Pièce jointe</a><% } %></p>
+        <% } %>
+
+        <% if (st !== 'ACCEPTED' && !a.justified) { %>
+          <form method="POST" action="/parent/justificatifs" enctype="multipart/form-data" class="form justificatif-form">
+            <input type="hidden" name="absenceId" value="<%= a.id %>">
+            <div class="form-group">
+              <label for="motif-<%= a.id %>">Motif</label>
+              <textarea id="motif-<%= a.id %>" name="motif" required maxlength="500" rows="2" placeholder="Ex. : maladie, rendez-vous médical…"><%= last && last.status === 'REFUSED' ? '' : (last ? last.motif : '') %></textarea>
+            </div>
+            <div class="form-group">
+              <label for="proof-<%= a.id %>">Photo ou PDF (optionnel)</label>
+              <input type="file" id="proof-<%= a.id %>" name="proof" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block"><%= last && last.status === 'REFUSED' ? 'Renvoyer un justificatif' : 'Soumettre le justificatif' %></button>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+<% }) %>
+<% } %>

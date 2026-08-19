@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titleSheet %> — EduConnect</title>
+  <link rel="stylesheet" href="/css/main.css?v=9">
+  <style>
+    .em-page { max-width: 54rem; margin: 1.25rem auto; padding: 0 1rem 2rem; }
+    .em-head { text-align: center; margin-bottom: 0.75rem; }
+    .em-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+    .em-meta { text-align: center; color: #666; margin-bottom: 0.75rem; }
+    .em-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+    .em-sign { border-top: 1px solid #ccc; padding-top: 0.4rem; min-height: 4rem; font-size: 0.85rem; color: #666; }
+    .em-brand { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #666; }
+    .emargement-table td.emargement-sig { min-width: 6.5rem; height: 2.1rem; border-bottom: 1px solid #ddd; }
+    .emargement-table td.emargement-check { white-space: nowrap; }
+    @media print {
+      .em-actions, .app-navbar, .app-sidebar { display: none !important; }
+      body { background: #fff; }
+      .em-page { max-width: none; margin: 0; padding: 0; }
+      .table-scroll { overflow: visible; }
+    }
+  </style>
+</head>
+<body>
+<main class="em-page">
+  <div class="em-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer</button>
+    <a class="btn btn-outline" href="/school/emargements.pdf?<%= qs %>">PDF</a>
+    <a class="btn btn-outline" href="/school/emargements?<%= qs %>">Retour</a>
+  </div>
+  <header class="em-head">
+    <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'md' }) %>
+    <h1><%= school.name %></h1>
+    <p class="page-sub"><%= titleSheet %></p>
+  </header>
+  <p class="em-meta"><%= subtitle %></p>
+  <p class="em-meta">
+    Effectif <%= counts.total %>
+    · Garçons <%= counts.boys %>
+    · Filles <%= counts.girls %>
+    · Présents ______ · Absents ______
+  </p>
+  <div class="table-scroll">
+    <table class="table emargement-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Nom</th>
+          <th>Prénom</th>
+          <th>Matricule</th>
+          <th>G/F</th>
+          <th>Présence</th>
+          <th>Signature</th>
+          <th>Observation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(r) { %>
+          <tr>
+            <td><%= r.n %></td>
+            <td><%= r.lastName %></td>
+            <td><%= r.firstName %></td>
+            <td><%= r.matricule || '—' %></td>
+            <td><%= r.genderCell %></td>
+            <td class="emargement-check">☐ P &nbsp; ☐ A</td>
+            <td class="emargement-sig"></td>
+            <td class="emargement-sig"></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="em-foot">
+    <div class="em-sign">Signature du surveillant</div>
+    <div class="em-sign">Visa de la direction</div>
+  </div>
+  <p class="em-brand">EduConnect</p>
+</main>
+</body>
+</html>

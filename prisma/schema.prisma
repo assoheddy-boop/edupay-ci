@@ -234,6 +234,7 @@ model School {
   transfersTo          TransferRequest[] @relation("TransferToSchool")
   accountingEntries    AccountingEntry[]
   studentYearRecords   StudentYearRecord[]
+  absenceJustifications AbsenceJustification[]
   subjects             Subject[]
   timetables           Timetable[]
   notificationJobs     NotificationJob[]
@@ -297,6 +298,7 @@ model Student {
   payments             Payment[]
   paymentProofs        PaymentProof[]
   absences             Absence[]
+  justifications       AbsenceJustification[]
   grades               Grade[]
   bulletins            Bulletin[]
   deliberations        Deliberation[]
@@ -344,6 +346,7 @@ model ParentProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   children ParentStudent[]
+  justifications AbsenceJustification[]
 }
 
 model ParentStudent {
@@ -457,12 +460,46 @@ model Absence {
   date      DateTime    @db.Date
   type      AbsenceType @default(ABSENCE)
   reason    String?
+  /// Justifiée après acceptation d’un justificatif parent.
+  justified Boolean     @default(false)
+  /// NONE | PENDING | ACCEPTED | REFUSED
+  justificationStatus String @default("NONE")
   createdAt DateTime    @default(now())
 
   studentId  String
   student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   recordedBy String?
   teacher    Teacher? @relation(fields: [recordedBy], references: [id])
+  justifications AbsenceJustification[]
+}
+
+/// Justificatif d’absence / retard soumis par un parent (photo ou PDF).
+model AbsenceJustification {
+  id           String   @id @default(cuid())
+  motif        String
+  fileUrl      String?
+  mimeType     String?
+  originalName String?
+  /// PENDING | ACCEPTED | REFUSED
+  status       String   @default("PENDING")
+  reviewNote   String?
+  reviewedAt   DateTime?
+  reviewedBy   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  absenceId String
+  absence   Absence @relation(fields: [absenceId], references: [id], onDelete: Cascade)
+  parentId  String
+  parent    ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, status])
+  @@index([absenceId])
+  @@index([parentId])
 }
 
 model Grade {

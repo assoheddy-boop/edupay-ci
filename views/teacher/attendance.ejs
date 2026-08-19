@@ -17,7 +17,14 @@
           <% cl.class.students.forEach(s => { %>
             <% const current = (typeof statusByStudent !== 'undefined' && statusByStudent[s.id]) || 'present'; %>
             <div class="attendance-row">
-              <span class="attendance-name"><%= s.firstName %> <%= s.lastName %></span>
+              <span class="attendance-name">
+                <%= s.firstName %> <%= s.lastName %>
+                <% if (typeof justifiedByStudent !== 'undefined' && justifiedByStudent[s.id]) { %>
+                  <span class="badge-status badge-validated">Justifiée</span>
+                <% } else if (typeof pendingJustifByStudent !== 'undefined' && pendingJustifByStudent[s.id]) { %>
+                  <span class="badge-status badge-pending">Justif. en attente</span>
+                <% } %>
+              </span>
               <div class="attendance-choices" role="group" aria-label="Présence <%= s.firstName %> <%= s.lastName %>">
                 <label class="attendance-choice present">
                   <input type="radio" name="status_<%= s.id %>" value="present" <%= current === 'present' ? 'checked' : '' %>>

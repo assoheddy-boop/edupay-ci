@@ -65,6 +65,18 @@ const NOTIFICATION_TYPES = {
     eventType: 'LATE',
     sms: true,
   },
+  justification_accepted: {
+    prisma: 'ABSENCE',
+    title: 'Justificatif accepté',
+    eventType: 'JUSTIFICATION_ACCEPTED',
+    sms: false,
+  },
+  justification_refused: {
+    prisma: 'ABSENCE',
+    title: 'Justificatif refusé',
+    eventType: 'JUSTIFICATION_REFUSED',
+    sms: false,
+  },
   new_homework: {
     prisma: 'HOMEWORK',
     title: 'Nouveau devoir',

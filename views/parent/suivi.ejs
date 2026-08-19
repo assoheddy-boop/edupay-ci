@@ -8,6 +8,7 @@
   </div>
 
   <div class="suivi-nav">
+    <a href="/parent/justificatifs" class="suivi-btn">📝 Justificatifs</a>
     <a href="/parent/pickup" class="suivi-btn">🛡️ Autoriser sortie</a>
     <a href="/parent/activities" class="suivi-btn">🎯 Activités</a>
     <a href="/parent/homeworks" class="suivi-btn">📚 Devoirs & contrôles</a>
@@ -25,6 +26,20 @@
       </div>
 
       <div class="suivi-sections">
+        <section class="suivi-block" id="absences">
+          <h3>📝 Absences & retards</h3>
+          <% if (!s.absences || s.absences.length === 0) { %><p class="empty-sm">Aucune.</p><% } %>
+          <ul class="timeline">
+            <% (s.absences || []).forEach(a => { %>
+              <li>
+                <%= a.type === 'LATE' ? 'Retard' : 'Absence' %> — <%= new Date(a.date).toLocaleDateString('fr-FR') %>
+                <% if (a.justified) { %><small> · justifiée</small><% } else if (a.justificationStatus === 'PENDING') { %><small> · en attente</small><% } %>
+              </li>
+            <% }) %>
+          </ul>
+          <p><a href="/parent/justificatifs" class="btn btn-outline btn-sm">Soumettre un justificatif</a></p>
+        </section>
+
         <section class="suivi-block" id="transport">
           <h3>🚌 Transport</h3>
           <% if (s.transportLogs.length === 0) { %><p class="empty-sm">Aucun événement.</p><% } %>

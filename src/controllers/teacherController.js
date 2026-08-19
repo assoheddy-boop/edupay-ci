@@ -257,10 +257,18 @@ async function attendancePage(req, res) {
   const statusByStudent = Object.fromEntries(
     marks.map((a) => [a.studentId, a.type === 'LATE' ? 'late' : 'absent']),
   );
+  const justifiedByStudent = Object.fromEntries(
+    marks.filter((a) => a.justified).map((a) => [a.studentId, true]),
+  );
+  const pendingJustifByStudent = Object.fromEntries(
+    marks.filter((a) => a.justificationStatus === 'PENDING').map((a) => [a.studentId, true]),
+  );
   res.render('teacher/attendance', {
     user: req.user,
     classLinks,
     statusByStudent,
+    justifiedByStudent,
+    pendingJustifByStudent,
     today: today.toISOString().slice(0, 10),
     success: req.query.success || null,
     error: req.query.error || null,

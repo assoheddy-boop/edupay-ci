@@ -1,0 +1,81 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('justificatifs', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Justificatifs' }) %>
+<% } else { %>
+<% const typeOf = typeof typeLabel === 'function' ? typeLabel : function(t) { return t === 'LATE' ? 'Retard' : 'Absence'; }; %>
+<% const stOf = typeof statusLabel === 'function' ? statusLabel : function(s) { return s || ''; }; %>
+<div class="page-header">
+  <div>
+    <h1>Justificatifs d’absence</h1>
+    <p class="page-sub">Demandes des parents — acceptez ou refusez. EduConnect</p>
+  </div>
+</div>
+
+<% if (error === 'action') { %><div class="alert alert-error">Action invalide.</div><% } %>
+<% if (error && error !== 'action') { %><div class="alert alert-error">Impossible de traiter le justificatif.</div><% } %>
+<% if (success === 'accepted') { %><div class="alert alert-success">Justificatif accepté. L’absence est marquée justifiée. Le parent a été notifié.</div><% } %>
+<% if (success === 'refused') { %><div class="alert alert-success">Justificatif refusé. Le parent a été notifié.</div><% } %>
+
+<nav class="hr-subnav justificatif-filters" aria-label="Filtrer les justificatifs">
+  <a href="/school/justificatifs?status=PENDING" class="<%= status === 'PENDING' ? 'is-active' : '' %>">En attente</a>
+  <a href="/school/justificatifs?status=ACCEPTED" class="<%= status === 'ACCEPTED' ? 'is-active' : '' %>">Acceptés</a>
+  <a href="/school/justificatifs?status=REFUSED" class="<%= status === 'REFUSED' ? 'is-active' : '' %>">Refusés</a>
+</nav>
+
+<div class="card">
+  <% if (!rows || rows.length === 0) { %>
+    <p class="empty">Aucun justificatif <%= status === 'PENDING' ? 'en attente' : '' %>.</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Motif parent</th>
+            <th>Pièce</th>
+            <th>Statut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(j) { %>
+            <tr>
+              <td>
+                <%= j.student.lastName %> <%= j.student.firstName %><br>
+                <small><%= j.student.class ? j.student.class.name : '—' %></small>
+              </td>
+              <td><%= new Date(j.absence.date).toLocaleDateString('fr-FR') %></td>
+              <td><%= typeOf(j.absence.type) %></td>
+              <td><%= j.motif %></td>
+              <td>
+                <% if (j.fileUrl) { %>
+                  <a href="<%= j.fileUrl %>" target="_blank" rel="noopener" class="btn btn-sm btn-outline">Voir</a>
+                <% } else { %>—<% } %>
+              </td>
+              <td>
+                <span class="badge-status badge-<%= j.status === 'ACCEPTED' ? 'validated' : (j.status === 'REFUSED' ? 'rejected' : 'pending') %>"><%= stOf(j.status) %></span>
+              </td>
+              <td>
+                <% if (j.status === 'PENDING') { %>
+                  <form method="POST" action="/school/justificatifs/<%= j.id %>/review" class="inline-forms">
+                    <input type="hidden" name="action" value="accept">
+                    <button type="submit" class="btn btn-sm btn-success">Accepter</button>
+                  </form>
+                  <form method="POST" action="/school/justificatifs/<%= j.id %>/review" class="inline-forms">
+                    <input type="hidden" name="action" value="refuse">
+                    <button type="submit" class="btn btn-sm btn-danger">Refuser</button>
+                  </form>
+                <% } else { %>
+                  <%= j.reviewedAt ? new Date(j.reviewedAt).toLocaleDateString('fr-FR') : '—' %>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<% } %>

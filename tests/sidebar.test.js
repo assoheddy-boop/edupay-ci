@@ -22,4 +22,12 @@ describe('sidebar missing links (Vague 3)', () => {
   test('school nav includes official SMS when the module is on', () => {
     expect(sidebar).toMatch(/on\('sms_official'\)[\s\S]*\/school\/sms/);
   });
+
+  test('parent nav includes justificatifs when absences module is on', () => {
+    expect(sidebar).toMatch(/on\('absences'\)[\s\S]*\/parent\/justificatifs/);
+  });
+
+  test('school nav includes justificatifs when absences module is on', () => {
+    expect(sidebar).toMatch(/on\('absences'\)[\s\S]*\/school\/justificatifs/);
+  });
 });

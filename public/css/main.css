@@ -642,6 +642,28 @@ a.admin-hub-card {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+.emargement-table td.emargement-sig {
+  min-width: 6.5rem;
+  height: 2.1rem;
+}
+.emargement-table td.emargement-check {
+  white-space: nowrap;
+}
+
+.justificatif-card { margin-bottom: 1.5rem; }
+.justificatif-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+.justificatif-item:last-child { border-bottom: none; }
+.justificatif-form { margin-top: 0.75rem; }
+.justificatif-filters a.is-active,
+.hr-subnav a.is-active {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.attendance-name .badge-status { margin-left: 0.4rem; vertical-align: middle; }
 .accounting-filter { margin-bottom: 1.5rem; }
 .accounting-filter .btn { margin-top: 0.25rem; }
 @media (max-width: 600px) {

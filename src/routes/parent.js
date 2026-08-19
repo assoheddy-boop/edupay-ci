@@ -5,6 +5,7 @@ const parentController = require('../controllers/parentController');
 const messageController = require('../controllers/messageController');
 
 const extras = require('../controllers/extrasController');
+const justificationController = require('../controllers/justificationController');
 
 const { requireAuth, checkRole } = require('../middleware/auth');
 
@@ -15,7 +16,7 @@ const { childLinkLimiter } = require('../middleware/rateLimit');
 const { addChildRules, handleValidationErrors } = require('../middleware/validators');
 
 const upload = require('../middleware/upload');
-const { chatUpload, persistUpload } = upload;
+const { chatUpload, persistUpload, hrDocUpload } = upload;
 
 const router = express.Router();
 
@@ -55,6 +56,10 @@ router.post('/messages/:partnerId', requireModule('chat'), chatUpload.fields([
 ]), persistUpload('chat'), messageController.send);
 
 router.get('/suivi', requireModule('absences'), extras.parentSuiviPage);
+
+router.get('/justificatifs', requireModule('absences'), justificationController.parentPage);
+
+router.post('/justificatifs', requireModule('absences'), hrDocUpload.single('proof'), persistUpload('justificatifs'), justificationController.submit);
 
 router.get('/pickup', requireModule('pickup'), extras.parentPickupPage);
 
