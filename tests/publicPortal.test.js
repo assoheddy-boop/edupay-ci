@@ -56,6 +56,8 @@ describe('publicPortal helpers', () => {
     expect(view).not.toHaveProperty('students');
     expect(view).not.toHaveProperty('waveNumber');
     expect(view).not.toHaveProperty('admin');
+    expect(view.marketplaceTier).toBe('NONE');
+    expect(view.marketplaceBadge).toBeNull();
     const seo = seoForSchool({ name: 'IGEST', slug: 'igest-yopougon-sideci', city: 'Abidjan', educationCycle: 'COLLEGE' });
     expect(seo.canonicalUrl).toMatch(/\/e\/igest-yopougon-sideci$/);
     expect(seo.title).toMatch(/IGEST/);

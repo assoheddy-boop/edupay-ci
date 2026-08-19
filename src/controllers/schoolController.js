@@ -8,6 +8,7 @@ const {
   smsPreviewExample,
   canAccessSchoolJobs,
 } = require('../utils/officialSms');
+const { MARKETPLACE_MODULE } = require('../utils/marketplaceAddon');
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
 const { parseEducationCycle } = require('../utils/educationCycle');
@@ -131,7 +132,7 @@ function uploadedList(req, field) {
   return Array.isArray(list) ? list : list ? [list] : [];
 }
 
-function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, smsPreview } = {}) {
+function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, smsPreview, marketplaceEnabled } = {}) {
   return {
     user: req.user,
     school: school || req.user.school,
@@ -139,6 +140,7 @@ function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, s
     error: error || null,
     smsOfficialEnabled,
     smsPreview,
+    marketplaceEnabled: Boolean(marketplaceEnabled),
     canSetFeatured: req.user?.role === 'SUPER_ADMIN',
     publicTypeOptions: PUBLIC_TYPE_OPTIONS,
   };
@@ -150,6 +152,7 @@ async function settings(req, res) {
   res.render('school/settings', settingsPageLocals(req, {
     success,
     smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+    marketplaceEnabled: isEnabled(mods, MARKETPLACE_MODULE),
     smsPreview: smsPreviewExample(req.user.school.name),
   }));
 }
@@ -239,6 +242,8 @@ async function updateCoefficients(req, res) {
 async function updateSettings(req, res) {
   const { waveNumber, omNumber, name, address, city, removeLogo, smsSenderId, educationCycle } = req.body;
   try {
+    const mods = await getModuleMap(req.user.school.id);
+    const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
     const portal = parsePublicPortalFields(req.body, { user: req.user });
     const data = {
       waveNumber,
@@ -246,16 +251,18 @@ async function updateSettings(req, res) {
       name,
       address,
       city,
-      publicPortalEnabled: portal.publicPortalEnabled,
-      publicDescription: portal.publicDescription,
-      publicLife: portal.publicLife,
-      publicPhone: portal.publicPhone,
-      publicType: portal.publicType,
-      lat: portal.lat,
-      lng: portal.lng,
     };
-    if (portal.publicFeatured != null) {
-      data.publicFeatured = portal.publicFeatured;
+    if (marketplaceEnabled) {
+      data.publicPortalEnabled = portal.publicPortalEnabled;
+      data.publicDescription = portal.publicDescription;
+      data.publicLife = portal.publicLife;
+      data.publicPhone = portal.publicPhone;
+      data.publicType = portal.publicType;
+      data.lat = portal.lat;
+      data.lng = portal.lng;
+      if (portal.publicFeatured != null) {
+        data.publicFeatured = portal.publicFeatured;
+      }
     }
     if (data.publicPortalEnabled && !req.user.school.slug) {
       throw new Error('Attribuez un code école (slug) avant de publier la page publique.');
@@ -282,24 +289,26 @@ async function updateSettings(req, res) {
       data.logoBase64 = logo.logoBase64;
     }
 
-    if (req.body.removeBanner === 'on') {
-      data.publicBanner = null;
-    } else {
-      const bannerFile = firstUploaded(req, 'banner');
-      if (bannerFile) {
-        const bannerUrl = await savePortalImage(bannerFile);
-        if (bannerUrl) data.publicBanner = bannerUrl;
-      } else if (portal.publicBanner) {
-        data.publicBanner = portal.publicBanner;
+    if (marketplaceEnabled) {
+      if (req.body.removeBanner === 'on') {
+        data.publicBanner = null;
+      } else {
+        const bannerFile = firstUploaded(req, 'banner');
+        if (bannerFile) {
+          const bannerUrl = await savePortalImage(bannerFile);
+          if (bannerUrl) data.publicBanner = bannerUrl;
+        } else if (portal.publicBanner) {
+          data.publicBanner = portal.publicBanner;
+        }
       }
-    }
 
-    const gallery = [...(portal.publicGallery || [])];
-    for (const file of uploadedList(req, 'gallery')) {
-      const url = await savePortalImage(file);
-      if (url) gallery.push(url);
+      const gallery = [...(portal.publicGallery || [])];
+      for (const file of uploadedList(req, 'gallery')) {
+        const url = await savePortalImage(file);
+        if (url) gallery.push(url);
+      }
+      data.publicGallery = gallery.slice(0, MAX_GALLERY);
     }
-    data.publicGallery = gallery.slice(0, MAX_GALLERY);
 
     const school = await prisma.school.update({
       where: { id: req.user.school.id },
@@ -307,11 +316,11 @@ async function updateSettings(req, res) {
     });
     req.user.school = school;
     await logAudit({ action: 'school_settings_update', entity: 'School', entityId: school.id, user: req.user, ip: req.ip });
-    const mods = await getModuleMap(school.id);
     res.render('school/settings', settingsPageLocals(req, {
       school,
       success: 'Paramètres mis à jour',
       smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+      marketplaceEnabled,
       smsPreview: smsPreviewExample(school.name),
     }));
   } catch (err) {
@@ -319,10 +328,11 @@ async function updateSettings(req, res) {
     const message = (err.message?.includes('Format') || err.message?.includes('slug'))
       ? err.message
       : 'Erreur de mise à jour';
-    const mods = await getModuleMap(req.user.school.id);
+    const errorMods = await getModuleMap(req.user.school.id);
     res.render('school/settings', settingsPageLocals(req, {
       error: message,
-      smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
+      smsOfficialEnabled: isEnabled(errorMods, SMS_OFFICIAL_MODULE),
+      marketplaceEnabled: isEnabled(errorMods, MARKETPLACE_MODULE),
       smsPreview: smsPreviewExample(req.user.school.name),
     }));
   }

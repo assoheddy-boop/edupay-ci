@@ -59,7 +59,7 @@ const PLANS = {
     cta: 'Obtenir un devis',
     ctaHref: '/devis',
     limits: 'Tous les modules · élèves illimités · multi-école',
-    modules: Object.keys(MODULES),
+    modules: Object.keys(MODULES).filter((key) => !MODULES[key].addon),
   },
   groupe: {
     id: 'groupe',
@@ -75,7 +75,7 @@ const PLANS = {
     cta: 'Demander une démo',
     ctaHref: 'mailto:contact@educonnect.ci?subject=Groupe%20scolaire%20EduConnect',
     limits: '2 campus et plus · tarif dégressif',
-    modules: Object.keys(MODULES),
+    modules: Object.keys(MODULES).filter((key) => !MODULES[key].addon),
     perks: [
       'Tableau de bord consolidé (élèves, recettes, absences)',
       'Vue par campus avec modules activables individuellement',
@@ -87,12 +87,14 @@ const PLANS = {
 };
 
 function getPlansForLanding() {
-  const moduleList = Object.entries(MODULES).map(([key, mod]) => ({
-    key,
-    label: mod.label,
-    description: mod.description,
-    core: !!mod.core,
-  }));
+  const moduleList = Object.entries(MODULES)
+    .filter(([, mod]) => !mod.addon)
+    .map(([key, mod]) => ({
+      key,
+      label: mod.label,
+      description: mod.description,
+      core: !!mod.core,
+    }));
 
   const plan = PLANS.pro;
   const moduleSet = new Set(plan.modules);

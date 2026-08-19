@@ -66,6 +66,14 @@ enum PublicSchoolType {
   CONFESSIONNEL
 }
 
+/// Offre Marketplace (visibilité). Indépendante du plan Pro (gestion interne).
+enum MarketplaceTier {
+  NONE
+  STANDARD
+  PREMIUM
+  VIP
+}
+
 /// Actualité publique du portail /e/:slug. Jamais de données élèves.
 enum PortalPostKind {
   NEWS
@@ -238,8 +246,10 @@ model School {
   publicGallery       Json?
   /// Clubs, cantine, activités — texte public, sans listes d’élèves.
   publicLife          String? @db.Text
-  /// Mise en avant marketplace. Réservé SUPER_ADMIN.
+  /// Mise en avant marketplace. Réservé SUPER_ADMIN. True si PREMIUM ou VIP.
   publicFeatured      Boolean @default(false)
+  /// Offre visibilité. NONE = pas de vitrine, même si un slug existe.
+  marketplaceTier     MarketplaceTier @default(NONE)
   publicType          PublicSchoolType @default(PRIVE)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -293,6 +303,7 @@ model School {
   @@index([groupId])
   @@index([publicPortalEnabled, city])
   @@index([publicPortalEnabled, publicFeatured])
+  @@index([publicPortalEnabled, marketplaceTier])
 }
 
 /// Actualité / événement public. Aucun nom d’élève, note ou matricule.

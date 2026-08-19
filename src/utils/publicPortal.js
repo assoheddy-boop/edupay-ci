@@ -1,5 +1,6 @@
 const { parseEducationCycle, CYCLE_LABELS, EDUCATION_CYCLE_OPTIONS } = require('./educationCycle');
 const { isDangerousUpload } = require('./uploadSafety');
+const { parseMarketplaceTier, marketplaceBadge } = require('./marketplaceAddon');
 
 const SITE_ORIGIN = (process.env.APP_URL || 'https://educonnect-ci.com').replace(/\/$/, '');
 const CONTACT_INBOX = 'contact@educonnect.ci';
@@ -57,6 +58,7 @@ const PUBLIC_SCHOOL_SELECT = {
   publicGallery: true,
   publicLife: true,
   publicFeatured: true,
+  marketplaceTier: true,
   publicType: true,
 };
 
@@ -482,7 +484,10 @@ function publicSchoolView(school, extras = {}) {
     publicPhone: school.publicPhone,
     publicBanner: banner,
     publicGallery: gallery,
-    publicFeatured: Boolean(school.publicFeatured),
+    publicFeatured: Boolean(school.publicFeatured) || parseMarketplaceTier(school.marketplaceTier) === 'PREMIUM'
+      || parseMarketplaceTier(school.marketplaceTier) === 'VIP',
+    marketplaceTier: parseMarketplaceTier(school.marketplaceTier),
+    marketplaceBadge: marketplaceBadge(school),
     lat: school.lat,
     lng: school.lng,
     classCount: extras.classCount != null ? extras.classCount : null,

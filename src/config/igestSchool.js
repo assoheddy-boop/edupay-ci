@@ -16,6 +16,7 @@ const IGEST_SCHOOL = {
   publicPortalEnabled: true,
   publicType: 'PRIVE',
   publicFeatured: true,
+  marketplaceTier: 'VIP',
   publicPhone: '05 45 47 48 29',
   lat: 5.336,
   lng: -4.086,

@@ -20,6 +20,13 @@ const { safeInternalPath } = require('../utils/cookies');
 const { sendConnectivityTestSms, smsConfigured, smsProvider } = require('../services/sms');
 const { resolveSmsSender } = require('../utils/officialSms');
 const { parseEducationCycle, EDUCATION_CYCLE_OPTIONS, CYCLE_LABELS } = require('../utils/educationCycle');
+const {
+  MARKETPLACE_MODULE,
+  MARKETPLACE_TIER_OPTIONS,
+  parseMarketplaceTier,
+  applyMarketplaceOffer,
+  syncMarketplaceAfterModuleChange,
+} = require('../utils/marketplaceAddon');
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -92,6 +99,7 @@ async function dashboard(req, res) {
     smsSender: req.query.smsSender || null,
     educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
     educationCycleLabels: CYCLE_LABELS,
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS,
   });
 }
 
@@ -136,6 +144,7 @@ async function modulesHub(req, res) {
     selected,
     MODULES,
     MODULE_KEYS,
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS,
     success: req.query.success || null,
   });
 }
@@ -156,6 +165,7 @@ async function schoolModules(req, res) {
     MODULE_KEYS,
     success: req.query.success || null,
     educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS,
   });
 }
 
@@ -169,6 +179,9 @@ async function updateSchoolModules(req, res) {
     const enabled = MODULES[key].core ? true : req.body[`mod_${key}`] === 'on';
     await setModule(id, key, { enabled, locked: true });
     changes.push({ key, enabled });
+    if (key === MARKETPLACE_MODULE) {
+      await syncMarketplaceAfterModuleChange(id, enabled);
+    }
   }
 
   await prisma.school.update({
@@ -220,10 +233,16 @@ async function updateSchoolFeatured(req, res) {
   const school = await prisma.school.findUnique({ where: { id } });
   if (!school) return res.redirect('/admin/dashboard?error=school');
 
-  const publicFeatured = req.body.publicFeatured === '1' || req.body.publicFeatured === 'on' || req.body.publicFeatured === 'true';
-  await prisma.school.update({
-    where: { id },
-    data: { publicFeatured },
+  let tier = req.body.marketplaceTier != null
+    ? parseMarketplaceTier(req.body.marketplaceTier)
+    : null;
+  if (!tier) {
+    const publicFeatured = req.body.publicFeatured === '1' || req.body.publicFeatured === 'on' || req.body.publicFeatured === 'true';
+    tier = publicFeatured ? 'PREMIUM' : 'STANDARD';
+  }
+  const result = await applyMarketplaceOffer(id, {
+    tier,
+    enableModule: tier !== 'NONE',
   });
   await logAudit({
     action: 'school_featured_update',
@@ -231,7 +250,7 @@ async function updateSchoolFeatured(req, res) {
     entityId: id,
     user: req.user,
     schoolId: id,
-    details: { publicFeatured },
+    details: { marketplaceTier: result.marketplaceTier, publicFeatured: result.publicFeatured },
     ip: req.ip,
   });
 
@@ -243,6 +262,7 @@ async function updateSchoolFeatured(req, res) {
 async function enableAllModules(req, res) {
   const { id } = req.params;
   for (const key of MODULE_KEYS) {
+    if (MODULES[key].addon) continue;
     await setModule(id, key, { enabled: true, locked: true });
   }
   await prisma.school.update({ where: { id }, data: { subscription: 'premium' } });
@@ -265,6 +285,9 @@ async function updateModulesMatrix(req, res) {
       const enabled = MODULES[key].core ? true : req.body[`mod_${school.id}_${key}`] === 'on';
       await setModule(school.id, key, { enabled, locked: true });
       changes.push({ key, enabled });
+      if (key === MARKETPLACE_MODULE) {
+        await syncMarketplaceAfterModuleChange(school.id, enabled);
+      }
     }
     await prisma.school.update({
       where: { id: school.id },

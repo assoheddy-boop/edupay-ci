@@ -116,6 +116,7 @@
                 <td>
                   <strong><%= mod.label %></strong><%- include('../partials/_hint', { text: mod.description, label: mod.label }) %>
                   <% if (mod.core) { %><span class="badge">Essentiel</span><% } %>
+                  <% if (mod.addon) { %><span class="badge">Option payante</span><% } %>
                 </td>
                 <td><%= mod.description %></td>
                 <td>

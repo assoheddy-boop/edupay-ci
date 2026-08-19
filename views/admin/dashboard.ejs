@@ -321,10 +321,11 @@
               <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
               <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-outline">Modules</a>
               <form method="POST" action="/admin/schools/<%= s.id %>/featured" class="form-inline" style="display:inline">
-                <input type="hidden" name="publicFeatured" value="<%= s.publicFeatured ? '0' : '1' %>">
-                <button type="submit" class="btn btn-sm <%= s.publicFeatured ? 'btn-outline' : 'btn-primary' %>">
-                  <%= s.publicFeatured ? 'Retirer mise en avant' : 'Mettre en avant' %>
-                </button>
+                <select name="marketplaceTier" aria-label="Marketplace <%= s.name %>" onchange="this.form.submit()">
+                  <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= (s.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
               </form>
             </td>
           </tr>

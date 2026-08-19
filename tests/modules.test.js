@@ -1,5 +1,29 @@
 const request = require('supertest');
 const app = require('../src/app');
+const { MODULES, MODULE_KEYS } = require('../src/config/modules');
+const { MARKETPLACE_MODULE } = require('../src/utils/marketplaceAddon');
+const { planIncludesFeature, isPlanIndependentModule } = require('../src/utils/plans');
+const { PLANS } = require('../src/config/plans');
+
+describe('Marketplace module', () => {
+  test('is registered, default off, paid add-on', () => {
+    expect(MARKETPLACE_MODULE).toBe('marketplace');
+    expect(MODULE_KEYS).toContain('marketplace');
+    expect(MODULES.marketplace.label).toBe('Marketplace');
+    expect(MODULES.marketplace.default).toBe(false);
+    expect(MODULES.marketplace.addon).toBe(true);
+    expect(MODULES.marketplace.core).toBeFalsy();
+  });
+
+  test('is independent of the Pro plan and cannot be self-enabled via plan sync', () => {
+    expect(isPlanIndependentModule('marketplace')).toBe(true);
+    expect(planIncludesFeature({ features: [] }, 'marketplace')).toBe(true);
+    expect(PLANS.essentiel.modules).not.toContain('marketplace');
+    expect(PLANS.pro.modules).not.toContain('marketplace');
+    expect(PLANS.groupe.modules).not.toContain('marketplace');
+  });
+});
+
 
 async function loginAgent(email) {
   const agent = request.agent(app);

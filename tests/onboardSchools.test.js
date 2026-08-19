@@ -111,6 +111,7 @@ describe('Catalogue IGEST', () => {
     expect(IGEST_SCHOOL.admin.lastName).toBe('Dongo');
     expect(IGEST_SCHOOL.admin.phone).toBe('05 45 47 48 29');
     expect(IGEST_SCHOOL.publicPortalEnabled).toBe(true);
+    expect(IGEST_SCHOOL.marketplaceTier).toBe('VIP');
     expect(IGEST_SCHOOL.logoFile).toBe('public/img/schools/igest-yopougon-sideci.png');
     expect(fs.existsSync(path.join(__dirname, '..', IGEST_SCHOOL.logoFile))).toBe(true);
   });

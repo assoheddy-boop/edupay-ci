@@ -25,8 +25,8 @@ async function bootstrapPremiumPlatform() {
   for (const { id } of schools) {
     await initSchoolModules(id);
     for (const key of MODULE_KEYS) {
-      const enabled = MODULES[key].core ? true : true;
-      await setModule(id, key, { enabled, locked: true });
+      if (MODULES[key].addon) continue;
+      await setModule(id, key, { enabled: true, locked: true });
     }
   }
 

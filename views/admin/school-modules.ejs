@@ -34,13 +34,20 @@
 
   <form method="POST" action="/admin/schools/<%= school.id %>/featured" class="card" style="margin-bottom:1.5rem">
     <div class="card-header">
-      <h2>Marketplace</h2>
-      <p class="page-sub">Mise en avant sur /ecoles — Super Admin uniquement (évite les abus).</p>
+      <h2>Marketplace (visibilité)</h2>
+      <p class="page-sub">Option payante, indépendante du plan Pro. Active le module + le palier. La direction ne peut pas s’activer elle-même.</p>
     </div>
     <input type="hidden" name="redirect" value="/admin/schools/<%= school.id %>/modules">
-    <input type="hidden" name="publicFeatured" value="<%= school.publicFeatured ? '0' : '1' %>">
+    <div class="form-group">
+      <label for="marketplaceTier">Offre</label>
+      <select id="marketplaceTier" name="marketplaceTier">
+        <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= (school.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
     <div class="card-footer">
-      <button type="submit" class="btn btn-primary"><%= school.publicFeatured ? 'Retirer la mise en avant' : 'Mettre en avant' %></button>
+      <button type="submit" class="btn btn-primary">Enregistrer l’offre Marketplace</button>
     </div>
   </form>
 
@@ -66,6 +73,7 @@
             <td>
               <strong><%= mod.label %></strong>
               <% if (mod.core) { %> <span class="badge">Essentiel</span><% } %>
+              <% if (mod.addon) { %> <span class="badge">Option payante</span><% } %>
             </td>
             <td><%= mod.description %></td>
             <td>

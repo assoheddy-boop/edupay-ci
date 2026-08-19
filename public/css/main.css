@@ -1539,14 +1539,67 @@ code {
   font-weight: 600;
 }
 
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .nav-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
   margin: 0.85rem 0 0.15rem;
-  padding: 0.35rem 0.85rem 0.1rem;
+  padding: 0.45rem 0.85rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-align: left;
   color: #64748b;
+  cursor: pointer;
+}
+
+.nav-group-title:hover,
+.nav-group-title:focus-visible {
+  color: var(--blue);
+  background: #f4f7fb;
+}
+
+.nav-group-title:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.nav-group-chevron {
+  display: block;
+  width: 0.4rem;
+  height: 0.4rem;
+  flex-shrink: 0;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+
+.nav-group.is-open .nav-group-chevron {
+  transform: rotate(45deg);
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.nav-group:not(.is-open) > .nav-group-items {
+  display: none;
 }
 
 .nav-cycle-label {
@@ -1964,7 +2017,8 @@ body.sidebar-open {
     flex-shrink: 0;
   }
 
-  .app-sidebar-nav a {
+  .app-sidebar-nav a,
+  .nav-group-title {
     min-height: 44px;
     display: flex;
     align-items: center;

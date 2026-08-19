@@ -10,31 +10,56 @@ const {
   publicPostView,
   publicSchoolView,
 } = require('../utils/publicPortal');
+const {
+  MARKETPLACE_MODULE,
+  MARKETPLACE_TIER,
+  publishedWhere,
+  publishedWhereLegacy,
+  marketplaceSortRank,
+  applyMarketplaceOffer,
+} = require('../utils/marketplaceAddon');
 
-function publishedWhere() {
-  return {
-    publicPortalEnabled: true,
-    slug: { not: null },
-  };
+function publicSelect(includeTier = true) {
+  if (includeTier) return { ...PUBLIC_SCHOOL_SELECT };
+  const select = { ...PUBLIC_SCHOOL_SELECT };
+  delete select.marketplaceTier;
+  return select;
 }
 
 async function findPublishedSchool(slug) {
   if (!isPortalSlug(slug)) return null;
+  const whereSlug = String(slug).toLowerCase().trim();
+  const select = {
+    ...publicSelect(true),
+    _count: { select: { classes: true } },
+    admin: { select: { email: true } },
+  };
   try {
     const school = await prisma.school.findFirst({
       where: {
         ...publishedWhere(),
-        slug: String(slug).toLowerCase().trim(),
+        slug: whereSlug,
       },
-      select: {
-        ...PUBLIC_SCHOOL_SELECT,
-        _count: { select: { classes: true } },
-        admin: { select: { email: true } },
-      },
+      select,
     });
     return school || null;
   } catch {
-    return null;
+    try {
+      const school = await prisma.school.findFirst({
+        where: {
+          ...publishedWhereLegacy(),
+          slug: whereSlug,
+        },
+        select: {
+          ...publicSelect(false),
+          _count: { select: { classes: true } },
+          admin: { select: { email: true } },
+        },
+      });
+      return school || null;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -61,64 +86,73 @@ async function listPortalPosts(schoolId) {
 
 function sortFeaturedFirst(rows) {
   return [...(rows || [])].sort((a, b) => {
-    const fa = a.publicFeatured ? 1 : 0;
-    const fb = b.publicFeatured ? 1 : 0;
-    if (fb !== fa) return fb - fa;
+    const ra = marketplaceSortRank(a);
+    const rb = marketplaceSortRank(b);
+    if (rb !== ra) return rb - ra;
     const city = String(a.city || '').localeCompare(String(b.city || ''), 'fr');
     if (city) return city;
     return String(a.name || '').localeCompare(String(b.name || ''), 'fr');
   });
 }
 
+async function queryPublishedSchools(where, select) {
+  try {
+    return await prisma.school.findMany({
+      where,
+      select,
+      orderBy: [{ city: 'asc' }, { name: 'asc' }],
+      take: 200,
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function listPublishedSchools({ ville, cycle, type } = {}) {
-  const where = { ...publishedWhere() };
   const city = String(ville || '').trim();
+  const extra = {};
   if (city) {
-    where.city = { contains: city, mode: 'insensitive' };
+    extra.city = { contains: city, mode: 'insensitive' };
   }
   if (cycle) {
     const parsed = parseEducationCycle(cycle);
     if (EDUCATION_CYCLE[String(cycle).toUpperCase()]) {
-      where.educationCycle = parsed;
+      extra.educationCycle = parsed;
     }
   }
   const publicType = parsePublicType(type);
   if (publicType) {
-    where.publicType = publicType;
+    extra.publicType = publicType;
   }
-  const select = { ...PUBLIC_SCHOOL_SELECT, logoBase64: false };
-  try {
-    let rows;
-    try {
-      rows = await prisma.school.findMany({
-        where,
-        select,
-        orderBy: [{ publicFeatured: 'desc' }, { city: 'asc' }, { name: 'asc' }],
-        take: 200,
-      });
-    } catch {
-      rows = await prisma.school.findMany({
-        where,
-        select,
-        orderBy: [{ city: 'asc' }, { name: 'asc' }],
-        take: 200,
-      });
-    }
-    return sortFeaturedFirst(rows);
-  } catch {
-    return [];
+
+  const select = { ...publicSelect(true), logoBase64: false };
+  let rows = await queryPublishedSchools(publishedWhere(extra), select);
+  if (!rows) {
+    const legacySelect = { ...publicSelect(false), logoBase64: false };
+    rows = await queryPublishedSchools({ ...publishedWhereLegacy(), ...extra }, legacySelect);
   }
+  return sortFeaturedFirst(rows || []);
 }
 
 async function listPublishedSlugs() {
   try {
-    const rows = await prisma.school.findMany({
-      where: publishedWhere(),
-      select: { slug: true, updatedAt: true },
-      orderBy: { slug: 'asc' },
-      take: 500,
-    });
-    return rows.filter((row) => isPortalSlug(row.slug));
+    try {
+      const rows = await prisma.school.findMany({
+        where: publishedWhere(),
+        select: { slug: true, updatedAt: true },
+        orderBy: { slug: 'asc' },
+        take: 500,
+      });
+      return rows.filter((row) => isPortalSlug(row.slug));
+    } catch {
+      const rows = await prisma.school.findMany({
+        where: publishedWhereLegacy(),
+        select: { slug: true, updatedAt: true },
+        orderBy: { slug: 'asc' },
+        take: 500,
+      });
+      return rows.filter((row) => isPortalSlug(row.slug));
+    }
   } catch {
     return [];
   }
@@ -166,14 +200,35 @@ async function enableIgestPublicPortal() {
     if (IGEST_SCHOOL.lat != null) data.lat = IGEST_SCHOOL.lat;
     if (IGEST_SCHOOL.lng != null) data.lng = IGEST_SCHOOL.lng;
     if (IGEST_SCHOOL.publicType) data.publicType = IGEST_SCHOOL.publicType;
-    if (IGEST_SCHOOL.publicFeatured != null) data.publicFeatured = IGEST_SCHOOL.publicFeatured;
     if (IGEST_SCHOOL.address) data.address = IGEST_SCHOOL.address;
     if (IGEST_SCHOOL.campusLabel) data.campusLabel = IGEST_SCHOOL.campusLabel;
-    const result = await prisma.school.updateMany({
+    data.marketplaceTier = IGEST_SCHOOL.marketplaceTier || MARKETPLACE_TIER.VIP;
+    data.publicFeatured = true;
+    let result;
+    try {
+      result = await prisma.school.updateMany({
+        where: { slug },
+        data,
+      });
+    } catch {
+      delete data.marketplaceTier;
+      result = await prisma.school.updateMany({
+        where: { slug },
+        data,
+      });
+    }
+    const school = await prisma.school.findFirst({
       where: { slug },
-      data,
+      select: { id: true },
     });
-    return { ok: true, count: result.count, slug };
+    if (school?.id) {
+      await applyMarketplaceOffer(school.id, {
+        tier: IGEST_SCHOOL.marketplaceTier || MARKETPLACE_TIER.VIP,
+        publish: true,
+        enableModule: true,
+      });
+    }
+    return { ok: true, count: result.count, slug, module: MARKETPLACE_MODULE };
   } catch (err) {
     return { ok: false, reason: err?.message || 'update_failed' };
   }
@@ -187,8 +242,7 @@ function toPublicCards(rows) {
 
 /**
  * 2–3 écoles pour la vitrine accueil.
- * Préfère `publicFeatured` ; sinon IGEST puis d’autres portails publiés.
- * Champs publics uniquement (pas d’élèves, notes ni finances).
+ * VIP, puis PREMIUM / featured, puis IGEST. Champs publics uniquement.
  */
 async function listFeaturedSchools(limit = 3) {
   const take = Math.max(1, Math.min(Number(limit) || 3, 6));
@@ -209,12 +263,22 @@ async function listFeaturedSchools(limit = 3) {
       return toPublicCards(sortFeaturedFirst(preferred).slice(0, take));
     }
 
-    const published = await prisma.school.findMany({
-      where: publishedWhere(),
-      select: FEATURED_SELECT,
-      orderBy: [{ name: 'asc' }],
-      take: 50,
-    });
+    let published = [];
+    try {
+      published = await prisma.school.findMany({
+        where: publishedWhere(),
+        select: FEATURED_SELECT,
+        orderBy: [{ name: 'asc' }],
+        take: 50,
+      });
+    } catch {
+      published = await prisma.school.findMany({
+        where: publishedWhereLegacy(),
+        select: FEATURED_SELECT,
+        orderBy: [{ name: 'asc' }],
+        take: 50,
+      });
+    }
 
     const byId = new Map();
     const push = (row) => {

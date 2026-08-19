@@ -54,6 +54,7 @@ function publishedSchool(overrides = {}) {
     publicGallery: [],
     publicLife: 'Cantine et clubs : se renseigner au secrétariat.',
     publicFeatured: false,
+    marketplaceTier: 'STANDARD',
     publicType: 'PRIVE',
     waveNumber: '07 11 22 33 44',
     students: [{
@@ -93,6 +94,22 @@ describe('Public school portal', () => {
     expect(res.status).toBe(404);
     expect(res.text).toMatch(/n’a pas publié|introuvable/i);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
+  test('GET /e/:slug returns 404 when marketplace is off even if the slug exists', async () => {
+    prisma.school.findFirst.mockResolvedValue(null);
+    const res = await request(app).get(`/e/${SLUG}`);
+    expect(res.status).toBe(404);
+    expect(prisma.school.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        slug: SLUG,
+        publicPortalEnabled: true,
+        marketplaceTier: { in: ['STANDARD', 'PREMIUM', 'VIP'] },
+        modules: { some: { moduleKey: 'marketplace', enabled: true } },
+      }),
+    }));
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+    expect(res.text).not.toMatch(/18\/20/);
   });
 
   test('GET /e/:slug returns 200 when enabled, with unique SEO and no grades', async () => {
@@ -239,12 +256,14 @@ describe('Marketplace /ecoles', () => {
         name: 'École Zèbre',
         slug: 'ecole-zebre',
         publicFeatured: false,
+        marketplaceTier: 'STANDARD',
         students: [{ firstName: SECRET_PUPIL }],
       }),
       publishedSchool({
         name: 'École Alpha',
         slug: 'ecole-alpha',
         publicFeatured: true,
+        marketplaceTier: 'PREMIUM',
         students: [{ firstName: SECRET_PUPIL }],
       }),
     ]);
@@ -252,8 +271,45 @@ describe('Marketplace /ecoles', () => {
     expect(res.status).toBe(200);
     expect(res.text.indexOf('École Alpha')).toBeGreaterThan(-1);
     expect(res.text.indexOf('École Alpha')).toBeLessThan(res.text.indexOf('École Zèbre'));
+    expect(res.text).toMatch(/Premium/);
     expect(res.text).toMatch(/Partenaire/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
+  test('VIP then premium appear before standard on /ecoles', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({
+        name: 'École Standard',
+        slug: 'ecole-standard',
+        marketplaceTier: 'STANDARD',
+        publicFeatured: false,
+      }),
+      publishedSchool({
+        name: 'École Premium',
+        slug: 'ecole-premium',
+        marketplaceTier: 'PREMIUM',
+        publicFeatured: true,
+      }),
+      publishedSchool({
+        name: 'École VIP',
+        slug: 'ecole-vip',
+        marketplaceTier: 'VIP',
+        publicFeatured: true,
+      }),
+    ]);
+    const res = await request(app).get('/ecoles');
+    expect(res.status).toBe(200);
+    const vip = res.text.indexOf('École VIP');
+    const premium = res.text.indexOf('École Premium');
+    const standard = res.text.indexOf('École Standard');
+    expect(vip).toBeGreaterThan(-1);
+    expect(vip).toBeLessThan(premium);
+    expect(premium).toBeLessThan(standard);
+    expect(res.text).toMatch(/>VIP</);
+    expect(res.text).toMatch(/>Premium</);
+    expect(res.text).toMatch(/>Partenaire</);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+    expect(res.text).not.toMatch(/18\/20/);
   });
 
   test('filters by establishment type', async () => {

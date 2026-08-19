@@ -3,10 +3,15 @@ const { MODULES, MODULE_KEYS } = require('../config/modules');
 const { PLANS, PLAN_IDS, PLAN_NAME_BY_ID, planSeedPrice, displayPlanName } = require('../config/plans');
 const { setModule, initSchoolModules } = require('./modules');
 
+function isPlanIndependentModule(moduleKey) {
+  if (moduleKey === 'sms_official') return true;
+  return Boolean(MODULES[moduleKey]?.addon);
+}
+
 function planIncludesFeature(plan, moduleKey) {
   if (!plan) return true;
   if (MODULES[moduleKey]?.core) return true;
-  if (moduleKey === 'sms_official') return true;
+  if (isPlanIndependentModule(moduleKey)) return true;
   const features = plan.features || [];
   return features.includes(moduleKey);
 }
@@ -55,7 +60,7 @@ async function syncSchoolModulesToPlan(schoolId, plan) {
   await initSchoolModules(schoolId);
   const features = new Set(plan?.features || []);
   for (const key of MODULE_KEYS) {
-    if (key === 'sms_official') continue;
+    if (isPlanIndependentModule(key)) continue;
     const enabled = MODULES[key].core || features.has(key);
     await setModule(schoolId, key, { enabled, locked: true });
   }
@@ -116,4 +121,5 @@ module.exports = {
   assignPlanToSchool,
   updatePlanFeatures,
   displayPlanName,
+  isPlanIndependentModule,
 };

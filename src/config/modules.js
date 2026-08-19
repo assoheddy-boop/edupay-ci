@@ -22,6 +22,12 @@ const MODULES = {
     description: 'SMS aux parents avec l’identité de l’école (identifiant expéditeur ou numéro SMS dédié — pas Wave / Orange Money)',
     default: false,
   },
+  marketplace: {
+    label: 'Marketplace',
+    description: 'Vitrine publique /e/:slug et listing /ecoles. Option payante, indépendante du plan Pro. La direction ne peut pas l’activer.',
+    default: false,
+    addon: true,
+  },
 };
 
 const MODULE_KEYS = Object.keys(MODULES);

@@ -55,16 +55,16 @@
 
   <% if (!schools.length) { %>
     <div class="card portal-card">
-      <p>Aucune école publiée pour ces critères. La direction active la page depuis <strong>Paramètres école</strong> (« Publier la page de l’école »).</p>
+      <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. Contactez EduConnect pour activer une page publique.</p>
     </div>
   <% } else { %>
     <ul class="portal-list">
       <% schools.forEach(function(s) { %>
         <li>
-          <a class="card portal-school-link<%= s.publicFeatured ? ' is-featured' : '' %>" href="<%= s.portalPath %>">
+          <a class="card portal-school-link<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
             <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
             <span>
-              <% if (s.publicFeatured) { %><span class="portal-featured-badge">Partenaire</span><% } %>
+              <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
               <strong><%= s.name %></strong>
               <span class="portal-school-meta"><%= s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>
             </span>

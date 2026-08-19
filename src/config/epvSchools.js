@@ -129,6 +129,7 @@ function pickSchoolFields(def, existing = {}) {
     publicBanner: def.publicBanner ?? existing.publicBanner ?? null,
     publicType: def.publicType ?? existing.publicType ?? 'PRIVE',
     publicFeatured: def.publicFeatured ?? existing.publicFeatured ?? false,
+    marketplaceTier: def.marketplaceTier ?? existing.marketplaceTier ?? 'NONE',
     lat: def.lat ?? existing.lat ?? null,
     lng: def.lng ?? existing.lng ?? null,
   };

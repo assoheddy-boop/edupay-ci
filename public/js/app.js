@@ -101,6 +101,45 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   best?.el.classList.add('is-active');
 
+  const groupStorageKey = 'educonnect.sidebar.groups';
+  const readGroupPrefs = () => {
+    try {
+      return JSON.parse(localStorage.getItem(groupStorageKey) || '{}') || {};
+    } catch (_err) {
+      return {};
+    }
+  };
+  const writeGroupPref = (id, open) => {
+    if (!id) return;
+    try {
+      const prefs = readGroupPrefs();
+      prefs[id] = open;
+      localStorage.setItem(groupStorageKey, JSON.stringify(prefs));
+    } catch (_err) {
+      /* ignore quota / private mode */
+    }
+  };
+  const setNavGroupOpen = (group, open) => {
+    group.classList.toggle('is-open', open);
+    const btn = group.querySelector(':scope > .nav-group-title');
+    btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  const groupPrefs = readGroupPrefs();
+  document.querySelectorAll('.app-sidebar-nav .nav-group').forEach((group) => {
+    const id = group.dataset.navGroup;
+    const hasActive = Boolean(group.querySelector('a.is-active'));
+    const stored = id && Object.prototype.hasOwnProperty.call(groupPrefs, id)
+      ? Boolean(groupPrefs[id])
+      : null;
+    setNavGroupOpen(group, hasActive || stored === true);
+    const btn = group.querySelector(':scope > .nav-group-title');
+    btn?.addEventListener('click', () => {
+      const open = !group.classList.contains('is-open');
+      setNavGroupOpen(group, open);
+      writeGroupPref(id, open);
+    });
+  });
+
   const userId = document.body?.dataset?.userId;
   if (userId) {
     const script = document.createElement('script');

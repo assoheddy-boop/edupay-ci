@@ -38,62 +38,104 @@
     <% } else if (showSchoolNav) { %>
       <a href="/school/dashboard">Accueil</a>
 
-      <p class="nav-group-title">Administration scolaire</p>
-      <a href="/school/classes">Classes</a>
-      <a href="/school/students">Élèves</a>
-      <a href="/school/teachers">Enseignants</a>
-      <% if (on('hr')) { %><a href="/school/hr">RH</a><% } %>
-      <a href="/school/school-year">Année scolaire</a>
-      <a href="/transfer/requests">Transferts</a>
-      <a href="/reinscription/dashboard">Réinscriptions</a>
-      <a href="/school/settings">Paramètres</a>
-      <a href="/school/portail">Portail public</a>
+      <div class="nav-group is-open" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+          Administration scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-administration-scolaire">
+          <a href="/school/classes">Classes</a>
+          <a href="/school/students">Élèves</a>
+          <a href="/school/teachers">Enseignants</a>
+          <% if (on('hr')) { %><a href="/school/hr">RH</a><% } %>
+          <a href="/school/school-year">Année scolaire</a>
+          <a href="/transfer/requests">Transferts</a>
+          <a href="/reinscription/dashboard">Réinscriptions</a>
+          <a href="/school/settings">Paramètres</a>
+          <% if (on('marketplace')) { %><a href="/school/portail">Portail public</a><% } %>
+        </div>
+      </div>
 
-      <p class="nav-group-title">Vie scolaire</p>
-      <a href="/timetable">Emploi du temps</a>
-      <% if (on('absences')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
-      <% if (on('canteen')) { %><a href="/school/canteen">Cantine</a><% } %>
-      <% if (on('lost_items')) { %><a href="/school/lost-items">Objets perdus</a><% } %>
-      <% if (on('activities')) { %><a href="/school/activities">Activités</a><% } %>
-      <% if (on('pickup')) { %><a href="/school/pickup">Sortie école</a><% } %>
+      <div class="nav-group is-open" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+          Vie scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-vie-scolaire">
+          <a href="/timetable">Emploi du temps</a>
+          <% if (on('absences')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
+          <% if (on('canteen')) { %><a href="/school/canteen">Cantine</a><% } %>
+          <% if (on('lost_items')) { %><a href="/school/lost-items">Objets perdus</a><% } %>
+          <% if (on('activities')) { %><a href="/school/activities">Activités</a><% } %>
+          <% if (on('pickup')) { %><a href="/school/pickup">Sortie école</a><% } %>
+        </div>
+      </div>
 
-      <p class="nav-group-title">Examens &amp; Évaluations</p>
-      <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
-      <a href="/school/coefficients">Coefficients</a>
-      <a href="/school/emargements">Émargement</a>
-      <% if (on('homeworks')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
-      <% if (navCycle.isMixte) { %>
-        <p class="nav-cycle-label">Primaire</p>
-        <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
-        <a href="/school/convocations">Convocations (blanc)</a>
-        <p class="nav-cycle-label">Secondaire</p>
-        <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
-        <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
-        <a href="/school/convocations">Convocations (blanc + national)</a>
-      <% } else if (navCycle.hasPrimaire) { %>
-        <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
-        <a href="/school/convocations">Convocations (blanc)</a>
-      <% } else { %>
-        <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
-        <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
-        <a href="/school/convocations">Convocations (blanc + national)</a>
-      <% } %>
+      <div class="nav-group is-open" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+          Examens &amp; Évaluations
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-examens">
+          <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
+          <a href="/school/coefficients">Coefficients</a>
+          <a href="/school/emargements">Émargement</a>
+          <% if (on('homeworks')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
+          <% if (navCycle.isMixte) { %>
+            <p class="nav-cycle-label">Primaire</p>
+            <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
+            <a href="/school/convocations">Convocations (blanc)</a>
+            <p class="nav-cycle-label">Secondaire</p>
+            <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+            <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
+            <a href="/school/convocations">Convocations (blanc + national)</a>
+          <% } else if (navCycle.hasPrimaire) { %>
+            <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
+            <a href="/school/convocations">Convocations (blanc)</a>
+          <% } else { %>
+            <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+            <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
+            <a href="/school/convocations">Convocations (blanc + national)</a>
+          <% } %>
+        </div>
+      </div>
 
-      <p class="nav-group-title">Finances &amp; Comptabilité</p>
-      <a href="/school/fees">Frais</a>
-      <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
-      <% if (on('payments')) { %><a href="/school/caisse">Caisse</a><% } %>
-      <a href="/school/cas-sociaux">Cas sociaux</a>
-      <% if (on('accounting')) { %><a href="/school/accounting">Comptabilité</a><% } %>
+      <div class="nav-group is-open" data-nav-group="finances">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-finances">
+          Finances &amp; Comptabilité
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-finances">
+          <a href="/school/fees">Frais</a>
+          <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
+          <% if (on('payments')) { %><a href="/school/caisse">Caisse</a><% } %>
+          <a href="/school/cas-sociaux">Cas sociaux</a>
+          <% if (on('accounting')) { %><a href="/school/accounting">Comptabilité</a><% } %>
+        </div>
+      </div>
 
-      <p class="nav-group-title">Communication</p>
-      <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
-      <% if (on('sms_official')) { %><a href="/school/sms">SMS officiels</a><% } %>
+      <div class="nav-group is-open" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+          Communication
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-communication">
+          <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
+          <% if (on('sms_official')) { %><a href="/school/sms">SMS officiels</a><% } %>
+        </div>
+      </div>
 
-      <p class="nav-group-title">Rapports &amp; Statistiques</p>
-      <a href="/school/analyse">Analyse</a>
-      <a href="/school/risques">Risques</a>
-      <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
+      <div class="nav-group is-open" data-nav-group="rapports">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-rapports">
+          Rapports &amp; Statistiques
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-rapports">
+          <a href="/school/analyse">Analyse</a>
+          <a href="/school/risques">Risques</a>
+          <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
+        </div>
+      </div>
     <% } else if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
       <a href="/admin/dashboard">Tableau de bord</a>
       <a href="/admin/plans">Plans</a>
@@ -107,59 +149,129 @@
       <a href="/transfer/dashboard">Transferts</a>
     <% } else if (currentUser && currentUser.role === 'PARENT') { %>
       <a href="/parent/dashboard">Accueil</a>
-      <p class="nav-group-title">Finances &amp; Comptabilité</p>
-      <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
-      <p class="nav-group-title">Examens &amp; Évaluations</p>
-      <% if (on('grades')) { %><a href="/parent/grades">Notes</a><% } %>
-      <a href="/parent/convocations">Convocations</a>
-      <% if (on('homeworks')) { %><a href="/parent/homeworks">Devoirs & contrôles</a><% } %>
-      <p class="nav-group-title">Vie scolaire</p>
-      <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a>
-      <a href="/parent/justificatifs">Justificatifs</a><% } %>
-      <% if (on('pickup')) { %><a href="/parent/pickup">Sortie école</a><% } %>
-      <% if (on('transport')) { %><a href="/parent/transport">Transport</a><% } %>
-      <% if (on('canteen')) { %><a href="/parent/canteen">Cantine</a><% } %>
-      <% if (on('health')) { %><a href="/parent/health">Santé</a><% } %>
-      <% if (on('activities')) { %><a href="/parent/activities">Activités</a><% } %>
-      <p class="nav-group-title">Communication</p>
-      <a href="/parent/timeline">Historique</a>
-      <a href="/parent/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
-      <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
-      <p class="nav-group-title">Administration scolaire</p>
-      <a href="/transfer">Transfert d'école</a>
-      <a href="/parent/privacy">Confidentialité</a>
+      <div class="nav-group is-open" data-nav-group="finances">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-finances">
+          Finances &amp; Comptabilité
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-finances">
+          <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+          Examens &amp; Évaluations
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-examens">
+          <% if (on('grades')) { %><a href="/parent/grades">Notes</a><% } %>
+          <a href="/parent/convocations">Convocations</a>
+          <% if (on('homeworks')) { %><a href="/parent/homeworks">Devoirs & contrôles</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+          Vie scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-vie-scolaire">
+          <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a>
+          <a href="/parent/justificatifs">Justificatifs</a><% } %>
+          <% if (on('pickup')) { %><a href="/parent/pickup">Sortie école</a><% } %>
+          <% if (on('transport')) { %><a href="/parent/transport">Transport</a><% } %>
+          <% if (on('canteen')) { %><a href="/parent/canteen">Cantine</a><% } %>
+          <% if (on('health')) { %><a href="/parent/health">Santé</a><% } %>
+          <% if (on('activities')) { %><a href="/parent/activities">Activités</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+          Communication
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-communication">
+          <a href="/parent/timeline">Historique</a>
+          <a href="/parent/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
+          <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+          Administration scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-administration-scolaire">
+          <a href="/transfer">Transfert d'école</a>
+          <a href="/parent/privacy">Confidentialité</a>
+        </div>
+      </div>
     <% } else if (currentUser && currentUser.role === 'TEACHER') { %>
       <a href="/teacher/dashboard">Accueil</a>
-      <p class="nav-group-title">Administration scolaire</p>
-      <a href="/teacher/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
-      <a href="/teacher/students">Élèves</a>
-      <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
-      <p class="nav-group-title">Vie scolaire</p>
-      <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
-      <% if (on('transport')) { %><a href="/teacher/transport">Transport</a><% } %>
-      <% if (on('canteen')) { %><a href="/teacher/canteen">Cantine</a><% } %>
-      <% if (on('behavior')) { %><a href="/teacher/behavior">Comportement</a><% } %>
-      <% if (on('health')) { %><a href="/teacher/health">Santé</a><% } %>
-      <a href="/timetable">Emploi du temps</a>
-      <p class="nav-group-title">Examens &amp; Évaluations</p>
-      <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
-      <% if (on('homeworks')) { %><a href="/teacher/homeworks">Devoirs & contrôles</a><% } %>
-      <% if (navCycle.isMixte) { %>
-        <p class="nav-cycle-label">Primaire</p>
-        <% if (on('bulletins')) { %><a href="/teacher/deliberations">Évaluations</a><% } %>
-        <p class="nav-cycle-label">Secondaire</p>
-        <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
-        <% if (on('bulletins')) { %><a href="/teacher/palmares">Palmarès</a><% } %>
-      <% } else if (navCycle.hasPrimaire) { %>
-        <% if (on('bulletins')) { %><a href="/teacher/deliberations">Évaluations</a><% } %>
-      <% } else { %>
-        <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
-        <% if (on('bulletins')) { %><a href="/teacher/palmares">Palmarès</a><% } %>
-      <% } %>
-      <p class="nav-group-title">Communication</p>
-      <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
-      <p class="nav-group-title">Rapports &amp; Statistiques</p>
-      <a href="/teacher/risques">Risques</a>
+      <div class="nav-group is-open" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+          Administration scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-administration-scolaire">
+          <a href="/teacher/notifications">Notifications<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
+          <a href="/teacher/students">Élèves</a>
+          <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+          Vie scolaire
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-vie-scolaire">
+          <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
+          <% if (on('transport')) { %><a href="/teacher/transport">Transport</a><% } %>
+          <% if (on('canteen')) { %><a href="/teacher/canteen">Cantine</a><% } %>
+          <% if (on('behavior')) { %><a href="/teacher/behavior">Comportement</a><% } %>
+          <% if (on('health')) { %><a href="/teacher/health">Santé</a><% } %>
+          <a href="/timetable">Emploi du temps</a>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+          Examens &amp; Évaluations
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-examens">
+          <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
+          <% if (on('homeworks')) { %><a href="/teacher/homeworks">Devoirs & contrôles</a><% } %>
+          <% if (navCycle.isMixte) { %>
+            <p class="nav-cycle-label">Primaire</p>
+            <% if (on('bulletins')) { %><a href="/teacher/deliberations">Évaluations</a><% } %>
+            <p class="nav-cycle-label">Secondaire</p>
+            <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
+            <% if (on('bulletins')) { %><a href="/teacher/palmares">Palmarès</a><% } %>
+          <% } else if (navCycle.hasPrimaire) { %>
+            <% if (on('bulletins')) { %><a href="/teacher/deliberations">Évaluations</a><% } %>
+          <% } else { %>
+            <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
+            <% if (on('bulletins')) { %><a href="/teacher/palmares">Palmarès</a><% } %>
+          <% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+          Communication
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-communication">
+          <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
+        </div>
+      </div>
+      <div class="nav-group is-open" data-nav-group="rapports">
+        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-rapports">
+          Rapports &amp; Statistiques
+          <span class="nav-group-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-group-items" id="nav-items-rapports">
+          <a href="/teacher/risques">Risques</a>
+        </div>
+      </div>
     <% } %>
   </nav>
 </aside>

@@ -23,6 +23,23 @@ function renderSchoolSidebar(cycleValue) {
   );
 }
 
+function renderTeacherSidebar(cycleValue) {
+  return ejs.render(
+    sidebar,
+    {
+      user: {
+        role: 'TEACHER',
+        teacher: { school: { name: 'Test', slug: 'test', educationCycle: cycleValue } },
+      },
+      modules: {},
+      adminAssist: null,
+      cycle: cycleFlags(cycleValue),
+      unreadNotifications: 0,
+    },
+    { filename: sidebarPath },
+  );
+}
+
 describe('sidebar missing links (Vague 3)', () => {
   test('school nav includes lost items when the module is on', () => {
     expect(sidebar).toMatch(/on\('lost_items'\)[\s\S]*\/school\/lost-items/);
@@ -38,6 +55,10 @@ describe('sidebar missing links (Vague 3)', () => {
 
   test('school nav includes official SMS when the module is on', () => {
     expect(sidebar).toMatch(/on\('sms_official'\)[\s\S]*\/school\/sms/);
+  });
+
+  test('school nav includes public portal when marketplace is on', () => {
+    expect(sidebar).toMatch(/on\('marketplace'\)[\s\S]*\/school\/portail/);
   });
 
   test('parent nav includes justificatifs when absences module is on', () => {
@@ -73,6 +94,44 @@ describe('sidebar grouped by dashboard categories', () => {
 
   test('keeps admin-assist exits at the top of the nav', () => {
     expect(sidebar).toMatch(/assist[\s\S]*\/admin\/dashboard[\s\S]*\/admin\/assist\/exit/);
+  });
+
+  test('school nav wraps the six categories as expandable buttons', () => {
+    const html = renderSchoolSidebar('COLLEGE');
+    expect(html.match(/class="nav-group is-open"/g)).toHaveLength(6);
+    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="true"/);
+    expect(html).toContain('nav-group-chevron');
+    expect(html).toContain('data-nav-group="administration-scolaire"');
+    expect(html).toContain('data-nav-group="vie-scolaire"');
+    expect(html).toContain('data-nav-group="examens"');
+    expect(html).toContain('data-nav-group="finances"');
+    expect(html).toContain('data-nav-group="communication"');
+    expect(html).toContain('data-nav-group="rapports"');
+    expect(html).toMatch(/aria-controls="nav-items-administration-scolaire"/);
+    expect(html).toMatch(/id="nav-items-administration-scolaire"/);
+  });
+
+  test('teacher nav uses the same collapsible category pattern', () => {
+    const html = renderTeacherSidebar('COLLEGE');
+    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="true"/);
+    expect(html).toContain('data-nav-group="administration-scolaire"');
+    expect(html).toContain('data-nav-group="vie-scolaire"');
+    expect(html).toContain('data-nav-group="examens"');
+    expect(html).toContain('nav-group-chevron');
+  });
+
+  test('app.js opens the active group and remembers the rest', () => {
+    const js = fs.readFileSync(path.join(__dirname, '../public/js/app.js'), 'utf8');
+    expect(js).toContain('educonnect.sidebar.groups');
+    expect(js).toMatch(/aria-expanded/);
+    expect(js).toMatch(/a\.is-active/);
+    expect(js).toMatch(/dataset\.navGroup/);
+  });
+
+  test('main.css hides closed group items and rotates the chevron', () => {
+    const css = fs.readFileSync(path.join(__dirname, '../public/css/main.css'), 'utf8');
+    expect(css).toMatch(/\.nav-group:not\(\.is-open\)\s*>\s*\.nav-group-items/);
+    expect(css).toMatch(/\.nav-group\.is-open \.nav-group-chevron/);
   });
 });
 

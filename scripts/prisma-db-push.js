@@ -142,6 +142,9 @@ function main() {
       console.log(`Portail IGEST → ${target.label}`);
       const igest = run('node', ['scripts/enable-igest-public-portal.js'], { DATABASE_URL: target.url });
       if (igest) code = igest;
+      console.log(`Marketplace IGEST + EPV → ${target.label}`);
+      const featured = run('node', ['scripts/feature-registered-schools.js', '--run'], { DATABASE_URL: target.url });
+      if (featured) code = featured;
     }
   }
   process.exit(code);

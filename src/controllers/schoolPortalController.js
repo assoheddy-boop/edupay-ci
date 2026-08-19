@@ -1,5 +1,7 @@
 const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
+const { getModuleMap, isEnabled } = require('../utils/modules');
+const { MARKETPLACE_MODULE } = require('../utils/marketplaceAddon');
 const {
   parsePortalPostInput,
   publicPostView,
@@ -10,6 +12,8 @@ const {
 async function page(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
+  const mods = await getModuleMap(school.id);
+  const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
   const posts = typeof prisma.portalPost?.findMany === 'function'
     ? await prisma.portalPost.findMany({
       where: { schoolId: school.id },
@@ -23,6 +27,7 @@ async function page(req, res) {
     posts,
     kindOptions: PORTAL_POST_KIND_OPTIONS,
     portalPath: school.slug ? portalPath(school.slug) : null,
+    marketplaceEnabled,
     success: req.query.success || null,
     error: req.query.error || null,
   });
@@ -31,6 +36,10 @@ async function page(req, res) {
 async function createNews(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
+  const mods = await getModuleMap(school.id);
+  if (!isEnabled(mods, MARKETPLACE_MODULE)) {
+    return res.redirect('/school/portail?error=1');
+  }
   const parsed = parsePortalPostInput(req.body);
   if (!parsed.ok) {
     return res.redirect(`/school/portail?error=${encodeURIComponent(parsed.errors[0] || 'invalide')}`);
@@ -62,6 +71,10 @@ async function createNews(req, res) {
 async function deleteNews(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
+  const mods = await getModuleMap(school.id);
+  if (!isEnabled(mods, MARKETPLACE_MODULE)) {
+    return res.redirect('/school/portail?error=1');
+  }
   const id = String(req.params.id || '').trim();
   if (!id) return res.redirect('/school/portail?error=1');
   try {

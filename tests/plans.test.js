@@ -22,11 +22,12 @@ describe('Plans config', () => {
     expect(essentiel.modules).not.toContain('accounting');
   });
 
-  test('pro includes accounting, hr and multi_campus', () => {
+  test('pro includes accounting, hr and multi_campus but not marketplace', () => {
     const pro = PLANS.pro;
     expect(pro.modules).toContain('accounting');
     expect(pro.modules).toContain('hr');
     expect(pro.modules).toContain('multi_campus');
+    expect(pro.modules).not.toContain('marketplace');
     expect(pro.price).toBe(500000);
   });
 
@@ -52,6 +53,11 @@ describe('planIncludesFeature', () => {
   test('allows modules listed in features', () => {
     expect(planIncludesFeature(essentiel, 'chat')).toBe(true);
     expect(planIncludesFeature(essentiel, 'bulletins')).toBe(true);
+  });
+
+  test('allows official SMS and marketplace independently of the plan', () => {
+    expect(planIncludesFeature({ features: [] }, 'sms_official')).toBe(true);
+    expect(planIncludesFeature({ features: [] }, 'marketplace')).toBe(true);
   });
 
   test('allows everything when no plan is assigned', () => {

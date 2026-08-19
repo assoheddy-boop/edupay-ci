@@ -17,6 +17,9 @@
 <% if (success === 'deleted') { %><div class="alert alert-success">Actualité retirée.</div><% } %>
 <% if (error) { %><div class="alert alert-error">Impossible d’enregistrer. Vérifiez le titre et le texte (pas de données élèves).</div><% } %>
 
+<% if (typeof marketplaceEnabled !== 'undefined' && !marketplaceEnabled) { %>
+  <div class="alert alert-error">Le Marketplace n’est pas activé pour cet établissement. <a href="mailto:contact@educonnect.ci?subject=Marketplace%20EduConnect">Contactez EduConnect pour le Marketplace</a>.</div>
+<% } else { %>
 <div class="card">
   <h2>Nouvelle actualité</h2>
   <p class="form-hint">Texte public uniquement : pas de noms d’élèves, notes, bulletins, matricules ni téléphones parents.</p>
@@ -66,4 +69,5 @@
     </ul>
   <% } %>
 </div>
+<% } %>
 <% } %>
