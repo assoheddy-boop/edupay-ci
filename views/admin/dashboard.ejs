@@ -5,24 +5,27 @@
 <div class="page-header">
     <div>
       <h1>Super Admin</h1>
-      <p class="page-sub">Plateforme premium — gestion centralisée des écoles et modules</p>
+      <p class="page-sub">Console propriétaire — écoles, marketplace, devis, utilisateurs. La prise en main reste obligatoire pour l’UI école.</p>
     </div>
     <div class="page-header-actions">
-      <a href="/admin/reporting" class="btn btn-primary">Graphiques d'analyse</a>
-      <a href="/transfer/dashboard" class="btn btn-outline">Transferts</a>
-      <a href="/admin/modules" class="btn btn-outline">Gérer les modules</a>
-      <a href="/admin/plans" class="btn btn-outline">Plans</a>
+      <a href="/admin/schools" class="btn btn-primary">Écoles</a>
+      <a href="/admin/marketplace" class="btn btn-outline">Marketplace</a>
+      <a href="/admin/quotes" class="btn btn-outline">Devis</a>
+      <a href="/admin/users" class="btn btn-outline">Utilisateurs</a>
+      <a href="/admin/modules" class="btn btn-outline">Modules</a>
       <a href="/admin/organizations" class="btn btn-outline">Groupes scolaires</a>
-      <a href="/admin/finance" class="btn btn-outline">Finance</a>
-      <a href="/admin/accounting" class="btn btn-outline">Comptabilité</a>
     </div>
   </div>
+  <%- include('../partials/_adminHubNav', { currentPath: 'dashboard' }) %>
 
   <% if (success === 'premium') { %>
     <div class="alert alert-success">Plateforme passée en mode premium.</div>
   <% } %>
   <% if (success === 'cycle') { %>
     <div class="alert alert-success">Cycle d’enseignement mis à jour. Le menu de l’école s’adapte immédiatement.</div>
+  <% } %>
+  <% if (success === 'saved' || success === 'featured') { %>
+    <div class="alert alert-success">École mise à jour.</div>
   <% } %>
   <% if (typeof error !== 'undefined' && error === 'assist') { %>
     <div class="alert alert-error">Impossible de prendre la main — école ou groupe introuvable.</div>
@@ -46,7 +49,7 @@
     </div>
   <% } %>
 
-  <div class="card" style="margin-bottom:1.25rem">
+  <div class="card" id="sms-test" style="margin-bottom:1.25rem">
     <div class="card-header">
       <h2>Test SMS <%= smsGwLabel %></h2>
       <p class="page-sub">
@@ -106,6 +109,14 @@
     <div class="stat-card<%= stats.pendingTransfers > 0 ? ' stat-card-warning' : '' %>">
       <span class="stat-value"><%= stats.pendingTransfers %></span>
       <span class="stat-label">Transferts en attente</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= typeof stats.pendingQuotes !== 'undefined' ? stats.pendingQuotes : 0 %></span>
+      <span class="stat-label">Devis ouverts</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><%= typeof stats.marketplaceLive !== 'undefined' ? stats.marketplaceLive : 0 %></span>
+      <span class="stat-label">Sur /ecoles</span>
     </div>
   </div>
 
@@ -198,6 +209,31 @@
       <p class="page-sub">Accès rapide à toutes les fonctionnalités de la plateforme.</p>
     </div>
     <div class="hero-features admin-hub-grid">
+      <a href="/admin/schools" class="feature-card admin-hub-card">
+        <span class="feature-icon">🏫</span>
+        <h3>Écoles</h3>
+        <p>Cycle, modules, marketplace, vitrine — sans prise en main.</p>
+      </a>
+      <a href="/admin/users" class="feature-card admin-hub-card">
+        <span class="feature-icon">👤</span>
+        <h3>Utilisateurs</h3>
+        <p>Recherche e-mail, mot de passe temporaire, désactivation.</p>
+      </a>
+      <a href="/admin/quotes" class="feature-card admin-hub-card">
+        <span class="feature-icon">📝</span>
+        <h3>Devis</h3>
+        <p>Demandes Pro en attente et activations.</p>
+      </a>
+      <a href="/admin/marketplace" class="feature-card admin-hub-card">
+        <span class="feature-icon">⭐</span>
+        <h3>Marketplace</h3>
+        <p>Publier / retirer sur /ecoles, palier VIP · Premium · Standard.</p>
+      </a>
+      <a href="/admin/dashboard#sms-test" class="feature-card admin-hub-card">
+        <span class="feature-icon">📱</span>
+        <h3>SMS / notifications</h3>
+        <p>Test de connexion Orange ou Twilio, expéditeur école.</p>
+      </a>
       <a href="/admin/plans" class="feature-card admin-hub-card">
         <span class="feature-icon">📋</span>
         <h3>Plans<%- include('../partials/_hint', { text: 'Abonnements et activation des modules par formule.', label: 'Plans' }) %></h3>
@@ -282,6 +318,7 @@
       <thead>
         <tr>
           <th>École</th>
+          <th>Slug</th>
           <th>Ville</th>
           <th>Cycle</th>
           <th>Groupe</th>
@@ -295,9 +332,10 @@
         <% schools.forEach(function(s) { %>
           <tr class="assist-filter-row" data-search="<%= (s.name + ' ' + (s.city || '') + ' ' + (s.admin && s.admin.email ? s.admin.email : '') + ' ' + (s.organization && s.organization.name ? s.organization.name : '')).toLowerCase() %>">
             <td>
-              <strong><%= s.name %></strong><br>
+              <a href="/admin/schools/<%= s.id %>"><strong><%= s.name %></strong></a><br>
               <small><%= s.admin?.email || '—' %></small>
             </td>
+            <td><code><%= s.slug || '—' %></code></td>
             <td><%= s.city %></td>
             <td>
               <form method="POST" action="/admin/schools/<%= s.id %>/cycle" class="form-inline cycle-inline">
@@ -318,6 +356,7 @@
               <span class="badge badge-premium"><%= s.plan?.name || s.subscription || '—' %></span>
             </td>
             <td class="assist-actions">
+              <a href="/admin/schools/<%= s.id %>" class="btn btn-sm btn-outline">Fiche</a>
               <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
               <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-outline">Modules</a>
               <form method="POST" action="/admin/schools/<%= s.id %>/featured" class="form-inline" style="display:inline">

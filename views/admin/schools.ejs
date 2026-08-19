@@ -1,0 +1,84 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('schools', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Écoles — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Écoles</h1>
+    <p class="page-sub">Cycle, plan, modules et vitrine — sans entrer dans l’école. « Gérer » ouvre la prise en main.</p>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'schools' }) %>
+
+<% if (success === 'cycle') { %><div class="alert alert-success">Cycle mis à jour.</div><% } %>
+<% if (success === 'featured' || success === 'saved') { %><div class="alert alert-success">École mise à jour.</div><% } %>
+<% if (typeof error !== 'undefined' && error === 'school') { %><div class="alert alert-error">École introuvable.</div><% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Toutes les écoles</h2>
+    <p class="page-sub"><%= schools.length %> établissement<%= schools.length > 1 ? 's' : '' %></p>
+  </div>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Slug</th>
+          <th>Ville</th>
+          <th>Cycle</th>
+          <th>Plan</th>
+          <th>Marketplace</th>
+          <th>Vitrine</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% schools.forEach(function(s) { %>
+          <tr>
+            <td>
+              <a href="/admin/schools/<%= s.id %>"><strong><%= s.name %></strong></a><br>
+              <small><%= s.admin?.email || '—' %></small>
+            </td>
+            <td><code><%= s.slug || '—' %></code></td>
+            <td><%= s.city || '—' %></td>
+            <td>
+              <form method="POST" action="/admin/schools/<%= s.id %>/cycle" class="form-inline cycle-inline">
+                <input type="hidden" name="redirect" value="/admin/schools">
+                <select name="educationCycle" aria-label="Cycle <%= s.name %>" onchange="this.form.submit()">
+                  <% (typeof educationCycleOptions !== 'undefined' ? educationCycleOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= s.educationCycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </td>
+            <td><span class="badge badge-premium"><%= s.plan?.name || s.subscription || '—' %></span></td>
+            <td>
+              <form method="POST" action="/admin/schools/<%= s.id %>/featured" class="form-inline">
+                <input type="hidden" name="redirect" value="/admin/schools">
+                <select name="marketplaceTier" aria-label="Marketplace <%= s.name %>" onchange="this.form.submit()">
+                  <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= (s.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </td>
+            <td>
+              <% if (s.publicPortalEnabled && s.slug) { %>
+                <a href="/e/<%= s.slug %>" target="_blank" rel="noopener">/e/<%= s.slug %></a>
+                <% if (s.publicFeatured) { %><br><span class="badge">Mise en avant</span><% } %>
+              <% } else { %>
+                —
+              <% } %>
+            </td>
+            <td class="assist-actions">
+              <a href="/admin/schools/<%= s.id %>" class="btn btn-sm btn-outline">Fiche</a>
+              <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>

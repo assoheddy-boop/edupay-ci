@@ -1,0 +1,120 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('school', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: school.name + ' — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <a href="/admin/schools" class="text-muted">← Écoles</a>
+    <h1><%= school.name %></h1>
+    <p class="page-sub">Configuration Super Admin — sans prise en main. « Gérer » ouvre l’interface école.</p>
+  </div>
+  <div class="page-header-actions">
+    <%- include('../partials/_adminAssistForm', { type: 'school', id: school.id, label: 'Gérer' }) %>
+    <a href="/admin/modules?school=<%= school.id %>" class="btn btn-outline">Modules (matrice)</a>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'schools' }) %>
+
+<% if (success === 'saved' || success === '1' || success === 'cycle' || success === 'featured') { %>
+  <div class="alert alert-success">École enregistrée. Le menu de l’école s’adapte au cycle immédiatement.</div>
+<% } %>
+
+<form method="POST" action="/admin/schools/<%= school.id %>" class="card">
+  <input type="hidden" name="saveModules" value="1">
+  <input type="hidden" name="redirect" value="/admin/schools/<%= school.id %>">
+
+  <div class="card-header">
+    <h2>Identité</h2>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Nom</label>
+      <input type="text" value="<%= school.name %>" disabled>
+    </div>
+    <div class="form-group">
+      <label>Slug</label>
+      <input type="text" value="<%= school.slug || '' %>" disabled>
+      <p class="form-hint">Page publique : <%= school.slug ? '/e/' + school.slug : 'aucun slug' %></p>
+    </div>
+    <div class="form-group">
+      <label for="city">Ville</label>
+      <input type="text" id="city" name="city" value="<%= school.city || '' %>">
+    </div>
+  </div>
+  <p class="form-hint">Plan : <strong><%= school.plan?.name || school.subscription || '—' %></strong>
+    · Direction : <%= school.admin?.email || '—' %>
+    · Groupe : <%= school.organization?.name || '—' %></p>
+
+  <div class="card-header">
+    <h2>Cycle d’enseignement</h2>
+  </div>
+  <div class="form-group">
+    <label for="educationCycle">Cycle</label>
+    <select id="educationCycle" name="educationCycle">
+      <% (typeof educationCycleOptions !== 'undefined' ? educationCycleOptions : []).forEach(function(opt) { %>
+        <option value="<%= opt.value %>" <%= school.educationCycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+      <% }) %>
+    </select>
+    <p class="form-hint">Primaire, collège, lycée ou mixte — le menu de l’école s’adapte.</p>
+  </div>
+
+  <div class="card-header">
+    <h2>Marketplace / vitrine /ecoles</h2>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="marketplaceTier">Offre visibilité</label>
+      <select id="marketplaceTier" name="marketplaceTier">
+        <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= (school.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="hidden" name="publicPortalEnabled" value="0">
+        <input type="checkbox" name="publicPortalEnabled" value="1" <%= school.publicPortalEnabled ? 'checked' : '' %>>
+        Publier sur /ecoles (publicPortalEnabled)
+      </label>
+      <label class="checkbox-label">
+        <input type="hidden" name="publicFeatured" value="0">
+        <input type="checkbox" name="publicFeatured" value="1" <%= school.publicFeatured ? 'checked' : '' %>>
+        Mise en avant (publicFeatured — Premium / VIP)
+      </label>
+    </div>
+  </div>
+
+  <div class="card-header">
+    <h2>SMS — identifiant expéditeur</h2>
+  </div>
+  <div class="form-group">
+    <label for="smsSenderId">Affichage expéditeur</label>
+    <input type="text" id="smsSenderId" name="smsSenderId" value="<%= school.smsSenderId || '' %>" maxlength="20" placeholder="EduConnect">
+    <p class="form-hint">Nom affiché sur les SMS officiels de cette école. Le test SMS reste sur le tableau de bord.</p>
+  </div>
+
+  <div class="card-header">
+    <h2>Modules</h2>
+    <p class="page-sub">Dont marketplace, SMS officiel et comptabilité. Les essentiels restent actifs.</p>
+  </div>
+  <div class="module-check-grid">
+    <% MODULE_KEYS.forEach(function(key) {
+      const mod = (school.modules && school.modules[key]) || {};
+    %>
+      <label class="checkbox-label">
+        <% if (mod.core) { %>
+          <input type="checkbox" checked disabled>
+          <input type="hidden" name="mod_<%= key %>" value="on">
+        <% } else { %>
+          <input type="checkbox" name="mod_<%= key %>" <%= mod.enabled ? 'checked' : '' %>>
+        <% } %>
+        <%= mod.label || key %><% if (mod.addon) { %> <span class="badge">Option</span><% } %>
+      </label>
+    <% }) %>
+  </div>
+
+  <div class="card-footer">
+    <button type="submit" class="btn btn-primary">Enregistrer cycle, offre et modules</button>
+  </div>
+</form>
+<% } %>

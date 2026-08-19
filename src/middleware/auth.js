@@ -139,7 +139,7 @@ async function requireAuth(req, res, next) {
 
     const user = await loadUser(decoded.userId);
 
-    if (!user) {
+    if (!user || user.isActive === false) {
       clearAuthCookie(res);
       return unauthenticated(req, res);
     }

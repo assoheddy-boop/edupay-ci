@@ -201,6 +201,8 @@ model User {
   lastName  String
   phone     String?
   photoUrl  String?
+  /// Super Admin peut désactiver un compte (connexion refusée).
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

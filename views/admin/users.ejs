@@ -1,0 +1,93 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('users', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Utilisateurs — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Utilisateurs</h1>
+    <p class="page-sub">Recherche par e-mail, rôle, école. Le mot de passe temporaire n’est affiché qu’une fois.</p>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'users' }) %>
+
+<% if (typeof tempPassword !== 'undefined' && tempPassword) { %>
+  <div class="alert alert-success">
+    Mot de passe temporaire pour <strong><%= resetEmail %></strong> — copiez-le maintenant, il ne sera plus affiché.
+    <p class="temp-password-box"><code><%= tempPassword %></code></p>
+  </div>
+<% } else if (success === 'deactivated') { %>
+  <div class="alert alert-success">Compte désactivé — connexion refusée.</div>
+<% } else if (success === 'activated') { %>
+  <div class="alert alert-success">Compte réactivé.</div>
+<% } else if (success === 'reset') { %>
+  <div class="alert alert-success">Mot de passe réinitialisé.</div>
+<% } %>
+<% if (error === 'self') { %><div class="alert alert-error">Vous ne pouvez pas désactiver votre propre compte.</div><% } %>
+<% if (error === 'super') { %><div class="alert alert-error">Les comptes Super Admin ne peuvent pas être désactivés ici.</div><% } %>
+<% if (error === 'user') { %><div class="alert alert-error">Utilisateur introuvable.</div><% } %>
+<% if (error === 'field') { %><div class="alert alert-error">Désactivation indisponible (colonne absente). Lancez un db push.</div><% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Recherche</h2>
+  </div>
+  <form method="GET" action="/admin/users" class="form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="userSearch">E-mail</label>
+        <input type="search" id="userSearch" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="assoheddy@gmail.com" autocomplete="off">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Rechercher</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Comptes</h2>
+    <p class="page-sub"><%= users.length %> résultat<%= users.length > 1 ? 's' : '' %> (100 max.)</p>
+  </div>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>E-mail</th>
+          <th>Nom</th>
+          <th>Rôle</th>
+          <th>École / groupe</th>
+          <th>Actif</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(u) { %>
+          <tr>
+            <td><%= u.email %></td>
+            <td><%= u.firstName %> <%= u.lastName %></td>
+            <td><%= (typeof roleLabels !== 'undefined' && roleLabels[u.role]) ? roleLabels[u.role] : u.role %></td>
+            <td><%= u.schoolLabel || '—' %></td>
+            <td><%= u.isActive === false ? 'Non' : 'Oui' %></td>
+            <td class="assist-actions">
+              <form method="POST" action="/admin/users/<%= u.id %>/reset-password" class="form-inline">
+                <input type="hidden" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>">
+                <button type="submit" class="btn btn-sm btn-outline">Mot de passe temporaire</button>
+              </form>
+              <% if (u.role !== 'SUPER_ADMIN' && u.id !== user.id) { %>
+                <% if (u.isActive === false) { %>
+                  <form method="POST" action="/admin/users/<%= u.id %>/activate" class="form-inline">
+                    <button type="submit" class="btn btn-sm btn-primary">Réactiver</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/admin/users/<%= u.id %>/deactivate" class="form-inline">
+                    <button type="submit" class="btn btn-sm btn-outline">Désactiver</button>
+                  </form>
+                <% } %>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>

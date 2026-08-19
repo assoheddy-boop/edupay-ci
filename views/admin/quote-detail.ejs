@@ -1,0 +1,48 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('quote-detail', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Devis ' + quote.schoolName }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <a href="/admin/quotes" class="text-muted">← Devis</a>
+    <h1><%= quote.schoolName %></h1>
+    <p class="page-sub"><%= quote.city %> · <%= (statusLabels && statusLabels[quote.status]) ? statusLabels[quote.status] : quote.status %></p>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'quotes' }) %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Montant</h2>
+  </div>
+  <p><strong><%= typeof formatMoney === 'function' ? formatMoney(quote.amount) : (quote.amount + ' FCFA') %></strong> / an</p>
+  <p class="form-hint">Référence : <code><%= quote.id %></code></p>
+  <% if (quote.activationRequestedAt) { %>
+    <p>Activation demandée le <%= new Date(quote.activationRequestedAt).toLocaleString('fr-FR') %>.</p>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Contact</h2>
+  </div>
+  <p><%= quote.contactName || (answers.contact && answers.contact.name) || '—' %></p>
+  <p><%= quote.contactEmail || (answers.contact && answers.contact.email) || '—' %></p>
+  <p><%= quote.contactPhone || (answers.contact && answers.contact.phone) || '—' %></p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Établissement</h2>
+  </div>
+  <p>Élèves : <%= answers.students || '—' %> · Enseignants : <%= answers.teachers || '—' %> · Classes : <%= answers.classes || '—' %></p>
+  <% if (answers.isGroup) { %>
+    <p>Groupe scolaire : <%= answers.groupName || 'oui' %></p>
+  <% } %>
+  <% if (summary && summary.selected && summary.selected.length) { %>
+    <p>Options : <%= summary.selected.join(', ') %></p>
+  <% } %>
+</div>
+
+<p><a href="/devis/<%= quote.id %>" class="btn btn-outline" target="_blank" rel="noopener">Voir la page publique du devis</a></p>
+<% } %>

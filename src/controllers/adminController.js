@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const prisma = require('../config/database');
 const { MODULES, MODULE_KEYS } = require('../config/modules');
 const {
@@ -20,13 +21,51 @@ const { safeInternalPath } = require('../utils/cookies');
 const { sendConnectivityTestSms, smsConfigured, smsProvider } = require('../services/sms');
 const { resolveSmsSender } = require('../utils/officialSms');
 const { parseEducationCycle, EDUCATION_CYCLE_OPTIONS, CYCLE_LABELS } = require('../utils/educationCycle');
+const { revokeUserRefreshTokens } = require('../utils/refreshToken');
+const { quoteSummary } = require('../utils/quoteAnswers');
 const {
   MARKETPLACE_MODULE,
   MARKETPLACE_TIER_OPTIONS,
   parseMarketplaceTier,
+  isLiveTier,
   applyMarketplaceOffer,
   syncMarketplaceAfterModuleChange,
 } = require('../utils/marketplaceAddon');
+
+const USER_ROLE_LABELS = {
+  SUPER_ADMIN: 'Super Admin',
+  ORGANIZATION_ADMIN: 'Admin groupe',
+  SCHOOL_ADMIN: 'Direction',
+  PARENT: 'Parent',
+  TEACHER: 'Enseignant',
+};
+
+const QUOTE_STATUS_LABELS = {
+  pending: 'En attente',
+  activation_requested: 'Activation demandée',
+};
+
+function isOn(value) {
+  if (Array.isArray(value)) return value.some(isOn);
+  if (value === true || value === 1) return true;
+  const raw = String(value || '').toLowerCase();
+  return raw === 'on' || raw === '1' || raw === 'true' || raw === 'oui' || raw === 'yes';
+}
+
+function wantsJson(req) {
+  return req.method === 'PATCH' || Boolean(req.is && req.is('json'));
+}
+
+function generateAdminTempPassword() {
+  return `EduA-${crypto.randomBytes(6).toString('base64url')}!`;
+}
+
+function userSchoolLabel(user) {
+  if (user.school?.name) return user.school.name;
+  if (user.teacher?.school?.name) return user.teacher.school.name;
+  if (user.organizationAdmin?.organization?.name) return user.organizationAdmin.organization.name;
+  return '—';
+}
 
 async function loadSchoolsWithModules() {
   const schools = await prisma.school.findMany({
@@ -56,7 +95,7 @@ async function loadSchoolsWithModules() {
 }
 
 async function dashboard(req, res) {
-  const [schools, organizations, users, moduleRows, students, pendingTransfers, genderStats] = await Promise.all([
+  const [schools, organizations, users, moduleRows, students, pendingTransfers, genderStats, pendingQuotes] = await Promise.all([
     loadSchoolsWithModules(),
     prisma.organization.findMany({
       include: { _count: { select: { schools: true, admins: true } } },
@@ -66,6 +105,10 @@ async function dashboard(req, res) {
     prisma.student.count(),
     prisma.transferRequest.count({ where: { status: 'PENDING' } }),
     getGenderStatsBySchool(),
+    (prisma.quoteRequest?.count
+      ? prisma.quoteRequest.count({ where: { status: { in: ['pending', 'activation_requested'] } } })
+      : Promise.resolve(0)
+    ).catch(() => 0),
   ]);
 
   const moduleStats = MODULE_KEYS.map((key) => ({
@@ -85,6 +128,8 @@ async function dashboard(req, res) {
       users,
       students,
       pendingTransfers,
+      pendingQuotes,
+      marketplaceLive: schools.filter((s) => s.publicPortalEnabled && s.slug && isLiveTier(s.marketplaceTier)).length,
     },
     genderBySchool: genderStats.schools || [],
     moduleStats,
@@ -465,6 +510,422 @@ async function activatePlanModules(req, res) {
   res.redirect('/admin/plans?success=activated');
 }
 
+function schoolFormLocals(school, extra = {}) {
+  return {
+    user: extra.user,
+    school,
+    MODULES,
+    MODULE_KEYS,
+    educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS,
+    success: extra.success || null,
+    error: extra.error || null,
+  };
+}
+
+async function schoolsList(req, res) {
+  const schools = await loadSchoolsWithModules();
+  res.render('admin/schools', {
+    user: req.user,
+    schools,
+    MODULES,
+    MODULE_KEYS,
+    educationCycleOptions: EDUCATION_CYCLE_OPTIONS,
+    educationCycleLabels: CYCLE_LABELS,
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function schoolDetail(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({
+    where: { id },
+    include: {
+      admin: true,
+      organization: true,
+      plan: true,
+      modules: true,
+      _count: { select: { classes: true, students: true } },
+    },
+  });
+  if (!school) return res.redirect('/admin/schools?error=school');
+
+  const modules = await getModuleMap(id);
+  res.render('admin/school', schoolFormLocals({ ...school, modules }, {
+    user: req.user,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  }));
+}
+
+async function updateSchool(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) {
+    if (wantsJson(req)) return res.status(404).json({ error: 'École introuvable' });
+    return res.redirect('/admin/schools?error=school');
+  }
+
+  const data = {};
+  if (req.body.educationCycle != null) {
+    data.educationCycle = parseEducationCycle(req.body.educationCycle);
+  }
+  if (req.body.city != null) {
+    const city = String(req.body.city).trim().slice(0, 80);
+    if (city) data.city = city;
+  }
+  if (req.body.smsSenderId != null) {
+    const sender = String(req.body.smsSenderId).trim().slice(0, 20);
+    data.smsSenderId = sender || null;
+  }
+
+  const hasTier = req.body.marketplaceTier != null && String(req.body.marketplaceTier).trim() !== '';
+  const hasPublish = req.body.publicPortalEnabled != null;
+  const hasFeatured = req.body.publicFeatured != null;
+  if (hasPublish && !hasTier) {
+    data.publicPortalEnabled = isOn(req.body.publicPortalEnabled);
+  }
+
+  if (Object.keys(data).length) {
+    await prisma.school.update({ where: { id }, data });
+  }
+
+  const saveModules = isOn(req.body.saveModules)
+    || Object.keys(req.body || {}).some((key) => key.startsWith('mod_'));
+  if (saveModules) {
+    for (const key of MODULE_KEYS) {
+      if (key === MARKETPLACE_MODULE) continue;
+      const enabled = MODULES[key].core ? true : isOn(req.body[`mod_${key}`]);
+      await setModule(id, key, { enabled, locked: true });
+    }
+  }
+
+  let marketplaceResult = null;
+  if (hasTier || hasFeatured || hasPublish) {
+    let tier = hasTier
+      ? parseMarketplaceTier(req.body.marketplaceTier)
+      : parseMarketplaceTier(school.marketplaceTier);
+    if (!hasTier && hasFeatured) {
+      tier = isOn(req.body.publicFeatured) ? 'PREMIUM' : (tier === 'VIP' ? 'VIP' : 'STANDARD');
+    }
+    marketplaceResult = await applyMarketplaceOffer(id, {
+      tier,
+      publish: hasPublish ? isOn(req.body.publicPortalEnabled) : undefined,
+      enableModule: saveModules ? isOn(req.body[`mod_${MARKETPLACE_MODULE}`]) : undefined,
+    });
+  }
+
+  await logAudit({
+    action: 'school_admin_update',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    details: {
+      educationCycle: data.educationCycle || school.educationCycle,
+      marketplaceTier: marketplaceResult?.marketplaceTier || school.marketplaceTier,
+      publicPortalEnabled: hasPublish ? isOn(req.body.publicPortalEnabled) : school.publicPortalEnabled,
+    },
+    ip: req.ip,
+  });
+
+  const payload = {
+    ok: true,
+    educationCycle: data.educationCycle || school.educationCycle,
+    marketplaceTier: marketplaceResult?.marketplaceTier || school.marketplaceTier,
+    publicFeatured: marketplaceResult?.publicFeatured ?? school.publicFeatured,
+    publicPortalEnabled: hasPublish ? isOn(req.body.publicPortalEnabled) : school.publicPortalEnabled,
+  };
+  if (wantsJson(req)) return res.json(payload);
+
+  const redirectTo = safeInternalPath(req.body.redirect, `/admin/schools/${id}`);
+  const sep = redirectTo.includes('?') ? '&' : '?';
+  return res.redirect(`${redirectTo}${sep}success=saved`);
+}
+
+async function usersPage(req, res) {
+  const q = String(req.query.q || req.query.email || '').trim().slice(0, 160);
+  const where = q
+    ? { email: { contains: q, mode: 'insensitive' } }
+    : {};
+  let users = [];
+  try {
+    users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        phone: true,
+        isActive: true,
+        createdAt: true,
+        school: { select: { id: true, name: true } },
+        teacher: { select: { school: { select: { id: true, name: true } } } },
+        organizationAdmin: { select: { organization: { select: { id: true, name: true } } } },
+      },
+      orderBy: { email: 'asc' },
+      take: 100,
+    });
+  } catch {
+    users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        phone: true,
+        createdAt: true,
+        school: { select: { id: true, name: true } },
+        teacher: { select: { school: { select: { id: true, name: true } } } },
+        organizationAdmin: { select: { organization: { select: { id: true, name: true } } } },
+      },
+      orderBy: { email: 'asc' },
+      take: 100,
+    });
+    users = users.map((u) => ({ ...u, isActive: true }));
+  }
+
+  res.render('admin/users', {
+    user: req.user,
+    users: users.map((u) => ({ ...u, schoolLabel: userSchoolLabel(u) })),
+    q,
+    roleLabels: USER_ROLE_LABELS,
+    success: req.query.success || null,
+    error: req.query.error || null,
+    tempPassword: null,
+    resetEmail: null,
+  });
+}
+
+async function resetUserPassword(req, res) {
+  const { id } = req.params;
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, role: true, firstName: true, lastName: true },
+  });
+  if (!target) return res.redirect('/admin/users?error=user');
+
+  const tempPassword = generateAdminTempPassword();
+  const hashed = await hashPassword(tempPassword);
+  await prisma.user.update({ where: { id }, data: { password: hashed } });
+  try {
+    await revokeUserRefreshTokens(id);
+  } catch {
+    /* refresh table may be empty in tests */
+  }
+  await logAudit({
+    action: 'user_password_reset',
+    entity: 'User',
+    entityId: id,
+    user: req.user,
+    details: { email: target.email },
+    ip: req.ip,
+    sensitive: true,
+  });
+
+  const q = String(req.body.q || '').trim().slice(0, 160);
+  const where = q ? { email: { contains: q, mode: 'insensitive' } } : {};
+  let users = [];
+  try {
+    users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        phone: true,
+        isActive: true,
+        createdAt: true,
+        school: { select: { id: true, name: true } },
+        teacher: { select: { school: { select: { id: true, name: true } } } },
+        organizationAdmin: { select: { organization: { select: { id: true, name: true } } } },
+      },
+      orderBy: { email: 'asc' },
+      take: 100,
+    });
+  } catch {
+    users = [];
+  }
+
+  res.render('admin/users', {
+    user: req.user,
+    users: users.map((u) => ({ ...u, schoolLabel: userSchoolLabel(u) })),
+    q,
+    roleLabels: USER_ROLE_LABELS,
+    success: 'reset',
+    error: null,
+    tempPassword,
+    resetEmail: target.email,
+  });
+}
+
+async function setUserActive(req, res, active) {
+  const { id } = req.params;
+  if (id === req.user?.id) {
+    return res.redirect('/admin/users?error=self');
+  }
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, role: true },
+  });
+  if (!target) return res.redirect('/admin/users?error=user');
+  if (target.role === 'SUPER_ADMIN') {
+    return res.redirect('/admin/users?error=super');
+  }
+
+  try {
+    await prisma.user.update({ where: { id }, data: { isActive: active } });
+  } catch {
+    return res.redirect('/admin/users?error=field');
+  }
+  if (!active) {
+    try {
+      await revokeUserRefreshTokens(id);
+    } catch {
+      /* ignore */
+    }
+  }
+  await logAudit({
+    action: active ? 'user_activate' : 'user_deactivate',
+    entity: 'User',
+    entityId: id,
+    user: req.user,
+    details: { email: target.email },
+    ip: req.ip,
+    sensitive: true,
+  });
+  return res.redirect(`/admin/users?success=${active ? 'activated' : 'deactivated'}`);
+}
+
+async function deactivateUser(req, res) {
+  return setUserActive(req, res, false);
+}
+
+async function activateUser(req, res) {
+  return setUserActive(req, res, true);
+}
+
+async function quotesPage(req, res) {
+  const status = String(req.query.status || '').trim();
+  const where = status
+    ? { status }
+    : { status: { in: ['pending', 'activation_requested'] } };
+  const quotes = await prisma.quoteRequest.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+  res.render('admin/quotes', {
+    user: req.user,
+    quotes,
+    statusFilter: status,
+    statusLabels: QUOTE_STATUS_LABELS,
+    success: req.query.success || null,
+  });
+}
+
+async function quoteDetail(req, res) {
+  const quote = await prisma.quoteRequest.findUnique({ where: { id: req.params.id } });
+  if (!quote) return res.redirect('/admin/quotes?error=quote');
+  const answers = quote.answers && typeof quote.answers === 'object' ? quote.answers : {};
+  res.render('admin/quote-detail', {
+    user: req.user,
+    quote,
+    answers,
+    summary: quoteSummary(answers),
+    statusLabels: QUOTE_STATUS_LABELS,
+  });
+}
+
+function marketplaceOnEcoles(school) {
+  return Boolean(
+    school.publicPortalEnabled
+    && school.slug
+    && isLiveTier(school.marketplaceTier)
+    && school.moduleMap?.[MARKETPLACE_MODULE]?.enabled,
+  );
+}
+
+async function marketplacePage(req, res) {
+  const schools = await loadSchoolsWithModules();
+  res.render('admin/marketplace', {
+    user: req.user,
+    schools: schools.map((s) => ({ ...s, onEcoles: marketplaceOnEcoles(s) })),
+    marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS.filter((opt) => opt.value !== 'NONE'),
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function publishMarketplace(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  const tier = parseMarketplaceTier(school.marketplaceTier);
+  await applyMarketplaceOffer(id, {
+    tier: tier === 'NONE' ? 'STANDARD' : tier,
+    publish: true,
+    enableModule: true,
+  });
+  await logAudit({
+    action: 'school_marketplace_publish',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=published');
+}
+
+async function unpublishMarketplace(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  await applyMarketplaceOffer(id, {
+    tier: parseMarketplaceTier(school.marketplaceTier),
+    publish: false,
+  });
+  await logAudit({
+    action: 'school_marketplace_unpublish',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=unpublished');
+}
+
+async function setMarketplaceTier(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  const tier = parseMarketplaceTier(req.body.marketplaceTier);
+  await applyMarketplaceOffer(id, {
+    tier,
+    enableModule: tier !== 'NONE',
+  });
+  await logAudit({
+    action: 'school_featured_update',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    details: { marketplaceTier: tier },
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=tier');
+}
+
 async function startSchoolAssist(req, res) {
   const result = await beginSchoolAssist(req, res);
   if (result.status === 403) return res.status(403).send('Forbidden');
@@ -505,4 +966,17 @@ module.exports = {
   exitAssist,
   updateSchoolCycle,
   updateSchoolFeatured,
+  schoolsList,
+  schoolDetail,
+  updateSchool,
+  usersPage,
+  resetUserPassword,
+  deactivateUser,
+  activateUser,
+  quotesPage,
+  quoteDetail,
+  marketplacePage,
+  publishMarketplace,
+  unpublishMarketplace,
+  setMarketplaceTier,
 };

@@ -11,12 +11,32 @@ router.get('/', (_req, res) => res.redirect('/admin/dashboard'));
 router.get('/dashboard', adminController.dashboard);
 router.post('/sms-test', adminController.sendTestSms);
 router.get('/modules', adminController.modulesHub);
+
+router.get('/schools', adminController.schoolsList);
+router.get('/schools/:id', adminController.schoolDetail);
+router.post('/schools/:id', auditMiddleware('school_admin_update', 'School'), adminController.updateSchool);
+router.patch('/schools/:id', auditMiddleware('school_admin_update', 'School'), adminController.updateSchool);
 router.get('/schools/:id/modules', adminController.schoolModules);
 router.post('/schools/:id/modules', auditMiddleware('school_modules_update', 'SchoolModule'), adminController.updateSchoolModules);
 router.post('/schools/:id/modules/enable-all', auditMiddleware('school_modules_enable_all', 'SchoolModule'), adminController.enableAllModules);
 router.post('/schools/:id/cycle', auditMiddleware('school_cycle_update', 'School'), adminController.updateSchoolCycle);
+router.patch('/schools/:id/cycle', auditMiddleware('school_cycle_update', 'School'), adminController.updateSchool);
 router.post('/schools/:id/featured', auditMiddleware('school_featured_update', 'School'), adminController.updateSchoolFeatured);
+router.patch('/schools/:id/featured', auditMiddleware('school_featured_update', 'School'), adminController.updateSchool);
 router.post('/schools/:id/manage', adminController.startSchoolAssist);
+
+router.get('/users', adminController.usersPage);
+router.post('/users/:id/reset-password', auditMiddleware('user_password_reset', 'User'), adminController.resetUserPassword);
+router.post('/users/:id/deactivate', auditMiddleware('user_deactivate', 'User'), adminController.deactivateUser);
+router.post('/users/:id/activate', auditMiddleware('user_activate', 'User'), adminController.activateUser);
+
+router.get('/quotes', adminController.quotesPage);
+router.get('/quotes/:id', adminController.quoteDetail);
+
+router.get('/marketplace', adminController.marketplacePage);
+router.post('/marketplace/:id/publish', auditMiddleware('school_marketplace_publish', 'School'), adminController.publishMarketplace);
+router.post('/marketplace/:id/unpublish', auditMiddleware('school_marketplace_unpublish', 'School'), adminController.unpublishMarketplace);
+router.post('/marketplace/:id/tier', auditMiddleware('school_featured_update', 'School'), adminController.setMarketplaceTier);
 router.post('/modules/matrix', auditMiddleware('school_modules_matrix', 'SchoolModule'), adminController.updateModulesMatrix);
 router.get('/organizations', adminController.organizations);
 router.post('/organizations', adminController.createOrganization);

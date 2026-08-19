@@ -1,0 +1,84 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('marketplace', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Marketplace — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Marketplace</h1>
+    <p class="page-sub">Écoles visibles sur /ecoles — publier, retirer, palier VIP / Premium / Standard.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/ecoles" class="btn btn-outline" target="_blank" rel="noopener">Ouvrir /ecoles</a>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'marketplace' }) %>
+
+<% if (success === 'published') { %><div class="alert alert-success">École publiée sur /ecoles.</div><% } %>
+<% if (success === 'unpublished') { %><div class="alert alert-success">École retirée de /ecoles.</div><% } %>
+<% if (success === 'tier') { %><div class="alert alert-success">Offre marketplace mise à jour.</div><% } %>
+<% if (typeof error !== 'undefined' && error === 'school') { %><div class="alert alert-error">École introuvable.</div><% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Listing /ecoles</h2>
+    <p class="page-sub">Une école apparaît si le module marketplace est actif, le palier n’est pas « Aucun », un slug existe et la vitrine est publiée.</p>
+  </div>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Slug</th>
+          <th>Sur /ecoles</th>
+          <th>Palier</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% schools.forEach(function(s) { %>
+          <tr>
+            <td>
+              <a href="/admin/schools/<%= s.id %>"><strong><%= s.name %></strong></a>
+              <br><small><%= s.city || '' %></small>
+            </td>
+            <td>
+              <% if (s.slug) { %>
+                <a href="/e/<%= s.slug %>" target="_blank" rel="noopener">/e/<%= s.slug %></a>
+              <% } else { %>—<% } %>
+            </td>
+            <td>
+              <% if (s.onEcoles) { %>
+                <span class="badge badge-success">Oui<%= s.publicFeatured ? ' · mise en avant' : '' %></span>
+              <% } else { %>
+                <span class="badge">Non</span>
+              <% } %>
+            </td>
+            <td>
+              <form method="POST" action="/admin/marketplace/<%= s.id %>/tier" class="form-inline">
+                <select name="marketplaceTier" aria-label="Palier <%= s.name %>" onchange="this.form.submit()">
+                  <option value="NONE" <%= (s.marketplaceTier || 'NONE') === 'NONE' ? 'selected' : '' %>>Aucun</option>
+                  <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= (s.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
+              </form>
+            </td>
+            <td class="assist-actions">
+              <% if (s.onEcoles) { %>
+                <form method="POST" action="/admin/marketplace/<%= s.id %>/unpublish">
+                  <button type="submit" class="btn btn-sm btn-outline">Dépublier</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/admin/marketplace/<%= s.id %>/publish">
+                  <button type="submit" class="btn btn-sm btn-primary">Publier</button>
+                </form>
+              <% } %>
+              <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>

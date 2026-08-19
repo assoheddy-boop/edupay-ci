@@ -181,6 +181,38 @@ a.admin-hub-card {
 
 .admin-hub-grid { padding: 0 1.5rem 1.5rem; }
 
+.admin-hub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+}
+.admin-hub-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: var(--gray-bg, #f3f4f6);
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.admin-hub-nav a:hover,
+.admin-hub-nav a.is-active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.module-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.4rem 1rem;
+  padding: 0.5rem 0 1rem;
+}
+.temp-password-box {
+  font-size: 1.05rem;
+  word-break: break-all;
+}
+
 /* Modules */
 .modules { padding: 2rem 0 4rem; }
 .modules h2 { text-align: center; color: var(--blue); margin-bottom: 2rem; }

@@ -10,6 +10,7 @@
     <p class="page-sub"><%= tx('modules.subtitle') %></p>
   </div>
 </div>
+<%- include('../partials/_adminHubNav', { currentPath: 'modules' }) %>
 
 <% if (success === '1') { %>
   <div class="alert alert-success"><%= tx('modules.updated') %> <%= selected ? selected.name : '' %>.</div>

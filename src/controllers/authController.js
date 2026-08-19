@@ -25,7 +25,7 @@ async function showLogin(req, res) {
     try {
       const decoded = verifyToken(req.cookies.token);
       const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-      if (user) return res.redirect(dashboardRedirect(user.role));
+      if (user && user.isActive !== false) return res.redirect(dashboardRedirect(user.role));
     } catch {
       /* access token expired or invalid — try refresh below */
     }
@@ -50,7 +50,7 @@ async function login(req, res) {
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await comparePassword(password, user.password))) {
+    if (!user || user.isActive === false || !(await comparePassword(password, user.password))) {
       return res.render('auth/login', { error: 'Email ou mot de passe incorrect', role: req.body.role || 'parent' });
     }
 

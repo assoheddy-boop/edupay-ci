@@ -1,0 +1,64 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('quotes', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Devis — Super Admin' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Devis</h1>
+    <p class="page-sub">Demandes Pro (pending / activation_requested).</p>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'quotes' }) %>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Filtres</h2>
+  </div>
+  <p>
+    <a href="/admin/quotes" class="btn btn-sm <%= !statusFilter ? 'btn-primary' : 'btn-outline' %>">Ouverts</a>
+    <a href="/admin/quotes?status=pending" class="btn btn-sm <%= statusFilter === 'pending' ? 'btn-primary' : 'btn-outline' %>">En attente</a>
+    <a href="/admin/quotes?status=activation_requested" class="btn btn-sm <%= statusFilter === 'activation_requested' ? 'btn-primary' : 'btn-outline' %>">Activation demandée</a>
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Liste</h2>
+  </div>
+  <% if (!quotes.length) { %>
+    <p class="empty">Aucun devis pour ce filtre.</p>
+  <% } else { %>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>École</th>
+          <th>Ville</th>
+          <th>Statut</th>
+          <th>Montant</th>
+          <th>Contact</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% quotes.forEach(function(q) { %>
+          <tr>
+            <td><strong><%= q.schoolName %></strong></td>
+            <td><%= q.city %></td>
+            <td><%= (statusLabels && statusLabels[q.status]) ? statusLabels[q.status] : q.status %></td>
+            <td><%= typeof formatMoney === 'function' ? formatMoney(q.amount) : (q.amount + ' FCFA') %></td>
+            <td>
+              <%= q.contactName || '—' %><br>
+              <small><%= q.contactEmail || q.contactPhone || '' %></small>
+            </td>
+            <td><%= q.createdAt ? new Date(q.createdAt).toLocaleDateString('fr-FR') : '—' %></td>
+            <td><a href="/admin/quotes/<%= q.id %>" class="btn btn-sm btn-outline">Ouvrir</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+<% } %>
