@@ -106,6 +106,7 @@
             <p style="margin-top:0.5rem">
               <a href="/school/classes/<%= c.id %>/dashboard" class="btn btn-outline btn-sm">Stats filles/garçons</a>
               <a href="/school/emargements?classId=<%= c.id %>" class="btn btn-outline btn-sm">Émargement</a>
+              <a href="/school/convocations?classId=<%= c.id %>" class="btn btn-outline btn-sm">Convocations</a>
             </p>
 
             <% if (c._count.students === 0) { %>

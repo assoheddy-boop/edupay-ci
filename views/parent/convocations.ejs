@@ -1,0 +1,41 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('convocations', { _inLayout: true }); %>
+<%- include('../layouts/parentLayout', { body: content, title: 'Convocations' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Convocations</h1>
+  <p class="page-sub">Examens blancs et nationaux de vos enfants — à consulter ou télécharger</p>
+</div>
+
+<% if (error) { %><div class="alert alert-error">Impossible d’afficher cette convocation.</div><% } %>
+
+<% if (!groups || !groups.length) { %>
+  <p class="empty-state">Liez un enfant depuis l’accueil pour voir ses convocations.</p>
+<% } else { %>
+  <% groups.forEach(function(g) { const s = g.student; %>
+    <div class="child-card">
+      <div class="child-header">
+        <h2><%= s.firstName %> <%= s.lastName %></h2>
+        <span class="badge"><%= s.class ? s.class.name : '' %><% if (s.class && s.class.school) { %> — <%= s.class.school.name %><% } %></span>
+        <p class="form-hint">Mat. école <%= s.matricule || '—' %> · Mat. national <%= s.nationalMatricule || '—' %></p>
+      </div>
+      <% if (!g.sessions || !g.sessions.length) { %>
+        <p class="empty-sm">Aucune convocation générée pour le moment.</p>
+      <% } else { %>
+        <% g.sessions.forEach(function(sess) { %>
+          <p>
+            <strong><%= sess.examTypeLabel %></strong>
+            — <%= sess.subject %>
+            — <%= sess.dateLabel %><% if (sess.timeLabel) { %> · <%= sess.timeLabel %><% } %>
+            <% if (sess.room) { %> · Salle <%= sess.room %><% } %>
+          </p>
+          <p>
+            <a class="btn btn-outline btn-sm" href="/parent/convocations/<%= sess.id %>/imprimer?studentId=<%= s.id %>">Voir</a>
+            <a class="btn btn-primary btn-sm" href="/parent/convocations/<%= sess.id %>/pdf?studentId=<%= s.id %>">Télécharger</a>
+          </p>
+        <% }) %>
+      <% } %>
+    </div>
+  <% }) %>
+<% } %>
+<% } %>

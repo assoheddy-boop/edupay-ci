@@ -254,6 +254,7 @@
         firstName: raw.firstName,
         lastName: raw.lastName,
         matricule: raw.matricule,
+        nationalMatricule: raw.nationalMatricule,
         classId: raw.classId,
         birthDate: raw.birthDate,
         gender: raw.gender,

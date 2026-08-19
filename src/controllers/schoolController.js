@@ -42,6 +42,12 @@ const { parseGender } = require('../../services/ClassService');
 const { parseSeries } = require('../services/series');
 const { applyClass, applyStudent, applyTeacher } = require('../services/offlineActions');
 const {
+  normalizeNationalMatricule,
+  uniqueStudentError,
+  assertNationalMatriculeAvailable,
+} = require('../utils/nationalMatricule');
+const { importStudentsFromFile } = require('../services/studentImport');
+const {
   getSchoolGenderStats,
   getAbsenceStatsByGender,
   getSuccessRateByGender,
@@ -405,7 +411,31 @@ async function listStudents(req, res) {
   });
 }
 
-async function downloadStudentImportTemplate(_req, res) {
+function schoolOr403(req, res) {
+  const school = req.user?.school;
+  if (!school?.id) {
+    res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+    return null;
+  }
+  const requested = String(req.body?.schoolId || req.query?.schoolId || '').trim();
+  if (requested && requested !== school.id) {
+    res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+    return null;
+  }
+  return school;
+}
+
+async function downloadStudentImportTemplate(req, res) {
+  const school = schoolOr403(req, res);
+  if (!school) return;
+
+  const format = String(req.query.format || '').toLowerCase();
+  if (format === 'xlsx' || format === 'excel') {
+    const { buildExcelTemplate } = require('../utils/csvStudents');
+    const wb = await buildExcelTemplate();
+    return sendExcel(res, 'modele-import-eleves.xlsx', wb);
+  }
+
   const { CSV_TEMPLATE } = require('../utils/csvStudents');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="modele-import-eleves.csv"');
@@ -413,66 +443,54 @@ async function downloadStudentImportTemplate(_req, res) {
 }
 
 async function importStudents(req, res) {
-  const schoolId = req.user.school.id;
-  const classes = await prisma.class.findMany({ where: { schoolId } });
+  const school = schoolOr403(req, res);
+  if (!school) return;
 
-  const render = (importResult, error = null) => prisma.student.findMany({
-    where: { schoolId },
-    include: { class: true, parents: { include: { parent: { include: { user: true } } } } },
-    orderBy: { lastName: 'asc' },
-  }).then((students) => res.render('school/students', {
+  const result = await importStudentsFromFile({
+    schoolId: school.id,
+    file: req.file,
     user: req.user,
-    school: req.user.school,
+    ip: req.ip,
+  });
+
+  if (result.status === 403) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const [classes, students] = await Promise.all([
+    prisma.class.findMany({ where: { schoolId: school.id } }),
+    prisma.student.findMany({
+      where: { schoolId: school.id },
+      include: { class: true, parents: { include: { parent: { include: { user: true } } } } },
+      orderBy: { lastName: 'asc' },
+    }),
+  ]);
+
+  const locals = {
+    user: req.user,
+    school,
     students,
     classes,
-    error,
-    importResult,
-  }));
+    success: null,
+  };
 
-  if (!req.file?.buffer) return render(null, 'Fichier CSV requis');
-
-  try {
-    const text = req.file.buffer.toString('utf-8');
-    const { parseCsv, prepareStudentRows } = require('../utils/csvStudents');
-    const { rows } = parseCsv(text);
-    if (!rows.length) return render(null, 'Le fichier CSV est vide');
-
-    const existing = await prisma.student.findMany({
-      where: { schoolId, matricule: { not: null } },
-      select: { matricule: true },
+  if (!result.ok) {
+    return res.status(result.status || 400).render('school/students', {
+      ...locals,
+      error: result.message || 'Erreur lors de l\'import',
+      importResult: null,
     });
-    const existingMatricules = new Set(existing.map((s) => s.matricule.toLowerCase()));
-    const { valid, errors } = prepareStudentRows(rows, classes, existingMatricules);
-
-    if (valid.length) {
-      await prisma.$transaction(
-        valid.map((row) => prisma.student.create({
-          data: {
-            firstName: row.firstName,
-            lastName: row.lastName,
-            matricule: row.matricule,
-            classId: row.classId,
-            schoolId,
-            birthDate: row.birthDate,
-            gender: parseGender(row.gender),
-          },
-        })),
-      );
-      await logAudit({
-        action: 'students_import_csv',
-        entity: 'Student',
-        entityId: schoolId,
-        user: req.user,
-        ip: req.ip,
-        details: { count: valid.length },
-      });
-    }
-
-    return render({ imported: valid.length, skipped: errors.length, errors });
-  } catch (err) {
-    console.error(err);
-    return render(null, 'Erreur lors de l\'import CSV');
   }
+
+  return res.render('school/students', {
+    ...locals,
+    error: null,
+    importResult: {
+      imported: result.imported,
+      skipped: result.skipped,
+      errors: result.errors,
+    },
+  });
 }
 
 async function createStudent(req, res) {
@@ -481,12 +499,14 @@ async function createStudent(req, res) {
     if (!result.ok) {
       if (result.error === 'class') return res.redirect('/school/students?error=class');
       if (result.error === 'matricule') return res.redirect('/school/students?error=matricule');
+      if (result.error === 'nationalMatricule') return res.redirect('/school/students?error=nationalMatricule');
       return res.redirect('/school/students?error=1');
     }
     res.redirect('/school/students?success=1');
   } catch (err) {
     console.error(err);
-    if (err.code === 'P2002') return res.redirect('/school/students?error=matricule');
+    const uniqueErr = uniqueStudentError(err);
+    if (uniqueErr) return res.redirect(`/school/students?error=${uniqueErr}`);
     res.redirect('/school/students?error=1');
   }
 }
@@ -499,10 +519,20 @@ async function updateStudent(req, res) {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
     if (!cls) return res.redirect('/school/students?error=class');
 
+    const nationalMatricule = normalizeNationalMatricule(req.body.nationalMatricule);
+    const uniqueNat = await assertNationalMatriculeAvailable({
+      prisma,
+      schoolId,
+      nationalMatricule,
+      excludeId: id,
+    });
+    if (!uniqueNat.ok) return res.redirect('/school/students?error=nationalMatricule');
+
     const data = {
       firstName,
       lastName,
       matricule: matricule || null,
+      nationalMatricule,
       classId,
       birthDate: birthDate ? new Date(birthDate) : null,
       gender: parseGender(gender),
@@ -526,6 +556,8 @@ async function updateStudent(req, res) {
     res.redirect('/school/students?success=updated');
   } catch (err) {
     console.error(err);
+    const uniqueErr = uniqueStudentError(err);
+    if (uniqueErr) return res.redirect(`/school/students?error=${uniqueErr}`);
     res.redirect('/school/students?error=update');
   }
 }

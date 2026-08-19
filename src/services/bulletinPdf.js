@@ -162,7 +162,8 @@ function generateBulletinPdf({
     doc.text(`Classe : ${student.class?.name || '—'}`);
     const serieTxt = seriesLabel(series || student.series || student.class?.series);
     if (serieTxt) doc.text(`Série : ${serieTxt}`);
-    doc.text(`Matricule : ${student.matricule || '—'}`);
+    doc.text(`Matricule école : ${student.matricule || '—'}`);
+    doc.text(`Matricule national : ${student.nationalMatricule || '—'}`);
     doc.text(`Période : ${periodLabel}`);
     doc.moveDown();
 
@@ -218,7 +219,7 @@ function generateBulletinPdf({
 
     doc.moveDown(2);
     doc.fontSize(9).fillColor('#999').text(
-      `Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${school.name}`,
+      `Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${school.name} — EduConnect`,
       { align: 'center' },
     );
 

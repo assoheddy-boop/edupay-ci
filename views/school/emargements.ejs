@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Listes d’émargement</h1>
-    <p class="page-sub">Feuille de présence imprimable — appel du jour ou composition</p>
+    <p class="page-sub">Feuille de présence imprimable — appel, composition, examen blanc ou national</p>
   </div>
   <% if (classId) { %>
     <div class="page-header-actions">
@@ -78,8 +78,8 @@
     <button type="submit" class="btn btn-primary">Afficher</button>
   </form>
   <p class="form-hint">
-    Imprimez la feuille pour le jour de composition : les élèves émargent, le surveillant coche Présent / Absent.
-    Pour un appel quotidien, choisissez « Appel du jour ».
+    Imprimez la feuille pour le jour de composition ou d’examen : les élèves émargent, le surveillant coche Présent / Absent.
+    Choisissez « Examen blanc » ou « Examen national » pour le distinguer clairement. Pour un appel quotidien, choisissez « Appel du jour ».
   </p>
 </div>
 
@@ -104,7 +104,8 @@
             <th>N°</th>
             <th>Nom</th>
             <th>Prénom</th>
-            <th>Matricule</th>
+            <th>Mat. école</th>
+            <th>Mat. national</th>
             <th>G/F</th>
             <th>Présence</th>
             <th>Signature</th>
@@ -118,6 +119,7 @@
               <td><%= r.lastName %></td>
               <td><%= r.firstName %></td>
               <td><%= r.matricule || '—' %></td>
+              <td><%= r.nationalMatricule || '—' %></td>
               <td><%= r.genderCell %></td>
               <td class="emargement-check">☐ P &nbsp; ☐ A</td>
               <td class="emargement-sig"></td>

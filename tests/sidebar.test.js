@@ -27,7 +27,19 @@ describe('sidebar missing links (Vague 3)', () => {
     expect(sidebar).toMatch(/on\('absences'\)[\s\S]*\/parent\/justificatifs/);
   });
 
-  test('school nav includes justificatifs when absences module is on', () => {
-    expect(sidebar).toMatch(/on\('absences'\)[\s\S]*\/school\/justificatifs/);
+  test('school nav includes convocations next to émargement', () => {
+    expect(sidebar).toMatch(/\/school\/emargements[\s\S]*\/school\/convocations/);
+  });
+
+  test('parent nav includes convocations', () => {
+    expect(sidebar).toMatch(/\/parent\/convocations/);
+  });
+
+  test('school nav includes palmarès next to délibérations', () => {
+    expect(sidebar).toMatch(/\/school\/deliberations[\s\S]*\/school\/palmares/);
+  });
+
+  test('teacher nav includes palmarès next to conseil de classe', () => {
+    expect(sidebar).toMatch(/\/teacher\/deliberations[\s\S]*\/teacher\/palmares/);
   });
 });

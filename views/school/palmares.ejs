@@ -1,0 +1,90 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('palmares', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Palmarès' }) %>
+<% } else { %>
+<% const action = typeof basePath !== 'undefined' ? basePath : '/school/palmares'; %>
+<% const printHref = (typeof printPath !== 'undefined' ? printPath : '/school/palmares/imprimer') + (qs ? '?' + qs : ''); %>
+<% const pdfHref = (typeof pdfPath !== 'undefined' ? pdfPath : '/school/palmares.pdf') + (qs ? '?' + qs : ''); %>
+<div class="page-header">
+  <div>
+    <h1>Tableau d’honneur</h1>
+    <p class="page-sub">Palmarès des moyennes pondérées — même formule que le bulletin (coefficients, interrogations, devoirs, composition)</p>
+  </div>
+  <% if (classId) { %>
+    <div class="page-header-actions">
+      <a class="btn btn-outline" href="<%= printHref %>">Imprimer</a>
+      <a class="btn btn-outline" href="<%= pdfHref %>">PDF</a>
+    </div>
+  <% } %>
+</div>
+
+<% if (error === 'pdf') { %><div class="alert alert-error">Impossible de générer le PDF.</div><% } %>
+<% if (error === 'term') { %><div class="alert alert-error">Trimestre invalide (T1, T2, T3 ou annuelle).</div><% } %>
+
+<div class="card" style="margin-bottom:1rem">
+  <form method="GET" action="<%= action %>" class="form form-inline">
+    <div class="form-group">
+      <label for="classId">Classe</label>
+      <select id="classId" name="classId">
+        <% if (!classes.length) { %><option value="">Aucune classe</option><% } %>
+        <% if (classes.length) { %>
+          <option value="all" <%= classId === 'all' ? 'selected' : '' %>>Toutes les classes</option>
+        <% } %>
+        <% classes.forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= classId === c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="term">Trimestre</label>
+      <select id="term" name="term">
+        <% terms.forEach(function(t) { %>
+          <option value="<%= t.value %>" <%= term === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="limit">Classement</label>
+      <select id="limit" name="limit">
+        <% limitOptions.forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= String(limit) === String(opt.value) ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% if (hasGender) { %>
+    <div class="form-group">
+      <label for="byGender">
+        <input type="checkbox" id="byGender" name="byGender" value="1" <%= byGender ? 'checked' : '' %>>
+        Distinguer filles / garçons
+      </label>
+    </div>
+    <% } %>
+    <button type="submit" class="btn btn-primary">Afficher</button>
+  </form>
+  <p class="form-hint">
+    Rang selon la moyenne pondérée /20. Mention : délibération enregistrée, sinon suggestion
+    (&lt;10 aucune · 10–12 Passable · 12–14 Assez bien · 14–16 Bien · 16–18 Très bien · ≥18 Excellent).
+    Annuelle = moyenne des trimestres renseignés.
+  </p>
+</div>
+
+<% if (!classes.length) { %>
+  <p class="empty"><%= action.indexOf('/teacher/') === 0 ? 'Aucune classe affectée.' : 'Créez d’abord une classe.' %></p>
+<% } else if (!groups.length) { %>
+  <p class="empty">Aucune classe à afficher.</p>
+<% } else { %>
+  <% groups.forEach(function(group) { %>
+    <% if (allClasses || groups.length > 1) { %>
+      <h2 class="section-title" style="margin:1rem 0 0.5rem"><%= group.class.name %></h2>
+    <% } %>
+    <% if (byGender) { %>
+      <h3 style="margin:0.75rem 0 0.35rem">Filles</h3>
+      <%- include('../partials/_palmares-table', { rows: group.girls, hasSeries: hasSeries || group.hasSeries, empty: 'Aucune fille avec des notes sur cette période.' }) %>
+      <h3 style="margin:0.75rem 0 0.35rem">Garçons</h3>
+      <%- include('../partials/_palmares-table', { rows: group.boys, hasSeries: hasSeries || group.hasSeries, empty: 'Aucun garçon avec des notes sur cette période.' }) %>
+    <% } else { %>
+      <%- include('../partials/_palmares-table', { rows: group.rows, hasSeries: hasSeries || group.hasSeries, empty: 'Aucun élève avec des notes sur cette période.' }) %>
+    <% } %>
+  <% }) %>
+<% } %>
+<% } %>

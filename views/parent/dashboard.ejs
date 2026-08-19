@@ -145,6 +145,7 @@
             <div>
               <h2><%= s.firstName %> <%= s.lastName %></h2>
               <span class="badge"><%= s.class.name %> — <%= s.class.school.name %></span>
+              <p class="form-hint">Mat. école <%= s.matricule || '—' %> · Mat. national <%= s.nationalMatricule || '—' %></p>
             </div>
           </div>
         </div>
@@ -194,6 +195,7 @@
         </div>
 
         <a href="/parent/justificatifs" class="btn btn-outline btn-lg">Justificatifs</a>
+        <a href="/parent/convocations" class="btn btn-outline btn-lg">Convocations</a>
 
         <a href="/parent/suivi" class="btn btn-outline btn-lg">Suivi complet</a>
 

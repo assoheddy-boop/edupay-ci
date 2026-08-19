@@ -11,7 +11,7 @@
         <p class="empty">Aucun élève.</p>
       <% } else { %>
         <table class="table">
-          <thead><tr><th>Nom</th><th>Matricule</th></tr></thead>
+          <thead><tr><th>Nom</th><th>Mat. école</th><th>Mat. national</th></tr></thead>
           <tbody>
             <% link.class.students.forEach(s => { %>
               <tr>
@@ -20,6 +20,7 @@
                   <%= s.firstName %> <%= s.lastName %>
                 </td>
                 <td><code><%= s.matricule || '—' %></code></td>
+                <td><code><%= s.nationalMatricule || '—' %></code></td>
               </tr>
             <% }) %>
           </tbody>

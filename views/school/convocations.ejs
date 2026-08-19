@@ -1,0 +1,109 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('convocations', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Convocations' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Convocations d’examen</h1>
+    <p class="page-sub">Examen blanc ou examen national — une feuille par élève, avec les deux matricules</p>
+  </div>
+</div>
+
+<% if (error === 'class') { %><div class="alert alert-error">Choisissez une classe.</div><% } %>
+<% if (error === 'date') { %><div class="alert alert-error">Date invalide (AAAA-MM-JJ ou JJ/MM/AAAA).</div><% } %>
+<% if (error === 'time') { %><div class="alert alert-error">Heure invalide (HH:MM).</div><% } %>
+<% if (error === 'subject') { %><div class="alert alert-error">Indiquez la matière.</div><% } %>
+<% if (error === 'examType') { %><div class="alert alert-error">Choisissez Examen blanc ou Examen national.</div><% } %>
+<% if (error && error !== 'class' && error !== 'date' && error !== 'time' && error !== 'subject' && error !== 'examType') { %><div class="alert alert-error">Impossible de générer la convocation.</div><% } %>
+
+<div class="card" style="margin-bottom:1rem">
+  <form method="POST" action="/school/convocations" class="form form-inline">
+    <div class="form-group">
+      <label for="classId">Classe</label>
+      <select id="classId" name="classId" required>
+        <% if (!classes.length) { %><option value="">Aucune classe</option><% } %>
+        <% classes.forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= classId === c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" value="<%= date %>" required>
+    </div>
+    <div class="form-group">
+      <label for="startTime">Heure</label>
+      <input type="time" id="startTime" name="startTime" value="<%= startTime %>">
+    </div>
+    <div class="form-group">
+      <label for="examType">Type d’examen</label>
+      <select id="examType" name="examType" required>
+        <% examTypes.forEach(function(t) { %>
+          <option value="<%= t.value %>" <%= examType === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="subject">Matière</label>
+      <input type="text" id="subject" name="subject" list="subjectList" value="<%= subject %>" placeholder="Ex. Mathématiques" required autocomplete="off">
+      <datalist id="subjectList">
+        <% (subjects || []).forEach(function(s) { %>
+          <option value="<%= s.name %>"></option>
+        <% }) %>
+      </datalist>
+    </div>
+    <div class="form-group">
+      <label for="term">Trimestre</label>
+      <select id="term" name="term">
+        <% terms.forEach(function(t) { %>
+          <option value="<%= t.value %>" <%= term === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="room">Salle</label>
+      <input type="text" id="room" name="room" value="<%= room %>" placeholder="Ex. Salle 12" autocomplete="off">
+    </div>
+    <button type="submit" class="btn btn-primary">Générer</button>
+  </form>
+  <p class="form-hint">Le type Examen blanc / Examen national figure sur chaque convocation, avec le matricule école et le matricule national.</p>
+</div>
+
+<% if (!classes.length) { %>
+  <p class="empty">Créez d’abord une classe.</p>
+<% } else if (!sessions.length) { %>
+  <p class="empty">Aucune convocation générée pour le moment.</p>
+<% } else { %>
+  <div class="card">
+    <h2>Sessions générées</h2>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Classe</th>
+            <th>Type</th>
+            <th>Matière</th>
+            <th>Salle</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sessions.forEach(function(s) { %>
+            <tr>
+              <td><%= s.dateLabel %><% if (s.timeLabel) { %><br><small><%= s.timeLabel %></small><% } %></td>
+              <td><%= s.class ? s.class.name : '—' %></td>
+              <td><strong><%= s.examTypeLabel %></strong></td>
+              <td><%= s.subject %></td>
+              <td><%= s.room || '—' %></td>
+              <td>
+                <a class="btn btn-outline btn-sm" href="/school/convocations/<%= s.id %>">Ouvrir</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+<% } %>

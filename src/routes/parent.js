@@ -6,6 +6,7 @@ const messageController = require('../controllers/messageController');
 
 const extras = require('../controllers/extrasController');
 const justificationController = require('../controllers/justificationController');
+const convocationController = require('../controllers/convocationController');
 
 const { requireAuth, checkRole } = require('../middleware/auth');
 
@@ -60,6 +61,11 @@ router.get('/suivi', requireModule('absences'), extras.parentSuiviPage);
 router.get('/justificatifs', requireModule('absences'), justificationController.parentPage);
 
 router.post('/justificatifs', requireModule('absences'), hrDocUpload.single('proof'), persistUpload('justificatifs'), justificationController.submit);
+
+router.get('/convocations', convocationController.parentConvocationsPage);
+router.get('/convocations/:id/imprimer', convocationController.parentConvocationPrint);
+router.get('/convocations/:id/pdf', convocationController.parentConvocationPdf);
+router.get('/convocations/:id.pdf', convocationController.parentConvocationPdf);
 
 router.get('/pickup', requireModule('pickup'), extras.parentPickupPage);
 

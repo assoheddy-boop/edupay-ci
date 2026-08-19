@@ -37,6 +37,12 @@ enum GradeKind {
   COMPOSITION
 }
 
+/// Type d’examen (convocations / émargement). Distinct de GradeKind.
+enum ExamType {
+  BLANC
+  NATIONAL
+}
+
 /// Série lycée (A / C / D). Null = collège, pas de filtre.
 enum SchoolSeries {
   A
@@ -240,6 +246,7 @@ model School {
   notificationJobs     NotificationJob[]
   deliberations        Deliberation[]
   socialCases          SocialCase[]
+  examSessions         ExamSession[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -275,13 +282,17 @@ model Class {
   incomingTransfers TransferRequest[]
   yearRecords StudentYearRecord[]
   timetables    Timetable[]
+  examSessions  ExamSession[]
 }
 
 model Student {
   id         String    @id @default(cuid())
   firstName  String
   lastName   String
+  /// Matricule interne de l’établissement (liaison parent, IGEST IG-DEMO-*).
   matricule  String?
+  /// Matricule national MEN (collèges-lycées CI). Unique par école lorsqu’il est renseigné.
+  nationalMatricule String?
   birthDate  DateTime?
   gender     String?
   /// Override série si la classe est mixte. Sinon héritage Class.series.
@@ -318,6 +329,7 @@ model Student {
   socialCases          SocialCase[]
 
   @@unique([schoolId, matricule])
+  @@unique([schoolId, nationalMatricule])
 }
 
 model StudentYearRecord {
@@ -532,6 +544,27 @@ model Bulletin {
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+/// Session d’examen (blanc ou national) pour convocations imprimables.
+model ExamSession {
+  id        String   @id @default(cuid())
+  subject   String
+  examType  ExamType
+  date      DateTime @db.Date
+  startTime String?
+  room      String?
+  term      String?
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classId  String
+  class    Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, classId, date])
+  @@index([schoolId, createdAt])
 }
 
 /// Conseil de classe (direction) : mention + décision par élève / trimestre.

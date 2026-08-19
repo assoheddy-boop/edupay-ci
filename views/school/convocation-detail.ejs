@@ -1,0 +1,61 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('convocation-detail', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: session.title || 'Convocation' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1><%= session.title %></h1>
+    <p class="page-sub">
+      <%= klass ? klass.name : '' %>
+      · <%= session.examTypeLabel %>
+      · <%= session.dateLabel %>
+      <% if (session.timeLabel) { %> · <%= session.timeLabel %><% } %>
+      <% if (session.subject) { %> · <%= session.subject %><% } %>
+      <% if (session.room) { %> · Salle <%= session.room %><% } %>
+    </p>
+  </div>
+  <div class="page-header-actions">
+    <a class="btn btn-outline" href="/school/convocations">Retour</a>
+    <a class="btn btn-outline" href="/school/convocations/<%= session.id %>/imprimer">Imprimer la classe</a>
+    <a class="btn btn-primary" href="/school/convocations/<%= session.id %>/pdf">PDF classe</a>
+  </div>
+</div>
+
+<% if (success) { %><div class="alert alert-success">Convocation générée. Imprimez un élève ou toute la classe.</div><% } %>
+
+<% if (!rows.length) { %>
+  <p class="empty">Aucun élève dans cette classe.</p>
+<% } else { %>
+  <div class="card">
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Mat. école</th>
+            <th>Mat. national</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+            <tr>
+              <td><%= r.n %></td>
+              <td><%= r.lastName %></td>
+              <td><%= r.firstName %></td>
+              <td><%= r.matricule || '—' %></td>
+              <td><%= r.nationalMatricule || '—' %></td>
+              <td>
+                <a class="btn btn-outline btn-sm" href="/school/convocations/<%= session.id %>/imprimer?studentId=<%= r.studentId %>">Imprimer</a>
+                <a class="btn btn-outline btn-sm" href="/school/convocations/<%= session.id %>/pdf?studentId=<%= r.studentId %>">PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+<% } %>

@@ -1337,6 +1337,8 @@ code {
 .edit-row summary { cursor: pointer; font-weight: 600; }
 
 .form-hint { font-size: 0.85rem; color: var(--gray-light); margin: 0.25rem 0 0.75rem; }
+.import-errors { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+.student-import-form { gap: 0.75rem; }
 .logo-upload-group { margin-bottom: 1.5rem; }
 .logo-preview {
   margin: 0.75rem 0;
@@ -2149,6 +2151,15 @@ body.sidebar-open {
   .page-header .btn,
   .page-header-actions .btn,
   .export-links .btn {
+    min-height: 44px;
+  }
+  .student-import-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .student-import-form input[type="file"],
+  .student-import-form .btn {
+    width: 100%;
     min-height: 44px;
   }
 

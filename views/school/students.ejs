@@ -6,13 +6,20 @@
 
     <h1>Élèves</h1>
 
-    <a href="/school/students/import/template" class="btn btn-outline btn-sm">Télécharger modèle CSV</a>
+    <div class="page-header-actions">
+      <a href="/school/students/import/template" class="btn btn-outline btn-sm">Modèle CSV</a>
+      <a href="/school/students/import/template?format=xlsx" class="btn btn-outline btn-sm">Modèle Excel</a>
+    </div>
 
   </div>
 
 
 
-  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <% if (error) { %>
+    <div class="alert alert-error">
+      <% if (error === 'matricule') { %>Ce matricule école est déjà utilisé.<% } else if (error === 'nationalMatricule') { %>Ce matricule national est déjà utilisé dans cette école.<% } else if (error === 'class') { %>Classe invalide.<% } else if (error === '1' || error === 'update' || error === 'delete') { %>Impossible d’enregistrer l’élève.<% } else { %><%= error %><% } %>
+    </div>
+  <% } %>
 
   <% if (success) { %><div class="alert alert-success">Opération réussie.</div><% } %>
 
@@ -24,6 +31,14 @@
 
       Import : <%= importResult.imported %> ajouté(s), <%= importResult.skipped %> ignoré(s).
 
+      <% if (importResult.errors && importResult.errors.length) { %>
+        <ul class="import-errors">
+          <% importResult.errors.forEach(function (e) { %>
+            <li>Ligne <%= e.line %> : <%= e.message %></li>
+          <% }) %>
+        </ul>
+      <% } %>
+
     </div>
 
   <% } %>
@@ -32,7 +47,7 @@
 
   <div class="card" style="margin-bottom:1.5rem">
 
-    <h2>Import CSV</h2>
+    <h2>Import CSV / Excel</h2>
 
     <% if (classes.length === 0) { %>
 
@@ -40,9 +55,14 @@
 
     <% } else { %>
 
-      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline" data-offline-skip="1">
+      <p class="form-hint">Colonnes : <code>prenom</code>, <code>nom</code>, <code>matricule</code> (école), <code>matricule_national</code>, <code>classe</code>, <code>date_naissance</code>, <code>genre</code> (M/F). Fichiers <strong>.csv</strong> ou <strong>.xlsx</strong>. Réservé à la direction.</p>
 
-        <input type="file" name="csv" accept=".csv" required>
+      <form method="POST" action="/school/students/import" enctype="multipart/form-data" class="form form-inline student-import-form" data-offline-skip="1">
+
+        <div class="form-group">
+          <label for="student-import-file">Fichier</label>
+          <input id="student-import-file" type="file" name="csv" accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required>
+        </div>
 
         <button type="submit" class="btn btn-primary">Importer</button>
 
@@ -72,7 +92,12 @@
 
         <div class="form-group"><label>Photo</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></div>
 
-        <div class="form-group"><label>Matricule</label><input type="text" name="matricule" placeholder="Pour liaison parent"></div>
+        <div class="form-group"><label>Matricule école</label><input type="text" name="matricule" placeholder="Pour liaison parent"></div>
+        <div class="form-group">
+          <label>Matricule national (MEN)</label>
+          <input type="text" name="nationalMatricule" placeholder="Identifiant national collège / lycée">
+          <p class="form-hint">Numéro national de l’élève (MEN). Distinct du matricule interne de l’école.</p>
+        </div>
 
         <div class="form-group">
 
@@ -134,7 +159,7 @@
 
             <summary>
               <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'sm' }) %>
-              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %><% const stuSeries = s.series || (s.class && s.class.series); if (stuSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(stuSeries) : stuSeries %><% } %> — <code><%= s.matricule || '—' %></code>
+              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %><% const stuSeries = s.series || (s.class && s.class.series); if (stuSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(stuSeries) : stuSeries %><% } %> — <code>École <%= s.matricule || '—' %></code><% if (s.nationalMatricule) { %> · <code>Nat. <%= s.nationalMatricule %></code><% } %>
             </summary>
 
             <form method="POST" action="/school/students/<%= s.id %>/update" class="form" enctype="multipart/form-data" style="margin-top:0.75rem">
@@ -147,7 +172,8 @@
 
               </div>
 
-              <div class="form-group"><label>Matricule</label><input type="text" name="matricule" value="<%= s.matricule || '' %>"></div>
+              <div class="form-group"><label>Matricule école</label><input type="text" name="matricule" value="<%= s.matricule || '' %>"></div>
+              <div class="form-group"><label>Matricule national (MEN)</label><input type="text" name="nationalMatricule" value="<%= s.nationalMatricule || '' %>"></div>
 
               <div class="form-group">
 

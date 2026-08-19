@@ -56,7 +56,13 @@ describe('emargement parsing', () => {
     expect(parseKind('interro')).toBe('INTERRO');
     expect(parseKind('devoir')).toBe('DEVOIR');
     expect(parseKind('')).toBe('COMPOSITION');
+    expect(parseKind('blanc')).toBe('EXAMEN_BLANC');
+    expect(parseKind('examen blanc')).toBe('EXAMEN_BLANC');
+    expect(parseKind('national')).toBe('EXAMEN_NATIONAL');
+    expect(parseKind('examen national')).toBe('EXAMEN_NATIONAL');
     expect(kindLabel('APPEL')).toBe('Appel du jour');
+    expect(kindLabel('EXAMEN_BLANC')).toBe('Examen blanc');
+    expect(kindLabel('EXAMEN_NATIONAL')).toBe('Examen national');
   });
 
   test('parseSheetDate accepts ISO, French, and empty (Abidjan today)', () => {
@@ -81,6 +87,7 @@ describe('emargement parsing', () => {
     expect(rows[0].n).toBe(1);
     expect(rows[2].genderCell).toBe('G');
     expect(rows[0].matricule).toBe('IG-002');
+    expect(rows[0].nationalMatricule).toBe('');
   });
 
   test('parseTerm ignored for appel, default T1 for composition', () => {
@@ -91,6 +98,8 @@ describe('emargement parsing', () => {
 
   test('sheet title, subtitle and query string', () => {
     expect(sheetTitle('COMPOSITION')).toBe('Liste d’émargement — Composition');
+    expect(sheetTitle('EXAMEN_BLANC')).toBe('Liste d’émargement — Examen blanc');
+    expect(sheetTitle('EXAMEN_NATIONAL')).toBe('Liste d’émargement — Examen national');
     const sub = sheetSubtitle({
       klass: { name: '3e A', series: null },
       dateLabel: '12/05/2026',
@@ -151,6 +160,25 @@ describe('getSheet', () => {
     expect(prisma.class.findFirst).toHaveBeenCalledWith({
       where: { id: KLASS.id, schoolId: SCHOOL.id },
     });
+  });
+
+  test('includes national matricule and examen blanc title', async () => {
+    prisma.class.findFirst.mockResolvedValue(KLASS);
+    prisma.student.findMany.mockResolvedValue([
+      { id: 'stu-1', firstName: 'Kofi', lastName: 'Yao', matricule: 'IG-DEMO-001', nationalMatricule: 'MEN-001', gender: 'M', series: null },
+    ]);
+    const sheet = await getSheet({
+      schoolId: SCHOOL.id,
+      classId: KLASS.id,
+      date: '2026-05-12',
+      kind: 'EXAMEN_BLANC',
+      subject: 'Mathématiques',
+    });
+    expect(sheet.ok).toBe(true);
+    expect(sheet.kind).toBe('EXAMEN_BLANC');
+    expect(sheet.title).toContain('Examen blanc');
+    expect(sheet.rows[0].matricule).toBe('IG-DEMO-001');
+    expect(sheet.rows[0].nationalMatricule).toBe('MEN-001');
   });
 });
 

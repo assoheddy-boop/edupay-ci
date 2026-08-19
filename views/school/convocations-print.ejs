@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= session.title %> — EduConnect</title>
+  <link rel="stylesheet" href="/css/main.css?v=9">
+  <style>
+    .cv-page { max-width: 40rem; margin: 1.25rem auto; padding: 0 1rem 2rem; }
+    .cv-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+    .cv-card { border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; page-break-after: always; }
+    .cv-head { text-align: center; margin-bottom: 0.75rem; }
+    .cv-type { font-size: 1.15rem; font-weight: 700; margin: 0.35rem 0; }
+    .cv-meta { color: #555; margin: 0.2rem 0; }
+    .cv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; margin: 1rem 0; }
+    .cv-grid dt { color: #666; font-size: 0.85rem; }
+    .cv-grid dd { margin: 0; font-weight: 600; }
+    .cv-intro { margin: 0.75rem 0 1rem; }
+    .cv-sign { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 0.4rem; min-height: 3.5rem; color: #666; max-width: 14rem; }
+    .cv-brand { text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: #666; }
+    @media (max-width: 640px) {
+      .cv-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .cv-actions, .app-navbar, .app-sidebar { display: none !important; }
+      body { background: #fff; }
+      .cv-page { max-width: none; margin: 0; padding: 0; }
+      .cv-card { border: none; margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+<main class="cv-page">
+  <div class="cv-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer</button>
+    <% const pdfHref = (typeof parentView !== 'undefined' && parentView)
+      ? '/parent/convocations/' + session.id + '/pdf' + (rows.length === 1 && rows[0].studentId ? '?studentId=' + rows[0].studentId : '')
+      : '/school/convocations/' + session.id + '/pdf' + (rows.length === 1 && rows[0].studentId ? '?studentId=' + rows[0].studentId : '');
+    %>
+    <a class="btn btn-outline" href="<%= pdfHref %>">PDF</a>
+    <% if (typeof parentView !== 'undefined' && parentView) { %>
+      <a class="btn btn-outline" href="/parent/convocations">Retour</a>
+    <% } else { %>
+      <a class="btn btn-outline" href="/school/convocations/<%= session.id %>">Retour</a>
+    <% } %>
+  </div>
+  <% rows.forEach(function(r) { %>
+    <article class="cv-card">
+      <header class="cv-head">
+        <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'md' }) %>
+        <h1><%= school.name %></h1>
+        <p class="cv-type"><%= session.examTypeLabel %></p>
+        <p class="page-sub"><%= session.title %></p>
+      </header>
+      <p class="cv-intro">Vous êtes convoqué(e) à l’<%= session.examTypeLabel ? session.examTypeLabel.toLowerCase() : 'examen' %> ci-dessous. Présentez-vous avec cette convocation.</p>
+      <dl class="cv-grid">
+        <div>
+          <dt>Élève</dt>
+          <dd><%= r.lastName %> <%= r.firstName %></dd>
+        </div>
+        <div>
+          <dt>Classe</dt>
+          <dd><%= klass ? klass.name : '—' %></dd>
+        </div>
+        <div>
+          <dt>Matricule école</dt>
+          <dd><%= r.matricule || '—' %></dd>
+        </div>
+        <div>
+          <dt>Matricule national</dt>
+          <dd><%= r.nationalMatricule || '—' %></dd>
+        </div>
+        <div>
+          <dt>Type</dt>
+          <dd><%= session.examTypeLabel %></dd>
+        </div>
+        <div>
+          <dt>Matière</dt>
+          <dd><%= session.subject || '—' %></dd>
+        </div>
+        <div>
+          <dt>Date</dt>
+          <dd><%= session.dateLabel %></dd>
+        </div>
+        <div>
+          <dt>Heure</dt>
+          <dd><%= session.timeLabel || '—' %></dd>
+        </div>
+        <div>
+          <dt>Salle</dt>
+          <dd><%= session.room ? ('Salle ' + session.room) : '—' %></dd>
+        </div>
+        <div>
+          <dt>Trimestre</dt>
+          <dd><%= session.termLabel || '—' %></dd>
+        </div>
+      </dl>
+      <div class="cv-sign">Visa de la direction</div>
+      <p class="cv-brand">EduConnect</p>
+    </article>
+  <% }) %>
+</main>
+</body>
+</html>

@@ -49,7 +49,8 @@
           <th>N°</th>
           <th>Nom</th>
           <th>Prénom</th>
-          <th>Matricule</th>
+            <th>Mat. école</th>
+            <th>Mat. national</th>
           <th>G/F</th>
           <th>Présence</th>
           <th>Signature</th>
@@ -63,6 +64,7 @@
             <td><%= r.lastName %></td>
             <td><%= r.firstName %></td>
             <td><%= r.matricule || '—' %></td>
+            <td><%= r.nationalMatricule || '—' %></td>
             <td><%= r.genderCell %></td>
             <td class="emargement-check">☐ P &nbsp; ☐ A</td>
             <td class="emargement-sig"></td>

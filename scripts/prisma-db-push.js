@@ -134,7 +134,9 @@ function main() {
   let code = 0;
   for (const target of targets) {
     console.log(`prisma db push → ${target.label}`);
-    const status = run('npx', ['prisma', 'db', 'push'], { DATABASE_URL: target.url });
+    const pushArgs = ['prisma', 'db', 'push'];
+    if (process.argv.includes('--accept-data-loss')) pushArgs.push('--accept-data-loss');
+    const status = run('npx', pushArgs, { DATABASE_URL: target.url });
     if (status) code = status;
   }
   process.exit(code);

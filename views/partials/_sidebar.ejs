@@ -50,9 +50,11 @@
       <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
       <a href="/school/analyse">Analyse</a>
       <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+      <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
       <a href="/school/risques">Risques</a>
       <a href="/school/coefficients">Coefficients</a>
       <a href="/school/emargements">Émargement</a>
+      <a href="/school/convocations">Convocations</a>
       <% if (on('absences')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
       <% if (on('homeworks')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
       <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
@@ -82,6 +84,7 @@
       <% if (on('grades')) { %><a href="/parent/grades">Notes</a><% } %>
       <% if (on('absences')) { %><a href="/parent/suivi">Suivi</a>
       <a href="/parent/justificatifs">Justificatifs</a><% } %>
+      <a href="/parent/convocations">Convocations</a>
       <% if (on('pickup')) { %><a href="/parent/pickup">Sortie école</a><% } %>
       <% if (on('transport')) { %><a href="/parent/transport">Transport</a><% } %>
       <% if (on('canteen')) { %><a href="/parent/canteen">Cantine</a><% } %>
@@ -100,6 +103,7 @@
       <% if (on('absences')) { %><a href="/teacher/attendance">Appel</a><% } %>
       <% if (on('grades')) { %><a href="/teacher/bulk-grades">Notes</a><% } %>
       <% if (on('bulletins')) { %><a href="/teacher/deliberations">Conseil de classe</a><% } %>
+      <% if (on('bulletins')) { %><a href="/teacher/palmares">Palmarès</a><% } %>
       <a href="/teacher/risques">Risques</a>
       <% if (on('homeworks')) { %><a href="/teacher/homeworks">Devoirs & contrôles</a><% } %>
       <% if (on('transport')) { %><a href="/teacher/transport">Transport</a><% } %>

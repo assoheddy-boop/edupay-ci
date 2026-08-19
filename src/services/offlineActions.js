@@ -16,6 +16,11 @@ const {
 } = require('./homeworkService');
 const { canonicalPeriod, normalizeTerm } = require('./academicTerms');
 const { upsertSubjectCoefficient, parseCoefficient, normalizeGradeKind } = require('./gradesAverage');
+const {
+  normalizeNationalMatricule,
+  uniqueStudentError,
+  assertNationalMatriculeAvailable,
+} = require('../utils/nationalMatricule');
 
 const MAX_PROOF_SIZE = PROOF_LIMIT || 5 * 1024 * 1024;
 
@@ -376,12 +381,21 @@ async function applyStudent({ user, payload = {}, file = null }) {
   const sizeCheck = assertFileSize(file);
   if (!sizeCheck.ok) return { ...sizeCheck, entity: 'student' };
 
+  const nationalMatricule = normalizeNationalMatricule(payload.nationalMatricule);
+  const uniqueNat = await assertNationalMatriculeAvailable({
+    prisma,
+    schoolId: school.id,
+    nationalMatricule,
+  });
+  if (!uniqueNat.ok) return { ...uniqueNat, entity: 'student' };
+
   try {
     const created = await prisma.student.create({
       data: {
         firstName,
         lastName,
         matricule: payload.matricule || null,
+        nationalMatricule,
         classId,
         schoolId: school.id,
         birthDate: payload.birthDate ? new Date(payload.birthDate) : null,
@@ -400,11 +414,12 @@ async function applyStudent({ user, payload = {}, file = null }) {
       action: 'student_create',
       entity: 'Student',
       user,
-      details: { matricule: payload.matricule },
+      details: { matricule: payload.matricule, nationalMatricule },
     });
     return { ok: true, id: created.id, entity: 'student' };
   } catch (err) {
-    if (err.code === 'P2002') return { ok: false, error: 'matricule', entity: 'student' };
+    const uniqueErr = uniqueStudentError(err);
+    if (uniqueErr) return { ok: false, error: uniqueErr, entity: 'student' };
     throw err;
   }
 }

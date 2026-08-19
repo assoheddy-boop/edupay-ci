@@ -29,10 +29,14 @@ const csvUpload = multer({
   storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ok = /\.csv$/i.test(file.originalname)
-      || file.mimetype === 'text/csv'
-      || file.mimetype === 'application/vnd.ms-excel'
-      || file.mimetype === 'text/plain';
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const mime = String(file.mimetype || '').toLowerCase();
+    const ok = ext === '.csv'
+      || ext === '.xlsx'
+      || mime === 'text/csv'
+      || mime === 'text/plain'
+      || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      || (mime === 'application/vnd.ms-excel' && ext !== '.xls');
     cb(null, ok);
   },
 });

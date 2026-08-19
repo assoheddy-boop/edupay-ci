@@ -1,0 +1,36 @@
+<% const list = typeof rows !== 'undefined' && rows ? rows : []; %>
+<% const showSeries = typeof hasSeries !== 'undefined' && hasSeries; %>
+<% const emptyText = typeof empty !== 'undefined' ? empty : 'Aucun élève.'; %>
+<% const fmt = typeof formatMoyenne === 'function' ? formatMoyenne : function (n) { return n == null ? '—' : Number(n).toFixed(2); }; %>
+<% const rankFn = typeof ordinalFr === 'function' ? ordinalFr : function (n) { return n === 1 ? '1er' : (n ? n + 'e' : '—'); }; %>
+<% const serieFn = typeof seriesLabel === 'function' ? seriesLabel : function (s) { return s || '—'; }; %>
+<div class="table-scroll">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Rang</th>
+        <th>Nom</th>
+        <th>Classe</th>
+        <% if (showSeries) { %><th>Série</th><% } %>
+        <th>Moyenne /20</th>
+        <th>Mention</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!list.length) { %>
+        <tr><td colspan="<%= showSeries ? 6 : 5 %>"><%= emptyText %></td></tr>
+      <% } else { %>
+        <% list.forEach(function(r) { %>
+          <tr>
+            <td><%= rankFn(r.rank) %></td>
+            <td><%= r.lastName %> <%= r.firstName %></td>
+            <td><%= r.className || '—' %></td>
+            <% if (showSeries) { %><td><%= serieFn(r.series) || '—' %></td><% } %>
+            <td><strong><%= fmt(r.average) %></strong></td>
+            <td><%= r.mention || '—' %></td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>

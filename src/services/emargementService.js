@@ -10,6 +10,8 @@ const SHEET_KINDS = [
   { value: 'COMPOSITION', label: 'Composition' },
   { value: 'DEVOIR', label: 'Devoir' },
   { value: 'INTERRO', label: 'Interrogation' },
+  { value: 'EXAMEN_BLANC', label: 'Examen blanc' },
+  { value: 'EXAMEN_NATIONAL', label: 'Examen national' },
   { value: 'APPEL', label: 'Appel du jour' },
 ];
 
@@ -17,6 +19,8 @@ const KIND_LABELS = {
   COMPOSITION: 'Composition',
   DEVOIR: 'Devoir',
   INTERRO: 'Interrogation',
+  EXAMEN_BLANC: 'Examen blanc',
+  EXAMEN_NATIONAL: 'Examen national',
   APPEL: 'Appel du jour',
 };
 
@@ -46,6 +50,8 @@ function parseKind(raw) {
   }
   if (f.includes('interro')) return 'INTERRO';
   if (f === 'devoir' || f === 'devoirs' || f.includes('controle')) return 'DEVOIR';
+  if (f.includes('blanc') || f === 'examen blanc') return 'EXAMEN_BLANC';
+  if (f.includes('national') || f === 'examen national') return 'EXAMEN_NATIONAL';
   if (f.includes('compo') || f === 'examen' || f.includes('examen')) return 'COMPOSITION';
   return 'COMPOSITION';
 }
@@ -122,6 +128,7 @@ function buildRows(students) {
     lastName: s.lastName || '',
     firstName: s.firstName || '',
     matricule: s.matricule || '',
+    nationalMatricule: s.nationalMatricule || '',
     gender: s.gender || null,
     genderCell: genderCell(s.gender),
   }));
@@ -198,6 +205,7 @@ async function getSheet({
       firstName: true,
       lastName: true,
       matricule: true,
+      nationalMatricule: true,
       gender: true,
       series: true,
     },
@@ -266,14 +274,15 @@ function generateEmargementPdf({ school, sheet }) {
     doc.moveDown(0.5);
 
     const cols = [
-      { key: 'n', label: 'N°', x: 40, w: 28 },
-      { key: 'lastName', label: 'Nom', x: 68, w: 92 },
-      { key: 'firstName', label: 'Prénom', x: 160, w: 80 },
-      { key: 'matricule', label: 'Matricule', x: 240, w: 72 },
-      { key: 'genderCell', label: 'G/F', x: 312, w: 28 },
-      { key: 'presence', label: 'Présence', x: 340, w: 70 },
-      { key: 'signature', label: 'Signature', x: 410, w: 80 },
-      { key: 'note', label: 'Obs.', x: 490, w: 65 },
+      { key: 'n', label: 'N°', x: 36, w: 22 },
+      { key: 'lastName', label: 'Nom', x: 58, w: 78 },
+      { key: 'firstName', label: 'Prénom', x: 136, w: 68 },
+      { key: 'matricule', label: 'Mat. école', x: 204, w: 62 },
+      { key: 'nationalMatricule', label: 'Mat. national', x: 266, w: 70 },
+      { key: 'genderCell', label: 'G/F', x: 336, w: 24 },
+      { key: 'presence', label: 'Présence', x: 360, w: 62 },
+      { key: 'signature', label: 'Signature', x: 422, w: 70 },
+      { key: 'note', label: 'Obs.', x: 492, w: 58 },
     ];
 
     function drawHeader(y) {
@@ -298,12 +307,13 @@ function generateEmargementPdf({ school, sheet }) {
       doc.text(row.lastName, cols[1].x, y, { width: cols[1].w });
       doc.text(row.firstName, cols[2].x, y, { width: cols[2].w });
       doc.text(row.matricule || '—', cols[3].x, y, { width: cols[3].w });
-      doc.text(row.genderCell, cols[4].x, y, { width: cols[4].w });
-      doc.rect(cols[5].x + 4, y - 1, 10, 10).stroke('#999');
-      doc.fontSize(7).fillColor('#888').text('P', cols[5].x + 16, y, { width: 12 });
-      doc.rect(cols[5].x + 30, y - 1, 10, 10).stroke('#999');
-      doc.text('A', cols[5].x + 42, y, { width: 12 });
-      doc.moveTo(cols[6].x, y + 10).lineTo(cols[6].x + cols[6].w - 4, y + 10).stroke('#ccc');
+      doc.text(row.nationalMatricule || '—', cols[4].x, y, { width: cols[4].w });
+      doc.text(row.genderCell, cols[5].x, y, { width: cols[5].w });
+      doc.rect(cols[6].x + 4, y - 1, 10, 10).stroke('#999');
+      doc.fontSize(7).fillColor('#888').text('P', cols[6].x + 16, y, { width: 12 });
+      doc.rect(cols[6].x + 30, y - 1, 10, 10).stroke('#999');
+      doc.text('A', cols[6].x + 42, y, { width: 12 });
+      doc.moveTo(cols[7].x, y + 10).lineTo(cols[7].x + cols[7].w - 4, y + 10).stroke('#ccc');
       y += 20;
     });
 
