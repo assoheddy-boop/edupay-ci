@@ -8,12 +8,46 @@ const {
 } = require('./gradesAverage');
 const { normalizeTerm, formatTermLabel, filterGradesForBulletin } = require('./academicTerms');
 const { getCache, setCache } = require('../../services/cache');
+const { computeClassement } = require('./classement');
+const { effectiveSeries } = require('./series');
 
 const BULLETIN_TTL = 60 * 60;
 
+async function findSavedDeliberation({ studentId, classId, term, schoolYear, schoolId }) {
+  if (!['T1', 'T2', 'T3'].includes(term)) return null;
+  const year = String(schoolYear || '').trim();
+  if (!studentId || !classId || !year) return null;
+  return prisma.deliberation.findFirst({
+    where: {
+      studentId,
+      classId,
+      term,
+      schoolYear: year,
+      ...(schoolId ? { schoolId } : {}),
+    },
+  });
+}
+
 async function generateBulletinForStudent({ studentId, period, school }) {
   const term = normalizeTerm(period);
-  const cacheKey = `bulletin:${studentId}:${term}:${String(period || '').trim()}`;
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, schoolId: school.id },
+    include: { class: true },
+  });
+  if (!student) return { error: 'eleve' };
+
+  const schoolYear = student.class?.schoolYear || school.currentSchoolYear || '2025-2026';
+  const savedDelib = await findSavedDeliberation({
+    studentId,
+    classId: student.classId,
+    term,
+    schoolYear,
+    schoolId: school.id,
+  });
+  const mention = savedDelib?.mention || null;
+  const decision = savedDelib?.decision || null;
+
+  const cacheKey = `bulletin:${studentId}:${term}:${String(period || '').trim()}:${mention || ''}:${decision || ''}:${savedDelib?.updatedAt || ''}`;
   const cached = await getCache(cacheKey);
   if (cached?.pdfUrl) {
     return {
@@ -25,11 +59,6 @@ async function generateBulletinForStudent({ studentId, period, school }) {
       pdfUrl: cached.pdfUrl,
     };
   }
-  const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: school.id },
-    include: { class: true },
-  });
-  if (!student) return { error: 'eleve' };
 
   const allGrades = await prisma.grade.findMany({
     where: { studentId },
@@ -46,7 +75,7 @@ async function generateBulletinForStudent({ studentId, period, school }) {
 
   const classmates = await prisma.student.findMany({
     where: { classId: student.classId },
-    select: { id: true },
+    select: { id: true, gender: true, series: true },
   });
 
   const classAverages = await Promise.all(
@@ -61,27 +90,33 @@ async function generateBulletinForStudent({ studentId, period, school }) {
       } else if (filtered.length) {
         avg = computeAverage(filtered, coeffMap);
       }
-      return { id: c.id, avg };
+      return { id: c.id, avg, gender: c.gender };
     }),
   );
-  classAverages.sort((a, b) => b.avg - a.avg);
-  const rank = classAverages.findIndex((c) => c.id === studentId) + 1;
+  const classement = computeClassement(classAverages, studentId);
 
   const periodLabel = formatTermLabel(period);
+  const series = effectiveSeries(student, student.class);
   const { pdfUrl } = await generateBulletinPdf({
     student,
     school,
     grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
     period: periodLabel,
     average,
-    rank,
-    classSize: classmates.length,
+    rank: classement.rank,
+    classSize: classement.classSize,
+    genderRank: classement.genderRank,
+    genderSize: classement.genderSize,
+    genderGroup: classement.genderGroup,
     coeffMap,
     termAverages: term === 'ANNUELLE' ? termAverages : null,
+    mention,
+    decision,
+    series,
   });
 
   await prisma.bulletin.create({
-    data: { studentId, period: term === 'AUTRE' ? periodLabel : term, pdfUrl, average, rank },
+    data: { studentId, period: term === 'AUTRE' ? periodLabel : term, pdfUrl, average, rank: classement.rank },
   });
 
   const parents = await prisma.parentStudent.findMany({
@@ -103,12 +138,12 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   const payload = {
     pdfUrl,
     average,
-    rank,
+    rank: classement.rank,
     student: { id: student.id, firstName: student.firstName, lastName: student.lastName },
   };
   await setCache(cacheKey, payload, BULLETIN_TTL);
 
-  return { success: true, student, average, rank, pdfUrl };
+  return { success: true, student, average, rank: classement.rank, pdfUrl, mention, decision };
 }
 
 async function generateBulkBulletins({ classId, period, schoolId, school }) {
@@ -147,4 +182,4 @@ async function generateBulkBulletins({ classId, period, schoolId, school }) {
   return results;
 }
 
-module.exports = { generateBulletinForStudent, generateBulkBulletins };
+module.exports = { generateBulletinForStudent, generateBulkBulletins, findSavedDeliberation };

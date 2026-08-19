@@ -23,10 +23,16 @@
   <div class="card">
     <h2>Par classe</h2>
     <table class="table">
-      <thead><tr><th>Classe</th><th>Élèves</th><th>Moyenne</th><th>Paiements validés</th></tr></thead>
+      <thead><tr><th>Classe</th><th>Série</th><th>Élèves</th><th>Moyenne</th><th>Paiements validés</th></tr></thead>
       <tbody>
         <% byClass.forEach(c => { %>
-          <tr><td><%= c.name %></td><td><%= c.students %></td><td><%= c.avg.toFixed(2) %></td><td><%= c.paymentsValidated %></td></tr>
+          <tr>
+            <td><%= c.name %></td>
+            <td><%= c.series && typeof seriesLabel === 'function' ? seriesLabel(c.series) : (c.series || '—') %></td>
+            <td><%= c.students %></td>
+            <td><%= c.avg.toFixed(2) %></td>
+            <td><%= c.paymentsValidated %></td>
+          </tr>
         <% }) %>
       </tbody>
     </table>

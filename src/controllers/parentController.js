@@ -122,6 +122,7 @@ async function grades(req, res) {
               class: true,
               grades: { orderBy: [{ period: 'desc' }, { subject: 'asc' }] },
               bulletins: { orderBy: { generatedAt: 'desc' } },
+              deliberations: { orderBy: [{ schoolYear: 'desc' }, { term: 'asc' }] },
             },
           },
         },

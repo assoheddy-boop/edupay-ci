@@ -36,6 +36,15 @@
             <% }) %>
           </select>
         </div>
+        <div class="form-group">
+          <label for="kind">Type de note</label>
+          <select id="kind" name="kind" required>
+            <% (gradeKinds || [{ value: 'DEVOIR', label: 'Devoir' }, { value: 'INTERRO', label: 'Interrogation' }, { value: 'COMPOSITION', label: 'Composition' }]).forEach(k => { %>
+              <option value="<%= k.value %>" <%= k.value === 'DEVOIR' ? 'selected' : '' %>><%= k.label %></option>
+            <% }) %>
+          </select>
+          <p class="form-hint">Interrogation (orale ou écrite courte), devoir, ou composition de fin de période.</p>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">

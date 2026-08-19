@@ -30,6 +30,21 @@ enum HomeworkKind {
   TEST
 }
 
+/// Type de note bulletin (collège CI). Anciennes lignes sans type = DEVOIR.
+enum GradeKind {
+  INTERRO
+  DEVOIR
+  COMPOSITION
+}
+
+/// Série lycée (A / C / D). Null = collège, pas de filtre.
+enum SchoolSeries {
+  A
+  C
+  D
+  AUTRE
+}
+
 enum NotificationType {
   ABSENCE
   LATE
@@ -244,6 +259,8 @@ model Class {
   name       String
   level      String
   schoolYear String   @default("2025-2026")
+  /// Lycée : tous les élèves héritent, sauf override élève. Null = collège.
+  series     SchoolSeries?
   createdAt  DateTime @default(now())
 
   schoolId String
@@ -266,6 +283,8 @@ model Student {
   matricule  String?
   birthDate  DateTime?
   gender     String?
+  /// Override série si la classe est mixte. Sinon héritage Class.series.
+  series     SchoolSeries?
   photoUrl   String?
   createdAt  DateTime  @default(now())
 
@@ -447,14 +466,16 @@ model Absence {
 }
 
 model Grade {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   subject   String
   value     Float
-  maxValue  Float    @default(20)
+  maxValue  Float     @default(20)
   period    String
   term      String?
+  /// INTERRO | DEVOIR | COMPOSITION. Null / défaut = DEVOIR (notes existantes).
+  kind      GradeKind @default(DEVOIR)
   comment   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)

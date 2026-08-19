@@ -8,8 +8,11 @@ const {
   computeSubjectRows,
   computeTermAverages,
   getCoefficient,
+  SUBJECT_AVERAGE_FOOTNOTE,
 } = require('./gradesAverage');
 const { formatTermLabel, normalizeTerm, filterGradesForBulletin } = require('./academicTerms');
+const { seriesLabel } = require('./series');
+const { formatClassRank, formatGenderRank } = require('./classement');
 
 const bulletinsDir = path.join(__dirname, '../../uploads/bulletins');
 
@@ -23,13 +26,33 @@ function safePeriodSlug(period) {
   return String(period || 'periode').replace(/\s+/g, '-');
 }
 
+function fmtPart(n) {
+  return n == null ? '—' : Number(n).toFixed(2);
+}
+
+function rowsHaveKindBreakdown(rows) {
+  return (rows || []).some((row) => row.interro != null || row.composition != null);
+}
+
 function drawSubjectTable(doc, rows) {
+  const showKinds = rowsHaveKindBreakdown(rows);
   const tableTop = doc.y;
-  doc.fontSize(10).fillColor('#666');
-  doc.text('Matière', 50, tableTop);
-  doc.text('Coef.', 220, tableTop);
-  doc.text('Moyenne', 270, tableTop);
-  doc.text('Appréciation', 350, tableTop);
+  doc.fontSize(9).fillColor('#666');
+  if (showKinds) {
+    doc.text('Matière', 50, tableTop, { width: 110 });
+    doc.text('Coef.', 165, tableTop);
+    doc.text('Interro', 205, tableTop);
+    doc.text('Devoir', 260, tableTop);
+    doc.text('Compo', 315, tableTop);
+    doc.text('Moyenne', 370, tableTop);
+    doc.text('Appréciation', 440, tableTop);
+  } else {
+    doc.fontSize(10);
+    doc.text('Matière', 50, tableTop);
+    doc.text('Coef.', 220, tableTop);
+    doc.text('Moyenne', 270, tableTop);
+    doc.text('Appréciation', 350, tableTop);
+  }
   doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#ddd');
 
   let y = tableTop + 25;
@@ -38,10 +61,20 @@ function drawSubjectTable(doc, rows) {
       doc.addPage();
       y = 50;
     }
-    doc.fillColor('#333').text(row.subject, 50, y, { width: 160 });
-    doc.text(String(row.coefficient), 220, y);
-    doc.text(`${row.average.toFixed(2)} / 20`, 270, y);
-    doc.text(row.comment || '—', 350, y, { width: 200 });
+    if (showKinds) {
+      doc.fontSize(9).fillColor('#333').text(row.subject, 50, y, { width: 110 });
+      doc.text(String(row.coefficient), 165, y);
+      doc.text(fmtPart(row.interro), 205, y);
+      doc.text(fmtPart(row.devoir), 260, y);
+      doc.text(fmtPart(row.composition), 315, y);
+      doc.text(`${Number(row.average).toFixed(2)}`, 370, y);
+      doc.text(row.comment || '—', 440, y, { width: 110 });
+    } else {
+      doc.fontSize(10).fillColor('#333').text(row.subject, 50, y, { width: 160 });
+      doc.text(String(row.coefficient), 220, y);
+      doc.text(`${row.average.toFixed(2)} / 20`, 270, y);
+      doc.text(row.comment || '—', 350, y, { width: 200 });
+    }
     y += 22;
   });
   doc.y = y + 8;
@@ -96,8 +129,14 @@ function generateBulletinPdf({
   average,
   rank,
   classSize,
+  genderRank,
+  genderSize,
+  genderGroup,
   coeffMap,
   termAverages,
+  mention,
+  decision,
+  series,
 }) {
   ensureDir();
   const filename = `bulletin-${student.id}-${safePeriodSlug(period)}-${Date.now()}.pdf`;
@@ -121,6 +160,8 @@ function generateBulletinPdf({
     doc.fontSize(11).fillColor('#333');
     doc.text(`Nom : ${student.lastName} ${student.firstName}`);
     doc.text(`Classe : ${student.class?.name || '—'}`);
+    const serieTxt = seriesLabel(series || student.series || student.class?.series);
+    if (serieTxt) doc.text(`Série : ${serieTxt}`);
     doc.text(`Matricule : ${student.matricule || '—'}`);
     doc.text(`Période : ${periodLabel}`);
     doc.moveDown();
@@ -139,8 +180,9 @@ function generateBulletinPdf({
     doc.moveDown();
     doc.fontSize(12).fillColor('#0052CC');
     doc.text(`Moyenne générale : ${Number(average).toFixed(2)} / 20`);
-    doc.fontSize(9).fillColor('#666');
-    doc.text('Moyenne pondérée : Σ (moyenne matière × coefficient) / Σ coefficients');
+    doc.fontSize(8).fillColor('#666');
+    doc.text(SUBJECT_AVERAGE_FOOTNOTE, { width: 500 });
+    doc.text('Moyenne générale = Σ (moyenne matière × coefficient) / Σ coefficients.');
 
     if (term === 'ANNUELLE' && termAverages) {
       doc.moveDown(0.4);
@@ -153,9 +195,25 @@ function generateBulletinPdf({
       doc.text('Moyenne annuelle = moyenne des trimestres renseignés.');
     }
 
-    if (rank && classSize) {
+    const classRankLine = formatClassRank({ rank, classSize });
+    if (classRankLine) {
       doc.fontSize(12).fillColor('#0052CC');
-      doc.text(`Rang : ${rank}e / ${classSize}`);
+      doc.text(`Rang : ${classRankLine}`);
+    }
+    const genderRankLine = formatGenderRank({ genderRank, genderSize, genderGroup });
+    if (genderRankLine) {
+      doc.fontSize(11).fillColor('#333');
+      doc.text(`Rang parmi les ${genderGroup} : ${genderRankLine}`);
+    }
+
+    const hasMention = Boolean(mention);
+    const hasDecision = Boolean(decision);
+    if (hasMention || hasDecision) {
+      doc.moveDown(1);
+      doc.fontSize(13).fillColor('#0052CC').text('Conseil de classe');
+      doc.fontSize(11).fillColor('#333');
+      if (hasMention) doc.text(`Mention : ${mention}`);
+      if (hasDecision) doc.text(`Décision : ${decision}`);
     }
 
     doc.moveDown(2);

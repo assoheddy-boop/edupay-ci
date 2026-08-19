@@ -5,10 +5,12 @@ const {
   MENTIONS,
   DECISIONS,
   THRESHOLDS,
+  SERIES_OPTIONS,
   getCouncilBoard,
   saveCouncil,
   generateCouncilPdf,
 } = require('../services/deliberationService');
+const { parseSeries, seriesLabel } = require('../services/series');
 
 function schoolOr403(req, res) {
   const school = req.user?.school;
@@ -33,6 +35,7 @@ async function deliberationsPage(req, res) {
   const classes = await listClasses(school.id);
   const classId = String(req.query.classId || classes[0]?.id || '').trim();
   const term = String(req.query.term || 'T1').trim();
+  const series = parseSeries(req.query.series);
 
   let board = null;
   if (classId) {
@@ -41,6 +44,7 @@ async function deliberationsPage(req, res) {
       classId,
       term,
       schoolYear: school.currentSchoolYear,
+      series,
     });
     if (board.status === 403) {
       return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
@@ -60,6 +64,10 @@ async function deliberationsPage(req, res) {
     thresholds: THRESHOLDS,
     rows: board?.ok ? board.rows : [],
     klass: board?.ok ? board.class : null,
+    series: board?.ok ? (board.series || '') : (series || ''),
+    hasSeries: board?.ok ? board.hasSeries : false,
+    seriesOptions: SERIES_OPTIONS,
+    seriesLabel,
     error: req.query.error || (board && !board.ok ? board.error : null),
     success: req.query.success || null,
     readOnly: false,
@@ -72,11 +80,13 @@ async function saveDeliberations(req, res) {
 
   const classId = String(req.body.classId || '').trim();
   const term = String(req.body.term || '').trim();
+  const series = parseSeries(req.body.series);
   const result = await saveCouncil({
     schoolId: school.id,
     classId,
     term,
     schoolYear: school.currentSchoolYear,
+    series,
     body: req.body,
   });
 
@@ -95,7 +105,7 @@ async function saveDeliberations(req, res) {
     ip: req.ip,
   });
 
-  res.redirect(`/school/deliberations?classId=${encodeURIComponent(classId)}&term=${encodeURIComponent(result.term)}&success=1`);
+  res.redirect(`/school/deliberations?classId=${encodeURIComponent(classId)}&term=${encodeURIComponent(result.term)}${series ? `&series=${encodeURIComponent(series)}` : ''}&success=1`);
 }
 
 async function deliberationsPv(req, res) {
@@ -104,11 +114,13 @@ async function deliberationsPv(req, res) {
 
   const classId = String(req.query.classId || '').trim();
   const term = String(req.query.term || 'T1').trim();
+  const series = parseSeries(req.query.series);
   const board = await getCouncilBoard({
     schoolId: school.id,
     classId,
     term,
     schoolYear: school.currentSchoolYear,
+    series,
   });
   if (!board.ok) {
     const status = board.status || 403;
@@ -122,6 +134,8 @@ async function deliberationsPv(req, res) {
     term: board.term,
     schoolYear: board.schoolYear,
     rows: board.rows,
+    series: board.series || '',
+    seriesLabel,
     formatTermLabel,
     mentions: MENTIONS,
     decisions: DECISIONS,
@@ -134,11 +148,13 @@ async function deliberationsPvPdf(req, res) {
 
   const classId = String(req.query.classId || '').trim();
   const term = String(req.query.term || 'T1').trim();
+  const series = parseSeries(req.query.series);
   const board = await getCouncilBoard({
     schoolId: school.id,
     classId,
     term,
     schoolYear: school.currentSchoolYear,
+    series,
   });
   if (!board.ok) {
     return res.status(board.status || 403).render('error', { message: 'Accès refusé', user: req.user });
@@ -174,6 +190,7 @@ async function teacherDeliberationsPage(req, res) {
   const allowed = new Set(classes.map((c) => c.id));
   const classId = String(req.query.classId || classes[0]?.id || '').trim();
   const term = String(req.query.term || 'T1').trim();
+  const series = parseSeries(req.query.series);
 
   if (classId && !allowed.has(classId)) {
     return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
@@ -186,6 +203,7 @@ async function teacherDeliberationsPage(req, res) {
       classId,
       term,
       schoolYear: teacher.school?.currentSchoolYear,
+      series,
     });
     if (board.status === 403) {
       return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
@@ -205,6 +223,10 @@ async function teacherDeliberationsPage(req, res) {
     thresholds: THRESHOLDS,
     rows: board?.ok ? board.rows : [],
     klass: board?.ok ? board.class : null,
+    series: board?.ok ? (board.series || '') : (series || ''),
+    hasSeries: board?.ok ? board.hasSeries : false,
+    seriesOptions: SERIES_OPTIONS,
+    seriesLabel,
     error: board && !board.ok ? board.error : null,
     success: null,
     readOnly: true,

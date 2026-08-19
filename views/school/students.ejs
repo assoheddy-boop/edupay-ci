@@ -99,6 +99,17 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label>Série (lycée)</label>
+          <select name="series">
+            <option value="">Hériter de la classe</option>
+            <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+              <option value="<%= opt.value %>"><%= opt.label %></option>
+            <% }) %>
+          </select>
+          <p class="form-hint">Si la classe est mixte (A/C/D), précisez la série de l’élève. Collège : laissez vide.</p>
+        </div>
+
         <button type="submit" class="btn btn-primary">Ajouter</button>
 
       </form>
@@ -123,7 +134,7 @@
 
             <summary>
               <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'sm' }) %>
-              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %> — <code><%= s.matricule || '—' %></code>
+              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %><% const stuSeries = s.series || (s.class && s.class.series); if (stuSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(stuSeries) : stuSeries %><% } %> — <code><%= s.matricule || '—' %></code>
             </summary>
 
             <form method="POST" action="/school/students/<%= s.id %>/update" class="form" enctype="multipart/form-data" style="margin-top:0.75rem">
@@ -162,6 +173,16 @@
                   <option value="" <%= !s.gender ? 'selected' : '' %>>— Non renseigné —</option>
                   <option value="M" <%= s.gender === 'M' ? 'selected' : '' %>>Garçon (M)</option>
                   <option value="F" <%= s.gender === 'F' ? 'selected' : '' %>>Fille (F)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Série (lycée)</label>
+                <select name="series">
+                  <option value="" <%= !s.series ? 'selected' : '' %>>Hériter de la classe<%= s.class && s.class.series ? ' (' + (typeof seriesLabel === 'function' ? seriesLabel(s.class.series) : s.class.series) + ')' : '' %></option>
+                  <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= s.series === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
                 </select>
               </div>
 

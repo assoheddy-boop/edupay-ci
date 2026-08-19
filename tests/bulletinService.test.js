@@ -5,6 +5,7 @@ jest.mock('../src/config/database', () => ({
   parentStudent: { findMany: jest.fn() },
   notification: { create: jest.fn() },
   subject: { findMany: jest.fn() },
+  deliberation: { findFirst: jest.fn() },
 }));
 
 jest.mock('../services/cache', () => ({
@@ -37,6 +38,7 @@ describe('bulletinService weighted bulletin', () => {
     ]);
     prisma.parentStudent.findMany.mockResolvedValue([]);
     prisma.bulletin.create.mockResolvedValue({ id: 'b1' });
+    prisma.deliberation.findFirst.mockResolvedValue(null);
     prisma.student.findFirst.mockResolvedValue({
       id: 'stu-1',
       firstName: 'Awa',
@@ -44,8 +46,9 @@ describe('bulletinService weighted bulletin', () => {
       classId: 'class-1',
       schoolId: 'school-1',
       class: { id: 'class-1', name: '6e A', schoolYear: '2025-2026' },
+      gender: 'F',
     });
-    prisma.student.findMany.mockResolvedValue([{ id: 'stu-1' }]);
+    prisma.student.findMany.mockResolvedValue([{ id: 'stu-1', gender: 'F' }]);
   });
 
   test('uses weighted average, not arithmetic mean', async () => {
@@ -91,5 +94,92 @@ describe('bulletinService weighted bulletin', () => {
     const result = await generateBulletinForStudent({ studentId: 'stu-1', period: 'T1', school });
     expect(result).toEqual({ error: 'notes' });
     expect(generateBulletinPdf).not.toHaveBeenCalled();
+  });
+
+  test('bulletin moyenne uses kind parts and passes Interro/Devoir/Compo grades to the PDF', async () => {
+    prisma.grade.findMany.mockResolvedValue([
+      { subject: 'Mathématiques', value: 10, maxValue: 20, period: 'T1', term: 'T1', kind: 'INTERRO', studentId: 'stu-1' },
+      { subject: 'Mathématiques', value: 14, maxValue: 20, period: 'T1', term: 'T1', kind: 'DEVOIR', studentId: 'stu-1' },
+      { subject: 'Mathématiques', value: 16, maxValue: 20, period: 'T1', term: 'T1', kind: 'COMPOSITION', studentId: 'stu-1' },
+    ]);
+    // (10 + 14 + 16) / 3 = 13.33, coef Maths 4
+    const result = await generateBulletinForStudent({ studentId: 'stu-1', period: 'T1', school });
+    expect(result.success).toBe(true);
+    expect(result.average).toBe(13.33);
+    expect(generateBulletinPdf).toHaveBeenCalledWith(expect.objectContaining({
+      average: 13.33,
+      grades: expect.arrayContaining([
+        expect.objectContaining({ kind: 'INTERRO', value: 10 }),
+        expect.objectContaining({ kind: 'DEVOIR', value: 14 }),
+        expect.objectContaining({ kind: 'COMPOSITION', value: 16 }),
+      ]),
+    }));
+  });
+
+  test('includes saved conseil mention and decision on the PDF', async () => {
+    prisma.deliberation.findFirst.mockResolvedValue({
+      mention: 'Bien',
+      decision: 'Admis',
+      term: 'T1',
+    });
+    prisma.grade.findMany.mockResolvedValue([
+      { subject: 'Mathématiques', value: 14, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-1' },
+    ]);
+    const result = await generateBulletinForStudent({ studentId: 'stu-1', period: 'T1', school });
+    expect(result.success).toBe(true);
+    expect(result.mention).toBe('Bien');
+    expect(result.decision).toBe('Admis');
+    expect(generateBulletinPdf).toHaveBeenCalledWith(expect.objectContaining({
+      mention: 'Bien',
+      decision: 'Admis',
+    }));
+  });
+
+  test('omits mention and decision when no deliberation is saved', async () => {
+    prisma.deliberation.findFirst.mockResolvedValue(null);
+    prisma.grade.findMany.mockResolvedValue([
+      { subject: 'Mathématiques', value: 14, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-1' },
+    ]);
+    await generateBulletinForStudent({ studentId: 'stu-1', period: 'T1', school });
+    expect(generateBulletinPdf).toHaveBeenCalledWith(expect.objectContaining({
+      mention: null,
+      decision: null,
+    }));
+  });
+
+  test('passes class rank and rank among girls when gender exists', async () => {
+    prisma.student.findFirst.mockResolvedValue({
+      id: 'stu-f1',
+      firstName: 'Awa',
+      lastName: 'Kouassi',
+      classId: 'class-1',
+      schoolId: 'school-1',
+      gender: 'F',
+      class: { id: 'class-1', name: '6e A', schoolYear: '2025-2026' },
+    });
+    prisma.student.findMany.mockResolvedValue([
+      { id: 'stu-f1', gender: 'F' },
+      { id: 'stu-f2', gender: 'F' },
+      { id: 'stu-m1', gender: 'M' },
+    ]);
+    prisma.grade.findMany.mockImplementation(async ({ where }) => {
+      const byId = {
+        'stu-f1': [{ subject: 'Mathématiques', value: 16, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-f1' }],
+        'stu-f2': [{ subject: 'Mathématiques', value: 12, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-f2' }],
+        'stu-m1': [{ subject: 'Mathématiques', value: 14, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-m1' }],
+      };
+      return byId[where?.studentId] || [];
+    });
+
+    const result = await generateBulletinForStudent({ studentId: 'stu-f1', period: 'T1', school });
+    expect(result.success).toBe(true);
+    expect(result.rank).toBe(1);
+    expect(generateBulletinPdf).toHaveBeenCalledWith(expect.objectContaining({
+      rank: 1,
+      classSize: 3,
+      genderRank: 1,
+      genderSize: 2,
+      genderGroup: 'filles',
+    }));
   });
 });

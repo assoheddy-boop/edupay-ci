@@ -103,7 +103,7 @@ const studentGenderSelect = {
   id: true,
   gender: true,
   absences: { select: { id: true } },
-  grades: { select: { value: true, maxValue: true, subject: true } },
+  grades: { select: { value: true, maxValue: true, subject: true, kind: true } },
 };
 
 async function getClassGenderStats(classId) {
@@ -150,7 +150,7 @@ async function getGenderStatsBySchool(schoolId) {
         schoolId: true,
         school: { select: { id: true, name: true } },
         absences: { select: { id: true } },
-        grades: { select: { value: true, maxValue: true, subject: true } },
+        grades: { select: { value: true, maxValue: true, subject: true, kind: true } },
       },
     });
 
@@ -190,6 +190,7 @@ async function listClassGenderStats({ schoolId } = {}) {
           id: true,
           name: true,
           level: true,
+          series: true,
           schoolId: true,
           school: { select: { id: true, name: true } },
         },
@@ -201,7 +202,7 @@ async function listClassGenderStats({ schoolId } = {}) {
           classId: true,
           gender: true,
           absences: { select: { id: true } },
-          grades: { select: { value: true, maxValue: true, subject: true } },
+          grades: { select: { value: true, maxValue: true, subject: true, kind: true } },
         },
       }),
     ]);
@@ -218,6 +219,7 @@ async function listClassGenderStats({ schoolId } = {}) {
         classId: c.id,
         className: c.name,
         level: c.level,
+        series: c.series || null,
         schoolId: c.schoolId,
         schoolName: c.school?.name || '—',
         ...computeGenderStats(byClass[c.id] || []),

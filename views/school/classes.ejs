@@ -42,6 +42,17 @@
 
         </div>
 
+        <div class="form-group">
+          <label for="series">Série (lycée)</label>
+          <select id="series" name="series">
+            <option value="">Collège (aucune)</option>
+            <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+              <option value="<%= opt.value %>"><%= opt.label %></option>
+            <% }) %>
+          </select>
+          <p class="form-hint">Lycée A / C / D : tous les élèves héritent. Collège : laissez vide.</p>
+        </div>
+
         <button type="submit" class="btn btn-primary">Créer</button>
 
       </form>
@@ -64,7 +75,7 @@
 
           <details class="edit-row">
 
-            <summary><strong><%= c.name %></strong> — <%= c.level %> (<%= c._count.students %> élève(s))</summary>
+            <summary><strong><%= c.name %></strong> — <%= c.level %><% if (c.series && typeof seriesLabel === 'function') { %> · <%= seriesLabel(c.series) %><% } else if (c.series) { %> · Série <%= c.series %><% } %> (<%= c._count.students %> élève(s))</summary>
 
             <form method="POST" action="/school/classes/<%= c.id %>/update" class="form" style="margin-top:0.75rem" data-offline-skip="1">
 
@@ -77,6 +88,16 @@
               </div>
 
               <div class="form-group"><label>Année</label><input type="text" name="schoolYear" value="<%= c.schoolYear %>"></div>
+
+              <div class="form-group">
+                <label>Série (lycée)</label>
+                <select name="series">
+                  <option value="" <%= !c.series ? 'selected' : '' %>>Collège (aucune)</option>
+                  <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+                    <option value="<%= opt.value %>" <%= c.series === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                  <% }) %>
+                </select>
+              </div>
 
               <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
 

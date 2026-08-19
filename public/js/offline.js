@@ -207,6 +207,7 @@
         period: raw.period,
         maxValue: raw.maxValue,
         coefficient: raw.coefficient,
+        kind: raw.kind,
         grades,
       };
     }
@@ -220,6 +221,7 @@
         period: raw.period,
         comment: raw.comment,
         coefficient: raw.coefficient,
+        kind: raw.kind,
       };
     }
 
@@ -242,6 +244,7 @@
         name: raw.name,
         level: raw.level,
         schoolYear: raw.schoolYear,
+        series: raw.series,
         clientTempId,
       };
     }
@@ -254,6 +257,7 @@
         classId: raw.classId,
         birthDate: raw.birthDate,
         gender: raw.gender,
+        series: raw.series,
       };
     }
 

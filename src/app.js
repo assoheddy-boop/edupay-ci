@@ -65,6 +65,9 @@ app.use((req, res, next) => {
   res.locals.safeJson = safeJson;
   res.locals.unreadNotifications = 0;
   res.locals.termLabel = require('./services/academicTerms').formatTermLabel;
+  res.locals.gradeKindLabel = require('./services/gradesAverage').gradeKindLabel;
+  res.locals.seriesOptions = require('./services/series').SERIES_OPTIONS;
+  res.locals.seriesLabel = require('./services/series').seriesLabel;
   next();
 });
 

@@ -31,6 +31,8 @@ const STUDENT = {
   firstName: 'Kofi',
   lastName: 'Yao',
   matricule: 'IG-DEMO-001',
+  gender: 'M',
+  series: null,
   grades: [
     { subject: 'Mathématiques', value: 16, maxValue: 20, period: 'T1', term: 'T1' },
     { subject: 'EPS', value: 10, maxValue: 20, period: 'T1', term: 'T1' },
@@ -39,6 +41,20 @@ const STUDENT = {
     { type: 'ABSENCE', date: new Date('2025-10-02') },
     { type: 'LATE', date: new Date('2025-10-03') },
   ],
+};
+
+const STUDENT_F = {
+  id: 'stu-2',
+  schoolId: 'school-1',
+  firstName: 'Awa',
+  lastName: 'Kouassi',
+  matricule: 'IG-DEMO-002',
+  gender: 'F',
+  series: null,
+  grades: [
+    { subject: 'Mathématiques', value: 12, maxValue: 20, period: 'T1', term: 'T1' },
+  ],
+  absences: [],
 };
 
 function mockRes() {
@@ -99,6 +115,63 @@ describe('weighted moyenne on the council table', () => {
     expect(board.ok).toBe(true);
     expect(board.rows).toHaveLength(1);
     expect(board.rows[0].average).toBe(14.8);
+  });
+
+  test('attaches class rank and rank among boys / girls', async () => {
+    prisma.class.findFirst.mockResolvedValue(KLASS);
+    prisma.student.findMany.mockResolvedValue([STUDENT, STUDENT_F]);
+    prisma.deliberation.findMany.mockResolvedValue([]);
+    prisma.subject.findMany.mockResolvedValue([]);
+
+    const board = await getCouncilBoard({
+      schoolId: SCHOOL.id,
+      classId: KLASS.id,
+      term: 'T1',
+      schoolYear: '2025-2026',
+    });
+
+    expect(board.ok).toBe(true);
+    const boy = board.rows.find((r) => r.studentId === STUDENT.id);
+    const girl = board.rows.find((r) => r.studentId === STUDENT_F.id);
+    expect(boy.rank).toBe(1);
+    expect(boy.classSize).toBe(2);
+    expect(boy.genderRank).toBe(1);
+    expect(boy.genderSize).toBe(1);
+    expect(boy.genderGroup).toBe('garçons');
+    expect(girl.rank).toBe(2);
+    expect(girl.genderRank).toBe(1);
+    expect(girl.genderGroup).toBe('filles');
+  });
+
+  test('filters the council table by lycée series', async () => {
+    const lycée = { ...KLASS, name: '1ère C', series: 'C' };
+    const studentC = { ...STUDENT, series: null };
+    const studentA = { ...STUDENT_F, series: 'A' };
+    prisma.class.findFirst.mockResolvedValue(lycée);
+    prisma.student.findMany.mockResolvedValue([studentC, studentA]);
+    prisma.deliberation.findMany.mockResolvedValue([]);
+    prisma.subject.findMany.mockResolvedValue([]);
+
+    const all = await getCouncilBoard({
+      schoolId: SCHOOL.id,
+      classId: lycée.id,
+      term: 'T1',
+      schoolYear: '2025-2026',
+    });
+    expect(all.rows).toHaveLength(2);
+    expect(all.hasSeries).toBe(true);
+
+    const onlyC = await getCouncilBoard({
+      schoolId: SCHOOL.id,
+      classId: lycée.id,
+      term: 'T1',
+      schoolYear: '2025-2026',
+      series: 'C',
+    });
+    expect(onlyC.ok).toBe(true);
+    expect(onlyC.rows).toHaveLength(1);
+    expect(onlyC.rows[0].studentId).toBe(STUDENT.id);
+    expect(onlyC.rows[0].series).toBe('C');
   });
 });
 

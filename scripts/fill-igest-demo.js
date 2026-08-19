@@ -668,11 +668,14 @@ async function fill() {
           periods.forEach((period, pi) => {
             let value = 9 + ((si + subi + pi) % 10) + ((si * 3 + subi) % 3) * 0.5;
             if (repeaterSet.has(st.id)) value = 6 + ((si + subi) % 4);
+            const kinds = ['INTERRO', 'DEVOIR', 'COMPOSITION'];
             gradeRows.push({
               subject,
               value: Math.min(20, Math.round(value * 2) / 2),
               maxValue: 20,
               period,
+              term: pi === 0 ? 'T1' : 'T2',
+              kind: kinds[(si + subi + pi) % 3],
               comment: value >= 14 ? 'Bon travail' : value < 8 ? 'Doit redoubler d’efforts' : null,
               studentId: st.id,
               teacherId: teacher.id,

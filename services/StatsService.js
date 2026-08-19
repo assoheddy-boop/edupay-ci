@@ -295,7 +295,7 @@ async function getGroupGenderStats(groupId) {
 const genderMetricsSelect = {
   gender: true,
   absences: { select: { id: true } },
-  grades: { select: { value: true, maxValue: true, subject: true } },
+  grades: { select: { value: true, maxValue: true, subject: true, kind: true } },
 };
 
 async function fetchStudentsForGenderMetrics({ classId, schoolId, groupId } = {}) {

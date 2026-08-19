@@ -84,6 +84,58 @@
     </div>
   </div>
 
+  <% const rw = typeof riskWidget !== 'undefined' && riskWidget ? riskWidget : { rows: [], counts: {}, term: 'T1' }; %>
+  <% const rc = rw.counts || {}; %>
+  <div class="card">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <h2>Élèves à suivre<%- include('../partials/_hint', { text: 'Score pédagogique (règles, pas d’IA) : moyenne pondérée du trimestre + absences et retards. Élevé si moyenne < 10 ou ≥ 6 absences.', label: 'Élèves à suivre' }) %></h2>
+        <p class="page-sub" style="margin:0">Trimestre <%= typeof termLabel === 'function' ? termLabel(rw.term) : (rw.term || '') %> — pas un modèle d’intelligence artificielle</p>
+      </div>
+      <a href="/school/risques" class="btn btn-primary">Voir la liste</a>
+    </div>
+    <div class="stats-grid" style="margin-bottom:0;padding:0 1rem">
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rc.ELEVE || 0 %></span>
+        <span class="stat-label">Élevé</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rc.MOYEN || 0 %></span>
+        <span class="stat-label">Moyen</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rc.FAIBLE || 0 %></span>
+        <span class="stat-label">Faible</span>
+      </div>
+    </div>
+    <% if (!(rw.rows && rw.rows.length)) { %>
+      <p class="empty">Aucun élève à signaler pour le moment.</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Élève</th>
+              <th>Classe</th>
+              <th>Niveau</th>
+              <th>Motif</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rw.rows.forEach(function(r) { %>
+              <tr>
+                <td><%= r.lastName %> <%= r.firstName %></td>
+                <td><%= r.className %></td>
+                <td><span class="badge <%= r.level === 'ELEVE' ? 'badge-error' : (r.level === 'MOYEN' ? 'badge-pending' : 'badge-success') %>"><%= r.label %></span></td>
+                <td><small><%= r.motif %></small></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <h2>Paiements récents</h2>
@@ -129,6 +181,7 @@
     <a href="/school/lost-items" class="action-card">🧸 Objets perdus</a>
     <a href="/school/activities" class="action-card">🎯 Activités</a>
     <a href="/school/analyse" class="action-card">📈 Graphiques d'analyse</a>
+    <a href="/school/risques" class="action-card">⚠️ Élèves à suivre</a>
     <a href="/school/stats" class="action-card">📊 Statistiques</a>
     <a href="/school/fees" class="action-card">💰 Types de frais</a>
     <a href="/school/pickup" class="action-card">🛡️ Sortie école</a>

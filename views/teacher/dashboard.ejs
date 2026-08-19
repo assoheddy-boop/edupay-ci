@@ -49,7 +49,7 @@
             <li class="list-item person-line">
               <%- include('../partials/_avatar', { src: g.student.photoUrl, firstName: g.student.firstName, lastName: g.student.lastName, size: 'sm' }) %>
               <strong><%= g.student.firstName %> <%= g.student.lastName %></strong>
-              <span><%= g.subject %> : <%= g.value %>/<%= g.maxValue %></span>
+              <span><%= typeof gradeKindLabel === 'function' ? gradeKindLabel(g.kind) : '' %> <%= g.subject %> : <%= g.value %>/<%= g.maxValue %></span>
             </li>
           <% }) %>
         </ul>
@@ -62,6 +62,7 @@
     <a href="/teacher/absences" class="action-card">📋 Signaler absence</a>
     <a href="/teacher/homeworks" class="action-card">📚 Publier devoir</a>
     <a href="/teacher/messages" class="action-card">💬 Messages parents</a>
+    <a href="/teacher/risques" class="action-card">⚠️ Élèves à suivre</a>
     <a href="/teacher/transport" class="action-card">🚌 Transport</a>
     <a href="/teacher/health" class="action-card">🧑‍⚕️ Santé</a>
     <a href="/teacher/canteen" class="action-card">🍽️ Cantine</a>

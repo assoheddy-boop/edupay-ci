@@ -22,15 +22,15 @@
 <main class="pv-page">
   <div class="pv-actions">
     <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer</button>
-    <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= klass.id %>&amp;term=<%= term %>">PDF</a>
-    <a class="btn btn-outline" href="/school/deliberations?classId=<%= klass.id %>&amp;term=<%= term %>">Retour</a>
+    <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= klass.id %>&amp;term=<%= term %><% if (typeof series !== 'undefined' && series) { %>&amp;series=<%= series %><% } %>">PDF</a>
+    <a class="btn btn-outline" href="/school/deliberations?classId=<%= klass.id %>&amp;term=<%= term %><% if (typeof series !== 'undefined' && series) { %>&amp;series=<%= series %><% } %>">Retour</a>
   </div>
   <header class="pv-head">
     <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'md' }) %>
     <h1><%= school.name %></h1>
     <p class="page-sub">Procès-verbal — Conseil de classe</p>
   </header>
-  <p class="pv-meta"><strong><%= klass.name %></strong> · <%= label %> · <%= schoolYear || '' %></p>
+  <p class="pv-meta"><strong><%= klass.name %></strong><% if (klass.series && typeof seriesLabel === 'function') { %> · <%= seriesLabel(klass.series) %><% } %><% if (typeof series !== 'undefined' && series && typeof seriesLabel === 'function') { %> · filtre <%= seriesLabel(series) %><% } %> · <%= label %> · <%= schoolYear || '' %></p>
   <div class="table-scroll">
     <table class="table">
       <thead>
@@ -38,6 +38,7 @@
           <th>Élève</th>
           <th>Matricule</th>
           <th>Moyenne</th>
+          <th>Rang</th>
           <th>Absences</th>
           <th>Mention</th>
           <th>Décision</th>
@@ -49,12 +50,18 @@
             <td><%= r.lastName %> <%= r.firstName %></td>
             <td><%= r.matricule || '—' %></td>
             <td><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></td>
+            <td>
+              <% if (r.rank && r.classSize) { %>
+                <%= r.rank === 1 ? '1er' : r.rank + 'e' %> / <%= r.classSize %>
+                <% if (r.genderRank && r.genderGroup) { %><br><small><%= r.genderRank === 1 ? '1er' : r.genderRank + 'e' %> / <%= r.genderSize %> <%= r.genderGroup %></small><% } %>
+              <% } else { %>—<% } %>
+            </td>
             <td><%= r.absences %></td>
             <td><%= r.mention || '—' %></td>
             <td><%= r.decision || '—' %></td>
           </tr>
           <% if (r.comment) { %>
-            <tr><td colspan="6"><small><%= r.comment %></small></td></tr>
+            <tr><td colspan="7"><small><%= r.comment %></small></td></tr>
           <% } %>
         <% }) %>
       </tbody>

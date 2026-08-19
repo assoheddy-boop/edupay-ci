@@ -9,7 +9,7 @@ const {
 } = require('../services/offlineActions');
 const { calendarEventsJson } = require('../services/homeworkService');
 const { ENTRY_TERMS } = require('../services/academicTerms');
-const { loadSchoolCoefficients, COLLEGE_CI_SUBJECTS } = require('../services/gradesAverage');
+const { loadSchoolCoefficients, COLLEGE_CI_SUBJECTS, GRADE_KINDS } = require('../services/gradesAverage');
 const { listSubjectsForSchool } = require('../../services/TimetableService');
 
 function collegeCoeffDefaults() {
@@ -69,6 +69,7 @@ async function grades(req, res) {
     subjects,
     coeffMap,
     terms: ENTRY_TERMS,
+    gradeKinds: GRADE_KINDS,
     collegeDefaults: collegeCoeffDefaults(),
     error: null,
     success: null,
@@ -300,6 +301,7 @@ async function bulkGradesPage(req, res) {
     subjects,
     coeffMap,
     terms: ENTRY_TERMS,
+    gradeKinds: GRADE_KINDS,
     collegeDefaults: collegeCoeffDefaults(),
     success: req.query.success || null,
   });

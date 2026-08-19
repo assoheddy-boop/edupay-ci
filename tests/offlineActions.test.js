@@ -206,6 +206,50 @@ describe('offlineActions teacher class scope', () => {
     expect(result).toEqual({ ok: false, error: 'forbidden', entity: 'grade' });
     expect(prisma.grade.create).not.toHaveBeenCalled();
   });
+
+  test('persists grade kind INTERRO on single and bulk entry', async () => {
+    prisma.student.findFirst.mockResolvedValue({
+      id: 'stu-1',
+      firstName: 'Awa',
+      lastName: 'Kouassi',
+      schoolId: 'sch-1',
+      parents: [],
+    });
+    prisma.grade.create.mockResolvedValue({ id: 'g-1' });
+    prisma.subject.upsert.mockResolvedValue({});
+
+    await applyGrade({
+      user: { role: 'TEACHER', teacher: { id: 't1', schoolId: 'sch-1' } },
+      payload: {
+        studentId: 'stu-1',
+        subject: 'Mathématiques',
+        period: 'T1',
+        value: '12',
+        kind: 'INTERRO',
+      },
+    });
+    expect(prisma.grade.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ kind: 'INTERRO', term: 'T1' }),
+    }));
+
+    prisma.teacherClass.findFirst.mockResolvedValue({ id: 'tc-1' });
+    prisma.student.findMany.mockResolvedValue([{ id: 'stu-1' }]);
+    prisma.grade.create.mockClear();
+
+    await applyGrade({
+      user: { role: 'TEACHER', teacher: { id: 't1', schoolId: 'sch-1' } },
+      payload: {
+        classId: 'class-1',
+        subject: 'Français',
+        period: 'T2',
+        kind: 'COMPOSITION',
+        grades: { 'stu-1': '16' },
+      },
+    });
+    expect(prisma.grade.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ kind: 'COMPOSITION', term: 'T2' }),
+    }));
+  });
 });
 
 describe('offlineActions school admin vs assist', () => {

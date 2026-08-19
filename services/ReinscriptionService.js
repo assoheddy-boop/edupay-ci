@@ -84,7 +84,7 @@ async function avgGradesByStudent(studentIds) {
 
   const rows = await prisma.grade.findMany({
     where: { studentId: { in: studentIds } },
-    select: { studentId: true, value: true, maxValue: true },
+    select: { studentId: true, value: true, maxValue: true, subject: true, kind: true },
   });
 
   const buckets = {};
@@ -273,7 +273,7 @@ async function reEnrollStudent(studentId, nextClassId, schoolYear) {
       where: { id: studentId },
       include: {
         class: true,
-        grades: { select: { value: true, maxValue: true } },
+        grades: { select: { value: true, maxValue: true, subject: true, kind: true } },
       },
     });
     if (!student?.classId) return { ok: false, error: 'student' };

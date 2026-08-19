@@ -28,6 +28,17 @@
         <% }) %>
       </select>
     </div>
+    <% if (typeof hasSeries !== 'undefined' && hasSeries) { %>
+    <div class="form-group">
+      <label for="series">Série</label>
+      <select id="series" name="series">
+        <option value="" <%= !series ? 'selected' : '' %>>Toutes</option>
+        <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= series === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% } %>
     <button type="submit" class="btn btn-primary">Afficher</button>
   </form>
   <p class="form-hint">Moyenne pondérée. Mentions : &lt;10 aucune · 10–12 Passable · 12–14 Assez bien · 14–16 Bien · 16–18 Très bien · ≥18 Excellent.</p>
@@ -45,6 +56,7 @@
           <tr>
             <th>Élève</th>
             <th>Moyenne</th>
+            <th>Rang</th>
             <th>Absences</th>
             <th>Mention</th>
             <th>Décision</th>
@@ -54,8 +66,14 @@
         <tbody>
           <% rows.forEach(function(r) { %>
             <tr>
-              <td><%= r.lastName %> <%= r.firstName %><br><small><%= r.matricule || '—' %></small></td>
+              <td><%= r.lastName %> <%= r.firstName %><br><small><%= r.matricule || '—' %><% if (r.series) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(r.series) : r.series %><% } %></small></td>
               <td><strong><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></strong></td>
+              <td>
+                <% if (r.rank && r.classSize) { %>
+                  <%= r.rank === 1 ? '1er' : r.rank + 'e' %> / <%= r.classSize %>
+                  <% if (r.genderRank && r.genderGroup) { %><br><small><%= r.genderRank === 1 ? '1er' : r.genderRank + 'e' %> / <%= r.genderSize %> <%= r.genderGroup %></small><% } %>
+                <% } else { %>—<% } %>
+              </td>
               <td><%= r.absences %></td>
               <td><%= r.mention || '—' %></td>
               <td><%= r.decision || '—' %></td>

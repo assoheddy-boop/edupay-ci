@@ -5,6 +5,8 @@ const prisma = require('../config/database');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
 const { TERMS, formatTermLabel, normalizeTerm, filterGradesForBulletin } = require('./academicTerms');
 const { computeWeightedAverage, loadSchoolCoefficients, round2 } = require('./gradesAverage');
+const { attachClassement, formatRankCompact } = require('./classement');
+const { SERIES_OPTIONS, parseSeries, effectiveSeries, matchesSeriesFilter, classHasSeries, seriesLabel } = require('./series');
 
 const MENTIONS = ['Passable', 'Assez bien', 'Bien', 'Très bien', 'Excellent'];
 const DECISIONS = ['Admis', 'Ajourné', 'Redouble', 'À surveiller'];
@@ -88,7 +90,7 @@ function countAbsences(absences, range) {
   }).length;
 }
 
-function councilRow({ student, grades, absences, saved, coeffMap, term, range }) {
+function councilRow({ student, grades, absences, saved, coeffMap, term, range, klass }) {
   const termGrades = filterGradesForBulletin(grades, term);
   const hasGrades = termGrades.length > 0;
   const average = hasGrades ? computeWeightedAverage(termGrades, coeffMap) : null;
@@ -99,6 +101,8 @@ function councilRow({ student, grades, absences, saved, coeffMap, term, range })
     firstName: student.firstName,
     lastName: student.lastName,
     matricule: student.matricule || '',
+    gender: student.gender || null,
+    series: effectiveSeries(student, klass || student.class),
     average,
     hasGrades,
     absences: absenceCount,
@@ -119,7 +123,7 @@ async function getClassForSchool(schoolId, classId) {
   });
 }
 
-async function getCouncilBoard({ schoolId, classId, term, schoolYear } = {}) {
+async function getCouncilBoard({ schoolId, classId, term, schoolYear, series } = {}) {
   if (!schoolId) return { ok: false, error: 'forbidden', status: 403 };
   const resolvedTerm = normalizeTerm(term);
   if (!['T1', 'T2', 'T3'].includes(resolvedTerm)) {
@@ -133,19 +137,22 @@ async function getCouncilBoard({ schoolId, classId, term, schoolYear } = {}) {
     || '2025-2026';
   const range = termDateRange(year, resolvedTerm);
   const coeffMap = await loadSchoolCoefficients(schoolId);
+  const seriesFilter = parseSeries(series);
 
   const students = await prisma.student.findMany({
     where: { classId: klass.id, schoolId },
-    include: { grades: true, absences: true },
+    include: { grades: true, absences: true, class: true },
     orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
   });
+
+  const visible = students.filter((student) => matchesSeriesFilter(student, klass, seriesFilter));
 
   const saved = await prisma.deliberation.findMany({
     where: { schoolId, classId: klass.id, term: resolvedTerm, schoolYear: year },
   });
   const savedByStudent = new Map(saved.map((d) => [d.studentId, d]));
 
-  const rows = students.map((student) => councilRow({
+  const rows = attachClassement(visible.map((student) => councilRow({
     student,
     grades: student.grades || [],
     absences: student.absences || [],
@@ -153,7 +160,8 @@ async function getCouncilBoard({ schoolId, classId, term, schoolYear } = {}) {
     coeffMap,
     term: resolvedTerm,
     range,
-  }));
+    klass,
+  })));
 
   return {
     ok: true,
@@ -163,6 +171,8 @@ async function getCouncilBoard({ schoolId, classId, term, schoolYear } = {}) {
     coeffMap,
     rows,
     thresholds: THRESHOLDS,
+    series: seriesFilter,
+    hasSeries: classHasSeries(klass, students),
   };
 }
 
@@ -184,8 +194,8 @@ function parseSaveRows(body = {}) {
   }));
 }
 
-async function saveCouncil({ schoolId, classId, term, schoolYear, body } = {}) {
-  const board = await getCouncilBoard({ schoolId, classId, term, schoolYear });
+async function saveCouncil({ schoolId, classId, term, schoolYear, series, body } = {}) {
+  const board = await getCouncilBoard({ schoolId, classId, term, schoolYear, series });
   if (!board.ok) return board;
 
   const allowedIds = new Set(board.rows.map((r) => r.studentId));
@@ -238,7 +248,7 @@ function generateCouncilPdf({ school, klass, term, schoolYear, rows }) {
 
     drawDocumentHeader(doc, school, {
       title: 'Procès-verbal — Conseil de classe',
-      subtitle: `${klass.name} · ${formatTermLabel(term)} · ${schoolYear || ''}`,
+      subtitle: `${klass.name}${klass.series ? ` · ${seriesLabel(klass.series)}` : ''} · ${formatTermLabel(term)} · ${schoolYear || ''}`,
     });
 
     doc.fontSize(9).fillColor('#666');
@@ -248,10 +258,10 @@ function generateCouncilPdf({ school, klass, term, schoolYear, rows }) {
     const startY = doc.y;
     doc.fontSize(9).fillColor('#666');
     doc.text('Élève', 50, startY);
-    doc.text('Moy.', 230, startY);
-    doc.text('Abs.', 275, startY);
-    doc.text('Mention', 315, startY);
-    doc.text('Décision', 410, startY);
+    doc.text('Moy.', 200, startY);
+    doc.text('Rang', 245, startY);
+    doc.text('Mention', 330, startY);
+    doc.text('Décision', 430, startY);
     doc.moveTo(50, startY + 14).lineTo(545, startY + 14).stroke('#ddd');
 
     let y = startY + 22;
@@ -261,11 +271,11 @@ function generateCouncilPdf({ school, klass, term, schoolYear, rows }) {
         y = 50;
       }
       const name = `${row.lastName} ${row.firstName}`;
-      doc.fillColor('#333').fontSize(9).text(name, 50, y, { width: 170 });
-      doc.text(row.average == null ? '—' : Number(row.average).toFixed(2), 230, y);
-      doc.text(String(row.absences ?? 0), 275, y);
-      doc.text(row.mention || '—', 315, y, { width: 90 });
-      doc.text(row.decision || '—', 410, y, { width: 90 });
+      doc.fillColor('#333').fontSize(9).text(name, 50, y, { width: 145 });
+      doc.text(row.average == null ? '—' : Number(row.average).toFixed(2), 200, y);
+      doc.text(formatRankCompact(row), 245, y, { width: 80 });
+      doc.text(row.mention || '—', 330, y, { width: 90 });
+      doc.text(row.decision || '—', 430, y, { width: 90 });
       y += 18;
       if (row.comment) {
         doc.fontSize(8).fillColor('#666').text(row.comment, 50, y, { width: 495 });
@@ -300,4 +310,5 @@ module.exports = {
   saveCouncil,
   generateCouncilPdf,
   parseSaveRows,
+  SERIES_OPTIONS,
 };

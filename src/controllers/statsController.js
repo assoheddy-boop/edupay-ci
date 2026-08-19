@@ -1,6 +1,6 @@
 const prisma = require('../config/database');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
-const { computeAverage, loadSchoolCoefficients } = require('../services/gradesAverage');
+const { computeAverage, loadSchoolCoefficients, gradeKindLabel } = require('../services/gradesAverage');
 const { logAudit } = require('../utils/audit');
 const { generateStatsExcel } = require('../../services/export');
 const { getCache, setCache } = require('../../services/cache');
@@ -43,6 +43,7 @@ async function loadSchoolStats(schoolId) {
       });
       return {
         name: c.name,
+        series: c.series || null,
         students: c._count.students,
         avg: classGrades.length ? computeAverage(classGrades, coeffMap) : 0,
         paymentsValidated: classPayments,
@@ -152,6 +153,7 @@ async function exportGrades(req, res) {
       { header: 'Élève', key: 'student', width: 20 },
       { header: 'Classe', key: 'class', width: 12 },
       { header: 'Matière', key: 'subject', width: 15 },
+      { header: 'Type', key: 'kind', width: 14 },
       { header: 'Note', key: 'value', width: 8 },
       { header: 'Période', key: 'period', width: 12 },
     ],
@@ -159,6 +161,7 @@ async function exportGrades(req, res) {
       student: `${g.student.firstName} ${g.student.lastName}`,
       class: g.student.class.name,
       subject: g.subject,
+      kind: gradeKindLabel(g.kind),
       value: `${g.value}/${g.maxValue}`,
       period: g.period,
     })),

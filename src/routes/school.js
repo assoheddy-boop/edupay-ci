@@ -9,6 +9,7 @@ const classController = require('../controllers/classController');
 const schoolAnalyseController = require('../controllers/schoolAnalyseController');
 const deliberationController = require('../controllers/deliberationController');
 const socialCaseController = require('../controllers/socialCaseController');
+const riskController = require('../controllers/riskController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
@@ -31,6 +32,7 @@ router.use(requireAuth, checkRole('school'), attachModules);
 
 router.get('/dashboard', schoolController.dashboard);
 router.get('/analyse', schoolAnalyseController.analysePage);
+router.get('/risques', riskController.risquesPage);
 router.get('/settings', schoolController.settings);
 router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
 router.get('/coefficients', schoolController.coefficientsPage);

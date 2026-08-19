@@ -12,19 +12,20 @@
 
   <% children.forEach(link => { const s = link.student; %>
     <div class="card">
-      <h2><%= s.firstName %> <%= s.lastName %> — <%= s.class.name %></h2>
+      <h2><%= s.firstName %> <%= s.lastName %> — <%= s.class.name %><% const childSeries = s.series || (s.class && s.class.series); if (childSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(childSeries) : childSeries %><% } %></h2>
 
       <% if (s.grades.length === 0) { %>
         <p class="empty">Aucune note publiée.</p>
       <% } else { %>
         <table class="table">
           <thead>
-            <tr><th>Matière</th><th>Note</th><th>Période</th><th>Commentaire</th></tr>
+            <tr><th>Matière</th><th>Type</th><th>Note</th><th>Période</th><th>Commentaire</th></tr>
           </thead>
           <tbody>
             <% s.grades.forEach(g => { %>
               <tr>
                 <td><%= g.subject %></td>
+                <td><%= typeof gradeKindLabel === 'function' ? gradeKindLabel(g.kind) : (g.kind || 'Devoir') %></td>
                 <td><strong><%= g.value %>/<%= g.maxValue %></strong></td>
                 <td><%= typeof termLabel === 'function' ? termLabel(g.period) : g.period %></td>
                 <td><%= g.comment || '—' %></td>
@@ -34,12 +35,33 @@
         </table>
       <% } %>
 
+      <% const delibs = (s.deliberations || []).filter(function(d) { return d.mention || d.decision; }); %>
+      <% if (delibs.length) { %>
+        <h3>Conseil de classe</h3>
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr><th>Trimestre</th><th>Mention</th><th>Décision</th></tr>
+            </thead>
+            <tbody>
+              <% delibs.forEach(function(d) { %>
+                <tr>
+                  <td><%= typeof termLabel === 'function' ? termLabel(d.term) : d.term %><% if (d.schoolYear) { %> · <%= d.schoolYear %><% } %></td>
+                  <td><%= d.mention || '—' %></td>
+                  <td><%= d.decision || '—' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
       <% if (s.bulletins.length > 0) { %>
         <h3>Bulletins</h3>
         <ul class="list">
           <% s.bulletins.forEach(b => { %>
             <li class="list-item">
-              <span><%= typeof termLabel === 'function' ? termLabel(b.period) : b.period %></span>
+              <span><%= typeof termLabel === 'function' ? termLabel(b.period) : b.period %><% if (b.rank) { %> · rang <%= b.rank %><% } %></span>
               <% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" class="btn btn-sm btn-outline">Télécharger PDF</a><% } %>
             </li>
           <% }) %>

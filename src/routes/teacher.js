@@ -4,6 +4,7 @@ const messageController = require('../controllers/messageController');
 const extras = require('../controllers/extrasController');
 const teacherHrController = require('../controllers/teacherHrController');
 const deliberationController = require('../controllers/deliberationController');
+const riskController = require('../controllers/riskController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
 const { attachUnreadNotifications } = require('../middleware/unreadNotifications');
@@ -33,6 +34,7 @@ router.post('/attendance', requireModule('absences'), teacherController.submitAt
 router.get('/bulk-grades', requireModule('grades'), teacherController.bulkGradesPage);
 router.post('/bulk-grades', requireModule('grades'), teacherController.submitBulkGrades);
 router.get('/deliberations', requireModule('bulletins'), deliberationController.teacherDeliberationsPage);
+router.get('/risques', riskController.teacherRisquesPage);
 router.get('/messages', requireModule('chat'), messageController.inbox);
 router.get('/messages/:partnerId', requireModule('chat'), messageController.chat);
 router.post('/messages/:partnerId', requireModule('chat'), upload.chatUpload.fields([

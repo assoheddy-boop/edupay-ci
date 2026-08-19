@@ -39,6 +39,7 @@ const { generateBulletinPDF, generateHomeworkCalendarPDF, generateHomeworkCalend
 const { sendExcel } = require('../services/exportExcel');
 const { summarizeHomeworkStats, calendarEventsJson } = require('../services/homeworkService');
 const { parseGender } = require('../../services/ClassService');
+const { parseSeries } = require('../services/series');
 const { applyClass, applyStudent, applyTeacher } = require('../services/offlineActions');
 const {
   getSchoolGenderStats,
@@ -46,6 +47,7 @@ const {
   getSuccessRateByGender,
 } = require('../../services/StatsService');
 const { getReinscriptionStats } = require('../../services/ReinscriptionService');
+const { getRiskSummary } = require('../services/riskService');
 
 async function dashboard(req, res) {
   const school = req.user.school;
@@ -63,6 +65,7 @@ async function dashboard(req, res) {
     absenceByGender,
     successByGender,
     reinscription,
+    riskWidget,
   ] = await Promise.all([
     prisma.class.count({ where: { schoolId: school.id } }),
     prisma.student.count({ where: { schoolId: school.id } }),
@@ -78,6 +81,14 @@ async function dashboard(req, res) {
     getAbsenceStatsByGender({ schoolId: school.id }),
     getSuccessRateByGender({ schoolId: school.id }),
     getReinscriptionStats(school.id, schoolYear),
+    getRiskSummary({ schoolId: school.id, schoolYear }).catch(() => ({
+      ok: true,
+      rows: [],
+      counts: { ELEVE: 0, MOYEN: 0, FAIBLE: 0 },
+      term: 'T1',
+      truncated: false,
+      totalStudents: 0,
+    })),
   ]);
 
   res.render('school/dashboard', {
@@ -86,6 +97,7 @@ async function dashboard(req, res) {
     stats: { classes, students, teachers, pendingPayments: pendingList.length },
     recentPayments,
     analyse: { gender, absenceByGender, successByGender, reinscription, schoolYear },
+    riskWidget,
   });
 }
 
@@ -346,11 +358,11 @@ async function createClass(req, res) {
 
 async function updateClass(req, res) {
   const { id } = req.params;
-  const { name, level, schoolYear } = req.body;
+  const { name, level, schoolYear, series } = req.body;
   try {
     await prisma.class.updateMany({
       where: { id, schoolId: req.user.school.id },
-      data: { name, level, schoolYear },
+      data: { name, level, schoolYear, series: parseSeries(series) },
     });
     await logAudit({ action: 'class_update', entity: 'Class', entityId: id, user: req.user, ip: req.ip });
     res.redirect('/school/classes?success=updated');
@@ -481,7 +493,7 @@ async function createStudent(req, res) {
 
 async function updateStudent(req, res) {
   const { id } = req.params;
-  const { firstName, lastName, matricule, classId, birthDate, gender } = req.body;
+  const { firstName, lastName, matricule, classId, birthDate, gender, series } = req.body;
   const schoolId = req.user.school.id;
   try {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
@@ -494,6 +506,7 @@ async function updateStudent(req, res) {
       classId,
       birthDate: birthDate ? new Date(birthDate) : null,
       gender: parseGender(gender),
+      series: parseSeries(series),
     };
     if (req.body.removePhoto === 'on') {
       const { removePersonPhoto } = require('../utils/media');

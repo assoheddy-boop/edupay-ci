@@ -1,0 +1,133 @@
+<% const t = typeof thresholds !== 'undefined' && thresholds ? thresholds : { averageHigh: 10, averageMedium: 12, absencesHigh: 6, absencesMedium: 3, latesHigh: 8, latesMedium: 4 }; %>
+<% const c = typeof counts !== 'undefined' && counts ? counts : { ELEVE: 0, MOYEN: 0, FAIBLE: 0 }; %>
+<% const action = typeof formAction !== 'undefined' ? formAction : '/school/risques'; %>
+<% const delibBase = typeof deliberationsBase !== 'undefined' ? deliberationsBase : '/school/deliberations'; %>
+<% const isReadOnly = typeof readOnly !== 'undefined' && readOnly; %>
+<% const topN = typeof schoolTopN !== 'undefined' ? schoolTopN : 40; %>
+<% const badgeFor = function(level) {
+  if (level === 'ELEVE') return 'badge-error';
+  if (level === 'MOYEN') return 'badge-pending';
+  return 'badge-success';
+}; %>
+<div class="page-header">
+  <div>
+    <h1>Élèves à suivre</h1>
+    <p class="page-sub">Score pédagogique transparent — pas un modèle d’intelligence artificielle. EduConnect</p>
+  </div>
+  <div class="page-header-actions">
+    <% if (!isReadOnly) { %>
+      <a class="btn btn-outline" href="/school/analyse">Analyse</a>
+    <% } %>
+    <% if (classId) { %>
+      <a class="btn btn-outline" href="<%= delibBase %>?classId=<%= classId %>&amp;term=<%= term %>">Délibérations <%= typeof formatTermLabel === 'function' ? formatTermLabel(term) : term %></a>
+    <% } %>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form method="GET" action="<%= action %>" class="form form-inline">
+    <div class="form-group">
+      <label for="classId">Classe</label>
+      <select id="classId" name="classId">
+        <option value="" <%= !classId ? 'selected' : '' %>><%= isReadOnly ? ('Mes classes (top ' + topN + ')') : ('Toute l’école (top ' + topN + ')') %></option>
+        <% classes.forEach(function(cl) { %>
+          <option value="<%= cl.id %>" <%= classId === cl.id ? 'selected' : '' %>><%= cl.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="term">Trimestre</label>
+      <select id="term" name="term">
+        <% terms.forEach(function(tr) { %>
+          <option value="<%= tr.value %>" <%= term === tr.value ? 'selected' : '' %>><%= tr.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Afficher</button>
+  </form>
+  <p class="form-hint">
+    <strong>Élevé</strong> : moyenne &lt; <%= t.averageHigh %>/20, ou ≥ <%= t.absencesHigh %> absences, ou ≥ <%= t.latesHigh %> retards (trimestre).
+    <strong>Moyen</strong> : moyenne &lt; <%= t.averageMedium %>, ou ≥ <%= t.absencesMedium %> absences, ou ≥ <%= t.latesMedium %> retards, ou pas de notes.
+    <strong>Faible</strong> : sinon.
+    Moyenne = formule bulletin (interro / devoir / composition, puis coefficients).
+  </p>
+  <% if (isReadOnly) { %>
+    <p class="form-hint">Consultation — vos classes uniquement. La direction voit toute l’école.</p>
+  <% } %>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card stat-card-warning">
+    <span class="stat-value"><%= c.ELEVE || 0 %></span>
+    <span class="stat-label">Élevé</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= c.MOYEN || 0 %></span>
+    <span class="stat-label">Moyen</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= c.FAIBLE || 0 %></span>
+    <span class="stat-label">Faible</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value"><%= totalStudents || 0 %></span>
+    <span class="stat-label">Élèves scorés</span>
+  </div>
+</div>
+
+<% if (!classes.length) { %>
+  <p class="empty"><%= isReadOnly ? 'Aucune classe affectée.' : 'Créez d’abord une classe.' %></p>
+<% } else if (!rows.length) { %>
+  <p class="empty">Aucun élève pour ce filtre.</p>
+<% } else { %>
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <% if (klass) { %>
+          <%= klass.name %> — <%= typeof formatTermLabel === 'function' ? formatTermLabel(term) : term %>
+        <% } else { %>
+          Priorité école — <%= typeof formatTermLabel === 'function' ? formatTermLabel(term) : term %>
+        <% } %>
+      </h2>
+    </div>
+    <% if (truncated) { %>
+      <p class="form-hint" style="padding:0 1rem">Les <%= topN %> scores les plus élevés sont affichés (<%= totalStudents %> élèves au total). Choisissez une classe pour la liste complète.</p>
+    <% } %>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Classe</th>
+            <th>Moyenne</th>
+            <th>Absences</th>
+            <th>Retard</th>
+            <th>Niveau</th>
+            <th>Motif</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+            <tr>
+              <td>
+                <%= r.lastName %> <%= r.firstName %>
+                <% if (r.matricule) { %><br><small><%= r.matricule %></small><% } %>
+              </td>
+              <td>
+                <%= r.className %>
+                <% if (r.classId) { %>
+                  <br><small><a href="<%= delibBase %>?classId=<%= r.classId %>&amp;term=<%= term %>">Délibérations</a></small>
+                <% } %>
+              </td>
+              <td><strong><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></strong></td>
+              <td><%= r.absences %></td>
+              <td><%= r.lates %></td>
+              <td><span class="badge <%= badgeFor(r.level) %>"><%= r.label %></span></td>
+              <td><small><%= r.motif %></small></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>

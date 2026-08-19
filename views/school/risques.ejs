@@ -1,0 +1,6 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('risques', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Risques pédagogiques' }) %>
+<% } else { %>
+<%- include('../partials/_risques-board') %>
+<% } %>

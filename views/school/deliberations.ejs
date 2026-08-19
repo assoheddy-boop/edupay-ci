@@ -9,8 +9,8 @@
   </div>
   <% if (classId) { %>
     <div class="page-header-actions">
-      <a class="btn btn-outline" href="/school/deliberations/pv?classId=<%= classId %>&amp;term=<%= term %>">Imprimer le PV</a>
-      <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= classId %>&amp;term=<%= term %>">PDF</a>
+      <a class="btn btn-outline" href="/school/deliberations/pv?classId=<%= classId %>&amp;term=<%= term %><% if (typeof series !== 'undefined' && series) { %>&amp;series=<%= series %><% } %>">Imprimer le PV</a>
+      <a class="btn btn-outline" href="/school/deliberations/pv.pdf?classId=<%= classId %>&amp;term=<%= term %><% if (typeof series !== 'undefined' && series) { %>&amp;series=<%= series %><% } %>">PDF</a>
     </div>
   <% } %>
 </div>
@@ -40,6 +40,17 @@
         <% }) %>
       </select>
     </div>
+    <% if (typeof hasSeries !== 'undefined' && hasSeries) { %>
+    <div class="form-group">
+      <label for="series">Série</label>
+      <select id="series" name="series">
+        <option value="" <%= !series ? 'selected' : '' %>>Toutes</option>
+        <% (typeof seriesOptions !== 'undefined' ? seriesOptions : []).forEach(function(opt) { %>
+          <option value="<%= opt.value %>" <%= series === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% } %>
     <button type="submit" class="btn btn-primary">Afficher</button>
   </form>
   <p class="form-hint">
@@ -56,12 +67,14 @@
   <form method="POST" action="/school/deliberations" class="card" id="delibForm">
     <input type="hidden" name="classId" value="<%= classId %>">
     <input type="hidden" name="term" value="<%= term %>">
+    <% if (typeof series !== 'undefined' && series) { %><input type="hidden" name="series" value="<%= series %>"><% } %>
     <div class="table-scroll">
       <table class="table">
         <thead>
           <tr>
             <th>Élève</th>
             <th>Moyenne</th>
+            <th>Rang</th>
             <th>Absences</th>
             <th>Mention</th>
             <th>Décision</th>
@@ -73,9 +86,15 @@
             <tr>
               <td>
                 <%= r.lastName %> <%= r.firstName %>
-                <br><small><%= r.matricule || '—' %><% if (r.suggestedDecision) { %> · suggéré : <%= r.suggestedMention || '—' %> / <%= r.suggestedDecision %><% } %></small>
+                <br><small><%= r.matricule || '—' %><% if (r.series) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(r.series) : r.series %><% } %><% if (r.suggestedDecision) { %> · suggéré : <%= r.suggestedMention || '—' %> / <%= r.suggestedDecision %><% } %></small>
               </td>
               <td><strong><%= r.average == null ? '—' : Number(r.average).toFixed(2) %></strong></td>
+              <td>
+                <% if (r.rank && r.classSize) { %>
+                  <%= r.rank === 1 ? '1er' : r.rank + 'e' %> / <%= r.classSize %>
+                  <% if (r.genderRank && r.genderGroup) { %><br><small><%= r.genderRank === 1 ? '1er' : r.genderRank + 'e' %> / <%= r.genderSize %> <%= r.genderGroup %></small><% } %>
+                <% } else { %>—<% } %>
+              </td>
               <td><%= r.absences %></td>
               <td>
                 <select name="rows[<%= r.studentId %>][mention]">

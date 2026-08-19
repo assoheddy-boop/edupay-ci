@@ -9,6 +9,7 @@
   </div>
   <div>
     <a href="/school/dashboard" class="btn btn-outline">Tableau de bord</a>
+    <a href="/school/risques" class="btn btn-outline">Risques</a>
     <a href="/reinscription/dashboard" class="btn btn-outline">Réinscriptions</a>
   </div>
 </div>
@@ -125,6 +126,7 @@
       <thead>
         <tr>
           <th>Classe</th>
+          <th>Série</th>
           <th>Garçons</th>
           <th>Filles</th>
           <th>Total</th>
@@ -139,6 +141,7 @@
         <% classStats.forEach(function(row) { %>
           <tr>
             <td><strong><%= row.className %></strong><% if (row.level) { %> <span class="text-muted">(<%= row.level %>)</span><% } %></td>
+            <td><%= row.series && typeof seriesLabel === 'function' ? seriesLabel(row.series) : (row.series || '—') %></td>
             <td><%= row.boys %></td>
             <td><%= row.girls %></td>
             <td><%= row.total %></td>

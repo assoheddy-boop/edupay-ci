@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1><%= classItem.name %></h1>
-    <p class="page-sub">Répartition filles / garçons — <%= classItem.level %></p>
+    <p class="page-sub">Répartition filles / garçons — <%= classItem.level %><% if (classItem.series && typeof seriesLabel === 'function') { %> · <%= seriesLabel(classItem.series) %><% } %></p>
   </div>
   <div>
     <a href="/school/classes" class="btn btn-outline">Classes</a>

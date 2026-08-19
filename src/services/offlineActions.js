@@ -3,6 +3,7 @@ const { sendNotification } = require('../../services/NotificationService');
 const { validateProof, MAX_PROOF_SIZE: PROOF_LIMIT } = require('../../services/PaymentService');
 const { createTeacherProfile } = require('../../services/HRService');
 const { parseGender } = require('../../services/ClassService');
+const { parseSeries } = require('./series');
 const { storeMulterFile } = require('../../services/StorageService');
 const { logAudit } = require('../utils/audit');
 const { isTempId, resolveEntityId, mapPayloadIds, payloadHasUnresolvedTempId } = require('../utils/offlineQueue');
@@ -14,7 +15,7 @@ const {
   parentPublishMessage,
 } = require('./homeworkService');
 const { canonicalPeriod, normalizeTerm } = require('./academicTerms');
-const { upsertSubjectCoefficient, parseCoefficient } = require('./gradesAverage');
+const { upsertSubjectCoefficient, parseCoefficient, normalizeGradeKind } = require('./gradesAverage');
 
 const MAX_PROOF_SIZE = PROOF_LIMIT || 5 * 1024 * 1024;
 
@@ -205,11 +206,12 @@ async function applyGrade({ user, payload = {} }) {
       if (isTempId(studentId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
     }
 
-    const { subject, period, maxValue, coefficient } = payload;
+    const { subject, period, maxValue, coefficient, kind } = payload;
     if (!subject || !period) return { ok: false, error: 'data', entity: 'grade' };
 
     const term = normalizeTerm(period);
     const storedPeriod = canonicalPeriod(period);
+    const storedKind = normalizeGradeKind(kind);
     await upsertSubjectCoefficient(teacher.schoolId, subject, parseCoefficient(coefficient));
 
     const students = await prisma.student.findMany({
@@ -227,6 +229,7 @@ async function applyGrade({ user, payload = {} }) {
           subject,
           period: storedPeriod,
           term,
+          kind: storedKind,
           value: parseFloat(val),
           maxValue: parseFloat(maxValue || 20),
         },
@@ -239,7 +242,7 @@ async function applyGrade({ user, payload = {} }) {
   const studentId = resolveEntityId(payload.studentId);
   if (!studentId || isTempId(studentId)) return { ok: false, error: 'unknown_id', entity: 'grade' };
 
-  const { subject, value, maxValue, period, comment, coefficient } = payload;
+  const { subject, value, maxValue, period, comment, coefficient, kind } = payload;
   if (!subject || value == null || value === '' || !period) {
     return { ok: false, error: 'data', entity: 'grade' };
   }
@@ -263,6 +266,7 @@ async function applyGrade({ user, payload = {} }) {
       maxValue: parseFloat(maxValue || 20),
       period: storedPeriod,
       term,
+      kind: normalizeGradeKind(kind),
       comment,
     },
   });
@@ -349,6 +353,7 @@ async function applyClass({ user, payload = {} }) {
       level,
       schoolYear: payload.schoolYear || school.currentSchoolYear,
       schoolId: school.id,
+      series: parseSeries(payload.series),
     },
   });
   await logAudit({ action: 'class_create', entity: 'Class', user, details: { name } });
@@ -381,6 +386,7 @@ async function applyStudent({ user, payload = {}, file = null }) {
         schoolId: school.id,
         birthDate: payload.birthDate ? new Date(payload.birthDate) : null,
         gender: parseGender(payload.gender),
+        series: parseSeries(payload.series),
       },
     });
 
