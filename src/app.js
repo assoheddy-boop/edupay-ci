@@ -28,6 +28,8 @@ const cronRoutes = require('./routes/cron');
 const legalRoutes = require('./routes/legal');
 const guideRoutes = require('./routes/guides');
 const devisRoutes = require('./routes/devis');
+const portalRoutes = require('./routes/portal');
+const portalController = require('./controllers/portalController');
 
 const app = express();
 
@@ -84,6 +86,7 @@ app.get('/offline', (_req, res) => {
 app.use(legalRoutes);
 app.use(guideRoutes);
 app.use(devisRoutes);
+app.use(portalRoutes);
 
 app.get('/', (_req, res) => {
   const { plans, moduleList } = getPlansForLanding();
@@ -119,6 +122,8 @@ app.use('/stats', statsRoutes);
 app.use('/reinscription', reinscriptionRoutes);
 app.use('/redoublement', redoublementRoutes);
 app.use('/timetable', timetableRoutes);
+
+app.get('/:slug', portalController.publicAlias);
 
 app.use((_req, res) => {
   res.status(404).render('error', { message: 'Page introuvable', user: null });

@@ -213,6 +213,12 @@ model School {
   currentSchoolYear String   @default("2025-2026")
   /// Collège par défaut : rien ne disparaît pour IGEST / écoles déjà en ligne.
   educationCycle    EducationCycle @default(COLLEGE)
+  /// Page publique /e/:slug et listing /ecoles. Défaut off (opt-in direction).
+  publicPortalEnabled Boolean @default(false)
+  publicDescription   String? @db.Text
+  publicPhone         String?
+  lat                 Float?
+  lng                 Float?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -262,6 +268,7 @@ model School {
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
 
   @@index([groupId])
+  @@index([publicPortalEnabled, city])
 }
 
 model SubscriptionPlan {

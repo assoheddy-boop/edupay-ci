@@ -6,6 +6,8 @@ Document d’équipe (cinq regards : Papyrus, examens & statistiques, vie scolai
 
 Ce texte ne décrit **que ce qui existe dans le code** d’EduConnect, puis ce qu’il faut construire. Rien n’est inventé.
 
+**Tableau de bord (6 catégories, cycle primaire / collège / lycée / mixte).** Voir [EduConnect-Papyrus-dashboard.md](./EduConnect-Papyrus-dashboard.md) — arborescence, champ `School.educationCycle`, ce qui s’affiche selon le cycle.
+
 ---
 
 ## État réel d’EduConnect (inventaire)
@@ -16,9 +18,19 @@ Ce texte ne décrit **que ce qui existe dans le code** d’EduConnect, puis ce q
 | --- | --- |
 | **Identités** | Direction, enseignant, parent, super-admin, admin de groupe. L’élève n’a pas de compte. Lien parent par **code école + matricule + nom**. |
 | **Paiements Wave / OM** | Numéros Wave et OM dans les paramètres. Le parent paie dans Wave ou Orange Money, envoie une **capture**. Statuts PENDING / VALIDATED / REJECTED. Reçu PDF possible. **Pas d’API Wave qui débite le parent.** Validation **en ligne**. |
-| **Notes** | Saisie unitaire et **en lot** (enseignant). Matière (texte), période (texte libre), note / barème, commentaire. |
-| **Bulletins PDF** | Génération élève ou **classe entière**. En-tête avec **logo de l’école**. Moyenne, **rang** dans la classe, coefficients affichés sur le PDF. |
-| **Absences & retards** | Appel du jour : Présent / **Retard (LATE)** / Absent. Signalement hors appel avec motif. Parents notifiés. |
+| **Notes** | Saisie unitaire et **en lot**. Types **INTERRO / DEVOIR / COMPOSITION**. Périodes **T1 / T2 / T3** (+ annuelle). |
+| **Bulletins PDF** | Génération élève ou **classe entière**. En-tête avec **logo de l’école**. Moyenne **pondérée** (coefficients établissement), **rang**, deux matricules. |
+| **Coefficients** | Grille par matière, page direction. Utilisés dans la moyenne du bulletin. |
+| **Délibérations** | Conseil de classe par classe / trimestre : mentions, décisions, PV PDF. Libellé **Évaluations** en primaire. |
+| **Palmarès** | Classement de classe, direction + enseignant, impression. Masqué en primaire. |
+| **Convocations / émargement** | Émargement. Convocations **blanc** et **national** (primaire : blanc seulement). |
+| **Matricules** | Matricule **école** + matricule **national MEN**. |
+| **Absences & retards** | Appel du jour : Présent / **Retard (LATE)** / Absent. Signalement hors appel. **Justificatifs** parent → direction. Parents notifiés. |
+| **Caisse** | Encaissement secrétariat (espèces / chèque), ticket, compte CASH. Complète Wave/OM. |
+| **Cas sociaux** | Dossier direction (remise, échéancier). Distinct des bourses super-admin. |
+| **Risques** | Liste « élèves à suivre » (notes + absences/retards, règles explicites). |
+| **Import** | Élèves **CSV et Excel (.xlsx)**. |
+| **Cycle** | `PRIMAIRE` \| `COLLEGE` \| `LYCEE` \| `MIXTE`. Défaut COLLEGE (IGEST). Menu à 6 catégories. |
 | **Devoirs & contrôles** | Publication enseignant (Devoir ou Contrôle), calendrier, pièce jointe, rappels (veille 18 h Abidjan ou horaire choisi). Vue direction + exports. |
 | **Messages** | Chat école ↔ parents ↔ enseignants (texte, fichier, vocal). Ce n’est **pas** un SMS. |
 | **Emploi du temps** | Créneaux classe / enseignant / élève, PDF et Excel, notification parents si modification. Affectation enseignant ↔ classe. |
@@ -36,16 +48,13 @@ Ce texte ne décrit **que ce qui existe dans le code** d’EduConnect, puis ce q
 
 ### Ce qui n’existe pas (écarts honnêtes)
 
-- **Délibérations / conseil de classe** : pas de module (pas de PV, pas de mentions « Assez bien / Bien / Très bien », pas de décision Admis / Ajourné / Redouble, pas de vote).
-- **Moyenne pondérée réelle** : les coefficients (ex. Maths 3, Français 3) sont **affichés** sur le bulletin, mais la moyenne calculée est une **moyenne arithmétique** des notes, pas une moyenne à coefficients. Pas de grille MEN par établissement, pas de séries (A, C, D) ni de classement par genre.
-- **Périodes** : champ texte, pas un trimestres T1 / T2 / T3 structuré avec moyenne annuelle.
-- **Compositions vs interrogations** : les devoirs distinguent Devoir / Contrôle ; les **notes du bulletin** n’ont pas ce découpage (interro, devoir, composition).
-- **Cas sociaux** : des **bourses** existent côté super-admin plateforme, pas un dossier « cas social » géré par la direction (remise, échelonnement, suivi social).
-- **Analytique prédictive** : **non construite**. L’analyse redoublement est **descriptive** (causes a posteriori), pas un score de risque.
-- **Caisse secrétariat Papyrus-like** : pas de ticket caisse espèces au guichet, pas de journal de caisse « secretaria » avec numérotation type logiciel Windows. La caisse existe dans la compta, le flux parent est Wave/OM + preuve.
-- **Impressions secrétariat** : bulletins, EDT, stats, devoirs, compta, RH — oui. Pas la batterie de listings Papyrus (listes d’appel papier, récapitulatifs de délibération, états MEN très denses).
+- **API Wave / OM de débit automatique** : volontairement absent. Le flux est **preuve + validation**.
+- **Campagnes SMS génériques** type « réunion parents » hors événements métier (absence, retard, paiement, devoir, EDT).
+- **Prédictif opaque / machine learning** : la page **Risques** existe (règles explicites). Pas de boîte noire.
+- **Listings inspection MEN** très denses (papier type Papyrus historique) : partiels (PV, palmarès, convocations, émargement, bulletins) mais pas toute la batterie Windows.
+- **Validation de paiement hors-ligne** : volontairement en ligne.
 
-Ces écarts orientent le moyen et le long terme. Ils ne doivent pas masquer l’avance déjà réelle sur le cloud, le parent, Wave/OM et le mobile.
+Les délibérations, coefficients pondérés, trimestres T1/T2/T3, kinds INTERRO/DEVOIR/COMPOSITION, cas sociaux, caisse secrétariat, palmarès, convocations blanc/national, deux matricules, justificatifs et import Excel **sont dans le code**. Le document tableau de bord détaille qui les voit selon le cycle.
 
 ---
 
@@ -96,22 +105,22 @@ Chaque limite Papyrus est mappée : **déjà là** ou **à construire**. Pas de 
 | Limite Papyrus | EduConnect maintenant | À construire |
 | --- | --- | --- |
 | Un PC Windows, pas de cloud | Application web live, comptes direction / prof / parent, assistance super-admin pour dépanner une école | Continuer le déploiement + formation secrétariat (le vrai concurrent de Papyrus, c’est l’habitude) |
-| Mobile money faible | **Wave + OM** : numéros école, preuve, validation, relances cron, recettes en compta | API de débit automatique : **non**, et ce n’est pas le sujet court terme. Améliorer le rapprochement preuve ↔ compte (Wave/OM/caisse/banque) |
-| Pas d’app parent | Espace parent : paiements, notes, absences/retards, devoirs, messages, suivi, confidentialité. Multi-enfants, multi-écoles | Bulletin consultable côté parent de façon plus visible (notification existe déjà à la génération) |
-| SMS add-on | **SMS officiel** (module + file + tableau de bord + sender école). Push + e-mail en parallèle. Wave/OM **≠** SMS | Campagnes SMS de masse type « réunion parents » (aujourd’hui surtout événements métier : absence, retard, paiement, devoir, EDT) |
-| Pas de multi-campus | Groupe : campus, finance, RH, comparatif, circulaires, classement recettes | Indicateurs pédagogiques consolidés (moyennes, délibérations) quand le module notes sera plus riche |
-| UI PC 2000 | Mobile : menu hamburger, PWA, dashboards direction / prof / parent / groupe | Affiner les écrans **secrétariat collège** (listes d’appel, saisie notes par matière/trimestre) pour que la secrétaire Papyrus s’y retrouve |
-| Appel sur papier | Appel Présent / Retard / Absent, **hors-ligne**, notif parent + SMS si module | Justificatifs d’absence (certificat) et récap mensuel type vie scolaire |
-| Notes / rangs / bulletins | Notes, rang de classe, bulletin PDF **avec logo**, génération de masse | **Moyenne à coefficients réelle**, trimestres structurés, compositions, **délibérations** |
-| Délibérations Papyrus | **Absent** | Conseil de classe : PV, mentions, décisions, listes à imprimer / PDF |
-| Caisse espèces | Compte **caisse** en compta + flux parent Wave/OM | Guichet secrétariat : encaissement espèces / chèque avec reçu immédiat (complément, pas remplacement de Wave/OM) |
-| Cas sociaux | Bourses **plateforme** (super-admin), pas l’école | Dossier cas social direction : remise, échéancier, suivi |
-| Stats listings | Analyse genre, réussite, absences, réinscriptions, causes de redoublement, exports Excel/PDF | Prédictif léger (risque d’échec / décrochage) — **pas encore là** |
-| Personnel | RH : dossiers, congés, présence, paie, évaluations | Lier plus fort EDT ↔ affectation matière/classe (aujourd’hui classe + créneaux) |
-| Inscriptions | Élèves, CSV, photos, réinscriptions, promotions, transferts | Parcours « rentrée » plus proche du secrétariat (lots, impressions listes) |
-| Sauvegarde USB | Cloud + job de backup | Communication claire aux directions : « plus de clé USB » |
+| Mobile money faible | **Wave + OM** : numéros école, preuve, validation, relances cron, recettes en compta | API de débit automatique : **non**, et ce n’est pas le sujet court terme. Améliorer le rapprochement preuve ↔ compte |
+| Pas d’app parent | Espace parent : paiements, notes, absences/retards, **justificatifs**, convocations, devoirs, messages, suivi | Bulletin encore plus visible côté parent (la notif à la génération existe) |
+| SMS add-on | **SMS officiel** (module + file + tableau de bord + sender école). Push + e-mail. Wave/OM **≠** SMS | Campagnes SMS de masse type « réunion parents » |
+| Pas de multi-campus | Groupe : campus, finance, RH, comparatif, circulaires | Indicateurs pédagogiques consolidés au niveau groupe |
+| UI PC 2000 | Mobile : hamburger, PWA, **menu 6 catégories** filtré par cycle (primaire / collège / lycée / mixte) | Affiner les listings secrétariat type inspection |
+| Appel sur papier | Appel Présent / Retard / Absent, **hors-ligne**, notif + SMS. **Justificatifs** | Récap mensuel type vie scolaire encore plus dense |
+| Notes / rangs / bulletins | INTERRO / DEVOIR / COMPOSITION, T1/T2/T3, **moyenne à coefficients**, rang, PDF logo | Listings papier inspection |
+| Délibérations Papyrus | Conseil de classe : PV, mentions, décisions. Palmarès. Primaire : libellé **Évaluations** | Signatures / jurys avancés (long terme) |
+| Convocations | Blanc + national, deux matricules, émargement. Primaire : blanc seulement | — |
+| Caisse espèces | **Caisse secrétariat** (espèces/chèque, ticket) + Wave/OM + compta 4 comptes | Rapprochement bancaire éventuel |
+| Cas sociaux | Dossier **direction** (remise, échéancier) | — |
+| Stats listings | Analyse + page **Risques** (règles explicites) + exports | Prédictif v2 (tendances), toujours explicable |
+| Inscriptions | Élèves, **CSV + Excel**, photos, réinscriptions, transferts | Parcours rentrée encore plus proche du secrétariat |
+| Sauvegarde USB | Cloud + job de backup | Communication « plus de clé USB » |
 
-**Synthèse honnête.** Sur Wave/OM, parent, mobile, SMS en file, compta 4 comptes, multi-école, hors-ligne ciblé, RH et vie scolaire, **EduConnect est déjà devant Papyrus**. Sur le **cœur examens du secondaire** (coefficients vrais, trimestres, conseil de classe), **Papyrus reste plus complet**. C’est le chantier prioritaire pour convaincre un collège qui « ne peut pas quitter Papyrus à cause des délibérations ».
+**Synthèse honnête.** Le cœur examens du secondaire (coefficients, trimestres, délibérations, palmarès, convocations) **est dans le code**. EduConnect est devant Papyrus sur Wave/OM, parent, mobile, SMS, multi-école, caisse mixte, cycle primaire/collège/lycée. Le chantier prioritaire n’est plus « rattraper les délibérations » : c’est **former le secrétariat** et **régler le cycle** de chaque école. Détail du menu : [EduConnect-Papyrus-dashboard.md](./EduConnect-Papyrus-dashboard.md).
 
 ---
 
@@ -144,12 +153,14 @@ Cible : collège ou lycée ivoirien (6e–Tle), direction + censeur + secrétari
 
 14. Cantine, transport, santé, sortie QR, activités, comportement, objets perdus  
 
-**À ajouter pour coller à Papyrus sur le secondaire (pas encore dans le code)**
+**À ajouter (plus tard, pas un trou bloquant)**
 
-15. **Trimestres & coefficients** configurables (grille établissement)  
-16. **Conseil de classe / délibérations** (PV, mentions, décisions)  
-17. **Cas sociaux** (direction, pas seulement super-admin)  
-18. **Prédictif** (moyen/long) : risque d’échec à partir des notes, absences, retards — aujourd’hui **inexistant**
+15. Campagnes SMS « réunion / conseil »  
+16. Indicateurs pédagogiques consolidés **groupe**  
+17. Prédictif v2 (tendances), toujours explicable — la page **Risques** existe déjà  
+18. Listings inspection MEN très denses  
+
+**Déjà livré (ne plus les vendre comme « à venir »)** : trimestres & coefficients, délibérations / évaluations, palmarès, convocations blanc/national, cas sociaux, caisse secrétariat, justificatifs, import Excel, cycle d’enseignement.
 
 ### 3.2 Interface (UX/UI)
 
@@ -186,55 +197,30 @@ Pas de slogans. Des pas concrets pour un collège/lycée qui compare à Papyrus.
 
 ### Court terme (0–3 mois) — vendre et ancrer ce qui existe
 
-Objectif : qu’une direction puisse **arrêter le PC Papyrus pour le quotidien** (caisse Wave/OM, parents, appel, bulletins simples) tout en gardant Papyrus **un trimestre** pour les délibérations si besoin. Double saisie temporaire assumée.
+Objectif : qu’une direction **arrête le PC Papyrus** pour le quotidien **et** le conseil de classe. Les délibérations, le palmarès, la caisse et les convocations sont livrés.
 
-1. **Démo collège type** (6e–3e ou 2nde–Tle) : classes, profs, appel LATE, notes en lot, bulletin PDF **avec le logo de l’école**, paiement Wave/OM parent, validation direction, SMS officiel sur une absence test.
-2. **Paramétrage Pro via `/devis`** : un seul plan, tarif **uniquement sur le résultat**. Formation secrétariat + 2 profs + 1 parent témoin.
-3. **Rentrée** : import CSV élèves, codes école, numéros Wave/OM, logo, identifiant SMS. Réinscriptions pour ceux qui y passent déjà.
-4. **Petits écarts utiles (code mince, gros effet)**  
-   - Afficher le **bulletin** plus clairement côté parent.  
-   - Expliquer sur le bulletin que la moyenne actuelle est **non pondérée** (honnêteté) **ou** corriger le calcul pour utiliser les coefficients déjà affichés (correctif ciblé, pas un nouveau module).  
-   - Périodes proposées : T1 / T2 / T3 (liste, le champ existe déjà).  
-   - Écran secrétariat « paiements du jour » + « bulletins de la classe ».
-5. **Run** : file SMS, hors-ligne appel/notes, assistance super-admin si l’école bloque. Guides direction / enseignant / parent déjà rédigés : les donner papier + lien.
+1. **Régler le cycle** de chaque école (`PRIMAIRE` / `COLLEGE` / `LYCEE` / `MIXTE`). IGEST → `COLLEGE`. Voir [EduConnect-Papyrus-dashboard.md](./EduConnect-Papyrus-dashboard.md).  
+2. **Démo par cycle** : primaire (évaluations, blanc, caisse, SMS, parents) ; collège (délibérations, palmarès, national, matricule MEN) ; mixte (séparateurs Primaire / Secondaire).  
+3. **Paramétrage Pro via `/devis`** : un seul plan, tarif **uniquement sur le résultat**. Formation secrétariat + 2 profs + 1 parent témoin.  
+4. **Rentrée** : import **CSV / Excel**, codes école, Wave/OM, logo, identifiant SMS.  
+5. **Run** : file SMS, hors-ligne appel/notes, assistance super-admin. Guides déjà rédigés.
 
-Hors scope court : prédictif, conseil de classe complet, API Wave.
+Hors scope court : API Wave, campagnes SMS génériques, prédictif opaque.
 
-### Moyen terme (3–9 mois) — rattraper Papyrus sur le secondaire
+### Moyen terme (3–9 mois) — confort secrétariat et groupe
 
-Objectif : le censeur n’a plus besoin de Papyrus pour le **conseil de classe**.
-
-1. **Coefficients et trimestres**  
-   - Grille de coefficients par matière et par niveau (6e, 3e, 1re, Tle…), éditable par l’école.  
-   - Moyenne trimestrielle **pondérée**, moyenne annuelle.  
-   - Classement de classe (déjà un rang) + éventuellement par genre (les stats genre existent).  
-2. **Saisie notes « collège »**  
-   - Types : interrogation, devoir, composition (aligné sur Devoir/Contrôle déjà présents côté homework).  
-   - Barème 20 par défaut, périodes T1/T2/T3.  
-3. **Délibérations (MVP)**  
-   - Session conseil par classe et trimestre.  
-   - Liste élèves : moyenne, rang, absences/retards, appréciation direction.  
-   - Décision : Admis / Ajourné / Redouble / Conditionnel (valeurs à figer avec des chefs d’établissement).  
-   - Mentions simples.  
-   - PV PDF + listes imprimables (c’est ce que Papyrus imprime le jour J).  
-4. **Cas sociaux (direction)**  
-   - Dossier élève : motif, remise %, échéancier, lien avec la scolarité. Les bourses super-admin restent un autre niveau (bourses institutionnelles).  
-5. **Prédictif léger (v1)**  
-   - **Pas de machine learning opaque.** Un score simple : moyenne basse + absences/retards au-dessus des seuils **déjà** utilisés pour les causes de redoublement. Liste « élèves à suivre » pour le censeur.  
-6. **Caisse secrétariat**  
-   - Encaissement espèces/chèque → compte CASH/BANK, reçu PDF, même élève que le flux Wave/OM.  
-7. **UX secrétariat** : tableaux d’appel et de notes pleine largeur ; dashboards direction inchangés (modernes).
+1. Affiner MIXTE primaire+collège **sans** séries lycée si l’établissement n’a pas de lycée.  
+2. UX secrétariat : listings d’appel et notes pleine largeur, impressions inspection.  
+3. Campagnes SMS / e-mail « conseil de classe / réunion ».  
+4. Indicateurs pédagogiques consolidés au **groupe**.  
+5. Liaison retards cumulés → convocation vie scolaire.
 
 ### Long terme (9–18 mois) — dépasser Papyrus
 
-Objectif : Papyrus n’a plus d’argument « métier » ; EduConnect devient le système d’enregistrement.
-
-1. **Délibérations avancées** : historique des conseils, signatures, rattrapages, séries (A/C/D), jurys de fin d’année, exports type inspection (à spécifier avec des établissements, pas à deviner).  
-2. **Prédictif v2** : tendances intra-trimestre, alerte précoce, comparaison campus (groupe). Toujours explicable (règles + historique), pas une boîte noire.  
-3. **Vie scolaire secondaire** : retards cumulés → convocation ; liaison comportement (badges déjà là) ↔ conseil de classe.  
-4. **Groupe scolaire** : mêmes indicateurs pédagogiques consolidés que la finance aujourd’hui.  
-5. **Intégrations** : rester **preuve Wave/OM** tant que les API paiement CI ne sont pas stables pour les écoles ; éventuellement rapprochement bancaire. SMS : campagnes et modèles (réunion, conseil).  
-6. **Hors-ligne élargi** avec prudence : ne pas promettre la validation de paiement hors-ligne (volontairement en ligne aujourd’hui).
+1. **Délibérations avancées** : signatures, rattrapages, jurys, exports inspection (à spécifier avec des établissements).  
+2. **Prédictif v2** : tendances intra-trimestre, comparaison campus. Toujours explicable. La page Risques (v1) existe.  
+3. **Intégrations** : rester **preuve Wave/OM** tant que les API paiement CI ne sont pas stables.  
+4. **Hors-ligne élargi** avec prudence : ne pas promettre la validation de paiement hors-ligne.
 
 ---
 
@@ -243,7 +229,7 @@ Objectif : Papyrus n’a plus d’argument « métier » ; EduConnect devient le
 - Une offre : **Pro**.  
 - Entrée par **https://educonnect-ci.com/devis**.  
 - Le prix se lit **sur le devis généré**, pas en vitrine.  
-- Face à Papyrus, le pitch n’est pas « on a plus de listings » : c’est **Wave/OM + parents + mobile + SMS officiel + compta + multi-école dès maintenant**, et **délibérations dans les 3–9 mois** pour ne plus laisser le censeur sur Windows.
+- Face à Papyrus, le pitch : **Wave/OM + parents + mobile + SMS officiel + compta + caisse + délibérations / palmarès / convocations + cycle primaire-collège-lycée dès maintenant**.
 
 **Contact.** [https://educonnect-ci.com](https://educonnect-ci.com) · contact@educonnect.ci  
 EduConnect — Alliance Digitale Internationale — Côte d’Ivoire.

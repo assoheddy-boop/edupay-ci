@@ -51,4 +51,13 @@ const devisLimiter = rateLimit({
   ...vercelSafe,
 });
 
-module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter, childLinkLimiter, devisLimiter };
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Trop de messages. Réessayez dans 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...vercelSafe,
+});
+
+module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter, childLinkLimiter, devisLimiter, contactLimiter };

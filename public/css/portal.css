@@ -1,0 +1,131 @@
+/* Pages publiques école + annuaire — chargées si portalCss */
+
+.portal {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+}
+
+.portal-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.portal-brand {
+  text-decoration: none;
+  color: var(--gray);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.portal-brand strong { color: var(--blue); }
+
+.portal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.portal-nav a {
+  text-decoration: none;
+  color: var(--gray);
+  font-size: 0.95rem;
+}
+
+.portal-nav a:hover { color: var(--blue); }
+
+.portal-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.portal-hero-brand {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.portal-kicker {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.portal-hero h1 { font-size: 1.75rem; margin: 0.15rem 0; }
+
+.portal-campus, .portal-lead { color: var(--gray-light); margin: 0.35rem 0 0; }
+
+.portal-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.portal-card { margin-bottom: 1rem; }
+
+.portal-desc { margin-bottom: 0.75rem; }
+
+.portal-meta {
+  list-style: none;
+  padding: 0;
+  color: var(--gray-light);
+}
+
+.portal-map {
+  width: 100%;
+  min-height: 280px;
+  border: 0;
+  border-radius: var(--radius);
+}
+
+.portal-filters { margin-bottom: 1.25rem; }
+
+.portal-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-school-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.portal-school-meta {
+  display: block;
+  color: var(--gray-light);
+  font-size: 0.9rem;
+}
+
+.portal-honeypot {
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
+}
+
+.portal-legal {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--gray-light);
+}

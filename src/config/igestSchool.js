@@ -13,6 +13,10 @@ const IGEST_SCHOOL = {
   waveNumber: null,
   omNumber: null,
   educationCycle: 'COLLEGE',
+  publicPortalEnabled: true,
+  publicPhone: '05 45 47 48 29',
+  publicDescription:
+    "Institut Général d'Enseignement Secondaire (IGEST), Yopougon-Sideci, Abidjan. Collège partenaire EduConnect.",
   admin: {
     email: 'igest@educonnect.ci',
     firstName: 'Affoua Valentine',

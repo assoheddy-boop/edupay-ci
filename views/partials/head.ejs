@@ -6,9 +6,12 @@
   <meta name="theme-color" content="#0052CC">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="description" content="EduConnect — Gestion scolaire & paiements Wave/OM, Côte d'Ivoire">
+  <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'EduConnect — Gestion scolaire & paiements Wave/OM, Côte d\'Ivoire' %>">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+  <link rel="canonical" href="<%= canonicalUrl %>">
+  <% } %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>EduConnect</title>
   <link rel="stylesheet" href="/css/main.css?v=9">
   <% if (typeof homeCss !== 'undefined' && homeCss) { %>
@@ -16,6 +19,9 @@
   <% } %>
   <% if (typeof devisCss !== 'undefined' && devisCss) { %>
   <link rel="stylesheet" href="/css/devis.css?v=1">
+  <% } %>
+  <% if (typeof portalCss !== 'undefined' && portalCss) { %>
+  <link rel="stylesheet" href="/css/portal.css?v=1">
   <% } %>
 </head>
 <body<% if (typeof user !== 'undefined' && user) { %> data-user-id="<%= user.id %>" data-user-role="<%= user.role %>"<% } %>>

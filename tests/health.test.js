@@ -63,7 +63,7 @@ describe('EduConnect API', () => {
   test('production error pages do not include stack traces', async () => {
     const prev = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
-    const res = await request(app).get('/definitely-missing-page-xyz');
+    const res = await request(app).get('/this/page/does/not-exist');
     process.env.NODE_ENV = prev;
     expect(res.status).toBe(404);
     expect(res.text).not.toMatch(/at\s+\S+\s+\(/);

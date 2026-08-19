@@ -1,0 +1,112 @@
+<%- include('../partials/head') %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/auth/login">Espace parent / Connexion</a>
+      <a href="/devis">Devis</a>
+    </nav>
+  </header>
+
+  <section class="portal-hero">
+    <div class="portal-hero-brand">
+      <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'lg' }) %>
+      <div>
+        <p class="portal-kicker"><%= school.cycleLabel %> · <%= school.city %></p>
+        <h1><%= school.name %></h1>
+        <% if (school.campusLabel) { %>
+          <p class="portal-campus"><%= school.campusLabel %></p>
+        <% } %>
+      </div>
+    </div>
+    <div class="portal-hero-actions">
+      <a class="btn btn-primary" href="<%= school.payUrl %>">Payer la scolarité</a>
+      <a class="btn btn-outline" href="<%= school.loginUrl %>">Espace parent / Connexion</a>
+    </div>
+  </section>
+
+  <div class="portal-grid">
+    <article class="card portal-card">
+      <h2>Présentation</h2>
+      <% if (school.publicDescription) { %>
+        <p class="portal-desc"><%= school.publicDescription %></p>
+      <% } else { %>
+        <p class="portal-desc"><%= school.name %> est un établissement EduConnect à <%= school.city %> (<%= school.cycleLabel %>).</p>
+      <% } %>
+      <ul class="portal-meta">
+        <% if (school.address) { %><li>Adresse : <%= school.address %></li><% } %>
+        <li>Ville : <%= school.city %></li>
+        <li>Cycle : <%= school.cycleLabel %></li>
+        <% if (school.publicPhone) { %><li>Téléphone : <%= school.publicPhone %></li><% } %>
+        <% if (school.classCount != null) { %><li>Classes : <%= school.classCount %> (effectif anonymisé, sans noms d’élèves)</li><% } %>
+      </ul>
+    </article>
+
+    <article class="card portal-card">
+      <h2>Résultats scolaires</h2>
+      <p>Les bulletins PDF, notes et classements <strong>ne sont pas publiés</strong> sur le web. Ils restent dans l’espace parent, derrière connexion — pour éviter toute fuite de données élèves.</p>
+      <a class="btn btn-primary" href="<%= school.loginUrl %>">Consulter dans l’espace parent</a>
+    </article>
+
+    <article class="card portal-card">
+      <h2>Paiement de la scolarité</h2>
+      <p>Wave et Orange Money se font dans l’espace parent (preuve + validation par l’école). Pas de paiement public sur cette page.</p>
+      <a class="btn btn-primary" href="<%= school.payUrl %>">Payer la scolarité</a>
+    </article>
+  </div>
+
+  <% if (school.osmEmbedSrc) { %>
+  <article class="card portal-card">
+    <h2>Plan</h2>
+    <iframe
+      class="portal-map"
+      title="Carte OpenStreetMap — <%= school.name %>"
+      src="<%= school.osmEmbedSrc %>"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <p class="form-hint"><a href="<%= school.osmSearchUrl %>" rel="noopener noreferrer" target="_blank">Ouvrir dans OpenStreetMap</a> — sans Google Maps.</p>
+  </article>
+  <% } else if (school.osmSearchUrl) { %>
+  <article class="card portal-card">
+    <h2>Plan</h2>
+    <p>Coordonnées GPS non renseignées. <a href="<%= school.osmSearchUrl %>" rel="noopener noreferrer" target="_blank">Rechercher l’adresse sur OpenStreetMap</a>.</p>
+  </article>
+  <% } %>
+
+  <article class="card portal-card" id="contact">
+    <h2>Contacter l’établissement</h2>
+    <% if (contactSuccess) { %>
+      <div class="alert alert-success">Message envoyé. L’école ou EduConnect vous répondra.</div>
+    <% } else { %>
+      <% if (contactError) { %><div class="alert alert-error"><%= contactError %></div><% } %>
+      <form method="POST" action="<%= school.portalPath %>/contact" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="portal-honeypot" aria-hidden="true">
+          <label>Site web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <div class="form-group">
+          <label for="name">Nom</label>
+          <input type="text" id="name" name="name" required maxlength="120" value="<%= contactValues.name || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" required maxlength="120" value="<%= contactValues.email || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="phone">Téléphone</label>
+          <input type="tel" id="phone" name="phone" maxlength="40" value="<%= contactValues.phone || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5" required minlength="10" maxlength="2000"><%= contactValues.message || '' %></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+      </form>
+    <% } %>
+  </article>
+
+  <p class="portal-legal">Page publique EduConnect — Alliance Digitale Internationale. Canonical : <a href="<%= school.portalUrl %>"><%= school.portalUrl %></a></p>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

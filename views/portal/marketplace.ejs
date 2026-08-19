@@ -1,0 +1,60 @@
+<%- include('../partials/head') %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/auth/login">Connexion</a>
+      <a href="/devis">Devis</a>
+    </nav>
+  </header>
+
+  <section class="portal-hero">
+    <div>
+      <p class="portal-kicker">Côte d’Ivoire · EduConnect</p>
+      <h1>Trouver une école</h1>
+      <p class="portal-lead">Annuaire des établissements qui ont publié leur page. Les notes, bulletins et classements restent dans l’espace parent.</p>
+    </div>
+  </section>
+
+  <form class="card portal-filters" method="GET" action="/ecoles">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ville">Ville</label>
+        <input type="text" id="ville" name="ville" value="<%= ville %>" placeholder="Abidjan, Bouaké…">
+      </div>
+      <div class="form-group">
+        <label for="cycle">Cycle</label>
+        <select id="cycle" name="cycle">
+          <option value="">Tous</option>
+          <% cycleOptions.forEach(function(opt) { %>
+            <option value="<%= opt.value %>" <%= cycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Rechercher</button>
+  </form>
+
+  <% if (!schools.length) { %>
+    <div class="card portal-card">
+      <p>Aucune école publiée pour ces critères. La direction active la page depuis <strong>Paramètres école</strong> (« Publier la page de l’école »).</p>
+    </div>
+  <% } else { %>
+    <ul class="portal-list">
+      <% schools.forEach(function(s) { %>
+        <li>
+          <a class="card portal-school-link" href="<%= s.portalPath %>">
+            <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+            <span>
+              <strong><%= s.name %></strong>
+              <span class="portal-school-meta"><%= s.city %> · <%= s.cycleLabel %></span>
+            </span>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

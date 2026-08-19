@@ -11,6 +11,7 @@ const {
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
 const { parseEducationCycle } = require('../utils/educationCycle');
+const { parsePublicPortalFields } = require('../utils/publicPortal');
 const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
 const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
@@ -212,7 +213,11 @@ async function updateSettings(req, res) {
       name,
       address,
       city,
+      ...parsePublicPortalFields(req.body),
     };
+    if (data.publicPortalEnabled && !req.user.school.slug) {
+      throw new Error('Attribuez un code école (slug) avant de publier la page publique.');
+    }
     if (educationCycle != null && String(educationCycle).trim() !== '') {
       data.educationCycle = parseEducationCycle(educationCycle);
     }
@@ -251,7 +256,9 @@ async function updateSettings(req, res) {
     });
   } catch (err) {
     console.error(err);
-    const message = err.message?.includes('Format') ? err.message : 'Erreur de mise à jour';
+    const message = (err.message?.includes('Format') || err.message?.includes('slug'))
+      ? err.message
+      : 'Erreur de mise à jour';
     const mods = await getModuleMap(req.user.school.id);
     res.render('school/settings', {
       user: req.user,

@@ -51,11 +51,12 @@ describe('pickSchoolFields', () => {
   test('garde les champs déjà en base si le catalogue n’a pas encore l’info', () => {
     const fields = pickSchoolFields(
       { name: 'EPV Fatoumaba', city: 'Abidjan', campusLabel: null, address: null },
-      { city: 'Abidjan', address: 'Cocody', waveNumber: '07 00 00 00 00', currentSchoolYear: '2025-2026' },
+      { city: 'Abidjan', address: 'Cocody', waveNumber: '07 00 00 00 00', currentSchoolYear: '2025-2026', publicPortalEnabled: true },
     );
     expect(fields.address).toBe('Cocody');
     expect(fields.waveNumber).toBe('07 00 00 00 00');
     expect(fields.currentSchoolYear).toBe('2025-2026');
+    expect(fields.publicPortalEnabled).toBe(true);
   });
 
   test('utilise 2026-2027 par défaut pour une nouvelle école', () => {
@@ -109,6 +110,7 @@ describe('Catalogue IGEST', () => {
     expect(IGEST_SCHOOL.admin.firstName).toBe('Affoua Valentine');
     expect(IGEST_SCHOOL.admin.lastName).toBe('Dongo');
     expect(IGEST_SCHOOL.admin.phone).toBe('05 45 47 48 29');
+    expect(IGEST_SCHOOL.publicPortalEnabled).toBe(true);
     expect(IGEST_SCHOOL.logoFile).toBe('public/img/schools/igest-yopougon-sideci.png');
     expect(fs.existsSync(path.join(__dirname, '..', IGEST_SCHOOL.logoFile))).toBe(true);
   });

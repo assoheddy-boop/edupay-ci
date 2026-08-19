@@ -60,6 +60,37 @@
         </select>
         <p class="form-hint">Détermine les menus : primaire (évaluations, convocations blanc), collège / lycée (délibérations, palmarès, examen national). Mixte = les deux, avec séparation Primaire / Secondaire. Les séries A / C / D n’apparaissent qu’en lycée ou mixte.</p>
       </div>
+      <fieldset class="form-group">
+        <legend>Page publique de l’école</legend>
+        <label class="checkbox-label">
+          <input type="checkbox" name="publicPortalEnabled" <%= school.publicPortalEnabled ? 'checked' : '' %>>
+          Publier la page de l’école
+        </label>
+        <p class="form-hint">
+          Adresse canonique :
+          <% if (school.slug) { %>
+            <a href="/e/<%= school.slug %>" target="_blank" rel="noopener">https://educonnect-ci.com/e/<%= school.slug %></a>
+          <% } else { %>
+            attribuez d’abord un code école (slug).
+          <% } %>
+          L’école apparaît alors sur <a href="/ecoles">/ecoles</a>. Les notes, bulletins et classements <strong>ne sont jamais publics</strong>.
+        </p>
+        <label for="publicDescription">Description publique</label>
+        <textarea id="publicDescription" name="publicDescription" rows="4" maxlength="2000" placeholder="Présentation courte, sans noms d’élèves."><%= school.publicDescription || '' %></textarea>
+        <label for="publicPhone">Téléphone public</label>
+        <input type="text" id="publicPhone" name="publicPhone" value="<%= school.publicPhone || '' %>" placeholder="05 XX XX XX XX" maxlength="40">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="lat">Latitude (optionnel, OpenStreetMap)</label>
+            <input type="text" id="lat" name="lat" value="<%= school.lat != null ? school.lat : '' %>" placeholder="5.34" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label for="lng">Longitude (optionnel)</label>
+            <input type="text" id="lng" name="lng" value="<%= school.lng != null ? school.lng : '' %>" placeholder="-4.03" inputmode="decimal">
+          </div>
+        </div>
+        <p class="form-hint">Carte OpenStreetMap uniquement — pas de Google Maps. Laissez vide si vous n’avez pas les coordonnées.</p>
+      </fieldset>
       <% if (typeof smsOfficialEnabled !== 'undefined' && smsOfficialEnabled) { %>
       <div class="form-group">
         <label for="smsSenderId">Identifiant SMS officiel (nom ou numéro dédié)</label>

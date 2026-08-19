@@ -122,6 +122,11 @@ function pickSchoolFields(def, existing = {}) {
     omNumber: def.omNumber ?? existing.omNumber ?? null,
     currentSchoolYear: def.currentSchoolYear || existing.currentSchoolYear || '2026-2027',
     educationCycle: def.educationCycle || existing.educationCycle || 'COLLEGE',
+    publicPortalEnabled: def.publicPortalEnabled ?? existing.publicPortalEnabled ?? false,
+    publicDescription: def.publicDescription ?? existing.publicDescription ?? null,
+    publicPhone: def.publicPhone ?? existing.publicPhone ?? def.admin?.phone ?? null,
+    lat: def.lat ?? existing.lat ?? null,
+    lng: def.lng ?? existing.lng ?? null,
   };
 }
 

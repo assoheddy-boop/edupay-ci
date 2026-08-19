@@ -138,6 +138,11 @@ function main() {
     if (process.argv.includes('--accept-data-loss')) pushArgs.push('--accept-data-loss');
     const status = run('npx', pushArgs, { DATABASE_URL: target.url });
     if (status) code = status;
+    else {
+      console.log(`Portail IGEST → ${target.label}`);
+      const igest = run('node', ['scripts/enable-igest-public-portal.js'], { DATABASE_URL: target.url });
+      if (igest) code = igest;
+    }
   }
   process.exit(code);
 }
