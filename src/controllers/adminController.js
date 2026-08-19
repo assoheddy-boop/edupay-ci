@@ -215,6 +215,31 @@ async function updateSchoolCycle(req, res) {
   res.redirect(`${redirectTo}${sep}success=cycle`);
 }
 
+async function updateSchoolFeatured(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/dashboard?error=school');
+
+  const publicFeatured = req.body.publicFeatured === '1' || req.body.publicFeatured === 'on' || req.body.publicFeatured === 'true';
+  await prisma.school.update({
+    where: { id },
+    data: { publicFeatured },
+  });
+  await logAudit({
+    action: 'school_featured_update',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    details: { publicFeatured },
+    ip: req.ip,
+  });
+
+  const redirectTo = safeInternalPath(req.body.redirect, '/admin/dashboard');
+  const sep = redirectTo.includes('?') ? '&' : '?';
+  res.redirect(`${redirectTo}${sep}success=featured`);
+}
+
 async function enableAllModules(req, res) {
   const { id } = req.params;
   for (const key of MODULE_KEYS) {
@@ -456,4 +481,5 @@ module.exports = {
   startGroupAssist,
   exitAssist,
   updateSchoolCycle,
+  updateSchoolFeatured,
 };

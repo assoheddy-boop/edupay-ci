@@ -6,6 +6,9 @@ const {
   isPortalSlug,
   portalPath,
   SITE_ORIGIN,
+  parsePublicType,
+  publicPostView,
+  publicSchoolView,
 } = require('../utils/publicPortal');
 
 function publishedWhere() {
@@ -35,7 +38,39 @@ async function findPublishedSchool(slug) {
   }
 }
 
-async function listPublishedSchools({ ville, cycle } = {}) {
+async function listPortalPosts(schoolId) {
+  if (!schoolId || typeof prisma.portalPost?.findMany !== 'function') return [];
+  try {
+    const rows = await prisma.portalPost.findMany({
+      where: { schoolId },
+      orderBy: { publishedAt: 'desc' },
+      take: 30,
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        publishedAt: true,
+        kind: true,
+      },
+    });
+    return rows.map(publicPostView).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function sortFeaturedFirst(rows) {
+  return [...(rows || [])].sort((a, b) => {
+    const fa = a.publicFeatured ? 1 : 0;
+    const fb = b.publicFeatured ? 1 : 0;
+    if (fb !== fa) return fb - fa;
+    const city = String(a.city || '').localeCompare(String(b.city || ''), 'fr');
+    if (city) return city;
+    return String(a.name || '').localeCompare(String(b.name || ''), 'fr');
+  });
+}
+
+async function listPublishedSchools({ ville, cycle, type } = {}) {
   const where = { ...publishedWhere() };
   const city = String(ville || '').trim();
   if (city) {
@@ -47,13 +82,29 @@ async function listPublishedSchools({ ville, cycle } = {}) {
       where.educationCycle = parsed;
     }
   }
+  const publicType = parsePublicType(type);
+  if (publicType) {
+    where.publicType = publicType;
+  }
+  const select = { ...PUBLIC_SCHOOL_SELECT, logoBase64: false };
   try {
-    return await prisma.school.findMany({
-      where,
-      select: { ...PUBLIC_SCHOOL_SELECT, logoBase64: false },
-      orderBy: [{ city: 'asc' }, { name: 'asc' }],
-      take: 200,
-    });
+    let rows;
+    try {
+      rows = await prisma.school.findMany({
+        where,
+        select,
+        orderBy: [{ publicFeatured: 'desc' }, { city: 'asc' }, { name: 'asc' }],
+        take: 200,
+      });
+    } catch {
+      rows = await prisma.school.findMany({
+        where,
+        select,
+        orderBy: [{ city: 'asc' }, { name: 'asc' }],
+        take: 200,
+      });
+    }
+    return sortFeaturedFirst(rows);
   } catch {
     return [];
   }
@@ -111,6 +162,13 @@ async function enableIgestPublicPortal() {
     const data = { publicPortalEnabled: true };
     if (IGEST_SCHOOL.publicPhone) data.publicPhone = IGEST_SCHOOL.publicPhone;
     if (IGEST_SCHOOL.publicDescription) data.publicDescription = IGEST_SCHOOL.publicDescription;
+    if (IGEST_SCHOOL.publicLife) data.publicLife = IGEST_SCHOOL.publicLife;
+    if (IGEST_SCHOOL.lat != null) data.lat = IGEST_SCHOOL.lat;
+    if (IGEST_SCHOOL.lng != null) data.lng = IGEST_SCHOOL.lng;
+    if (IGEST_SCHOOL.publicType) data.publicType = IGEST_SCHOOL.publicType;
+    if (IGEST_SCHOOL.publicFeatured != null) data.publicFeatured = IGEST_SCHOOL.publicFeatured;
+    if (IGEST_SCHOOL.address) data.address = IGEST_SCHOOL.address;
+    if (IGEST_SCHOOL.campusLabel) data.campusLabel = IGEST_SCHOOL.campusLabel;
     const result = await prisma.school.updateMany({
       where: { slug },
       data,
@@ -121,11 +179,67 @@ async function enableIgestPublicPortal() {
   }
 }
 
+const FEATURED_SELECT = { ...PUBLIC_SCHOOL_SELECT, logoBase64: false };
+
+function toPublicCards(rows) {
+  return rows.map((row) => publicSchoolView(row, { includeBase64: false })).filter(Boolean);
+}
+
+/**
+ * 2–3 écoles pour la vitrine accueil.
+ * Préfère `publicFeatured` ; sinon IGEST puis d’autres portails publiés.
+ * Champs publics uniquement (pas d’élèves, notes ni finances).
+ */
+async function listFeaturedSchools(limit = 3) {
+  const take = Math.max(1, Math.min(Number(limit) || 3, 6));
+  try {
+    let preferred = [];
+    try {
+      preferred = await prisma.school.findMany({
+        where: { ...publishedWhere(), publicFeatured: true },
+        select: FEATURED_SELECT,
+        orderBy: [{ name: 'asc' }],
+        take,
+      });
+    } catch {
+      preferred = [];
+    }
+
+    if (preferred.length >= take) {
+      return toPublicCards(sortFeaturedFirst(preferred).slice(0, take));
+    }
+
+    const published = await prisma.school.findMany({
+      where: publishedWhere(),
+      select: FEATURED_SELECT,
+      orderBy: [{ name: 'asc' }],
+      take: 50,
+    });
+
+    const byId = new Map();
+    const push = (row) => {
+      if (!row || !row.slug || byId.has(row.id)) return;
+      byId.set(row.id, row);
+    };
+    preferred.forEach(push);
+    const igest = published.find((row) => row.slug === IGEST_SCHOOL.slug);
+    if (igest) push(igest);
+    sortFeaturedFirst(published).forEach(push);
+
+    return toPublicCards([...byId.values()].slice(0, take));
+  } catch {
+    return [];
+  }
+}
+
 module.exports = {
   publishedWhere,
   findPublishedSchool,
   listPublishedSchools,
   listPublishedSlugs,
+  listFeaturedSchools,
+  listPortalPosts,
+  sortFeaturedFirst,
   buildSitemapXml,
   enableIgestPublicPortal,
 };

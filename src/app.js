@@ -13,7 +13,6 @@ const groupRoutes = require('./routes/group');
 const apiV1Routes = require('./routes/api/v1');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { metricsMiddleware, metricsHandler } = require('./middleware/metrics');
-const { getPlansForLanding } = require('./config/plans');
 const { safeJson } = require('./utils/safeJson');
 const { i18nMiddleware, setLocale } = require('./middleware/i18n');
 const { currencyMiddleware, setCurrency } = require('./middleware/currency');
@@ -30,6 +29,8 @@ const guideRoutes = require('./routes/guides');
 const devisRoutes = require('./routes/devis');
 const portalRoutes = require('./routes/portal');
 const portalController = require('./controllers/portalController');
+const { SITE_ORIGIN, cycleFilterOptions } = require('./utils/publicPortal');
+const { listFeaturedSchools } = require('./services/marketplace');
 
 const app = express();
 
@@ -88,15 +89,27 @@ app.use(guideRoutes);
 app.use(devisRoutes);
 app.use(portalRoutes);
 
-app.get('/', (_req, res) => {
-  const { plans, moduleList } = getPlansForLanding();
-  res.render('home', {
-    user: null,
-    plans,
-    moduleList,
-    homeCss: true,
-    title: 'Gestion scolaire & paiements Wave/OM',
-  });
+app.get('/', async (_req, res, next) => {
+  try {
+    const featuredSchools = await listFeaturedSchools(3);
+    const title = 'Gestion scolaire et visibilité digitale des écoles';
+    const metaDescription =
+      'EduConnect — gestion scolaire, communication parents et visibilité digitale des établissements en Côte d’Ivoire. Wave, Orange Money, portail public, marketplace des écoles.';
+    res.render('home', {
+      user: null,
+      homeCss: true,
+      title,
+      metaDescription,
+      canonicalUrl: `${SITE_ORIGIN}/`,
+      ogTitle: 'EduConnect — Gestion scolaire et visibilité digitale des écoles',
+      ogDescription: metaDescription,
+      ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+      featuredSchools,
+      cycleOptions: cycleFilterOptions(),
+    });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 app.get('/api/health', apiLimiter, (_req, res) => {

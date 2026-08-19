@@ -15,6 +15,7 @@ router.get('/schools/:id/modules', adminController.schoolModules);
 router.post('/schools/:id/modules', auditMiddleware('school_modules_update', 'SchoolModule'), adminController.updateSchoolModules);
 router.post('/schools/:id/modules/enable-all', auditMiddleware('school_modules_enable_all', 'SchoolModule'), adminController.enableAllModules);
 router.post('/schools/:id/cycle', auditMiddleware('school_cycle_update', 'School'), adminController.updateSchoolCycle);
+router.post('/schools/:id/featured', auditMiddleware('school_featured_update', 'School'), adminController.updateSchoolFeatured);
 router.post('/schools/:id/manage', adminController.startSchoolAssist);
 router.post('/modules/matrix', auditMiddleware('school_modules_matrix', 'SchoolModule'), adminController.updateModulesMatrix);
 router.get('/organizations', adminController.organizations);

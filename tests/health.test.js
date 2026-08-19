@@ -20,7 +20,7 @@ describe('EduConnect API', () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/Obtenir un devis/);
-    expect(res.text).toMatch(/bien plus qu.un paiement scolaire/);
+    expect(res.text).toMatch(/Gestion scolaire et visibilité digitale des écoles/);
   });
 
   test('GET /metrics exposes prometheus text', async () => {

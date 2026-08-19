@@ -59,6 +59,19 @@ enum EducationCycle {
   MIXTE
 }
 
+/// Type d’établissement (filtre annuaire /ecoles). Défaut privé (EPV, IGEST).
+enum PublicSchoolType {
+  PRIVE
+  PUBLIC
+  CONFESSIONNEL
+}
+
+/// Actualité publique du portail /e/:slug. Jamais de données élèves.
+enum PortalPostKind {
+  NEWS
+  EVENT
+}
+
 enum NotificationType {
   ABSENCE
   LATE
@@ -219,6 +232,15 @@ model School {
   publicPhone         String?
   lat                 Float?
   lng                 Float?
+  /// Bannière vitrine (URL upload ou https). Pas de SVG.
+  publicBanner        String?
+  /// Galerie photos (JSON string[]). Pas de vidéos, pas de SVG.
+  publicGallery       Json?
+  /// Clubs, cantine, activités — texte public, sans listes d’élèves.
+  publicLife          String? @db.Text
+  /// Mise en avant marketplace. Réservé SUPER_ADMIN.
+  publicFeatured      Boolean @default(false)
+  publicType          PublicSchoolType @default(PRIVE)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -263,12 +285,30 @@ model School {
   deliberations        Deliberation[]
   socialCases          SocialCase[]
   examSessions         ExamSession[]
+  portalPosts          PortalPost[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
 
   @@index([groupId])
   @@index([publicPortalEnabled, city])
+  @@index([publicPortalEnabled, publicFeatured])
+}
+
+/// Actualité / événement public. Aucun nom d’élève, note ou matricule.
+model PortalPost {
+  id          String         @id @default(cuid())
+  title       String
+  body        String         @db.Text
+  publishedAt DateTime       @default(now())
+  kind        PortalPostKind @default(NEWS)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, publishedAt])
 }
 
 model SubscriptionPlan {

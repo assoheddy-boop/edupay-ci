@@ -14,6 +14,7 @@ const emargementController = require('../controllers/emargementController');
 const convocationController = require('../controllers/convocationController');
 const palmaresController = require('../controllers/palmaresController');
 const justificationController = require('../controllers/justificationController');
+const schoolPortalController = require('../controllers/schoolPortalController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
@@ -49,7 +50,14 @@ router.get('/convocations/:id', convocationController.convocationDetail);
 router.get('/justificatifs', requireModule('absences'), justificationController.schoolPage);
 router.post('/justificatifs/:id/review', requireModule('absences'), auditMiddleware('justification_review', 'AbsenceJustification'), justificationController.review);
 router.get('/settings', schoolController.settings);
-router.post('/settings', upload.logoUpload.single('logo'), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
+router.post('/settings', upload.logoUpload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'banner', maxCount: 1 },
+  { name: 'gallery', maxCount: 8 },
+]), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
+router.get('/portail', schoolPortalController.page);
+router.post('/portail/news', auditMiddleware('portal_post_create', 'PortalPost'), schoolPortalController.createNews);
+router.post('/portail/news/:id/delete', auditMiddleware('portal_post_delete', 'PortalPost'), schoolPortalController.deleteNews);
 router.get('/coefficients', schoolController.coefficientsPage);
 router.post('/coefficients', auditMiddleware('coefficients_update', 'Subject'), schoolController.updateCoefficients);
 router.get('/sms', schoolController.smsDashboard);

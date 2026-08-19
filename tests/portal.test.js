@@ -4,6 +4,17 @@ jest.mock('../src/config/database', () => ({
     findMany: jest.fn(),
     updateMany: jest.fn(),
   },
+  portalPost: {
+    findMany: jest.fn(),
+    create: jest.fn(),
+    deleteMany: jest.fn(),
+  },
+  student: {
+    findMany: jest.fn(),
+  },
+  subject: {
+    findMany: jest.fn(),
+  },
 }));
 
 jest.mock('../src/services/email', () => ({
@@ -20,6 +31,8 @@ const SLUG = 'igest-yopougon-sideci';
 
 const SECRET_PUPIL = 'AyaKouassiSecret';
 const SECRET_EMAIL = 'secret-director@hidden.ci';
+const SECRET_PARENT_PHONE = '0700998877';
+const SECRET_MATRICULE = 'IG-DEMO-999';
 
 function publishedSchool(overrides = {}) {
   return {
@@ -37,8 +50,18 @@ function publishedSchool(overrides = {}) {
     publicPhone: '05 45 47 48 29',
     lat: 5.33,
     lng: -4.08,
+    publicBanner: null,
+    publicGallery: [],
+    publicLife: 'Cantine et clubs : se renseigner au secrétariat.',
+    publicFeatured: false,
+    publicType: 'PRIVE',
     waveNumber: '07 11 22 33 44',
-    students: [{ firstName: SECRET_PUPIL, lastName: 'Test', grades: [{ value: 18, subject: 'Maths' }] }],
+    students: [{
+      firstName: SECRET_PUPIL,
+      lastName: 'Test',
+      matricule: SECRET_MATRICULE,
+      grades: [{ value: 18, subject: 'Maths' }],
+    }],
     _count: { classes: 8 },
     admin: { email: SECRET_EMAIL },
     ...overrides,
@@ -50,11 +73,18 @@ function csrfFrom(res) {
   return match ? match[1] : '';
 }
 
+function mockEmptyPortalExtras() {
+  prisma.portalPost.findMany.mockResolvedValue([]);
+  prisma.student.findMany.mockResolvedValue([]);
+  prisma.subject.findMany.mockResolvedValue([]);
+}
+
 describe('Public school portal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.school.findFirst.mockResolvedValue(null);
     prisma.school.findMany.mockResolvedValue([]);
+    mockEmptyPortalExtras();
   });
 
   test('GET /e/:slug returns 404 when the portal is disabled or missing', async () => {
@@ -69,21 +99,76 @@ describe('Public school portal', () => {
     prisma.school.findFirst.mockResolvedValue(publishedSchool());
     const res = await request(app).get(`/e/${SLUG}`);
     expect(res.status).toBe(200);
+    expect(res.text).toMatch(/<title>[^<]*IGEST/);
     expect(res.text).toMatch(/IGEST/);
     expect(res.text).toMatch(/Yopougon-Sideci/);
     expect(res.text).toMatch(/Collège/);
     expect(res.text).toMatch(/rel="canonical"/);
     expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
+    expect(res.text).toMatch(/og:title/);
+    expect(res.text).toMatch(/EducationalOrganization/);
+    expect(res.text).toMatch(/id="presentation"/);
+    expect(res.text).toMatch(/id="actualites"/);
+    expect(res.text).toMatch(/id="galerie"/);
+    expect(res.text).toMatch(/id="vie-scolaire"/);
+    expect(res.text).toMatch(/id="resultats"/);
+    expect(res.text).toMatch(/id="paiements"/);
+    expect(res.text).toMatch(/id="contact"/);
     expect(res.text).toMatch(/Payer la scolarité/);
     expect(res.text).toMatch(/href="\/auth\/login"/);
     expect(res.text).toMatch(/Espace parent \/ Connexion/);
+    expect(res.text).toMatch(/Paiements sécurisés via EduConnect/);
+    expect(res.text).toMatch(/Wave/);
     expect(res.text).toMatch(/openstreetmap\.org/);
+    expect(res.text).toMatch(/directions/);
+    expect(res.text).toMatch(/wa\.me\/225/);
     expect(res.text).not.toMatch(/maps\.google/i);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(res.text).not.toMatch(SECRET_EMAIL);
+    expect(res.text).not.toMatch(SECRET_MATRICULE);
+    expect(res.text).not.toMatch(SECRET_PARENT_PHONE);
     expect(res.text).not.toMatch(/07 11 22 33 44/);
     expect(res.text).not.toMatch(/18\/20/);
     expect(res.text).toMatch(/ne sont pas publiés/);
+    expect(res.text).toMatch(/Bulletins : espace parent/);
+  });
+
+  test('public HTML never leaks pupil names even when grades exist for aggregates', async () => {
+    prisma.school.findFirst.mockResolvedValue(publishedSchool());
+    prisma.student.findMany.mockResolvedValue([
+      {
+        id: 'st_secret',
+        firstName: SECRET_PUPIL,
+        lastName: 'Test',
+        matricule: SECRET_MATRICULE,
+        grades: [{
+          subject: 'Maths',
+          value: 12.4,
+          maxValue: 20,
+          period: 'T1',
+          term: 'T1',
+          kind: 'DEVOIR',
+        }],
+      },
+    ]);
+    const res = await request(app).get(`/e/${SLUG}`);
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Taux de réussite/);
+    expect(res.text).toMatch(/Moyenne générale/);
+    expect(res.text).toMatch(/12,4\/20/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+    expect(res.text).not.toMatch(SECRET_MATRICULE);
+    expect(res.text).not.toMatch(SECRET_PARENT_PHONE);
+    expect(prisma.student.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      select: expect.objectContaining({
+        id: true,
+        grades: expect.anything(),
+      }),
+    }));
+    const select = prisma.student.findMany.mock.calls[0][0].select;
+    expect(select.firstName).toBeUndefined();
+    expect(select.lastName).toBeUndefined();
+    expect(select.matricule).toBeUndefined();
   });
 
   test('GET /:slug aliases to canonical /e/:slug without colliding with /devis', async () => {
@@ -126,6 +211,7 @@ describe('Marketplace /ecoles', () => {
     jest.clearAllMocks();
     prisma.school.findFirst.mockResolvedValue(null);
     prisma.school.findMany.mockResolvedValue([]);
+    mockEmptyPortalExtras();
   });
 
   test('lists only opted-in schools and supports ville + cycle search', async () => {
@@ -147,6 +233,41 @@ describe('Marketplace /ecoles', () => {
     }));
   });
 
+  test('featured partner cards appear first', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({
+        name: 'École Zèbre',
+        slug: 'ecole-zebre',
+        publicFeatured: false,
+        students: [{ firstName: SECRET_PUPIL }],
+      }),
+      publishedSchool({
+        name: 'École Alpha',
+        slug: 'ecole-alpha',
+        publicFeatured: true,
+        students: [{ firstName: SECRET_PUPIL }],
+      }),
+    ]);
+    const res = await request(app).get('/ecoles');
+    expect(res.status).toBe(200);
+    expect(res.text.indexOf('École Alpha')).toBeGreaterThan(-1);
+    expect(res.text.indexOf('École Alpha')).toBeLessThan(res.text.indexOf('École Zèbre'));
+    expect(res.text).toMatch(/Partenaire/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
+  test('filters by establishment type', async () => {
+    prisma.school.findMany.mockResolvedValue([publishedSchool({ publicType: 'PRIVE' })]);
+    const res = await request(app).get('/ecoles').query({ type: 'PRIVE' });
+    expect(res.status).toBe(200);
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        publicPortalEnabled: true,
+        publicType: 'PRIVE',
+      }),
+    }));
+  });
+
   test('empty marketplace does not invent pupil results', async () => {
     prisma.school.findMany.mockResolvedValue([]);
     const res = await request(app).get('/ecoles').query({ ville: 'Korhogo' });
@@ -163,6 +284,7 @@ describe('SEO sitemap and robots', () => {
     prisma.school.findMany.mockResolvedValue([
       { slug: SLUG, updatedAt: new Date('2026-08-19') },
     ]);
+    mockEmptyPortalExtras();
   });
 
   test('sitemap.xml includes /ecoles and /e/:slug', async () => {

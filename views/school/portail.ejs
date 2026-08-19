@@ -1,0 +1,69 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('portail', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Portail public' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Portail public</h1>
+  <p class="page-sub">
+    Actualités de la vitrine
+    <% if (portalPath) { %>
+      — <a href="<%= portalPath %>" target="_blank" rel="noopener">voir la page</a>
+    <% } %>
+    · <a href="/school/settings">Paramètres (bannière, galerie, GPS)</a>
+  </p>
+</div>
+
+<% if (success === 'created') { %><div class="alert alert-success">Actualité publiée.</div><% } %>
+<% if (success === 'deleted') { %><div class="alert alert-success">Actualité retirée.</div><% } %>
+<% if (error) { %><div class="alert alert-error">Impossible d’enregistrer. Vérifiez le titre et le texte (pas de données élèves).</div><% } %>
+
+<div class="card">
+  <h2>Nouvelle actualité</h2>
+  <p class="form-hint">Texte public uniquement : pas de noms d’élèves, notes, bulletins, matricules ni téléphones parents.</p>
+  <form method="POST" action="/school/portail/news" class="form">
+    <div class="form-group">
+      <label for="title">Titre</label>
+      <input type="text" id="title" name="title" required maxlength="160">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="kind">Type</label>
+        <select id="kind" name="kind">
+          <% kindOptions.forEach(function(opt) { %>
+            <option value="<%= opt.value %>"><%= opt.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="publishedAt">Date (optionnel)</label>
+        <input type="datetime-local" id="publishedAt" name="publishedAt">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="body">Texte</label>
+      <textarea id="body" name="body" rows="5" required minlength="10" maxlength="4000"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Publier</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <h2>Déjà publiées</h2>
+  <% if (!posts.length) { %>
+    <p class="form-hint">Aucune actualité pour le moment. La page publique affiche un état vide honnête.</p>
+  <% } else { %>
+    <ul class="list">
+      <% posts.forEach(function(post) { %>
+        <li style="margin-bottom:1rem">
+          <strong><%= post.title %></strong>
+          <span class="form-hint"> — <%= post.kindLabel %></span>
+          <p><%= post.body %></p>
+          <form method="POST" action="/school/portail/news/<%= post.id %>/delete" onsubmit="return confirm('Retirer cette actualité ?');">
+            <button type="submit" class="btn btn-outline">Supprimer</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
+<% } %>

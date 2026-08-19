@@ -32,6 +32,18 @@
     </div>
   </form>
 
+  <form method="POST" action="/admin/schools/<%= school.id %>/featured" class="card" style="margin-bottom:1.5rem">
+    <div class="card-header">
+      <h2>Marketplace</h2>
+      <p class="page-sub">Mise en avant sur /ecoles — Super Admin uniquement (évite les abus).</p>
+    </div>
+    <input type="hidden" name="redirect" value="/admin/schools/<%= school.id %>/modules">
+    <input type="hidden" name="publicFeatured" value="<%= school.publicFeatured ? '0' : '1' %>">
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary"><%= school.publicFeatured ? 'Retirer la mise en avant' : 'Mettre en avant' %></button>
+    </div>
+  </form>
+
   <form method="POST" action="/admin/schools/<%= school.id %>/modules" class="card">
     <div class="card-header">
       <h2>Modules disponibles</h2>

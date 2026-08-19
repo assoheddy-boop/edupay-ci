@@ -5,8 +5,13 @@ const {
   sanitizeContact,
   publicSchoolView,
   seoForSchool,
+  jsonLdForSchool,
   portalPath,
+  sanitizeImageUrl,
+  parseGallery,
+  whatsappUrl,
 } = require('../src/utils/publicPortal');
+const { aggregateAverages } = require('../src/services/publicPortalStats');
 
 describe('publicPortal helpers', () => {
   test('blocks reserved first segments so /devis and /school stay intact', () => {
@@ -54,6 +59,44 @@ describe('publicPortal helpers', () => {
     const seo = seoForSchool({ name: 'IGEST', slug: 'igest-yopougon-sideci', city: 'Abidjan', educationCycle: 'COLLEGE' });
     expect(seo.canonicalUrl).toMatch(/\/e\/igest-yopougon-sideci$/);
     expect(seo.title).toMatch(/IGEST/);
+    const jsonLd = jsonLdForSchool({
+      name: 'IGEST',
+      slug: 'igest-yopougon-sideci',
+      city: 'Abidjan',
+      educationCycle: 'COLLEGE',
+    });
+    expect(jsonLd['@type']).toBe('EducationalOrganization');
+    expect(jsonLd.url).toMatch(/\/e\/igest-yopougon-sideci$/);
+  });
+
+  test('only SUPER_ADMIN can set featured from portal fields', () => {
+    const schoolAdmin = parsePublicPortalFields({ publicFeatured: 'on' }, { user: { role: 'SCHOOL_ADMIN' } });
+    expect(schoolAdmin.publicFeatured).toBeUndefined();
+    const superAdmin = parsePublicPortalFields({ publicFeatured: 'on' }, { user: { role: 'SUPER_ADMIN' } });
+    expect(superAdmin.publicFeatured).toBe(true);
+  });
+
+  test('gallery and banner reject SVG', () => {
+    expect(sanitizeImageUrl('https://cdn.example/photo.svg')).toBeNull();
+    expect(sanitizeImageUrl('/uploads/portal/x.svg')).toBeNull();
+    expect(parseGallery('https://cdn.example/ok.jpg\nhttps://cdn.example/no.svg')).toEqual([
+      'https://cdn.example/ok.jpg',
+    ]);
+    expect(sanitizeImageUrl('https://cdn.example/banner.png')).toBe('https://cdn.example/banner.png');
+  });
+
+  test('WhatsApp link uses the 225 country code from a public CI number', () => {
+    expect(whatsappUrl('05 45 47 48 29')).toBe('https://wa.me/2250545474829');
+  });
+
+  test('anonymized aggregates never include pupil identities', () => {
+    const stats = aggregateAverages([12.4, 8, 16], 'T1');
+    expect(stats.hasData).toBe(true);
+    expect(stats.successRate).toBe(67);
+    expect(stats.overallAverage).toBe(12.1);
+    expect(stats.overallAverageText).toBe('12,1/20');
+    expect(stats.majorsCount).toBe(1);
+    expect(JSON.stringify(stats)).not.toMatch(/Aya|Kouassi|matricule/i);
   });
 
   test('contact honeypot is treated as spam without leaking content rules', () => {

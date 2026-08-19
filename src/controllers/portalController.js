@@ -1,6 +1,7 @@
 const { sendEmail } = require('../services/email');
 const { ensureCsrfToken, requireCsrf } = require('../utils/csrf');
 const { parseEducationCycle, CYCLE_LABELS } = require('../utils/educationCycle');
+const { safeJson } = require('../utils/safeJson');
 const {
   SITE_ORIGIN,
   CONTACT_INBOX,
@@ -8,15 +9,20 @@ const {
   portalPath,
   seoForSchool,
   seoForMarketplace,
+  jsonLdForSchool,
   sanitizeContact,
   publicSchoolView,
   cycleFilterOptions,
+  typeFilterOptions,
+  parsePublicType,
 } = require('../utils/publicPortal');
 const {
   findPublishedSchool,
   listPublishedSchools,
+  listPortalPosts,
   buildSitemapXml,
 } = require('../services/marketplace');
+const { publicSchoolStats } = require('../services/publicPortalStats');
 
 function renderMissing(res, status = 404) {
   return res.status(status).render('error', {
@@ -26,17 +32,27 @@ function renderMissing(res, status = 404) {
   });
 }
 
-function schoolPageLocals(req, res, school, extra = {}) {
+async function schoolPageLocals(req, res, school, extra = {}) {
+  const posts = extra.posts || await listPortalPosts(school.id);
+  const stats = extra.stats || await publicSchoolStats(school.id);
   const view = publicSchoolView(school, {
     classCount: school._count?.classes ?? null,
   });
-  const seo = seoForSchool(school);
+  const seo = seoForSchool(school, { posts });
+  const jsonLd = jsonLdForSchool(school, { posts });
   return {
     user: null,
     school: view,
+    posts,
+    stats,
     title: seo.title,
     metaDescription: seo.metaDescription,
     canonicalUrl: seo.canonicalUrl,
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogImage: seo.ogImage,
+    jsonLd,
+    jsonLdJson: safeJson(jsonLd),
     portalCss: true,
     csrfToken: ensureCsrfToken(req, res),
     contactError: extra.contactError || null,
@@ -49,7 +65,7 @@ async function schoolPage(req, res, next) {
   try {
     const school = await findPublishedSchool(req.params.slug);
     if (!school) return renderMissing(res);
-    return res.render('portal/school', schoolPageLocals(req, res, school));
+    return res.render('portal/school', await schoolPageLocals(req, res, school));
   } catch (err) {
     return next(err);
   }
@@ -62,10 +78,10 @@ async function sendContact(req, res, next) {
 
     const parsed = sanitizeContact(req.body);
     if (parsed.spam) {
-      return res.render('portal/school', schoolPageLocals(req, res, school, { contactSuccess: true }));
+      return res.render('portal/school', await schoolPageLocals(req, res, school, { contactSuccess: true }));
     }
     if (!parsed.ok) {
-      return res.status(400).render('portal/school', schoolPageLocals(req, res, school, {
+      return res.status(400).render('portal/school', await schoolPageLocals(req, res, school, {
         contactError: parsed.errors.join(' '),
         contactValues: {
           name: parsed.name,
@@ -96,7 +112,7 @@ async function sendContact(req, res, next) {
       text,
     });
 
-    return res.render('portal/school', schoolPageLocals(req, res, school, { contactSuccess: true }));
+    return res.render('portal/school', await schoolPageLocals(req, res, school, { contactSuccess: true }));
   } catch (err) {
     return next(err);
   }
@@ -109,17 +125,23 @@ async function marketplace(req, res, next) {
     const cycle = cycleRaw && parseEducationCycle(cycleRaw) === cycleRaw.toUpperCase()
       ? cycleRaw.toUpperCase()
       : '';
-    const schools = await listPublishedSchools({ ville, cycle });
-    const seo = seoForMarketplace({ ville, cycle });
+    const type = parsePublicType(req.query.type) || '';
+    const schools = await listPublishedSchools({ ville, cycle, type });
+    const seo = seoForMarketplace({ ville, cycle, type });
     return res.render('portal/marketplace', {
       user: null,
       title: seo.title,
       metaDescription: seo.metaDescription,
       canonicalUrl: seo.canonicalUrl,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
       portalCss: true,
       ville,
       cycle,
+      type,
       cycleOptions: cycleFilterOptions(),
+      typeOptions: typeFilterOptions(),
       cycleLabels: CYCLE_LABELS,
       schools: schools.map((row) => publicSchoolView(row, { includeBase64: false })),
     });

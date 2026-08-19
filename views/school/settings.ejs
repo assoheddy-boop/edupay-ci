@@ -73,12 +73,39 @@
           <% } else { %>
             attribuez d’abord un code école (slug).
           <% } %>
-          L’école apparaît alors sur <a href="/ecoles">/ecoles</a>. Les notes, bulletins et classements <strong>ne sont jamais publics</strong>.
+          L’école apparaît alors sur <a href="/ecoles">/ecoles</a>. Les notes, bulletins, matricules et téléphones parents <strong>ne sont jamais publics</strong>.
+          <% if (school.slug) { %> · <a href="/school/portail">Gérer les actualités</a><% } %>
         </p>
-        <label for="publicDescription">Description publique</label>
-        <textarea id="publicDescription" name="publicDescription" rows="4" maxlength="2000" placeholder="Présentation courte, sans noms d’élèves."><%= school.publicDescription || '' %></textarea>
-        <label for="publicPhone">Téléphone public</label>
+        <label for="publicType">Type d’établissement</label>
+        <select id="publicType" name="publicType">
+          <% (typeof publicTypeOptions !== 'undefined' ? publicTypeOptions : [{ value: 'PRIVE', label: 'Privé' }, { value: 'PUBLIC', label: 'Public' }, { value: 'CONFESSIONNEL', label: 'Confessionnel' }]).forEach(function(opt) { %>
+            <option value="<%= opt.value %>" <%= (school.publicType || 'PRIVE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+          <% }) %>
+        </select>
+        <label for="publicDescription">À propos (description publique)</label>
+        <textarea id="publicDescription" name="publicDescription" rows="4" maxlength="2000" placeholder="Historique, valeurs, cycles — sans noms d’élèves."><%= school.publicDescription || '' %></textarea>
+        <label for="publicLife">Vie scolaire (clubs, cantine, activités)</label>
+        <textarea id="publicLife" name="publicLife" rows="4" maxlength="4000" placeholder="Texte public uniquement. Pas de listes d’élèves."><%= school.publicLife || '' %></textarea>
+        <label for="publicPhone">Téléphone / WhatsApp public</label>
         <input type="text" id="publicPhone" name="publicPhone" value="<%= school.publicPhone || '' %>" placeholder="05 XX XX XX XX" maxlength="40">
+        <p class="form-hint">Numéro officiel affiché sur la page. Un lien WhatsApp <code>wa.me/225…</code> est généré. Ce n’est pas le numéro Wave/OM.</p>
+        <label for="publicBanner">Bannière (URL https, JPG/PNG/WebP — pas de SVG)</label>
+        <input type="url" id="publicBanner" name="publicBanner" value="<%= school.publicBanner || '' %>" placeholder="https://… ou laissez vide pour envoyer un fichier">
+        <% if (school.publicBanner) { %>
+          <div class="logo-preview" style="margin:0.5rem 0">
+            <img src="<%= school.publicBanner %>" alt="Bannière" class="school-logo-preview">
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" name="removeBanner">
+            Supprimer la bannière
+          </label>
+        <% } %>
+        <label for="banner">Ou envoyer une photo bannière</label>
+        <input type="file" id="banner" name="banner" accept="image/jpeg,image/png,image/webp">
+        <label for="publicGallery">Galerie (une URL d’image par ligne, pas de SVG ni de vidéo)</label>
+        <textarea id="publicGallery" name="publicGallery" rows="4" placeholder="https://…/photo.jpg"><%= Array.isArray(school.publicGallery) ? school.publicGallery.join('\n') : (school.publicGallery || '') %></textarea>
+        <label for="gallery">Ajouter des photos (JPG, PNG, WebP)</label>
+        <input type="file" id="gallery" name="gallery" accept="image/jpeg,image/png,image/webp" multiple>
         <div class="form-row">
           <div class="form-group">
             <label for="lat">Latitude (optionnel, OpenStreetMap)</label>
@@ -89,7 +116,13 @@
             <input type="text" id="lng" name="lng" value="<%= school.lng != null ? school.lng : '' %>" placeholder="-4.03" inputmode="decimal">
           </div>
         </div>
-        <p class="form-hint">Carte OpenStreetMap uniquement — pas de Google Maps. Laissez vide si vous n’avez pas les coordonnées.</p>
+        <p class="form-hint">Carte OpenStreetMap uniquement — pas de Google Maps. Un lien « itinéraire » est affiché si les coordonnées sont renseignées.</p>
+        <% if (typeof canSetFeatured !== 'undefined' && canSetFeatured) { %>
+        <label class="checkbox-label">
+          <input type="checkbox" name="publicFeatured" <%= school.publicFeatured ? 'checked' : '' %>>
+          Mettre en avant sur /ecoles (Super Admin)
+        </label>
+        <% } %>
       </fieldset>
       <% if (typeof smsOfficialEnabled !== 'undefined' && smsOfficialEnabled) { %>
       <div class="form-group">

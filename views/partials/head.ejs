@@ -12,16 +12,30 @@
   <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
   <link rel="canonical" href="<%= canonicalUrl %>">
   <% } %>
+  <% if (typeof ogTitle !== 'undefined' && ogTitle) { %>
+  <meta property="og:title" content="<%= ogTitle %>">
+  <meta property="og:description" content="<%= typeof ogDescription !== 'undefined' && ogDescription ? ogDescription : (typeof metaDescription !== 'undefined' ? metaDescription : '') %>">
+  <meta property="og:type" content="website">
+  <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+  <meta property="og:url" content="<%= canonicalUrl %>">
+  <% } %>
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+  <meta property="og:image" content="<%= ogImage %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="<%= ogImage %>">
+  <% } %>
+  <meta property="og:site_name" content="EduConnect">
+  <% } %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>EduConnect</title>
   <link rel="stylesheet" href="/css/main.css?v=9">
   <% if (typeof homeCss !== 'undefined' && homeCss) { %>
-  <link rel="stylesheet" href="/css/home.css?v=3">
+  <link rel="stylesheet" href="/css/home.css?v=4">
   <% } %>
   <% if (typeof devisCss !== 'undefined' && devisCss) { %>
   <link rel="stylesheet" href="/css/devis.css?v=1">
   <% } %>
   <% if (typeof portalCss !== 'undefined' && portalCss) { %>
-  <link rel="stylesheet" href="/css/portal.css?v=1">
+  <link rel="stylesheet" href="/css/portal.css?v=2">
   <% } %>
 </head>
 <body<% if (typeof user !== 'undefined' && user) { %> data-user-id="<%= user.id %>" data-user-role="<%= user.role %>"<% } %>>

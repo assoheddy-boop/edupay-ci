@@ -1,3 +1,7 @@
+<%
+  const featured = typeof featuredSchools !== 'undefined' && Array.isArray(featuredSchools) ? featuredSchools : [];
+  const cycles = typeof cycleOptions !== 'undefined' && Array.isArray(cycleOptions) ? cycleOptions : [];
+%>
 <%- include('partials/head') %>
 <div class="home">
   <header class="home-top">
@@ -9,182 +13,208 @@
       <span></span><span></span><span></span>
     </button>
     <nav class="home-links" id="homeNav" aria-label="Navigation principale">
+      <a href="/" aria-current="page">Accueil</a>
       <a href="/ecoles">Écoles</a>
       <a href="/devis">Devis</a>
-      <a href="#contact">Contact</a>
       <a href="/auth/login">Connexion</a>
       <a href="/devis" class="home-btn home-btn-primary">Obtenir un devis</a>
     </nav>
   </header>
   <div class="home-nav-overlay" id="homeNavOverlay" hidden></div>
 
-  <section class="home-hero">
+  <section class="home-hero" aria-labelledby="home-hero-title">
+    <div class="home-hero-media">
+      <img
+        src="/img/home-hero.jpg"
+        alt="Classe en Côte d’Ivoire : une enseignante et des élèves en uniforme, autour d’un tableau."
+        width="1600"
+        height="900"
+        fetchpriority="high"
+      >
+    </div>
+    <div class="home-hero-shade" aria-hidden="true"></div>
     <div class="home-hero-inner">
-      <p class="home-kicker">Côte d'Ivoire · Wave &amp; Orange Money</p>
-      <h1>EduConnect — bien plus qu'un paiement scolaire</h1>
+      <p class="home-kicker">Côte d’Ivoire · Alliance Digitale Internationale</p>
+      <h1 id="home-hero-title">EduConnect — Gestion scolaire et visibilité digitale des écoles</h1>
       <p class="home-hero-lead">
-        La plateforme qui relie paiements mobiles, vie scolaire, RH et gouvernance multi-campus.
-        Conçue pour les écoles ivoiriennes — pas seulement pour encaisser les frais.
+        Inscriptions, examens, finances, SMS et espace parent — plus une page publique pour que les familles trouvent votre établissement.
       </p>
       <div class="home-hero-actions">
-        <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
+        <a href="/ecoles" class="home-btn home-btn-primary home-btn-xl">Découvrir les écoles</a>
+        <a href="/auth/login" class="home-btn home-btn-ghost home-btn-xl">Connexion espace parent</a>
+        <a href="/devis" class="home-btn home-btn-accent home-btn-xl">Inscrire mon établissement</a>
       </div>
     </div>
   </section>
 
-  <section class="home-section" id="piliers" aria-labelledby="pillars-title">
+  <section class="home-section" id="presentation" aria-labelledby="pillars-title">
     <div class="home-wrap">
       <header class="home-section-head">
-        <h2 id="pillars-title">Quatre piliers, une seule plateforme</h2>
-        <p>Ce que les outils de paiement seuls ne couvrent pas — et ce qu'un logiciel pensé hors de Côte d'Ivoire peine à faire avec Wave et Orange Money.</p>
+        <h2 id="pillars-title">Trois piliers, une seule plateforme</h2>
+        <p>EduConnect relie le secrétariat, les familles et la visibilité de l’école — sans exposer les dossiers élèves sur le web public.</p>
       </header>
       <div class="home-pillars">
         <article class="home-card">
-          <span class="home-card-icon" aria-hidden="true">💳</span>
-          <h3>Paiements simplifiés</h3>
-          <p>Wave et Orange Money, preuve de paiement, validation par l'école. Le parent paie depuis son téléphone ; la direction voit ce qui est réglé.</p>
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+          </span>
+          <h3>Gestion</h3>
+          <p>Inscriptions, notes, examens, caisse et RH dans le même fil — pensé pour le collège et le lycée ivoiriens.</p>
         </article>
         <article class="home-card">
-          <span class="home-card-icon" aria-hidden="true">📚</span>
-          <h3>Vie scolaire</h3>
-          <p>Notes, appel Présent / Retard / Absent, bulletins, suivi parent. L'enfant n'a pas d'écran : la famille reçoit l'essentiel.</p>
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+          </span>
+          <h3>Communication</h3>
+          <p>SMS officiel, notifications et espace parent : absences, notes et paiements, sans compte élève.</p>
         </article>
         <article class="home-card">
-          <span class="home-card-icon" aria-hidden="true">👩‍🏫</span>
-          <h3>RH &amp; Comptabilité</h3>
-          <p>Équipe, congés, paie, recettes et dépenses : le pilotage administratif dans le même espace que la scolarité.</p>
-        </article>
-        <article class="home-card">
-          <span class="home-card-icon" aria-hidden="true">🌍</span>
-          <h3>Multi-campus &amp; Gouvernance</h3>
-          <p>Groupes scolaires, vue consolidée, modules activables campus par campus. Une direction, plusieurs établissements.</p>
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          </span>
+          <h3>Visibilité</h3>
+          <p>Portail public, fiche marketplace et présence Google : l’école se trouve, les résultats restent privés.</p>
         </article>
       </div>
     </div>
   </section>
 
-  <section class="home-section home-section-alt" id="comparaison" aria-labelledby="compare-title">
+  <section class="home-section home-section-alt" id="ecoles" aria-labelledby="market-title">
     <div class="home-wrap">
       <header class="home-section-head">
-        <h2 id="compare-title">Paiement seul, ou école entière&nbsp;?</h2>
-        <p class="home-key-sentence">Contrairement aux solutions limitées aux paiements, EduConnect offre une gestion scolaire complète.</p>
+        <h2 id="market-title">Trouver une école</h2>
+        <p>Annuaire des établissements qui ont publié leur page. Les notes et bulletins restent derrière la connexion parent.</p>
       </header>
-      <div class="home-compare">
-        <article class="home-compare-col">
-          <h3>Solutions classiques</h3>
-          <p class="home-compare-tag">Paiement uniquement</p>
-          <ul>
-            <li>Encaissement des frais</li>
-            <li>Peu ou pas de suivi pédagogique</li>
-            <li>RH et compta ailleurs, ou nulle part</li>
-            <li>Un campus, un outil, un tableur</li>
-          </ul>
-        </article>
-        <article class="home-compare-col home-compare-col-accent">
-          <h3>EduConnect</h3>
-          <p class="home-compare-tag">Paiement + Vie scolaire + RH + Multi-campus</p>
-          <ul>
-            <li>Wave / Orange Money + preuve + validation</li>
-            <li>Notes, appel, bulletins, parents informés</li>
-            <li>RH et comptabilité dans le même fil</li>
-            <li>Réseaux et groupes : une gouvernance, plusieurs campus</li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  </section>
 
-  <section class="home-section" id="temoignages" aria-labelledby="social-title">
-    <div class="home-wrap">
-      <header class="home-section-head">
-        <h2 id="social-title">Ce que l'on vise, concrètement</h2>
-        <p>Pas de chiffres gonflés. Un produit en déploiement, un réseau EPV déjà au catalogue, et des usages qui changent le quotidien.</p>
-      </header>
-      <div class="home-figures">
-        <div class="home-figure">
-          <strong>Réseau EPV</strong>
-          <span>Premiers établissements connectés — Abidjan et Bingerville</span>
-        </div>
-        <div class="home-figure">
-          <strong>Wave &amp; OM</strong>
-          <span>Deux canaux que les familles ivoiriennes utilisent déjà</span>
-        </div>
-        <div class="home-figure">
-          <strong>Redoublement</strong>
-          <span>Des indicateurs pour agir plus tôt, pas un taux magique affiché en vitrine</span>
-        </div>
-      </div>
-      <div class="home-quotes">
-        <blockquote>
-          <p>« On savait qui avait payé. On ne savait pas qui était en retard en classe. Maintenant les deux se voient le jour même. »</p>
-          <footer>Direction d'établissement, Abidjan</footer>
-        </blockquote>
-        <blockquote>
-          <p>« Je paie par Wave, je vois les notes. Je n'ai pas besoin d'un autre application pour l'école. »</p>
-          <footer>Parent, Cocody</footer>
-        </blockquote>
-        <blockquote>
-          <p>« L'appel, c'est trois boutons. On ne cherche plus le cahier. »</p>
-          <footer>Enseignant, Yopougon</footer>
-        </blockquote>
-      </div>
-    </div>
-  </section>
-
-  <section class="home-section home-section-alt" id="appel" aria-labelledby="appel-title">
-    <div class="home-wrap home-appel">
-      <div class="home-appel-copy">
-        <h2 id="appel-title">Un clic par élève, pensé pour le pouce</h2>
-        <p>Sur le terrain, l'enseignant n'a pas une main libre et un clavier. L'appel du jour tient en trois gros boutons : Présent, Retard, Absent. Les parents sont notifiés en cas d'absence ou de retard.</p>
-        <ul class="home-appel-points">
-          <li>Une ligne par élève, lisible au soleil</li>
-          <li>Un geste, pas un menu</li>
-          <li>Le même statut que voit la famille</li>
-        </ul>
-      </div>
-      <div class="home-phone" aria-hidden="true">
-        <div class="home-phone-frame">
-          <div class="home-phone-notch"></div>
-          <div class="home-phone-screen">
-            <p class="home-phone-appbar">Appel du jour · CM2 A</p>
-            <div class="home-phone-row">
-              <span>Aya Kouassi</span>
-              <div class="home-att">
-                <span class="is-on is-present">Présent</span>
-                <span>Retard</span>
-                <span>Absent</span>
-              </div>
-            </div>
-            <div class="home-phone-row">
-              <span>Jean Yao</span>
-              <div class="home-att">
-                <span>Présent</span>
-                <span class="is-on is-late">Retard</span>
-                <span>Absent</span>
-              </div>
-            </div>
-            <div class="home-phone-row">
-              <span>Fatou Diallo</span>
-              <div class="home-att">
-                <span>Présent</span>
-                <span>Retard</span>
-                <span class="is-on is-absent">Absent</span>
-              </div>
-            </div>
-            <div class="home-phone-save">Enregistrer l'appel</div>
+      <form class="home-search" method="GET" action="/ecoles" role="search">
+        <div class="home-search-fields">
+          <div class="home-search-field">
+            <label for="home-ville">Ville</label>
+            <input type="text" id="home-ville" name="ville" placeholder="Abidjan, Bouaké…" autocomplete="address-level2">
+          </div>
+          <div class="home-search-field">
+            <label for="home-cycle">Cycle</label>
+            <select id="home-cycle" name="cycle">
+              <option value="">Tous les cycles</option>
+              <% cycles.forEach(function(opt) { %>
+                <option value="<%= opt.value %>"><%= opt.label %></option>
+              <% }) %>
+            </select>
           </div>
         </div>
+        <button type="submit" class="home-btn home-btn-primary">Rechercher</button>
+      </form>
+
+      <% if (featured.length) { %>
+        <ul class="home-featured">
+          <% featured.forEach(function(s) { %>
+            <li>
+              <a class="home-school-card" href="<%= s.portalPath %>">
+                <%- include('partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+                <span>
+                  <strong><%= s.name %></strong>
+                  <span class="home-school-meta"><%= [s.city, s.cycleLabel].filter(Boolean).join(' · ') %></span>
+                </span>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+
+      <p class="home-section-cta">
+        <a href="/ecoles" class="home-btn home-btn-outline">Voir toutes les écoles</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="home-section" id="fonctionnalites" aria-labelledby="features-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="features-title">Ce que l’établissement gère au quotidien</h2>
+        <p>Un logiciel pensé pour Wave, Orange Money, et le rythme d’une année scolaire en Côte d’Ivoire.</p>
+      </header>
+      <div class="home-features">
+        <article class="home-feature">
+          <h3>Gestion</h3>
+          <ul>
+            <li>Inscriptions et réinscriptions</li>
+            <li>Examens, notes, bulletins</li>
+            <li>Finances : Wave, Orange Money, caisse</li>
+          </ul>
+        </article>
+        <article class="home-feature">
+          <h3>Communication</h3>
+          <ul>
+            <li>SMS officiel de l’école</li>
+            <li>Espace parent (notes, absences, paiements)</li>
+            <li>Notifications dès qu’il se passe quelque chose</li>
+          </ul>
+        </article>
+        <article class="home-feature">
+          <h3>Visibilité</h3>
+          <ul>
+            <li>Portail public /e/votre-ecole</li>
+            <li>Référencement (SEO) de la fiche établissement</li>
+            <li>Marketplace des écoles EduConnect</li>
+          </ul>
+        </article>
       </div>
     </div>
   </section>
 
-  <section class="home-cta-band" id="contact">
+  <section class="home-section home-section-alt" id="securite" aria-labelledby="security-title">
     <div class="home-wrap">
-      <h2>Parlons de votre établissement</h2>
-      <p>Un devis Pro, ou simplement une question. Pas de mot de passe de démonstration sur cette page : on vous ouvre un espace propre.</p>
+      <header class="home-section-head">
+        <h2 id="security-title">Sécurité et paiements</h2>
+        <p>La vitrine montre l’école. Les dossiers élèves restent derrière authentification.</p>
+      </header>
+      <div class="home-security">
+        <article class="home-security-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V7z"/><path d="M9 12l2 2 4-4"/></svg>
+          </span>
+          <h3>Vos données élèves sont protégées</h3>
+          <p>Notes, bulletins et classements ne figurent pas sur les pages publiques. Seuls la direction, les enseignants et les parents connectés y accèdent.</p>
+        </article>
+        <article class="home-security-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
+          </span>
+          <h3>Paiements sécurisés via Wave &amp; Orange Money</h3>
+          <p>Le parent paie depuis son téléphone, envoie la preuve ; l’école valide. Deux canaux que les familles ivoiriennes utilisent déjà.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="partenaires" aria-labelledby="partners-title">
+    <div class="home-wrap">
+      <header class="home-section-head">
+        <h2 id="partners-title">Établissements partenaires</h2>
+        <p>Les directions suivent paiements et absences depuis le téléphone.</p>
+      </header>
+      <% if (featured.length) { %>
+        <ul class="home-partners">
+          <% featured.forEach(function(s) { %>
+            <li>
+              <a href="<%= s.portalPath %>" class="home-partner">
+                <%- include('partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'lg' }) %>
+                <span><%= s.name %></span>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="home-cta-band" id="inscription" aria-labelledby="cta-title">
+    <div class="home-wrap">
+      <h2 id="cta-title">Prêt à digitaliser votre établissement&nbsp;?</h2>
+      <p>Un devis pour inscrire l’école, ou l’annuaire pour découvrir les établissements déjà en ligne.</p>
       <div class="home-hero-actions">
-        <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Obtenir un devis Pro</a>
-        <a href="mailto:contact@educonnect.ci?subject=Devis%20EduConnect" class="home-btn home-btn-ghost home-btn-xl">Écrire à contact@educonnect.ci</a>
+        <a href="/devis" class="home-btn home-btn-accent home-btn-xl">Inscrire mon établissement</a>
+        <a href="/ecoles" class="home-btn home-btn-ghost home-btn-xl">Découvrir les écoles</a>
       </div>
     </div>
   </section>
@@ -193,22 +223,23 @@
     <div class="home-wrap home-footer-grid">
       <div>
         <p class="home-footer-brand">Edu<strong>Connect</strong></p>
-        <p>Gestion scolaire et paiements Wave / Orange Money, Côte d'Ivoire.</p>
+        <p>Gestion scolaire et visibilité digitale des écoles, Côte d’Ivoire.</p>
         <p class="home-footer-entity">Éditeur : Alliance Digitale Internationale</p>
       </div>
       <div>
         <h3>Contact</h3>
         <p><a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a></p>
-        <p><a href="/ecoles">Écoles</a> · <a href="/devis">Devis</a> · <a href="/auth/login">Connexion</a> · <a href="/auth/register">Inscription</a></p>
+        <p><a href="/ecoles">Écoles</a> · <a href="/devis">Devis</a> · <a href="/auth/login">Connexion</a></p>
       </div>
       <div>
         <h3>Informations légales</h3>
         <ul class="home-footer-links">
           <li><a href="/mentions-legales">Mentions légales</a></li>
           <li><a href="/confidentialite">Politique de confidentialité</a></li>
-          <li><a href="/cgu">Conditions générales d'utilisation</a></li>
+          <li><a href="/cgu">Conditions générales d’utilisation</a></li>
           <li><a href="/cookies">Cookies</a></li>
           <li><a href="/guides">Guides</a></li>
+          <li><a href="/ecoles">Écoles</a></li>
           <li><a href="/devis">Devis</a></li>
         </ul>
       </div>

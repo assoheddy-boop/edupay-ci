@@ -2,14 +2,22 @@
 <div class="portal">
   <header class="portal-top">
     <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
-    <nav class="portal-nav" aria-label="Navigation">
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
       <a href="/ecoles">Écoles</a>
       <a href="/auth/login">Connexion</a>
       <a href="/devis">Devis</a>
     </nav>
+    <details class="portal-burger">
+      <summary aria-label="Ouvrir le menu">Menu</summary>
+      <nav class="portal-nav" aria-label="Menu mobile">
+        <a href="/ecoles">Écoles</a>
+        <a href="/auth/login">Connexion</a>
+        <a href="/devis">Devis</a>
+      </nav>
+    </details>
   </header>
 
-  <section class="portal-hero">
+  <section class="portal-hero portal-hero-market">
     <div>
       <p class="portal-kicker">Côte d’Ivoire · EduConnect</p>
       <h1>Trouver une école</h1>
@@ -32,6 +40,15 @@
           <% }) %>
         </select>
       </div>
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type">
+          <option value="">Tous</option>
+          <% (typeof typeOptions !== 'undefined' ? typeOptions : []).forEach(function(opt) { %>
+            <option value="<%= opt.value %>" <%= type === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+          <% }) %>
+        </select>
+      </div>
     </div>
     <button type="submit" class="btn btn-primary">Rechercher</button>
   </form>
@@ -44,11 +61,12 @@
     <ul class="portal-list">
       <% schools.forEach(function(s) { %>
         <li>
-          <a class="card portal-school-link" href="<%= s.portalPath %>">
+          <a class="card portal-school-link<%= s.publicFeatured ? ' is-featured' : '' %>" href="<%= s.portalPath %>">
             <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
             <span>
+              <% if (s.publicFeatured) { %><span class="portal-featured-badge">Partenaire</span><% } %>
               <strong><%= s.name %></strong>
-              <span class="portal-school-meta"><%= s.city %> · <%= s.cycleLabel %></span>
+              <span class="portal-school-meta"><%= s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>
             </span>
           </a>
         </li>
