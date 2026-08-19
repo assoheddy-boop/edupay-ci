@@ -338,17 +338,54 @@ describe('SEO sitemap and robots', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.school.findMany.mockResolvedValue([
-      { slug: SLUG, updatedAt: new Date('2026-08-19') },
+      { slug: SLUG, updatedAt: new Date('2026-08-19'), marketplaceTier: 'VIP' },
     ]);
     mockEmptyPortalExtras();
   });
 
-  test('sitemap.xml includes /ecoles and /e/:slug', async () => {
+  test('sitemap.xml includes public pages and /e/:slug', async () => {
     const res = await request(app).get('/sitemap.xml');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/xml/);
-    expect(res.text).toMatch(/\/ecoles/);
+    expect(res.text).toMatch(/<urlset /);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/ecoles<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/e\/igest-yopougon-sideci<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/mentions-legales<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/confidentialite<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/devis<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/guides<\/loc>/);
+    expect(res.text).not.toMatch(/\/auth/);
+    expect(res.text).not.toMatch(/\/admin/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
+  test('sitemap.xml stays valid XML when Prisma fails or lastmod is invalid', async () => {
+    prisma.school.findMany.mockRejectedValue(new Error('column School.updatedAt does not exist'));
+    const failed = await request(app).get('/sitemap.xml');
+    expect(failed.status).toBe(200);
+    expect(failed.headers['content-type']).toMatch(/xml/);
+    expect(failed.text).toMatch(/<urlset /);
+    expect(failed.text).toMatch(/\/ecoles/);
+    expect(failed.text).not.toMatch(/Erreur serveur/);
+
+    prisma.school.findMany.mockResolvedValue([
+      { slug: SLUG, updatedAt: new Date('not-a-date'), marketplaceTier: 'STANDARD' },
+    ]);
+    const invalid = await request(app).get('/sitemap.xml');
+    expect(invalid.status).toBe(200);
+    expect(invalid.text).toMatch(/\/e\/igest-yopougon-sideci/);
+    expect(invalid.text).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+  });
+
+  test('sitemap.xml omits marketplace-off schools', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      { slug: 'ecole-privee-cachee', updatedAt: new Date('2026-08-19'), marketplaceTier: 'NONE' },
+      { slug: SLUG, updatedAt: new Date('2026-08-19'), marketplaceTier: 'VIP' },
+    ]);
+    const res = await request(app).get('/sitemap.xml');
+    expect(res.status).toBe(200);
     expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
+    expect(res.text).not.toMatch(/ecole-privee-cachee/);
   });
 
   test('robots.txt points to the sitemap', async () => {
@@ -357,5 +394,6 @@ describe('SEO sitemap and robots', () => {
     expect(res.text).toMatch(/Sitemap: /);
     expect(res.text).toMatch(/sitemap\.xml/);
     expect(res.text).toMatch(/Disallow: \/school/);
+    expect(res.text).toMatch(/Disallow: \/auth/);
   });
 });

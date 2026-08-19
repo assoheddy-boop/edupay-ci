@@ -17,6 +17,7 @@ const {
   publishedWhereLegacy,
   marketplaceSortRank,
   applyMarketplaceOffer,
+  isLiveTier,
 } = require('../utils/marketplaceAddon');
 
 function publicSelect(includeTier = true) {
@@ -134,59 +135,105 @@ async function listPublishedSchools({ ville, cycle, type } = {}) {
   return sortFeaturedFirst(rows || []);
 }
 
+function xmlEscape(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function sitemapDay(value, fallback = '2026-01-01') {
+  try {
+    if (value == null || value === '') return fallback;
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return fallback;
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return fallback;
+  }
+}
+
+function isIndexableSchool(row) {
+  return isPortalSlug(row?.slug) && isLiveTier(row?.marketplaceTier);
+}
+
+/** Same publication rules as /ecoles. No ORDER BY on nullable slug; lastmod is sanitized. */
+async function querySitemapSchools(select) {
+  try {
+    return await prisma.school.findMany({
+      where: publishedWhere(),
+      select,
+      take: 500,
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function listPublishedSlugs() {
   try {
-    try {
-      const rows = await prisma.school.findMany({
-        where: publishedWhere(),
-        select: { slug: true, updatedAt: true },
-        orderBy: { slug: 'asc' },
-        take: 500,
-      });
-      return rows.filter((row) => isPortalSlug(row.slug));
-    } catch {
-      const rows = await prisma.school.findMany({
-        where: publishedWhereLegacy(),
-        select: { slug: true, updatedAt: true },
-        orderBy: { slug: 'asc' },
-        take: 500,
-      });
-      return rows.filter((row) => isPortalSlug(row.slug));
+    let rows = await querySitemapSchools({
+      slug: true,
+      updatedAt: true,
+      marketplaceTier: true,
+    });
+    if (!rows) {
+      rows = await querySitemapSchools({ slug: true, marketplaceTier: true });
     }
+    return (rows || []).filter(isIndexableSchool);
   } catch {
     return [];
   }
 }
 
 function sitemapXml(entries) {
-  const urls = entries
+  const urls = (entries || [])
     .map((entry) => {
-      const loc = `${SITE_ORIGIN}${entry.path}`;
-      const lastmod = entry.lastmod ? `\n    <lastmod>${entry.lastmod}</lastmod>` : '';
-      const changefreq = entry.changefreq ? `\n    <changefreq>${entry.changefreq}</changefreq>` : '';
-      const priority = entry.priority != null ? `\n    <priority>${entry.priority}</priority>` : '';
+      const loc = xmlEscape(`${SITE_ORIGIN}${entry.path}`);
+      const lastmod = entry.lastmod ? `\n    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : '';
+      const changefreq = entry.changefreq ? `\n    <changefreq>${xmlEscape(entry.changefreq)}</changefreq>` : '';
+      const priority = entry.priority != null ? `\n    <priority>${xmlEscape(entry.priority)}</priority>` : '';
       return `  <url>\n    <loc>${loc}</loc>${lastmod}${changefreq}${priority}\n  </url>`;
     })
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
-async function buildSitemapXml() {
-  const today = new Date().toISOString().slice(0, 10);
-  const staticEntries = [
+function staticSitemapEntries(today) {
+  return [
     { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: today },
     { path: '/ecoles', changefreq: 'daily', priority: '0.8', lastmod: today },
     { path: '/devis', changefreq: 'monthly', priority: '0.7', lastmod: today },
     { path: '/guides', changefreq: 'monthly', priority: '0.6', lastmod: today },
+    { path: '/mentions-legales', changefreq: 'yearly', priority: '0.3', lastmod: today },
+    { path: '/confidentialite', changefreq: 'yearly', priority: '0.3', lastmod: today },
+    { path: '/cgu', changefreq: 'yearly', priority: '0.3', lastmod: today },
+    { path: '/cookies', changefreq: 'yearly', priority: '0.2', lastmod: today },
   ];
-  const schools = await listPublishedSlugs();
-  const schoolEntries = schools.map((row) => ({
-    path: portalPath(row.slug),
-    changefreq: 'weekly',
-    priority: '0.7',
-    lastmod: row.updatedAt ? new Date(row.updatedAt).toISOString().slice(0, 10) : today,
-  }));
-  return sitemapXml([...staticEntries, ...schoolEntries]);
+}
+
+function fallbackSitemapXml() {
+  return sitemapXml(staticSitemapEntries(sitemapDay(new Date())));
+}
+
+async function buildSitemapXml() {
+  const today = sitemapDay(new Date());
+  const staticEntries = staticSitemapEntries(today);
+  try {
+    const schools = await listPublishedSlugs();
+    const schoolEntries = schools.map((row) => ({
+      path: portalPath(row.slug),
+      changefreq: 'weekly',
+      priority: '0.7',
+      lastmod: sitemapDay(row.updatedAt, today),
+    }));
+    return sitemapXml([...staticEntries, ...schoolEntries]);
+  } catch (err) {
+    console.error('[sitemap]', err?.message || err);
+    return sitemapXml(staticEntries);
+  }
 }
 
 async function enableIgestPublicPortal() {
@@ -305,5 +352,6 @@ module.exports = {
   listPortalPosts,
   sortFeaturedFirst,
   buildSitemapXml,
+  fallbackSitemapXml,
   enableIgestPublicPortal,
 };

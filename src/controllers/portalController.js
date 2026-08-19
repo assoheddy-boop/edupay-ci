@@ -21,6 +21,7 @@ const {
   listPublishedSchools,
   listPortalPosts,
   buildSitemapXml,
+  fallbackSitemapXml,
 } = require('../services/marketplace');
 const { publicSchoolStats } = require('../services/publicPortalStats');
 
@@ -150,13 +151,18 @@ async function marketplace(req, res, next) {
   }
 }
 
-async function sitemap(req, res, next) {
+function sendSitemap(res, xml) {
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=1800');
+  return res.status(200).send(xml);
+}
+
+async function sitemap(_req, res) {
   try {
-    const xml = await buildSitemapXml();
-    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-    return res.status(200).send(xml);
+    return sendSitemap(res, await buildSitemapXml());
   } catch (err) {
-    return next(err);
+    console.error('[sitemap]', err?.message || err);
+    return sendSitemap(res, fallbackSitemapXml());
   }
 }
 
@@ -166,6 +172,7 @@ function robots(_req, res) {
     'Allow: /',
     'Allow: /ecoles',
     'Allow: /e/',
+    'Disallow: /auth',
     'Disallow: /school',
     'Disallow: /parent',
     'Disallow: /teacher',
