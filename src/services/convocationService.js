@@ -1,8 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const prisma = require('../config/database');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const { formatTermLabel, normalizeTerm } = require('./academicTerms');
 const { parseSheetDate, todayIso, formatDateFr, buildRows } = require('./emargementService');
 
@@ -15,12 +13,6 @@ const EXAM_TYPE_LABELS = {
   BLANC: 'Examen blanc',
   NATIONAL: 'Examen national',
 };
-
-const pdfDir = path.join(__dirname, '../../uploads/convocations');
-
-function ensurePdfDir() {
-  if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
-}
 
 function parseExamType(raw) {
   const upper = String(raw || '').trim().toUpperCase();
@@ -365,29 +357,20 @@ function drawOneConvocation(doc, { school, session, student, klass }) {
   );
 }
 
-function generateConvocationPdf({ school, session, klass, rows, outputDir }) {
-  const dir = outputDir || pdfDir;
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+async function generateConvocationPdf({ school, session, klass, rows, outputDir }) {
   const who = rows.length === 1
     ? safeFilePart(`${rows[0].lastName}-${rows[0].firstName}`)
     : safeFilePart(klass?.name);
   const filename = `convocation-${examTypeLabel(session.examType).replace(/\s+/g, '-').toLowerCase()}-${who}-${session.dateIso}.pdf`;
-  const filepath = path.join(dir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4', compress: false });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
+  const buffer = await renderPdfToBuffer((doc) => {
     rows.forEach((row, index) => {
       if (index > 0) doc.addPage();
       drawOneConvocation(doc, { school, session, student: row, klass });
     });
+  }, { size: 'A4', compress: false });
 
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/convocations/${filename}`, filepath, filename }));
-    stream.on('error', reject);
-  });
+  return savePdfBuffer({ folder: 'convocations', filename, buffer, outputDir });
 }
 
 module.exports = {

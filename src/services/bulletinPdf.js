@@ -1,7 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const {
   computeAverage,
   computeAnnuelleAverage,
@@ -14,12 +12,8 @@ const { formatTermLabel, normalizeTerm, filterGradesForBulletin } = require('./a
 const { seriesLabel } = require('./series');
 const { formatClassRank, formatGenderRank } = require('./classement');
 
-const bulletinsDir = path.join(__dirname, '../../uploads/bulletins');
-
 function ensureDir() {
-  if (!fs.existsSync(bulletinsDir)) {
-    fs.mkdirSync(bulletinsDir, { recursive: true });
-  }
+  // Persistence goes through StorageService (/tmp on Vercel, Blob when configured).
 }
 
 function safePeriodSlug(period) {
@@ -121,7 +115,7 @@ function drawAnnualTable(doc, grades, coeffMap) {
   doc.y = y + 8;
 }
 
-function generateBulletinPdf({
+async function generateBulletinPdf({
   student,
   school,
   grades,
@@ -137,19 +131,14 @@ function generateBulletinPdf({
   mention,
   decision,
   series,
+  outputDir,
 }) {
-  ensureDir();
   const filename = `bulletin-${student.id}-${safePeriodSlug(period)}-${Date.now()}.pdf`;
-  const filepath = path.join(bulletinsDir, filename);
   const term = normalizeTerm(period);
   const periodLabel = formatTermLabel(period);
   const rows = computeSubjectRows(grades, coeffMap);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
+  const buffer = await renderPdfToBuffer((doc) => {
     drawDocumentHeader(doc, school, { title: 'Bulletin scolaire' });
 
     doc.fontSize(11).fillColor('#333');
@@ -222,12 +211,9 @@ function generateBulletinPdf({
       `Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${school.name} — EduConnect`,
       { align: 'center' },
     );
-
-    doc.end();
-
-    stream.on('finish', () => resolve({ filepath, filename, pdfUrl: `/uploads/bulletins/${filename}` }));
-    stream.on('error', reject);
   });
+
+  return savePdfBuffer({ folder: 'bulletins', filename, buffer, outputDir });
 }
 
 module.exports = { generateBulletinPdf, computeAverage, ensureDir, getCoefficient };

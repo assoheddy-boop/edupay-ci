@@ -73,6 +73,8 @@ function mockRes() {
     render: jest.fn().mockReturnThis(),
     redirect: jest.fn(),
     download: jest.fn(),
+    setHeader: jest.fn(),
+    send: jest.fn(),
   };
 }
 
@@ -265,9 +267,10 @@ describe('palmarès HTTP isolation', () => {
       query: { classId: KLASS.id, term: 'T1' },
     }, res);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.download).toHaveBeenCalled();
-    const filepath = res.download.mock.calls[0][0];
-    expect(fs.existsSync(filepath)).toBe(true);
+    expect(res.send).toHaveBeenCalled();
+    const buffer = res.send.mock.calls[0][0];
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(buffer.subarray(0, 4).toString()).toBe('%PDF');
   });
 
   test('GET PDF returns 403 for another school', async () => {

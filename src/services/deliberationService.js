@@ -1,8 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const prisma = require('../config/database');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const { TERMS, formatTermLabel, normalizeTerm, filterGradesForBulletin } = require('./academicTerms');
 const { computeWeightedAverage, loadSchoolCoefficients, round2 } = require('./gradesAverage');
 const { attachClassement, formatRankCompact } = require('./classement');
@@ -37,12 +35,6 @@ const THRESHOLDS = [
   { min: 10, mention: 'Passable', decision: 'Admis' },
   { min: 0, mention: null, decision: 'Ajourné' },
 ];
-
-const pvDir = path.join(__dirname, '../../uploads/deliberations');
-
-function ensurePvDir() {
-  if (!fs.existsSync(pvDir)) fs.mkdirSync(pvDir, { recursive: true });
-}
 
 function suggestFromAverage(average, { hasGrades = true } = {}) {
   if (!hasGrades || average == null || !Number.isFinite(Number(average))) {
@@ -236,15 +228,10 @@ async function saveCouncil({ schoolId, classId, term, schoolYear, series, body }
   return { ok: true, count: results.length, records: results, class: board.class, term: board.term };
 }
 
-function generateCouncilPdf({ school, klass, term, schoolYear, rows }) {
-  ensurePvDir();
+async function generateCouncilPdf({ school, klass, term, schoolYear, rows, outputDir }) {
   const filename = `pv-${klass.id}-${term}.pdf`;
-  const filepath = path.join(pvDir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
+  const buffer = await renderPdfToBuffer((doc) => {
 
     drawDocumentHeader(doc, school, {
       title: 'Procès-verbal — Conseil de classe',
@@ -287,11 +274,9 @@ function generateCouncilPdf({ school, klass, term, schoolYear, rows }) {
     doc.fontSize(9).fillColor('#999').text(`Document officiel — ${school.name} — EduConnect`, 50, Math.max(doc.y, y + 24), {
       align: 'center',
     });
-
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/deliberations/${filename}`, filepath, filename }));
-    stream.on('error', reject);
   });
+
+  return savePdfBuffer({ folder: 'deliberations', filename, buffer, outputDir });
 }
 
 module.exports = {

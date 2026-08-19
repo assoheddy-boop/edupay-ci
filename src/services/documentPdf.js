@@ -1,7 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const { drawDocumentHeader, drawSchoolLogo } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const { formatMoney } = require('../middleware/currency');
 
 const METHOD_LABELS = {
@@ -11,22 +9,10 @@ const METHOD_LABELS = {
   BANK: 'Banque',
 };
 
-const receiptsDir = path.join(__dirname, '../../uploads/receipts');
-
-function ensureDir() {
-  if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir, { recursive: true });
-}
-
-function generateReceiptPdf({ payment, student, school, feeType }) {
-  ensureDir();
+function generateReceiptPdf({ payment, student, school, feeType, outputDir }) {
   const filename = `recu-${payment.id}.pdf`;
-  const filepath = path.join(receiptsDir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
+  return renderPdfToBuffer((doc) => {
     drawDocumentHeader(doc, school, { title: 'Reçu de paiement' });
 
     doc.fontSize(11).fillColor('#333');
@@ -45,46 +31,25 @@ function generateReceiptPdf({ payment, student, school, feeType }) {
     doc.text(`Date validation : ${payment.validatedAt ? new Date(payment.validatedAt).toLocaleDateString('fr-FR') : '—'}`);
     doc.moveDown(2);
     doc.fontSize(9).fillColor('#999').text(`Document officiel — ${school.name} — EduConnect`, { align: 'center' });
-
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));
-    stream.on('error', reject);
-  });
+  }).then((buffer) => savePdfBuffer({ folder: 'receipts', filename, buffer, outputDir }));
 }
 
-function generateBadgePdf({ student, badge, school }) {
-  ensureDir();
+function generateBadgePdf({ student, badge, school, outputDir }) {
   const filename = `badge-${badge.id}.pdf`;
-  const filepath = path.join(receiptsDir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: [300, 200], margin: 20 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
+  return renderPdfToBuffer((doc) => {
     drawSchoolLogo(doc, school, { x: 110, y: 15, width: 40 });
     doc.fontSize(12).fillColor('#0052CC').text(school.name, { align: 'center' });
-    doc.fontSize(28).text('🏅', { align: 'center' });
     doc.fontSize(16).fillColor('#333').text(badge.label, { align: 'center' });
     doc.fontSize(11).text(`${student.firstName} ${student.lastName}`, { align: 'center' });
     doc.fontSize(9).fillColor('#666').text(new Date(badge.awardedAt).toLocaleDateString('fr-FR'), { align: 'center' });
-
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));
-    stream.on('error', reject);
-  });
+  }, { size: [300, 200], margin: 20 }).then((buffer) => savePdfBuffer({ folder: 'receipts', filename, buffer, outputDir }));
 }
 
-function generateHomeworkPdf({ homework, studentClass, school }) {
-  ensureDir();
+function generateHomeworkPdf({ homework, studentClass, school, outputDir }) {
   const filename = `devoir-${homework.id}.pdf`;
-  const filepath = path.join(receiptsDir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
+  return renderPdfToBuffer((doc) => {
     drawDocumentHeader(doc, school, { title: `${homework.kind === 'TEST' ? 'Contrôle' : 'Devoir'} — ${homework.title}` });
 
     doc.fontSize(11).fillColor('#333');
@@ -95,11 +60,7 @@ function generateHomeworkPdf({ homework, studentClass, school }) {
     if (homework.description) doc.text(homework.description);
     doc.moveDown();
     doc.fontSize(9).fillColor('#999').text(`Fiche pour accompagnement à la maison — ${school.name}`, { align: 'center' });
-
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/receipts/${filename}` }));
-    stream.on('error', reject);
-  });
+  }).then((buffer) => savePdfBuffer({ folder: 'receipts', filename, buffer, outputDir }));
 }
 
 module.exports = { generateReceiptPdf, generateBadgePdf, generateHomeworkPdf };

@@ -8,6 +8,7 @@ const {
   queryString,
   todayIso,
 } = require('../services/emargementService');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 function schoolOr403(req, res) {
   const school = req.user?.school;
@@ -158,8 +159,7 @@ async function emargementsPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generateEmargementPdf({ school, sheet });
-    return res.download(filepath, filename);
+    return sendPdfDownload(res, await generateEmargementPdf({ school, sheet }));
   } catch (err) {
     console.error(err);
     return res.redirect(`/school/emargements?${qs(q)}&error=pdf`);

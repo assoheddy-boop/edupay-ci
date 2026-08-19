@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 const prisma = require('../src/config/database');
 const { drawDocumentHeader } = require('../src/utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../src/utils/pdfOutput');
 const { computeAverage, getCoefficient, loadSchoolCoefficients } = require('../src/services/gradesAverage');
 const { formatTermLabel } = require('../src/services/academicTerms');
 const { calcNetPay, monthLabel } = require('../src/utils/hr');
@@ -19,7 +19,12 @@ const ABSENCE_LABELS = {
 };
 
 function ensureDir(dir) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  } catch (err) {
+    if (err && (err.code === 'EROFS' || err.code === 'EACCES' || err.code === 'EPERM')) return;
+    throw err;
+  }
 }
 
 function parseMonth(month) {
@@ -49,21 +54,11 @@ function monthBounds(month, year) {
   return { start, end };
 }
 
-function writePdf(filepath, render) {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-    try {
-      render(doc);
-      doc.end();
-    } catch (err) {
-      reject(err);
-      return;
-    }
-    stream.on('finish', resolve);
-    stream.on('error', reject);
-  });
+async function writePdf(filepath, render) {
+  const filename = path.basename(filepath);
+  const folder = path.basename(path.dirname(filepath));
+  const buffer = await renderPdfToBuffer(render);
+  return savePdfBuffer({ folder, filename, buffer });
 }
 
 function drawFooter(doc, school) {
@@ -111,7 +106,7 @@ async function generateBulletinPDF(studentId) {
   const filename = `bulletin-${student.id}-${Date.now()}.pdf`;
   const filepath = path.join(BULLETINS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title: 'Bulletin scolaire' });
 
     doc.fontSize(11).fillColor('#333');
@@ -197,9 +192,15 @@ async function generateBulletinPDF(studentId) {
     drawFooter(doc, school);
   });
 
-  const url = `/uploads/bulletins/${filename}`;
-  const result = { ok: true, filepath, filename, url, pdfUrl: url, average };
-  await setCache(cacheKey, result, 60 * 60);
+  const result = { ok: true, ...saved, average };
+  await setCache(cacheKey, {
+    ok: true,
+    filepath: saved.filepath,
+    filename: saved.filename,
+    url: saved.url,
+    pdfUrl: saved.pdfUrl,
+    average,
+  }, 60 * 60);
   return { ...result, grades, absences };
 }
 
@@ -277,7 +278,7 @@ async function generatePayrollPDF(teacherId, month) {
   const school = teacher.school;
   const period = monthLabel(m, y);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title: `Fiche de paie — ${period}` });
 
     doc.fontSize(11).fillColor('#333');
@@ -333,7 +334,7 @@ async function generatePayrollPDF(teacherId, month) {
     drawFooter(doc, school);
   });
 
-  const url = `/uploads/payslips/${filename}`;
+  const url = saved.pdfUrl || saved.url;
 
   if (payslip) {
     await prisma.payslip.update({ where: { id: payslip.id }, data: { pdfUrl: url } });
@@ -344,8 +345,7 @@ async function generatePayrollPDF(teacherId, month) {
 
   return {
     ok: true,
-    filepath,
-    filename,
+    ...saved,
     url,
     pdfUrl: url,
     netPay,
@@ -572,7 +572,7 @@ async function generateGenderStatsPDF(schoolId) {
   const filename = `genre-${schoolId.slice(0, 8)}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, data.school, { title: 'Répartition filles / garçons par classe' });
 
     doc.fontSize(10).fillColor('#666');
@@ -606,12 +606,7 @@ async function generateGenderStatsPDF(schoolId) {
     drawFooter(doc, data.school);
   });
 
-  return {
-    ok: true,
-    filepath,
-    filename,
-    url: `/uploads/exports/${filename}`,
-  };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -699,7 +694,7 @@ async function generateClassGenderStatsPdf({ schoolId, classId } = {}) {
   const filename = `genre-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     doc.fontSize(18).fillColor('#0052CC').text(title, { align: 'center' });
     doc.moveDown();
     doc.fontSize(10).fillColor('#666');
@@ -727,12 +722,7 @@ async function generateClassGenderStatsPdf({ schoolId, classId } = {}) {
     drawFooter(doc, { name: 'EduConnect' });
   });
 
-  return {
-    ok: true,
-    filepath,
-    filename,
-    url: `/uploads/exports/${filename}`,
-  };
+  return { ok: true, ...saved };
 }
 
 const REINSCRIPTION_COLUMNS = [
@@ -764,7 +754,7 @@ async function generateReinscriptionPDF(schoolId, schoolYear) {
   const filename = `reinscription-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title: 'Réinscriptions' });
     doc.fontSize(11).fillColor('#333');
     doc.text(`Année scolaire : ${schoolYear}`);
@@ -798,7 +788,7 @@ async function generateReinscriptionPDF(schoolId, schoolYear) {
     drawFooter(doc, school);
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -867,7 +857,7 @@ async function generateRedoublementCausesPDF(schoolId, schoolYear) {
   const filename = `causes-redoublement-${schoolId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title: 'Causes probables de redoublement' });
     doc.fontSize(11).fillColor('#333');
     doc.text(`Année scolaire : ${schoolYear}`);
@@ -905,7 +895,7 @@ async function generateRedoublementCausesPDF(schoolId, schoolYear) {
     drawFooter(doc, school);
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -978,7 +968,7 @@ async function generateGroupRedoublementCausesPDF(groupId, schoolYear) {
   const filename = `causes-redoublement-groupe-${groupId}-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     doc.fontSize(16).fillColor('#222').text('Comparatif redoublement par école', { align: 'center' });
     doc.moveDown(0.5);
     doc.fontSize(11).fillColor('#333');
@@ -1022,7 +1012,7 @@ async function generateGroupRedoublementCausesPDF(groupId, schoolYear) {
     doc.fontSize(9).fillColor('#999').text('EduConnect — export groupe', 50, doc.page.height - 40, { align: 'left' });
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -1095,7 +1085,7 @@ async function generateRedoublementByPlanPDF(schoolYear) {
   const filename = `redoublement-par-plan-${schoolYear.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     doc.fontSize(16).fillColor('#222').text('Redoublement par formule d\'abonnement', { align: 'center' });
     doc.moveDown(0.5);
     doc.fontSize(11).fillColor('#333');
@@ -1137,7 +1127,7 @@ async function generateRedoublementByPlanPDF(schoolYear) {
     doc.fontSize(9).fillColor('#999').text('EduConnect — analyse redoublement par plan', 50, doc.page.height - 40, { align: 'left' });
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -1231,7 +1221,7 @@ async function generateTimetablePDF(targetId, { mode = 'student' } = {}) {
   const filename = `emploi-du-temps-${targetId.slice(0, 8)}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title });
     doc.fontSize(11).fillColor('#333').text(subtitle);
     doc.moveDown();
@@ -1267,10 +1257,7 @@ async function generateTimetablePDF(targetId, { mode = 'student' } = {}) {
 
   return {
     ok: true,
-    filepath,
-    filename,
-    url: `/uploads/exports/${filename}`,
-    pdfUrl: `/uploads/exports/${filename}`,
+    ...saved,
     entries,
   };
 }
@@ -1358,7 +1345,7 @@ async function generateHomeworkCalendarPDF(schoolId) {
   const filename = `devoirs-controles-${schoolId.slice(0, 8)}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, { title: 'Devoirs & contrôles' });
     doc.fontSize(11).fillColor('#333');
     doc.text(`${stats.total} publication(s) — ${stats.homework} devoir(s), ${stats.test} contrôle(s)`);
@@ -1396,7 +1383,7 @@ async function generateHomeworkCalendarPDF(schoolId) {
     drawFooter(doc, school);
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 /**
@@ -1458,7 +1445,7 @@ async function generateAccountingReportPdf({
   const filename = `comptabilite-educonnect-${slug}-${Date.now()}.pdf`;
   const filepath = path.join(EXPORTS_DIR, filename);
 
-  await writePdf(filepath, (doc) => {
+  const saved = await writePdf(filepath, (doc) => {
     drawDocumentHeader(doc, school, {
       title: 'Rapport comptable',
       subtitle: periodLabel ? `${periodLabel} · EduConnect` : 'EduConnect',
@@ -1505,7 +1492,7 @@ async function generateAccountingReportPdf({
     doc.fontSize(8).fillColor('#999').text('Document EduConnect — à usage interne de l\'établissement.', { align: 'center' });
   });
 
-  return { ok: true, filepath, filename, url: `/uploads/exports/${filename}` };
+  return { ok: true, ...saved };
 }
 
 module.exports = {

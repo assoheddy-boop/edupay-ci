@@ -17,6 +17,7 @@ const {
   ensureSubject,
 } = require('../services/TimetableService');
 const { generateTimetablePDF, generateTimetableExcel } = require('../services/export');
+const { sendPdfDownload } = require('../src/utils/pdfOutput');
 
 const router = express.Router();
 
@@ -393,7 +394,7 @@ router.get('/export/class/:id.pdf', requireAuth, async (req, res) => {
 
   const pdf = await generateTimetablePDF(req.params.id, { mode: 'class' });
   if (!pdf.ok) return res.status(404).json(pdf);
-  return res.redirect(pdf.url);
+  return sendPdfDownload(res, pdf);
 });
 
 router.get('/export/class/:id.xlsx', requireAuth, async (req, res) => {

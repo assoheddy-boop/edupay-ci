@@ -2,6 +2,7 @@ const prisma = require('../config/database');
 const { sendExcel } = require('../services/exportExcel');
 const { getClassGenderStats } = require('../../services/ClassService');
 const { generateClassGenderStatsExcel, generateClassGenderStatsPdf } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 function schoolIdOf(req) {
   return req.user?.school?.id || null;
@@ -54,7 +55,7 @@ async function exportPdf(req, res) {
   }
   const result = await generateClassGenderStatsPdf({ schoolId: cls.schoolId, classId: cls.id });
   if (!result.ok) return res.redirect(`/school/classes/${cls.id}/dashboard`);
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 module.exports = {

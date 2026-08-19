@@ -13,6 +13,7 @@ const {
   getPalmares,
   generatePalmaresPdf,
 } = require('../services/palmaresService');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 function schoolOr403(req, res) {
   const school = req.user?.school;
@@ -172,8 +173,7 @@ async function palmaresPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generatePalmaresPdf({ school, board });
-    return res.status(200).download(filepath, filename);
+    return sendPdfDownload(res, await generatePalmaresPdf({ school, board }));
   } catch (err) {
     console.error(err);
     return res.redirect(`/school/palmares?${palmaresQuery(filters)}&error=pdf`);
@@ -264,8 +264,7 @@ async function teacherPalmaresPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generatePalmaresPdf({ school: ctx.school, board });
-    return res.status(200).download(filepath, filename);
+    return sendPdfDownload(res, await generatePalmaresPdf({ school: ctx.school, board }));
   } catch (err) {
     console.error(err);
     return res.redirect(`/teacher/palmares?${palmaresQuery(filters)}&error=pdf`);

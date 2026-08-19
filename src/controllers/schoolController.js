@@ -44,6 +44,7 @@ const {
   discountLabel,
 } = require('../services/socialCaseService');
 const { generateBulletinPDF, generateHomeworkCalendarPDF, generateHomeworkCalendarExcel } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 const { sendExcel } = require('../services/exportExcel');
 const { summarizeHomeworkStats, calendarEventsJson } = require('../services/homeworkService');
 const { parseGender } = require('../../services/ClassService');
@@ -925,7 +926,7 @@ async function exportBulletinPdf(req, res) {
   try {
     const result = await generateBulletinPDF(student.id);
     if (!result.ok) return res.redirect(`/school/bulletins?error=${result.error}`);
-    return res.download(result.filepath, result.filename);
+    return sendPdfDownload(res, result);
   } catch (err) {
     console.error(err);
     res.redirect('/school/bulletins?error=generation');
@@ -1122,7 +1123,7 @@ async function exportHomeworksPdf(req, res) {
   if (!school) return res.redirect('/auth/login');
   const result = await generateHomeworkCalendarPDF(school.id);
   if (!result.ok) return res.redirect('/school/homeworks');
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 module.exports = {

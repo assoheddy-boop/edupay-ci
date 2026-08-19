@@ -10,6 +10,7 @@ const {
   getParentPrintBundle,
   generateConvocationPdf,
 } = require('../services/convocationService');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 const { examTypesForCycle, allowsNationalExam } = require('../utils/educationCycle');
 
 function schoolOr403(req, res) {
@@ -166,13 +167,12 @@ async function convocationPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generateConvocationPdf({
+    return sendPdfDownload(res, await generateConvocationPdf({
       school,
       session: bundle.session,
       klass: bundle.class,
       rows: bundle.rows,
-    });
-    return res.download(filepath, filename);
+    }));
   } catch (err) {
     console.error(err);
     return res.redirect(`/school/convocations/${req.params.id}?error=pdf`);
@@ -240,13 +240,12 @@ async function parentConvocationPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generateConvocationPdf({
+    return sendPdfDownload(res, await generateConvocationPdf({
       school: bundle.school,
       session: bundle.session,
       klass: bundle.class,
       rows: bundle.rows,
-    });
-    return res.download(filepath, filename);
+    }));
   } catch (err) {
     console.error(err);
     return res.redirect('/parent/convocations?error=pdf');

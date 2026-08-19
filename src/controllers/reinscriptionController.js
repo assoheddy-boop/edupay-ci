@@ -17,6 +17,7 @@ const {
   generateGroupRedoublementCausesPDF,
   generateGroupRedoublementCausesExcel,
 } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 const ERRORS = {
   student: 'Élève introuvable.',
@@ -178,7 +179,7 @@ async function exportCausesPdf(req, res) {
   const schoolYear = req.query.schoolYear || school?.currentSchoolYear;
   const result = await generateRedoublementCausesPDF(schoolId, schoolYear);
   if (!result.ok) return res.status(400).send('Export impossible');
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 async function exportCausesExcel(req, res) {
@@ -286,7 +287,7 @@ async function exportGroupCausesPdf(req, res) {
   const schoolYear = req.query.schoolYear || '2025-2026';
   const result = await generateGroupRedoublementCausesPDF(groupId, schoolYear);
   if (!result.ok) return res.status(400).send('Export impossible');
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 async function exportGroupCausesExcel(req, res) {
@@ -309,7 +310,7 @@ async function exportPdf(req, res) {
   const schoolYear = req.query.schoolYear || school?.currentSchoolYear;
   const result = await generateReinscriptionPDF(schoolId, schoolYear);
   if (!result.ok) return res.status(400).send('Export impossible');
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 async function exportExcel(req, res) {

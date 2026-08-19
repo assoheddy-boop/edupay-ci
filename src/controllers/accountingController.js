@@ -9,6 +9,7 @@ const {
 } = require('../../services/AccountingService');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { generateAccountingReportPdf } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 function queryPeriod(req) {
   return parsePeriod({
@@ -186,7 +187,7 @@ async function exportPdf(req, res) {
     byCategory: data.byCategory,
   });
   if (!result.ok) return res.redirect(`/school/accounting/report${periodQuery(data.period)}`);
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 module.exports = { dashboard, addTransaction, report, exportExcel, exportPdf };

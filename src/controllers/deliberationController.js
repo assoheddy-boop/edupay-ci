@@ -10,6 +10,7 @@ const {
   saveCouncil,
   generateCouncilPdf,
 } = require('../services/deliberationService');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 const { parseSeries, seriesLabel } = require('../services/series');
 
 function schoolOr403(req, res) {
@@ -161,14 +162,13 @@ async function deliberationsPvPdf(req, res) {
   }
 
   try {
-    const { filepath, filename } = await generateCouncilPdf({
+    return sendPdfDownload(res, await generateCouncilPdf({
       school,
       klass: board.class,
       term: board.term,
       schoolYear: board.schoolYear,
       rows: board.rows,
-    });
-    return res.download(filepath, filename);
+    }));
   } catch (err) {
     console.error(err);
     return res.redirect(`/school/deliberations?classId=${encodeURIComponent(classId)}&term=${encodeURIComponent(term)}&error=pdf`);

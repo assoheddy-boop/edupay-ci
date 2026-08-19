@@ -12,6 +12,7 @@ const {
 const { generatePayroll, markPayrollPaid } = require('../services/hrPayrollService');
 const { generatePayroll: generateTeacherPayroll } = require('../../services/HRService');
 const { generatePayrollPDF } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { putObject } = require('../../services/StorageService');
 
@@ -598,7 +599,7 @@ async function exportPayslipPdf(req, res) {
   try {
     const result = await generatePayrollPDF(teacher.id, period);
     if (!result.ok) return res.redirect('/school/hr/payroll?error=pdf');
-    return res.download(result.filepath, result.filename);
+    return sendPdfDownload(res, result);
   } catch (err) {
     console.error(err);
     res.redirect('/school/hr/payroll?error=pdf');

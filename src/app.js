@@ -49,11 +49,12 @@ app.use(helmet({
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/js', express.static(path.join(__dirname, '../node_modules/chart.js/dist')));
 const { blockedUploadPath } = require('./utils/uploadSafety');
+const { uploadsRoot } = require('../services/StorageService');
 app.use('/uploads', (req, res, next) => {
   if (blockedUploadPath(req.path)) return res.status(404).end();
   res.setHeader('X-Content-Type-Options', 'nosniff');
   next();
-}, express.static(path.join(__dirname, '../uploads')));
+}, express.static(uploadsRoot()));
 app.use(express.urlencoded({ extended: true, limit: '8mb' }));
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());

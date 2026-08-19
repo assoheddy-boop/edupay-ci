@@ -2,6 +2,7 @@ const prisma = require('../config/database');
 const { getAbsenceStats, getSuccessRate, getHealthStats, getAbsenceStatsByGender, getSuccessRateByGender } = require('../../services/StatsService');
 const { getGenderStatsBySchool } = require('../../services/ClassService');
 const { generateGenderStatsExcel, generateGenderStatsPDF, generateRedoublementByPlanPDF, generateRedoublementByPlanExcel } = require('../../services/export');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 const { getRedoublementCausesByPlan } = require('../../services/RedoublementService');
 const { sendExcel } = require('../services/exportExcel');
 const { listAuditTrail } = require('../utils/audit');
@@ -132,7 +133,7 @@ async function exportGenderPdf(req, res) {
   if (!schoolId) return res.redirect('/admin/reporting');
   const result = await generateGenderStatsPDF(schoolId);
   if (!result.ok) return res.redirect('/admin/reporting');
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 async function exportRedoublementPlanExcel(req, res) {
@@ -146,7 +147,7 @@ async function exportRedoublementPlanPdf(req, res) {
   const schoolYear = req.query.schoolYear || '2025-2026';
   const result = await generateRedoublementByPlanPDF(schoolYear);
   if (!result.ok) return res.redirect(`/admin/reporting?schoolYear=${encodeURIComponent(schoolYear)}`);
-  res.download(result.filepath, result.filename);
+  return sendPdfDownload(res, result);
 }
 
 module.exports = {

@@ -1,8 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const prisma = require('../config/database');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const {
   BULLETIN_TERMS,
   formatTermLabel,
@@ -26,13 +24,6 @@ const LIMIT_OPTIONS = [
 ];
 
 const DEFAULT_LIMIT = 10;
-const pdfDir = path.join(__dirname, '../../uploads/palmares');
-
-function ensurePdfDir(dir) {
-  const target = dir || pdfDir;
-  if (!fs.existsSync(target)) fs.mkdirSync(target, { recursive: true });
-  return target;
-}
 
 function parseLimit(raw) {
   const s = String(raw || '').trim().toLowerCase();
@@ -274,18 +265,13 @@ async function getPalmares({
   };
 }
 
-function generatePalmaresPdf({ school, board, outputDir } = {}) {
-  const dir = ensurePdfDir(outputDir);
+async function generatePalmaresPdf({ school, board, outputDir } = {}) {
   const classPart = board?.allClasses
     ? 'toutes-classes'
     : safeFilePart(board?.groups?.[0]?.class?.name);
   const filename = `palmares-${classPart}-${board?.term || 'T1'}.pdf`;
-  const filepath = path.join(dir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4', compress: false });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
+  const buffer = await renderPdfToBuffer((doc) => {
 
     const classLabel = board?.allClasses
       ? 'Toutes les classes'
@@ -377,15 +363,9 @@ function generatePalmaresPdf({ school, board, outputDir } = {}) {
       Math.max(doc.y, y + 16),
       { align: 'center', width: 495 },
     );
+  }, { size: 'A4', compress: false });
 
-    doc.end();
-    stream.on('finish', () => resolve({
-      pdfUrl: `/uploads/palmares/${filename}`,
-      filepath,
-      filename,
-    }));
-    stream.on('error', reject);
-  });
+  return savePdfBuffer({ folder: 'palmares', filename, buffer, outputDir });
 }
 
 module.exports = {

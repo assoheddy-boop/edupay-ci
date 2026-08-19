@@ -1,8 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
 const prisma = require('../config/database');
 const { drawDocumentHeader } = require('../utils/schoolLogo');
+const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const { formatTermLabel, normalizeTerm } = require('./academicTerms');
 const { parseSeries, matchesSeriesFilter, classHasSeries, seriesLabel } = require('./series');
 
@@ -23,12 +21,6 @@ const KIND_LABELS = {
   EXAMEN_NATIONAL: 'Examen national',
   APPEL: 'Appel du jour',
 };
-
-const pdfDir = path.join(__dirname, '../../uploads/emargements');
-
-function ensurePdfDir() {
-  if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
-}
 
 function fold(value) {
   return String(value || '')
@@ -254,15 +246,10 @@ function safeFilePart(value) {
     .slice(0, 40) || 'classe';
 }
 
-function generateEmargementPdf({ school, sheet }) {
-  ensurePdfDir();
+async function generateEmargementPdf({ school, sheet, outputDir }) {
   const filename = `emargement-${safeFilePart(sheet.class?.name)}-${sheet.date.iso}.pdf`;
-  const filepath = path.join(pdfDir, filename);
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 40, size: 'A4' });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
+  const buffer = await renderPdfToBuffer((doc) => {
 
     drawDocumentHeader(doc, school, {
       title: sheet.title,
@@ -344,11 +331,9 @@ function generateEmargementPdf({ school, sheet }) {
       y + 56,
       { align: 'center', width: 515 },
     );
+  }, { margin: 40, size: 'A4' });
 
-    doc.end();
-    stream.on('finish', () => resolve({ pdfUrl: `/uploads/emargements/${filename}`, filepath, filename }));
-    stream.on('error', reject);
-  });
+  return savePdfBuffer({ folder: 'emargements', filename, buffer, outputDir });
 }
 
 module.exports = {
