@@ -3,7 +3,7 @@
 <%- include('../layouts/schoolLayout', { body: content, title: title || 'Fiche d’inscription' }) %>
 <% } else { %>
 <div class="page-header">
-  <h1><%= isNew ? 'Inscription' : 'Fiche d’inscription' %></h1>
+  <h1><%= isNew ? 'Inscription' : 'Fiche d’inscription' %><%- include('../partials/_helpKey', { key: 'page.inscription-form' }) %></h1>
   <div class="page-header-actions">
     <a href="/school/inscriptions" class="btn btn-outline btn-sm">Liste</a>
     <% if (!isNew) { %>
@@ -40,7 +40,7 @@
 
   <div class="grid-2 inscription-grid">
     <div class="card">
-      <h2>Identité &amp; scolarité</h2>
+      <h2>Identité &amp; scolarité<%- include('../partials/_helpKey', { key: 'inscription.identite' }) %></h2>
       <div class="form-row matricule-row">
         <div class="form-group">
           <label>Mle étab.</label>
@@ -48,7 +48,7 @@
         </div>
         <% if (cycle.hasNationalMatricule) { %>
         <div class="form-group">
-          <label for="nationalMatriculeInput">Mle nat. (MEN)</label>
+          <label for="nationalMatriculeInput">Mle nat. (MEN)<%- include('../partials/_helpKey', { key: 'inscription.men' }) %></label>
           <div class="input-with-action">
             <input type="text" name="nationalMatricule" id="nationalMatriculeInput" value="<%= student && student.nationalMatricule ? student.nationalMatricule : '' %>" placeholder="Matricule national">
             <button type="button" class="input-action-btn" id="menLookupBtn" title="Ouvrir la fiche par matricule national" aria-label="Rechercher par matricule national">&#128269;</button>
@@ -147,7 +147,7 @@
     </div>
 
     <div class="card">
-      <h2>Famille &amp; parcours</h2>
+      <h2>Famille &amp; parcours<%- include('../partials/_helpKey', { key: 'inscription.famille' }) %></h2>
       <div class="form-group"><label>Père</label><input type="text" name="fatherName" value="<%= student && student.fatherName ? student.fatherName : '' %>"></div>
       <div class="form-group"><label>Mère</label><input type="text" name="motherName" value="<%= student && student.motherName ? student.motherName : '' %>"></div>
       <div class="form-group"><label>Tuteur</label><input type="text" name="guardianName" value="<%= student && student.guardianName ? student.guardianName : '' %>"></div>
@@ -173,7 +173,7 @@
   </div>
 
   <div class="card">
-    <h2>Dossier — pièces fournies</h2>
+    <h2>Dossier — pièces fournies<%- include('../partials/_helpKey', { key: 'inscription.dossier' }) %></h2>
     <div class="doc-checklist">
       <% enrollmentDocuments.forEach(function(doc) { %>
         <label class="checkbox-label doc-check">
@@ -190,7 +190,7 @@
 
   <% if (!isNew) { %>
   <div class="card">
-    <h2>Certificats</h2>
+    <h2>Certificats<%- include('../partials/_helpKey', { key: 'inscription.certificats' }) %></h2>
     <p class="form-hint">Documents officiels à imprimer ou télécharger.</p>
     <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
       <a href="/school/inscriptions/<%= student.id %>/certificat-scolarite.pdf" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Certificat de scolarité</a>

@@ -1,0 +1,8 @@
+<%
+  const _key = typeof key !== 'undefined' ? String(key) : '';
+  const _map = typeof uiHelp !== 'undefined' ? uiHelp : {};
+  const _entry = _map[_key];
+  if (_entry && _entry.text) {
+%>
+<%- include('_hint', { text: _entry.text, label: _entry.label || _key }) %>
+<% } %>

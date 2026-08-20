@@ -29,38 +29,46 @@ async function showPage(req, res) {
   const permissions = resolvePermissions(req.user, schoolId);
   const staffCtx = attachStaffContext(req.user, schoolId);
 
-  const result = await loadStudentSituation({
-    schoolId,
-    schoolYear,
-    studentId: id,
-    permissions,
-  });
+  try {
+    const result = await loadStudentSituation({
+      schoolId,
+      schoolYear,
+      studentId: id,
+      permissions,
+    });
 
-  if (!result) {
-    return res.status(404).render('error', { message: 'Élève introuvable.', user: req.user });
+    if (!result) {
+      return res.status(404).render('error', { message: 'Élève introuvable.', user: req.user });
+    }
+
+    const from = String(req.query.from || '').trim();
+    let backUrl = '/school/students';
+    if (from === 'reinscription') {
+      backUrl = `/reinscription/dashboard?schoolYear=${encodeURIComponent(schoolYear)}`;
+    } else if (from === 'inscriptions') {
+      backUrl = '/school/inscriptions';
+    }
+
+    return res.render('school/studentSituation', {
+      title: `Situation — ${result.student.lastName} ${result.student.firstName}`,
+      school,
+      schoolYear,
+      student: result.student,
+      sections: result.sections,
+      backUrl,
+      motifLabel,
+      discountLabel,
+      formatTermLabel,
+      seriesLabel,
+      staffRoleLabel: staffCtx.staffRoleLabel,
+    });
+  } catch (err) {
+    console.error('[studentSituation]', err);
+    return res.status(500).render('error', {
+      message: 'Impossible d’afficher la situation de cet élève.',
+      user: req.user,
+    });
   }
-
-  const from = String(req.query.from || '').trim();
-  let backUrl = '/school/students';
-  if (from === 'reinscription') {
-    backUrl = `/reinscription/dashboard?schoolYear=${encodeURIComponent(schoolYear)}`;
-  } else if (from === 'inscriptions') {
-    backUrl = '/school/inscriptions';
-  }
-
-  res.render('school/studentSituation', {
-    title: `Situation — ${result.student.lastName} ${result.student.firstName}`,
-    school,
-    schoolYear,
-    student: result.student,
-    sections: result.sections,
-    backUrl,
-    motifLabel,
-    discountLabel,
-    formatTermLabel,
-    seriesLabel,
-    staffRoleLabel: staffCtx.staffRoleLabel,
-  });
 }
 
 module.exports = {

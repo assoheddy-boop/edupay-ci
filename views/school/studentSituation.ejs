@@ -8,7 +8,7 @@
 
 <div class="page-header">
   <div>
-    <h1><%= s.lastName %> <%= s.firstName %></h1>
+    <h1><%= s.lastName %> <%= s.firstName %><%- include('../partials/_helpKey', { key: 'page.student-situation' }) %></h1>
     <p class="page-sub">
       Situation complète — <%= schoolYear %>
       <% if (staffRoleLabel) { %> · vue <strong><%= staffRoleLabel %></strong><% } %>
@@ -69,7 +69,7 @@
 <div class="situation-sections">
   <% if (can('stats:read') && sec.risk) { %>
   <section class="card situation-block risk-<%= sec.risk.level ? sec.risk.level.toLowerCase() : 'faible' %>">
-    <h2>Suivi pédagogique (<%= sec.riskTerm ? formatTermLabel(sec.riskTerm) : 'trimestre' %>)</h2>
+    <h2>Suivi pédagogique (<%= sec.riskTerm ? formatTermLabel(sec.riskTerm) : 'trimestre' %>)<%- include('../partials/_helpKey', { key: 'situation.suivi-pedagogique' }) %></h2>
     <p class="situation-highlight"><span class="badge"><%= sec.risk.label %></span> — <%= sec.risk.motif %></p>
     <a href="/school/risques" class="btn btn-outline btn-sm">Voir tous les élèves à suivre</a>
   </section>
@@ -77,7 +77,7 @@
 
   <% if (can('enrollments:read') && sec.enrollment) { %>
   <section class="card situation-block">
-    <h2>Inscription <%= schoolYear %></h2>
+    <h2>Inscription <%= schoolYear %><%- include('../partials/_helpKey', { key: 'situation.inscription' }) %></h2>
     <p><strong>Statut :</strong> <%= sec.enrollment.statusLabel || '—' %></p>
     <% if (sec.enrollment.enrollment) { %>
       <% if (sec.enrollment.enrollment.lv2) { %><p><strong>LV2 :</strong> <%= sec.enrollment.enrollment.lv2 %></p><% } %>
@@ -111,7 +111,7 @@
 
   <% if ((can('fees:read') || can('payments:read')) && sec.finance) { %>
   <section class="card situation-block">
-    <h2>Scolarité & paiements</h2>
+    <h2>Scolarité & paiements<%- include('../partials/_helpKey', { key: 'situation.finance' }) %></h2>
     <p>
       <strong>Total dû :</strong> <%= (sec.finance.totalDue || 0).toLocaleString('fr-FR') %> FCFA ·
       <strong>Payé :</strong> <%= (sec.finance.totalPaid || 0).toLocaleString('fr-FR') %> FCFA ·
@@ -152,7 +152,7 @@
 
   <% if (can('social_cases:write') && sec.socialCase) { %>
   <section class="card situation-block">
-    <h2>Cas social</h2>
+    <h2>Cas social<%- include('../partials/_helpKey', { key: 'situation.social' }) %></h2>
     <p><strong>Motif :</strong> <%= typeof motifLabel === 'function' ? motifLabel(sec.socialCase.motif) : sec.socialCase.motif %></p>
     <p><strong>Remise :</strong> <%= typeof discountLabel === 'function' ? discountLabel(sec.socialCase) : '—' %></p>
     <a href="/school/cas-sociaux?studentId=<%= s.id %>" class="btn btn-outline btn-sm">Gérer</a>
@@ -161,7 +161,7 @@
 
   <% if (can('bulletins:read') && sec.grades) { %>
   <section class="card situation-block">
-    <h2>Notes & bulletins</h2>
+    <h2>Notes & bulletins<%- include('../partials/_helpKey', { key: 'situation.notes' }) %></h2>
     <% if (!sec.grades.length) { %><p class="empty-sm">Aucune note.</p><% } else { %>
       <table class="data-table compact">
         <thead><tr><th>Matière</th><th>Note</th><th>Période</th><th>Type</th></tr></thead>
@@ -202,14 +202,13 @@
 
   <% if (can('absences:write') && sec.absences) { %>
   <section class="card situation-block">
-    <h2>Absences & retards (<%= sec.absenceCount || 0 %> au total)</h2>
+    <h2>Absences & retards (<%= sec.absenceCount || 0 %> au total)<%- include('../partials/_helpKey', { key: 'situation.absences' }) %></h2>
     <% if (!sec.absences.length) { %><p class="empty-sm">Aucune absence enregistrée.</p><% } else { %>
       <ul class="timeline">
         <% sec.absences.forEach(function(a) { %>
           <li>
             <%= a.type === 'LATE' ? 'Retard' : 'Absence' %> — <%= new Date(a.date).toLocaleDateString('fr-FR') %>
-            <% if (a.justified) { %><small> · justifiée</small><% } %>
-            <% else if (a.justifications && a.justifications[0] && a.justifications[0].status === 'PENDING') { %><small> · en attente</small><% } %>
+            <% if (a.justified) { %><small> · justifiée</small><% } else if (a.justifications && a.justifications[0] && a.justifications[0].status === 'PENDING') { %><small> · en attente</small><% } %>
           </li>
         <% }) %>
       </ul>
@@ -220,7 +219,7 @@
 
   <% if (can('discipline:write')) { %>
   <section class="card situation-block">
-    <h2>Discipline & comportement</h2>
+    <h2>Discipline & comportement<%- include('../partials/_helpKey', { key: 'situation.discipline' }) %></h2>
     <% if (sec.badges && sec.badges.length) { %>
       <h3>Badges</h3>
       <div class="badge-grid">
@@ -243,7 +242,7 @@
 
   <% if (can('canteen:write') && sec.canteenRecords && sec.canteenRecords.length) { %>
   <section class="card situation-block">
-    <h2>Cantine</h2>
+    <h2>Cantine<%- include('../partials/_helpKey', { key: 'situation.cantine' }) %></h2>
     <% sec.canteenRecords.forEach(function(r) { %>
       <p><%= r.menu ? new Date(r.menu.date).toLocaleDateString('fr-FR') : '—' %> : <%= r.ate ? 'A mangé ✓' : 'N\'a pas mangé' %></p>
     <% }) %>
@@ -252,7 +251,7 @@
 
   <% if (can('activities:write') && sec.activities && sec.activities.length) { %>
   <section class="card situation-block">
-    <h2>Activités extrascolaires</h2>
+    <h2>Activités extrascolaires<%- include('../partials/_helpKey', { key: 'situation.activites' }) %></h2>
     <ul>
       <% sec.activities.forEach(function(e) { %>
         <li><%= e.activity ? e.activity.name : 'Activité' %></li>

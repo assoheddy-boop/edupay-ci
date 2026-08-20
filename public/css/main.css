@@ -1911,8 +1911,29 @@ code {
   visibility: visible;
 }
 
-h1 .hint, h2 .hint, h3 .hint, .stat-label .hint {
+h1 .hint, h2 .hint, h3 .hint, .stat-label .hint, th .hint {
   vertical-align: text-top;
+}
+
+.nav-group-title {
+  position: relative;
+}
+
+.nav-group-title .hint-tip {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  left: 0;
+  transform: none;
+  bottom: auto;
+  top: calc(100% + 4px);
+  z-index: 300;
+}
+
+.nav-group-title .hint-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  font-size: 0.6rem;
 }
 
 /* Offline-first banner & status */
