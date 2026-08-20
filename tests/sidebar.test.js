@@ -169,18 +169,20 @@ describe('sidebar grouped by dashboard categories', () => {
     expect(html).toContain('nav-group-chevron');
   });
 
-  test('app.js opens the active group and remembers the rest', () => {
+  test('app.js uses single-open accordion and opens the active group', () => {
     const js = fs.readFileSync(path.join(__dirname, '../public/js/app.js'), 'utf8');
-    expect(js).toContain('educonnect.sidebar.groups');
+    expect(js).toContain('educonnect.sidebar.openGroup');
+    expect(js).toMatch(/closeAllNavGroups/);
+    expect(js).toMatch(/openNavGroup/);
     expect(js).toMatch(/aria-expanded/);
     expect(js).toMatch(/a\.is-active/);
     expect(js).toMatch(/dataset\.navGroup/);
   });
 
-  test('main.css animates closed group items and rotates the chevron', () => {
+  test('main.css hides closed group items and rotates the chevron', () => {
     const css = fs.readFileSync(path.join(__dirname, '../public/css/main.css'), 'utf8');
     expect(css).toMatch(/\.nav-group\.is-open > \.nav-group-items/);
-    expect(css).toMatch(/max-height/);
+    expect(css).toMatch(/\.nav-group-items[\s\S]*display:\s*none/);
     expect(css).toMatch(/\.nav-group\.is-open \.nav-group-chevron/);
   });
 });

@@ -1574,7 +1574,12 @@ code {
 .nav-group {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0;
+  margin-top: 0.35rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
 
 .nav-group-title {
@@ -1583,36 +1588,42 @@ code {
   justify-content: space-between;
   gap: 0.5rem;
   width: 100%;
-  margin: 0.85rem 0 0.15rem;
-  padding: 0.45rem 0.85rem;
+  margin: 0;
+  padding: 0.7rem 0.85rem;
   border: 0;
-  border-radius: 8px;
-  background: transparent;
+  border-radius: 0;
+  background: #f8fafc;
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   text-align: left;
-  color: #64748b;
+  color: #334155;
   cursor: pointer;
 }
 
 .nav-group-title:hover,
 .nav-group-title:focus-visible {
   color: var(--blue);
-  background: #f4f7fb;
+  background: #eef4ff;
+}
+
+.nav-group.is-open > .nav-group-title {
+  color: var(--blue);
+  background: #eef4ff;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .nav-group-title:focus-visible {
   outline: 2px solid var(--blue);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .nav-group-chevron {
   display: block;
-  width: 0.4rem;
-  height: 0.4rem;
+  width: 0.45rem;
+  height: 0.45rem;
   flex-shrink: 0;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
@@ -1625,39 +1636,30 @@ code {
 }
 
 .nav-group-items {
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 0.15rem;
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  margin-left: 0.45rem;
-  padding-left: 0.35rem;
-  border-left: 2px solid transparent;
-  transition:
-    max-height 0.32s ease,
-    opacity 0.24s ease,
-    border-color 0.24s ease,
-    margin 0.24s ease;
+  gap: 0;
+  margin: 0;
+  padding: 0.2rem 0;
+  background: #fff;
 }
 
 .nav-group.is-open > .nav-group-items {
-  max-height: 1200px;
-  opacity: 1;
-  border-left-color: #e2e8f0;
+  display: flex;
 }
 
 .nav-group-items a {
-  padding-left: 1.15rem;
+  padding: 0.52rem 0.85rem 0.52rem 1.15rem;
   font-size: 0.88rem;
+  border-radius: 0;
 }
 
-.nav-group:not(.is-open) > .nav-group-items {
-  pointer-events: none;
+.nav-group-items a:hover,
+.nav-group-items a:focus-visible {
+  background: #f8fafc;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav-group-items,
   .nav-group-chevron {
     transition: none;
   }

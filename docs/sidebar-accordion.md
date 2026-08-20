@@ -1,5 +1,12 @@
 # Menu accordéon — sidebar EduConnect
 
+## Comportement (type e-commerce)
+
+- Au chargement : **toutes les catégories sont fermées**, sauf celle de la page en cours.
+- **Un seul panneau ouvert à la fois** : cliquer sur « Finances » ferme « Vie scolaire », etc.
+- Re-cliquer sur la catégorie ouverte la **referme**.
+- Les catégories sans lien visible (RBAC) sont **masquées**.
+
 ## Structure (EJS)
 
 Chaque catégorie du tableau de bord est un bloc `.nav-group` dans `views/partials/_sidebar.ejs` :
@@ -19,27 +26,26 @@ Chaque catégorie du tableau de bord est un bloc `.nav-group` dans `views/partia
 </div>
 ```
 
-- **`data-nav-group`** : identifiant stable pour mémoriser l’état (localStorage).
+- **`data-nav-group`** : identifiant stable pour mémoriser la dernière catégorie ouverte.
 - **`aria-expanded` / `aria-controls`** : accessibilité clavier et lecteurs d’écran.
 - Par défaut **fermé** (pas de classe `is-open` dans le HTML).
 
-## Comportement (JavaScript)
+## JavaScript
 
 Fichier : `public/js/app.js`
 
-1. Au chargement, la catégorie contenant le lien actif (`.is-active`) s’ouvre.
-2. Les préférences utilisateur sont lues dans `localStorage` (`educonnect.sidebar.groups`).
-3. Clic sur `.nav-group-title` → toggle classe `is-open` + mise à jour `aria-expanded`.
-4. L’état ouvert/fermé est enregistré par `data-nav-group`.
+1. Fermeture de tous les groupes, puis ouverture de celui contenant le lien actif (`.is-active`).
+2. Sinon, réouverture de la dernière catégorie mémorisée (`localStorage` : `educonnect.sidebar.openGroup`).
+3. Clic sur `.nav-group-title` → accordéon strict (ferme les autres) + toggle.
+4. Clic sur l’icône d’aide (`.hint-tip`) ne déclenche pas l’accordéon.
 
-## Style & animation (CSS)
+## CSS
 
 Fichier : `public/css/main.css`
 
-- `.nav-group-items` : `max-height: 0`, `opacity: 0` (fermé).
-- `.nav-group.is-open > .nav-group-items` : `max-height: 1200px`, `opacity: 1` (ouvert).
-- Transition ~0,3 s (effet slide).
-- Sous-liens indentés (`padding-left`) + bordure gauche légère.
+- Catégories en **cartes** avec bordure (style menu boutique).
+- `.nav-group-items` : `display: none` quand fermé (aucun lien visible).
+- `.nav-group.is-open > .nav-group-items` : `display: flex`.
 - Chevron pivoté quand le groupe est ouvert.
 
 ## Ajouter une catégorie

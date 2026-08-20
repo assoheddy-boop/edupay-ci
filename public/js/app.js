@@ -101,43 +101,74 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   best?.el.classList.add('is-active');
 
-  const groupStorageKey = 'educonnect.sidebar.groups';
-  const readGroupPrefs = () => {
-    try {
-      return JSON.parse(localStorage.getItem(groupStorageKey) || '{}') || {};
-    } catch (_err) {
-      return {};
-    }
-  };
-  const writeGroupPref = (id, open) => {
-    if (!id) return;
-    try {
-      const prefs = readGroupPrefs();
-      prefs[id] = open;
-      localStorage.setItem(groupStorageKey, JSON.stringify(prefs));
-    } catch (_err) {
-      /* ignore quota / private mode */
-    }
-  };
+  const groupStorageKey = 'educonnect.sidebar.openGroup';
+  const allNavGroups = [...document.querySelectorAll('.app-sidebar-nav .nav-group')];
+
   const setNavGroupOpen = (group, open) => {
+    if (!group) return;
     group.classList.toggle('is-open', open);
     const btn = group.querySelector(':scope > .nav-group-title');
     btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
-  const groupPrefs = readGroupPrefs();
-  document.querySelectorAll('.app-sidebar-nav .nav-group').forEach((group) => {
-    const id = group.dataset.navGroup;
-    const hasActive = Boolean(group.querySelector('a.is-active'));
-    const stored = id && Object.prototype.hasOwnProperty.call(groupPrefs, id)
-      ? Boolean(groupPrefs[id])
+
+  const closeAllNavGroups = () => {
+    allNavGroups.forEach((group) => setNavGroupOpen(group, false));
+  };
+
+  const persistOpenGroupId = (id) => {
+    try {
+      if (id) localStorage.setItem(groupStorageKey, id);
+      else localStorage.removeItem(groupStorageKey);
+    } catch (_err) {
+      /* ignore quota / private mode */
+    }
+  };
+
+  const readOpenGroupId = () => {
+    try {
+      return localStorage.getItem(groupStorageKey) || '';
+    } catch (_err) {
+      return '';
+    }
+  };
+
+  const openNavGroup = (group) => {
+    if (!group) return;
+    closeAllNavGroups();
+    setNavGroupOpen(group, true);
+    persistOpenGroupId(group.dataset.navGroup || '');
+  };
+
+  allNavGroups.forEach((group) => {
+    const items = group.querySelector('.nav-group-items');
+    const hasLinks = Boolean(items?.querySelector('a'));
+    if (!hasLinks) group.hidden = true;
+  });
+
+  closeAllNavGroups();
+  const activeGroup = allNavGroups.find((group) => group.querySelector('a.is-active'));
+  if (activeGroup) {
+    openNavGroup(activeGroup);
+  } else {
+    const storedId = readOpenGroupId();
+    const storedGroup = storedId
+      ? allNavGroups.find((group) => group.dataset.navGroup === storedId)
       : null;
-    const shouldOpen = hasActive || stored === true;
-    setNavGroupOpen(group, shouldOpen);
+    if (storedGroup && !storedGroup.hidden) setNavGroupOpen(storedGroup, true);
+  }
+
+  allNavGroups.forEach((group) => {
     const btn = group.querySelector(':scope > .nav-group-title');
-    btn?.addEventListener('click', () => {
-      const open = !group.classList.contains('is-open');
-      setNavGroupOpen(group, open);
-      writeGroupPref(id, open);
+    btn?.addEventListener('click', (event) => {
+      if (event.target.closest('.hint, .hint-tip, .hint-icon, .hint-bubble')) return;
+      event.preventDefault();
+      const isOpen = group.classList.contains('is-open');
+      if (isOpen) {
+        closeAllNavGroups();
+        persistOpenGroupId('');
+        return;
+      }
+      openNavGroup(group);
     });
   });
 

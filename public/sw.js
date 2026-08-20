@@ -1,12 +1,12 @@
-const CACHE = 'educonnect-offline-v1';
+const CACHE = 'educonnect-offline-v2';
 const SHELL = [
   '/offline',
   '/css/main.css',
-  '/css/main.css?v=5',
+  '/css/main.css?v=10',
   '/js/app.js',
-  '/js/app.js?v=5',
+  '/js/app.js?v=8',
   '/js/offline.js',
-  '/js/offline.js?v=5',
+  '/js/offline.js?v=6',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
