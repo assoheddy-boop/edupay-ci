@@ -54,6 +54,21 @@ function readNeonUrl() {
     const line = fs.readFileSync(neonFile, 'utf8').split(/\r?\n/).find((l) => /^postgres/i.test(l.trim()));
     if (line) return line.trim();
   }
+  const { spawnSync } = require('child_process');
+  const projectId = process.env.NEON_PROJECT_ID || 'ancient-cloud-90631299';
+  const result = spawnSync(
+    'npx',
+    ['--yes', 'neonctl', 'connection-string', '--project-id', projectId, '--pooled'],
+    { encoding: 'utf8', shell: true, env: { ...process.env, NODE_OPTIONS: '--use-system-ca' } },
+  );
+  const line = `${result.stdout || ''}\n${result.stderr || ''}`
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => /^postgres(ql)?:\/\//i.test(l));
+  if (line) {
+    fs.writeFileSync(neonFile, `${line}\n`);
+    return line;
+  }
   return null;
 }
 
