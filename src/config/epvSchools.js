@@ -178,8 +178,18 @@ function validateEpvCatalog(schools = EPV_SCHOOLS) {
   return { ok: errors.length === 0, errors, count: schools.length };
 }
 
+/** Vitrine multi-campus /e/groupe/epv */
+const EPV_ORGANIZATION = {
+  slug: 'epv',
+  name: 'EPV',
+  city: 'Abidjan',
+  publicDescription:
+    "Réseau d'établissements EPV partenaires EduConnect en Côte d'Ivoire. Pages publiques par campus ; notes et bulletins dans l'espace parent.",
+};
+
 module.exports = {
   EPV_SCHOOLS,
+  EPV_ORGANIZATION,
   validateEpvCatalog,
   generateTempPassword,
   pickSchoolFields,

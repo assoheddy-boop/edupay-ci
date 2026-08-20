@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   EPV_SCHOOLS,
+  EPV_ORGANIZATION,
   validateEpvCatalog,
   pickSchoolFields,
   generateTempPassword,
@@ -32,6 +33,13 @@ describe('Catalogue EPV', () => {
 
   test('utilise des identifiants @educonnect.ci', () => {
     expect(EPV_SCHOOLS.every((s) => /@educonnect\.ci$/i.test(s.admin.email))).toBe(true);
+  });
+
+  test('organisation EPV expose /e/groupe/epv', () => {
+    expect(EPV_ORGANIZATION.slug).toBe('epv');
+    expect(EPV_ORGANIZATION.name).toBe('EPV');
+    expect(EPV_ORGANIZATION.city).toBe('Abidjan');
+    expect(EPV_ORGANIZATION.publicDescription).toMatch(/Réseau d'établissements EPV/);
   });
 
   test('reprend Bingerville et Yopougon depuis les infos déjà connues', () => {

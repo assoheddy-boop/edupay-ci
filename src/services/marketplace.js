@@ -257,6 +257,53 @@ async function buildSitemapXml() {
   }
 }
 
+async function ensureEpvOrganizationPortal() {
+  const { EPV_SCHOOLS, EPV_ORGANIZATION } = require('../config/epvSchools');
+  const { ensureGroupForOrganization } = require('../utils/group');
+  const slugs = EPV_SCHOOLS.map((s) => s.slug).filter(Boolean);
+  const orgSlug = EPV_ORGANIZATION.slug;
+
+  let org = await prisma.organization.findFirst({ where: { slug: orgSlug } });
+  const created = !org;
+  if (!org) {
+    org = await prisma.organization.create({
+      data: {
+        name: EPV_ORGANIZATION.name,
+        slug: orgSlug,
+        city: EPV_ORGANIZATION.city,
+        publicPortalEnabled: true,
+        publicDescription: EPV_ORGANIZATION.publicDescription,
+        publicPhone: null,
+      },
+    });
+  } else {
+    org = await prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        publicPortalEnabled: true,
+        city: org.city || EPV_ORGANIZATION.city,
+        publicDescription: org.publicDescription || EPV_ORGANIZATION.publicDescription,
+      },
+    });
+  }
+
+  const linked = await prisma.school.updateMany({
+    where: { slug: { in: slugs } },
+    data: { organizationId: org.id },
+  });
+
+  await ensureGroupForOrganization(org);
+
+  const check = await findPublishedOrganization(orgSlug);
+  return {
+    ok: Boolean(check),
+    slug: orgSlug,
+    created,
+    linked: linked.count,
+    publishedSchools: check?.schools?.length ?? 0,
+  };
+}
+
 async function enableEpvMarketplaceDemos() {
   const { EPV_SCHOOLS, pickSchoolFields } = require('../config/epvSchools');
   const { applyCatalogLogo } = require('../utils/onboardSchools');
@@ -285,7 +332,8 @@ async function enableEpvMarketplaceDemos() {
     });
     results.push({ slug: def.slug, ok: true, tier: data.marketplaceTier || MARKETPLACE_TIER.PREMIUM });
   }
-  return { ok: true, results };
+  const organization = await ensureEpvOrganizationPortal();
+  return { ok: true, results, organization };
 }
 
 async function enableMarketplaceDemos() {
@@ -429,6 +477,7 @@ module.exports = {
   fallbackSitemapXml,
   enableIgestPublicPortal,
   enableEpvMarketplaceDemos,
+  ensureEpvOrganizationPortal,
   enableMarketplaceDemos,
   findPublishedOrganization,
 };

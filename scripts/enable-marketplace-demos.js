@@ -17,6 +17,14 @@ enableMarketplaceDemos()
         if (row.ok) console.log(`EPV ${row.slug} : Premium publié.`);
         else console.warn(`EPV ${row.slug} : ${row.reason}`);
       });
+      if (epv.organization?.ok) {
+        const verb = epv.organization.created ? 'créée' : 'activée';
+        console.log(
+          `EPV groupe /e/groupe/${epv.organization.slug} : ${verb} (${epv.organization.publishedSchools} campus publié(s)).`,
+        );
+      } else if (epv.organization) {
+        console.warn(`EPV groupe : ${epv.organization.slug || 'epv'} non publié (${epv.organization.linked ?? 0} lien(s)).`);
+      }
     }
     console.log('Marketplace démo terminé.');
   })
