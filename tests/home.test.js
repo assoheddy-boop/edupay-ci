@@ -63,6 +63,9 @@ describe('Homepage', () => {
     expect(res.text).toMatch(/Gestion scolaire, suivi parental, correspondance internationale/);
     expect(res.text).toMatch(/Demander une démonstration/);
     expect(res.text).toMatch(/Souscrire maintenant/);
+    expect(res.text).toMatch(/hero-correspondance-ci-fr\.jpg/);
+    expect(res.text).toMatch(/correspondance scolaire Côte d’Ivoire–France/);
+    expect(res.text).toMatch(/home\.css\?v=7/);
     expect(res.text).toMatch(/href="\/devis"/);
     expect(res.text).toMatch(/href="\/auth\/register\?role=SCHOOL_ADMIN"/);
     expect(res.text).toMatch(/id="modules"/);

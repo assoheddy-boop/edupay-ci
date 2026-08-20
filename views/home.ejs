@@ -28,9 +28,16 @@
 
   <section class="home-hero" aria-labelledby="home-hero-title">
     <div class="home-hero-bg" aria-hidden="true"></div>
+    <div class="home-hero-flag-stripe" aria-hidden="true"></div>
     <div class="home-hero-inner home-hero-split">
       <div class="home-hero-copy">
-        <p class="home-kicker">Côte d’Ivoire · France · Alliance Digitale Internationale</p>
+        <p class="home-kicker">
+          <span class="home-kicker-flags" aria-hidden="true">
+            <span class="home-flag home-flag-ci" title="Côte d’Ivoire"></span>
+            <span class="home-flag home-flag-fr" title="France"></span>
+          </span>
+          Côte d’Ivoire · France · Alliance Digitale Internationale
+        </p>
         <h1 id="home-hero-title">EduConnect – La plateforme scolaire numérique de référence</h1>
         <p class="home-hero-lead">Gestion scolaire, suivi parental, correspondance internationale</p>
         <div class="home-hero-actions">
@@ -38,39 +45,16 @@
           <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-accent home-btn-xl">Souscrire maintenant</a>
         </div>
       </div>
-      <div class="home-hero-visual" aria-hidden="true">
-        <svg class="home-hero-illustration" viewBox="0 0 480 360" role="img" aria-label="Illustration institutionnelle : établissement scolaire connecté">
-          <defs>
-            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#4d8fff"/>
-              <stop offset="100%" stop-color="#0052CC"/>
-            </linearGradient>
-            <linearGradient id="heroGlow" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stop-color="#0b1f4a" stop-opacity="0"/>
-              <stop offset="100%" stop-color="#8eb6ff" stop-opacity="0.35"/>
-            </linearGradient>
-          </defs>
-          <ellipse cx="240" cy="320" rx="180" ry="24" fill="url(#heroGlow)"/>
-          <rect x="120" y="120" width="240" height="160" rx="8" fill="#fff" opacity="0.95"/>
-          <rect x="120" y="120" width="240" height="36" rx="8" fill="url(#heroGrad)"/>
-          <circle cx="148" cy="138" r="6" fill="#fff" opacity="0.7"/>
-          <circle cx="168" cy="138" r="6" fill="#fff" opacity="0.5"/>
-          <rect x="140" y="175" width="80" height="8" rx="4" fill="#dfe6ef"/>
-          <rect x="140" y="195" width="120" height="8" rx="4" fill="#dfe6ef"/>
-          <rect x="140" y="215" width="100" height="8" rx="4" fill="#dfe6ef"/>
-          <rect x="280" y="170" width="60" height="45" rx="6" fill="rgba(0,82,204,0.12)"/>
-          <rect x="290" y="180" width="40" height="6" rx="3" fill="#0052CC" opacity="0.6"/>
-          <rect x="290" y="192" width="30" height="6" rx="3" fill="#0052CC" opacity="0.4"/>
-          <path d="M240 80 L320 110 L320 120 L160 120 L160 110 Z" fill="url(#heroGrad)"/>
-          <rect x="225" y="55" width="30" height="35" rx="2" fill="#e86a12"/>
-          <circle cx="360" cy="90" r="28" fill="none" stroke="#8eb6ff" stroke-width="2" opacity="0.8"/>
-          <path d="M360 70 A20 20 0 0 1 380 90" fill="none" stroke="#fff" stroke-width="2"/>
-          <path d="M348 90 L360 102 L378 78" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="100" cy="100" r="22" fill="rgba(232,106,18,0.2)"/>
-          <text x="100" y="106" text-anchor="middle" fill="#ffe8d2" font-size="18" font-weight="700">FR</text>
-          <circle cx="380" cy="200" r="22" fill="rgba(0,82,204,0.25)"/>
-          <text x="380" y="206" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">CI</text>
-        </svg>
+      <div class="home-hero-visual">
+        <img
+          class="home-hero-photo"
+          src="/images/hero-correspondance-ci-fr.jpg"
+          alt="Deux élèves souriants, une élève française et un élève ivoirien en tenue scolaire kaki, échangeant un livre — symbole de la correspondance scolaire Côte d’Ivoire–France"
+          width="640"
+          height="360"
+          loading="eager"
+          decoding="async"
+        >
       </div>
     </div>
   </section>
