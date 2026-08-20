@@ -16,6 +16,7 @@ function dashboardRedirect(role) {
     SCHOOL_ADMIN: '/school/dashboard',
     PARENT: '/parent/dashboard',
     TEACHER: '/teacher/dashboard',
+    STUDENT: '/student/dashboard',
   };
   return map[role] || '/';
 }

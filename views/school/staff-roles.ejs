@@ -1,0 +1,85 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('staff-roles', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Rôles staff' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Rôles staff</h1>
+  <p class="page-sub">Attribuez des rôles métier (secrétariat, compta, éducateur, vie scolaire) sans changer le rôle de connexion.</p>
+  <% if (typeof staffRoleLabel !== 'undefined' && staffRoleLabel) { %>
+    <p class="form-hint">Votre rôle actuel : <strong><%= staffRoleLabel %></strong></p>
+  <% } %>
+</div>
+
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+<div class="card">
+  <h2>Affectations</h2>
+  <% if (!assignments || !assignments.length) { %>
+    <p>Aucun compte staff secondaire. Le directeur titulaire conserve l’accès complet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Rôle staff</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% assignments.forEach(function(a) { %>
+          <tr>
+            <td><%= a.user.firstName %> <%= a.user.lastName %></td>
+            <td><%= a.user.email %></td>
+            <td><%= roleLabels[a.staffRole] || a.staffRole %></td>
+            <td>
+              <form method="POST" action="/school/staff-roles/<%= a.id %>/delete" style="display:inline" onsubmit="return confirm('Retirer cette affectation ?');">
+                <button type="submit" class="btn btn-sm btn-danger">Retirer</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>Ajouter ou modifier</h2>
+  <form method="POST" action="/school/staff-roles" class="form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="email">Email du compte</label>
+        <input type="email" id="email" name="email" required placeholder="secretaire@ecole.ci">
+      </div>
+      <div class="form-group">
+        <label for="staffRole">Rôle staff</label>
+        <select id="staffRole" name="staffRole" required>
+          <% assignableRoles.forEach(function(r) { %>
+            <option value="<%= r %>"><%= roleLabels[r] %></option>
+          <% }); %>
+        </select>
+      </div>
+    </div>
+    <p class="form-hint">Si le compte n’existe pas, renseignez aussi prénom, nom et mot de passe (compte SCHOOL_ADMIN créé automatiquement).</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">Prénom (nouveau compte)</label>
+        <input type="text" id="firstName" name="firstName">
+      </div>
+      <div class="form-group">
+        <label for="lastName">Nom (nouveau compte)</label>
+        <input type="text" id="lastName" name="lastName">
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe (nouveau compte)</label>
+        <input type="password" id="password" name="password" minlength="8" autocomplete="new-password">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+</div>
+
+<p><a href="/school/settings">← Retour aux paramètres</a></p>
+<% } %>

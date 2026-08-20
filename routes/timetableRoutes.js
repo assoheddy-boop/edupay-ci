@@ -84,6 +84,10 @@ async function assertStudentAccess(user, studentId) {
     if (link) return { ok: true, student };
   }
 
+  if (user?.role === 'STUDENT' && user.studentId === studentId) {
+    return { ok: true, student };
+  }
+
   return { ok: false, status: 403, error: 'Accès refusé.' };
 }
 

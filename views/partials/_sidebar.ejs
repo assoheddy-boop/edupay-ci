@@ -1,6 +1,7 @@
 <% const currentUser = typeof user !== 'undefined' ? user : null; %>
 <% const m = typeof modules !== 'undefined' ? modules : {}; %>
 <% const on = (k) => m[k]?.enabled !== false; %>
+<% const can = typeof staffCan === 'function' ? staffCan : () => true; %>
 <% const assist = typeof adminAssist !== 'undefined' ? adminAssist : null; %>
 <% const brandSchool = currentUser && (currentUser.school || (currentUser.teacher && currentUser.teacher.school)); %>
 <% const brandOrg = currentUser && currentUser.organizationAdmin && currentUser.organizationAdmin.organization; %>
@@ -44,15 +45,16 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-administration-scolaire">
-          <a href="/school/classes">Classes</a>
-          <a href="/school/students">Élèves</a>
-          <a href="/school/teachers">Enseignants</a>
-          <% if (on('hr')) { %><a href="/school/hr">RH</a><% } %>
-          <a href="/school/school-year">Année scolaire</a>
-          <a href="/transfer/requests">Transferts</a>
-          <a href="/reinscription/dashboard">Réinscriptions</a>
-          <a href="/school/settings">Paramètres</a>
-          <% if (on('marketplace')) { %><a href="/school/portail">Portail public</a><% } %>
+          <% if (can('classes:read')) { %><a href="/school/classes">Classes</a><% } %>
+          <% if (can('students:read')) { %><a href="/school/students">Élèves</a><% } %>
+          <% if (can('teachers:read')) { %><a href="/school/teachers">Enseignants</a><% } %>
+          <% if (on('hr') && can('hr:read')) { %><a href="/school/hr">RH</a><% } %>
+          <% if (can('school_year:write')) { %><a href="/school/school-year">Année scolaire</a><% } %>
+          <% if (can('enrollments:read')) { %><a href="/transfer/requests">Transferts</a><% } %>
+          <% if (can('enrollments:read')) { %><a href="/reinscription/dashboard">Réinscriptions</a><% } %>
+          <% if (can('settings:read')) { %><a href="/school/settings">Paramètres</a><% } %>
+          <% if (can('settings:write')) { %><a href="/school/staff-roles">Rôles staff</a><% } %>
+          <% if (on('marketplace') && can('portal:write')) { %><a href="/school/portail">Portail public</a><% } %>
         </div>
       </div>
 
@@ -62,12 +64,12 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-vie-scolaire">
-          <a href="/timetable">Emploi du temps</a>
-          <% if (on('absences')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
-          <% if (on('canteen')) { %><a href="/school/canteen">Cantine</a><% } %>
-          <% if (on('lost_items')) { %><a href="/school/lost-items">Objets perdus</a><% } %>
-          <% if (on('activities')) { %><a href="/school/activities">Activités</a><% } %>
-          <% if (on('pickup')) { %><a href="/school/pickup">Sortie école</a><% } %>
+          <% if (can('classes:read')) { %><a href="/timetable">Emploi du temps</a><% } %>
+          <% if (on('absences') && can('absences:write')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
+          <% if (on('canteen') && can('canteen:write')) { %><a href="/school/canteen">Cantine</a><% } %>
+          <% if (on('lost_items') && can('lost_items:write')) { %><a href="/school/lost-items">Objets perdus</a><% } %>
+          <% if (on('activities') && can('activities:write')) { %><a href="/school/activities">Activités</a><% } %>
+          <% if (on('pickup') && can('pickup:write')) { %><a href="/school/pickup">Sortie école</a><% } %>
         </div>
       </div>
 
@@ -77,25 +79,25 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-examens">
-          <% if (on('bulletins')) { %><a href="/school/bulletins">Bulletins</a><% } %>
-          <a href="/school/coefficients">Coefficients</a>
-          <a href="/school/emargements">Émargement</a>
-          <% if (on('homeworks')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
+          <% if (on('bulletins') && can('bulletins:read')) { %><a href="/school/bulletins">Bulletins</a><% } %>
+          <% if (can('coefficients:write')) { %><a href="/school/coefficients">Coefficients</a><% } %>
+          <% if (can('emargements:write')) { %><a href="/school/emargements">Émargement</a><% } %>
+          <% if (on('homeworks') && can('classes:read')) { %><a href="/school/homeworks">Devoirs & contrôles</a><% } %>
           <% if (navCycle.isMixte) { %>
             <p class="nav-cycle-label">Primaire</p>
-            <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
-            <a href="/school/convocations">Convocations (blanc)</a>
+            <% if (on('bulletins') && can('deliberations:write')) { %><a href="/school/deliberations">Évaluations</a><% } %>
+            <% if (can('convocations:write')) { %><a href="/school/convocations">Convocations (blanc)</a><% } %>
             <p class="nav-cycle-label">Secondaire</p>
-            <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
-            <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
-            <a href="/school/convocations">Convocations (blanc + national)</a>
+            <% if (on('bulletins') && can('deliberations:write')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+            <% if (on('bulletins') && can('palmares:read')) { %><a href="/school/palmares">Palmarès</a><% } %>
+            <% if (can('convocations:write')) { %><a href="/school/convocations">Convocations (blanc + national)</a><% } %>
           <% } else if (navCycle.hasPrimaire) { %>
-            <% if (on('bulletins')) { %><a href="/school/deliberations">Évaluations</a><% } %>
-            <a href="/school/convocations">Convocations (blanc)</a>
+            <% if (on('bulletins') && can('deliberations:write')) { %><a href="/school/deliberations">Évaluations</a><% } %>
+            <% if (can('convocations:write')) { %><a href="/school/convocations">Convocations (blanc)</a><% } %>
           <% } else { %>
-            <% if (on('bulletins')) { %><a href="/school/deliberations">Délibérations</a><% } %>
-            <% if (on('bulletins')) { %><a href="/school/palmares">Palmarès</a><% } %>
-            <a href="/school/convocations">Convocations (blanc + national)</a>
+            <% if (on('bulletins') && can('deliberations:write')) { %><a href="/school/deliberations">Délibérations</a><% } %>
+            <% if (on('bulletins') && can('palmares:read')) { %><a href="/school/palmares">Palmarès</a><% } %>
+            <% if (can('convocations:write')) { %><a href="/school/convocations">Convocations (blanc + national)</a><% } %>
           <% } %>
         </div>
       </div>
@@ -106,11 +108,11 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-finances">
-          <a href="/school/fees">Frais</a>
-          <% if (on('payments')) { %><a href="/school/payments">Paiements</a><% } %>
-          <% if (on('payments')) { %><a href="/school/caisse">Caisse</a><% } %>
-          <a href="/school/cas-sociaux">Cas sociaux</a>
-          <% if (on('accounting')) { %><a href="/school/accounting">Comptabilité</a><% } %>
+          <% if (can('fees:read')) { %><a href="/school/fees">Frais</a><% } %>
+          <% if (on('payments') && can('payments:read')) { %><a href="/school/payments">Paiements</a><% } %>
+          <% if (on('payments') && can('caisse:write')) { %><a href="/school/caisse">Caisse</a><% } %>
+          <% if (can('social_cases:write')) { %><a href="/school/cas-sociaux">Cas sociaux</a><% } %>
+          <% if (on('accounting') && can('accounting:read')) { %><a href="/school/accounting">Comptabilité</a><% } %>
         </div>
       </div>
 
@@ -120,8 +122,8 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-communication">
-          <% if (on('chat')) { %><a href="/school/messages">Messages</a><% } %>
-          <% if (on('sms_official')) { %><a href="/school/sms">SMS officiels</a><% } %>
+          <% if (on('chat') && can('messages:write')) { %><a href="/school/messages">Messages</a><% } %>
+          <% if (on('sms_official') && can('sms:write')) { %><a href="/school/sms">SMS officiels</a><% } %>
         </div>
       </div>
 
@@ -131,9 +133,9 @@
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-group-items" id="nav-items-rapports">
-          <a href="/school/analyse">Analyse</a>
-          <a href="/school/risques">Risques</a>
-          <% if (on('stats')) { %><a href="/school/stats">Statistiques</a><% } %>
+          <% if (can('stats:read')) { %><a href="/school/analyse">Analyse</a><% } %>
+          <% if (can('stats:read')) { %><a href="/school/risques">Risques</a><% } %>
+          <% if (on('stats') && can('stats:read')) { %><a href="/school/stats">Statistiques</a><% } %>
         </div>
       </div>
     <% } else if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
@@ -210,6 +212,18 @@
           <a href="/parent/privacy">Confidentialité</a>
         </div>
       </div>
+    <% } else if (currentUser && currentUser.role === 'STUDENT') { %>
+      <% const brandStudentSchool = currentUser.student && currentUser.student.class && currentUser.student.class.school; %>
+      <% if (brandStudentSchool) { %>
+        <div class="sidebar-brand">
+          <%- include('_logo', { logoUrl: brandStudentSchool.logoUrl, logoBase64: brandStudentSchool.logoBase64, slug: brandStudentSchool.slug, name: brandStudentSchool.name, size: 'sm' }) %>
+          <span><%= brandStudentSchool.name %></span>
+        </div>
+      <% } %>
+      <a href="/student/dashboard">Accueil</a>
+      <a href="/student/timetable">Emploi du temps</a>
+      <% if (on('grades')) { %><a href="/student/grades">Notes & bulletins</a><% } %>
+      <% if (on('homeworks')) { %><a href="/student/homeworks">Devoirs & contrôles</a><% } %>
     <% } else if (currentUser && currentUser.role === 'TEACHER') { %>
       <a href="/teacher/dashboard">Accueil</a>
       <div class="nav-group is-open" data-nav-group="administration-scolaire">

@@ -38,6 +38,7 @@ const USER_ROLE_LABELS = {
   SCHOOL_ADMIN: 'Direction',
   PARENT: 'Parent',
   TEACHER: 'Enseignant',
+  STUDENT: 'Élève',
 };
 
 const QUOTE_STATUS_LABELS = {

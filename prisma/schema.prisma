@@ -12,6 +12,16 @@ enum UserRole {
   SCHOOL_ADMIN
   PARENT
   TEACHER
+  STUDENT
+}
+
+/// Rôle métier staff école (couche RBAC, distinct du rôle de connexion UserRole).
+enum SchoolStaffRole {
+  DIRECTOR
+  SECRETARIAT
+  ACCOUNTANT
+  EDUCATOR
+  LIFE_SCHOOL
 }
 
 enum PaymentStatus {
@@ -210,6 +220,9 @@ model User {
   teacher      Teacher?
   parentProfile ParentProfile?
   organizationAdmin OrganizationAdmin?
+  /// Compte élève lié à un enregistrement Student (accès lecture seule, données propres).
+  studentId    String?  @unique
+  student      Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
   sentMessages Message[]      @relation("SentMessages")
   receivedMessages Message[]  @relation("ReceivedMessages")
   notifications      Notification[]
@@ -218,6 +231,23 @@ model User {
   auditTrails        AuditTrail[]
   consents           Consent[]
   refreshTokens      RefreshToken[]
+  staffAssignments   SchoolStaffAssignment[]
+}
+
+/// Affectation staff école : permissions granulaires pour un compte SCHOOL_ADMIN.
+model SchoolStaffAssignment {
+  id        String          @id @default(cuid())
+  staffRole SchoolStaffRole @default(SECRETARIAT)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, schoolId])
+  @@index([schoolId, staffRole])
 }
 
 model School {
@@ -298,6 +328,7 @@ model School {
   socialCases          SocialCase[]
   examSessions         ExamSession[]
   portalPosts          PortalPost[]
+  staffAssignments     SchoolStaffAssignment[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -397,6 +428,7 @@ model Student {
   scholarships         Scholarship[]
   yearRecords          StudentYearRecord[]
   socialCases          SocialCase[]
+  user                 User?
 
   @@unique([schoolId, matricule])
   @@unique([schoolId, nationalMatricule])

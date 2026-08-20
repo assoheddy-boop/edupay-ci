@@ -1,0 +1,30 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('homeworks', { _inLayout: true }); %>
+<%- include('../layouts/studentLayout', { body: content, title: 'Devoirs' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Devoirs & contrôles</h1>
+  <p class="page-sub"><%= student.class.name %></p>
+</div>
+
+<% if (!homeworks.length) { %>
+  <p class="empty">Aucun devoir ou contrôle programmé.</p>
+<% } else { %>
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Titre</th><th>Type</th><th>Date</th><th>Enseignant</th></tr></thead>
+      <tbody>
+        <% homeworks.forEach(function(hw) { %>
+          <tr>
+            <td><%= hw.title %></td>
+            <td><%= hw.kind === 'TEST' ? 'Contrôle' : 'Devoir' %></td>
+            <td><%= hw.dueDate ? new Date(hw.dueDate).toLocaleDateString('fr-FR') : '—' %></td>
+            <td><%= hw.teacher?.user ? (hw.teacher.user.firstName + ' ' + hw.teacher.user.lastName) : '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../partials/_homeworkCalendar', { eventsJson: typeof calendarEventsJson !== 'undefined' ? calendarEventsJson : '[]', eventsUrl: '/student/homeworks/events' }) %>
+<% } %>
+<% } %>

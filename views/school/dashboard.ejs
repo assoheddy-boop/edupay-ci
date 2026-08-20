@@ -2,12 +2,20 @@
 <% const content = include('dashboard', { _inLayout: true }); %>
 <%- include('../layouts/schoolLayout', { body: content, title: 'Tableau de bord' }) %>
 <% } else { %>
+<% const role = typeof staffRole !== 'undefined' ? staffRole : 'DIRECTOR'; %>
+<% const rw = typeof roleWidgets !== 'undefined' ? roleWidgets : {}; %>
+<% const can = typeof staffCan === 'function' ? staffCan : () => true; %>
 <div class="page-header">
     <div class="school-identity">
       <%- include('../partials/_logo', { logoUrl: school.logoUrl, logoBase64: school.logoBase64, slug: school.slug, name: school.name, size: 'lg' }) %>
       <div>
         <h1><%= school.name %></h1>
-        <p class="page-sub">Tableau de bord école</p>
+        <p class="page-sub">
+          Tableau de bord
+          <% if (typeof staffRoleLabel !== 'undefined' && staffRoleLabel) { %>
+            — <span class="badge badge-success"><%= staffRoleLabel %></span>
+          <% } %>
+        </p>
         <ul class="school-meta">
           <% if (school.address || school.city) { %>
             <li><%= [school.address, school.city].filter(Boolean).join(' — ') %></li>
@@ -24,169 +32,338 @@
         </ul>
       </div>
     </div>
-    <a href="/school/settings" class="btn btn-outline">Paramètres école</a>
+    <% if (can('settings:read')) { %>
+      <a href="/school/settings" class="btn btn-outline">Paramètres école</a>
+    <% } %>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.classes %></span>
-      <span class="stat-label">Classes</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.students %></span>
-      <span class="stat-label">Élèves</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value"><%= stats.teachers %></span>
-      <span class="stat-label">Enseignants</span>
-    </div>
-    <div class="stat-card stat-card-warning">
-      <span class="stat-value"><%= stats.pendingPayments %></span>
-      <span class="stat-label">Paiements en attente</span>
-    </div>
-  </div>
-
-  <div class="card" style="border:2px solid #3498db;background:linear-gradient(135deg,#f8fbff 0%,#fff 100%)">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <div>
-        <h2>📊 Analyse pédagogique<%- include('../partials/_hint', { text: 'Effectifs, absences, réussite et réinscriptions — aperçu graphique de votre école.', label: 'Analyse pédagogique' }) %></h2>
-        <p class="page-sub" style="margin:0">Effectifs, absences, réussite et réinscriptions — <%= analyse.schoolYear %></p>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap">
-        <a href="/school/analyse" class="btn btn-primary">Voir les graphiques d'analyse</a>
-        <%- include('../partials/_hint', { text: 'Ouvre la page complète avec tous les graphiques d\'analyse pédagogique.', label: 'Graphiques d\'analyse' }) %>
-      </div>
-    </div>
-    <div class="grid-2" style="padding:0 1rem 1rem">
-      <div style="max-width:280px;margin:0 auto">
-        <canvas id="dashboardGenderChart"></canvas>
-      </div>
-      <div>
-        <div class="stats-grid" style="margin-bottom:0">
-          <div class="stat-card">
-            <span class="stat-value"><%= analyse.gender.boys || 0 %> / <%= analyse.gender.girls || 0 %></span>
-            <span class="stat-label">Garçons / Filles</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value"><%= analyse.absenceByGender.boys || 0 %> / <%= analyse.absenceByGender.girls || 0 %></span>
-            <span class="stat-label">Absences G / F</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value"><%= analyse.reinscription.promoted || 0 %> / <%= analyse.reinscription.repeated || 0 %></span>
-            <span class="stat-label">Promus / Redoublants</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value"><%= Math.round(((analyse.successByGender.boys && analyse.successByGender.boys.averageOn20) || 0) * 10) / 10 %> / <%= Math.round(((analyse.successByGender.girls && analyse.successByGender.girls.averageOn20) || 0) * 10) / 10 %></span>
-            <span class="stat-label">Moyenne G / F (/20)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <% const rw = typeof riskWidget !== 'undefined' && riskWidget ? riskWidget : { rows: [], counts: {}, term: 'T1' }; %>
-  <% const rc = rw.counts || {}; %>
-  <div class="card">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <div>
-        <h2>Élèves à suivre<%- include('../partials/_hint', { text: 'Score pédagogique (règles, pas d’IA) : moyenne pondérée du trimestre + absences et retards. Élevé si moyenne < 10 ou ≥ 6 absences.', label: 'Élèves à suivre' }) %></h2>
-        <p class="page-sub" style="margin:0">Trimestre <%= typeof termLabel === 'function' ? termLabel(rw.term) : (rw.term || '') %> — pas un modèle d’intelligence artificielle</p>
-      </div>
-      <a href="/school/risques" class="btn btn-primary">Voir la liste</a>
-    </div>
-    <div class="stats-grid" style="margin-bottom:0;padding:0 1rem">
+  <% if (role === 'SECRETARIAT') { %>
+    <div class="stats-grid">
       <div class="stat-card stat-card-warning">
-        <span class="stat-value"><%= rc.ELEVE || 0 %></span>
-        <span class="stat-label">Élevé</span>
+        <span class="stat-value"><%= rw.pendingEnrollments || 0 %></span>
+        <span class="stat-label">Inscriptions en attente</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value"><%= rc.MOYEN || 0 %></span>
-        <span class="stat-label">Moyen</span>
+        <span class="stat-value"><%= rw.bulletinsToGenerate || 0 %></span>
+        <span class="stat-label">Bulletins à générer (<%= rw.termLabel || rw.term || '' %>)</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value"><%= rc.FAIBLE || 0 %></span>
-        <span class="stat-label">Faible</span>
+        <span class="stat-value"><%= rw.convocationsUpcoming || 0 %></span>
+        <span class="stat-label">Convocations à venir</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= formatMoney((rw.caisseToday && rw.caisseToday.total) || 0) %></span>
+        <span class="stat-label">Caisse aujourd’hui (<%= (rw.caisseToday && rw.caisseToday.count) || 0 %> encaissements)</span>
+      </div>
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.pendingDocuments || 0 %></span>
+        <span class="stat-label">Justificatifs à traiter</span>
       </div>
     </div>
-    <% if (!(rw.rows && rw.rows.length)) { %>
-      <p class="empty">Aucun élève à signaler pour le moment.</p>
-    <% } else { %>
-      <div class="table-scroll">
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Caisse du jour</h2>
+        <% if (can('caisse:write')) { %><a href="/school/caisse" class="btn btn-sm btn-primary">Ouvrir la caisse</a><% } %>
+      </div>
+      <% if (!(rw.caissePayments && rw.caissePayments.length)) { %>
+        <p class="empty">Aucun encaissement caisse aujourd’hui.</p>
+      <% } else { %>
         <table class="table">
-          <thead>
-            <tr>
-              <th>Élève</th>
-              <th>Classe</th>
-              <th>Niveau</th>
-              <th>Motif</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Élève</th><th>Montant</th><th>Frais</th></tr></thead>
           <tbody>
-            <% rw.rows.forEach(function(r) { %>
+            <% rw.caissePayments.forEach(function(p) { %>
               <tr>
-                <td><%= r.lastName %> <%= r.firstName %></td>
-                <td><%= r.className %></td>
-                <td><span class="badge <%= r.level === 'ELEVE' ? 'badge-error' : (r.level === 'MOYEN' ? 'badge-pending' : 'badge-success') %>"><%= r.label %></span></td>
-                <td><small><%= r.motif %></small></td>
+                <td><%= p.student.firstName %> <%= p.student.lastName %></td>
+                <td><%= formatMoney(p.amount) %></td>
+                <td><%= p.feeType ? p.feeType.name : '—' %></td>
               </tr>
             <% }) %>
           </tbody>
         </table>
+      <% } %>
+    </div>
+
+  <% } else if (role === 'ACCOUNTANT') { %>
+    <div class="stats-grid">
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.pendingPayments || 0 %></span>
+        <span class="stat-label">Paiements à valider</span>
+      </div>
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= formatMoney(rw.unpaidTotal || 0) %></span>
+        <span class="stat-label">Montant en attente</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= formatMoney(rw.paymentsTodayTotal || 0) %></span>
+        <span class="stat-label">Encaissements du jour (<%= rw.paymentsTodayCount || 0 %>)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.accountingEntriesMonth || 0 %></span>
+        <span class="stat-label">Écritures comptables ce mois</span>
+      </div>
+    </div>
+
+    <% if (rw.payrollRun) { %>
+      <div class="card">
+        <div class="card-header">
+          <h2>Paie — <%= rw.payrollRun.month %>/<%= rw.payrollRun.year %></h2>
+          <span class="badge badge-<%= rw.payrollRun.status === 'PAID' ? 'success' : 'pending' %>"><%= rw.payrollRun.status %></span>
+        </div>
+        <p>Net total : <strong><%= formatMoney(rw.payrollRun.totalNet || 0) %></strong></p>
       </div>
     <% } %>
-  </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h2>Paiements récents</h2>
-      <a href="/school/payments" class="btn btn-sm btn-primary">Voir tout</a>
+    <div class="card">
+      <div class="card-header">
+        <h2>Paiements récents</h2>
+        <% if (can('payments:read')) { %><a href="/school/payments" class="btn btn-sm btn-primary">Voir tout</a><% } %>
+      </div>
+      <% if (!recentPayments.length) { %>
+        <p class="empty">Aucun paiement pour le moment.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Élève</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+          <tbody>
+            <% recentPayments.forEach(p => { %>
+              <tr>
+                <td><%= p.student.firstName %> <%= p.student.lastName %></td>
+                <td><%= formatMoney(p.amount) %></td>
+                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+                <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
     </div>
-    <% if (recentPayments.length === 0) { %>
-      <p class="empty">Aucun paiement pour le moment.</p>
-    <% } else { %>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Élève</th>
-            <th>Montant</th>
-            <th>Statut</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% recentPayments.forEach(p => { %>
-            <tr>
-              <td class="person-cell">
-                <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
-                <%= p.student.firstName %> <%= p.student.lastName %>
-              </td>
-              <td><%= formatMoney(p.amount) %></td>
-              <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
-              <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+
+  <% } else if (role === 'EDUCATOR') { %>
+    <% const risk = typeof riskWidget !== 'undefined' && riskWidget ? riskWidget : { rows: [], counts: {}, term: 'T1' }; %>
+    <% const rc = risk.counts || {}; %>
+    <div class="stats-grid">
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.absencesToday || 0 %></span>
+        <span class="stat-label">Absences aujourd’hui</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.latesToday || 0 %></span>
+        <span class="stat-label">Retards aujourd’hui</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.activeSocialCases || 0 %></span>
+        <span class="stat-label">Cas sociaux actifs</span>
+      </div>
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.disciplineIncidents || 0 %></span>
+        <span class="stat-label">Incidents discipline (7 j)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h2>Élèves à suivre</h2>
+          <p class="page-sub" style="margin:0">Trimestre <%= typeof termLabel === 'function' ? termLabel(risk.term) : (risk.term || '') %></p>
+        </div>
+        <% if (can('stats:read')) { %><a href="/school/risques" class="btn btn-primary">Voir la liste</a><% } %>
+      </div>
+      <div class="stats-grid" style="margin-bottom:0;padding:0 1rem">
+        <div class="stat-card stat-card-warning"><span class="stat-value"><%= rc.ELEVE || 0 %></span><span class="stat-label">Élevé</span></div>
+        <div class="stat-card"><span class="stat-value"><%= rc.MOYEN || 0 %></span><span class="stat-label">Moyen</span></div>
+        <div class="stat-card"><span class="stat-value"><%= rc.FAIBLE || 0 %></span><span class="stat-label">Faible</span></div>
+      </div>
+    </div>
+
+  <% } else if (role === 'LIFE_SCHOOL') { %>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.latesToday || 0 %></span>
+        <span class="stat-label">Retards aujourd’hui</span>
+      </div>
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.disciplineIncidents || 0 %></span>
+        <span class="stat-label">Incidents discipline (7 j)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.activitiesCount || 0 %></span>
+        <span class="stat-label">Activités / clubs</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= rw.lostItemsOpen || 0 %></span>
+        <span class="stat-label">Objets perdus non réclamés</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Cantine du jour</h2>
+        <% if (can('canteen:write')) { %><a href="/school/canteen" class="btn btn-sm btn-primary">Gérer la cantine</a><% } %>
+      </div>
+      <% if (rw.canteenMenu && rw.canteenMenu.menu) { %>
+        <p><%= rw.canteenMenu.menu %></p>
+      <% } else { %>
+        <p class="empty">Aucun menu cantine publié pour aujourd’hui.</p>
+      <% } %>
+    </div>
+
+  <% } else { %>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value"><%= stats.classes %></span>
+        <span class="stat-label">Classes</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= stats.students %></span>
+        <span class="stat-label">Élèves</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value"><%= stats.teachers %></span>
+        <span class="stat-label">Enseignants</span>
+      </div>
+      <div class="stat-card stat-card-warning">
+        <span class="stat-value"><%= rw.pendingPayments || stats.pendingPayments || 0 %></span>
+        <span class="stat-label">Paiements en attente</span>
+      </div>
+      <% if ((rw.deliberationsPending || 0) > 0) { %>
+        <div class="stat-card stat-card-warning">
+          <span class="stat-value"><%= rw.deliberationsPending %></span>
+          <span class="stat-label">Délibérations en attente (<%= rw.termLabel || '' %>)</span>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (analyse) { %>
+    <div class="card" style="border:2px solid #3498db;background:linear-gradient(135deg,#f8fbff 0%,#fff 100%)">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h2>📊 Analyse pédagogique<%- include('../partials/_hint', { text: 'Effectifs, absences, réussite et réinscriptions — aperçu graphique de votre école.', label: 'Analyse pédagogique' }) %></h2>
+          <p class="page-sub" style="margin:0">Effectifs, absences, réussite et réinscriptions — <%= analyse.schoolYear %></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap">
+          <% if (can('stats:read')) { %>
+            <a href="/school/analyse" class="btn btn-primary">Voir les graphiques d'analyse</a>
+            <%- include('../partials/_hint', { text: 'Ouvre la page complète avec tous les graphiques d\'analyse pédagogique.', label: 'Graphiques d\'analyse' }) %>
+          <% } %>
+        </div>
+      </div>
+      <div class="grid-2" style="padding:0 1rem 1rem">
+        <div style="max-width:280px;margin:0 auto">
+          <canvas id="dashboardGenderChart"></canvas>
+        </div>
+        <div>
+          <div class="stats-grid" style="margin-bottom:0">
+            <div class="stat-card">
+              <span class="stat-value"><%= analyse.gender.boys || 0 %> / <%= analyse.gender.girls || 0 %></span>
+              <span class="stat-label">Garçons / Filles</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value"><%= analyse.absenceByGender.boys || 0 %> / <%= analyse.absenceByGender.girls || 0 %></span>
+              <span class="stat-label">Absences G / F</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value"><%= analyse.reinscription.promoted || 0 %> / <%= analyse.reinscription.repeated || 0 %></span>
+              <span class="stat-label">Promus / Redoublants</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value"><%= Math.round(((analyse.successByGender.boys && analyse.successByGender.boys.averageOn20) || 0) * 10) / 10 %> / <%= Math.round(((analyse.successByGender.girls && analyse.successByGender.girls.averageOn20) || 0) * 10) / 10 %></span>
+              <span class="stat-label">Moyenne G / F (/20)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <% } %>
-  </div>
+
+    <% const riskDir = typeof riskWidget !== 'undefined' && riskWidget ? riskWidget : { rows: [], counts: {}, term: 'T1' }; %>
+    <% const rcDir = riskDir.counts || {}; %>
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h2>Élèves à suivre<%- include('../partials/_hint', { text: 'Score pédagogique (règles, pas d’IA) : moyenne pondérée du trimestre + absences et retards. Élevé si moyenne < 10 ou ≥ 6 absences.', label: 'Élèves à suivre' }) %></h2>
+          <p class="page-sub" style="margin:0">Trimestre <%= typeof termLabel === 'function' ? termLabel(riskDir.term) : (riskDir.term || '') %> — pas un modèle d’intelligence artificielle</p>
+        </div>
+        <% if (can('stats:read')) { %><a href="/school/risques" class="btn btn-primary">Voir la liste</a><% } %>
+      </div>
+      <div class="stats-grid" style="margin-bottom:0;padding:0 1rem">
+        <div class="stat-card stat-card-warning"><span class="stat-value"><%= rcDir.ELEVE || 0 %></span><span class="stat-label">Élevé</span></div>
+        <div class="stat-card"><span class="stat-value"><%= rcDir.MOYEN || 0 %></span><span class="stat-label">Moyen</span></div>
+        <div class="stat-card"><span class="stat-value"><%= rcDir.FAIBLE || 0 %></span><span class="stat-label">Faible</span></div>
+      </div>
+      <% if (!(riskDir.rows && riskDir.rows.length)) { %>
+        <p class="empty">Aucun élève à signaler pour le moment.</p>
+      <% } else { %>
+        <div class="table-scroll">
+          <table class="table">
+            <thead><tr><th>Élève</th><th>Classe</th><th>Niveau</th><th>Motif</th></tr></thead>
+            <tbody>
+              <% riskDir.rows.forEach(function(r) { %>
+                <tr>
+                  <td><%= r.lastName %> <%= r.firstName %></td>
+                  <td><%= r.className %></td>
+                  <td><span class="badge <%= r.level === 'ELEVE' ? 'badge-error' : (r.level === 'MOYEN' ? 'badge-pending' : 'badge-success') %>"><%= r.label %></span></td>
+                  <td><small><%= r.motif %></small></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Paiements récents</h2>
+        <% if (can('payments:read')) { %><a href="/school/payments" class="btn btn-sm btn-primary">Voir tout</a><% } %>
+      </div>
+      <% if (recentPayments.length === 0) { %>
+        <p class="empty">Aucun paiement pour le moment.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Élève</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+          <tbody>
+            <% recentPayments.forEach(p => { %>
+              <tr>
+                <td class="person-cell">
+                  <%- include('../partials/_avatar', { src: p.student.photoUrl, firstName: p.student.firstName, lastName: p.student.lastName, size: 'sm' }) %>
+                  <%= p.student.firstName %> <%= p.student.lastName %>
+                </td>
+                <td><%= formatMoney(p.amount) %></td>
+                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+                <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  <% } %>
 
   <div class="quick-actions">
-    <a href="/school/classes" class="action-card">➕ Ajouter une classe</a>
-    <a href="/school/students" class="action-card">👨‍🎓 Ajouter un élève</a>
-    <a href="/school/payments" class="action-card">✅ Valider paiements</a>
-    <a href="/school/bulletins" class="action-card">📄 Générer bulletins</a>
-    <a href="/school/teachers" class="action-card">👩‍🏫 Enseignants</a>
-    <a href="/school/messages" class="action-card">💬 Messages</a>
-    <a href="/school/canteen" class="action-card">🍽️ Cantine</a>
-    <a href="/school/lost-items" class="action-card">🧸 Objets perdus</a>
-    <a href="/school/activities" class="action-card">🎯 Activités</a>
-    <a href="/school/analyse" class="action-card">📈 Graphiques d'analyse</a>
-    <a href="/school/risques" class="action-card">⚠️ Élèves à suivre</a>
-    <a href="/school/stats" class="action-card">📊 Statistiques</a>
-    <a href="/school/fees" class="action-card">💰 Types de frais</a>
-    <a href="/school/pickup" class="action-card">🛡️ Sortie école</a>
+    <% if (can('classes:write')) { %><a href="/school/classes" class="action-card">➕ Ajouter une classe</a><% } %>
+    <% if (can('students:write')) { %><a href="/school/students" class="action-card">👨‍🎓 Ajouter un élève</a><% } %>
+    <% if (can('payments:write')) { %><a href="/school/payments" class="action-card">✅ Valider paiements</a><% } %>
+    <% if (can('caisse:write')) { %><a href="/school/caisse" class="action-card">💵 Caisse</a><% } %>
+    <% if (can('bulletins:write')) { %><a href="/school/bulletins" class="action-card">📄 Générer bulletins</a><% } %>
+    <% if (can('convocations:write')) { %><a href="/school/convocations" class="action-card">📋 Convocations</a><% } %>
+    <% if (can('enrollments:read')) { %><a href="/reinscription/dashboard" class="action-card">📝 Réinscriptions</a><% } %>
+    <% if (can('absences:write')) { %><a href="/school/justificatifs" class="action-card">📎 Justificatifs</a><% } %>
+    <% if (can('teachers:read')) { %><a href="/school/teachers" class="action-card">👩‍🏫 Enseignants</a><% } %>
+    <% if (can('messages:write')) { %><a href="/school/messages" class="action-card">💬 Messages</a><% } %>
+    <% if (can('canteen:write')) { %><a href="/school/canteen" class="action-card">🍽️ Cantine</a><% } %>
+    <% if (can('lost_items:write')) { %><a href="/school/lost-items" class="action-card">🧸 Objets perdus</a><% } %>
+    <% if (can('activities:write')) { %><a href="/school/activities" class="action-card">🎯 Activités</a><% } %>
+    <% if (can('social_cases:write')) { %><a href="/school/cas-sociaux" class="action-card">🤝 Cas sociaux</a><% } %>
+    <% if (can('stats:read')) { %><a href="/school/analyse" class="action-card">📈 Graphiques d'analyse</a><% } %>
+    <% if (can('stats:read')) { %><a href="/school/risques" class="action-card">⚠️ Élèves à suivre</a><% } %>
+    <% if (can('stats:read')) { %><a href="/school/stats" class="action-card">📊 Statistiques</a><% } %>
+    <% if (can('fees:read')) { %><a href="/school/fees" class="action-card">💰 Types de frais</a><% } %>
+    <% if (can('accounting:read')) { %><a href="/school/accounting" class="action-card">📒 Comptabilité</a><% } %>
+    <% if (can('deliberations:write')) { %><a href="/school/deliberations" class="action-card">⚖️ Délibérations</a><% } %>
+    <% if (can('pickup:write')) { %><a href="/school/pickup" class="action-card">🛡️ Sortie école</a><% } %>
   </div>
 
+  <% if (role === 'DIRECTOR' && analyse) { %>
   <script src="/js/chart.umd.min.js"></script>
   <script>
     (function () {
@@ -211,4 +388,5 @@
       });
     })();
   </script>
+  <% } %>
 <% } %>

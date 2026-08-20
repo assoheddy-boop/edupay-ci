@@ -56,63 +56,49 @@ const {
   assertNationalMatriculeAvailable,
 } = require('../utils/nationalMatricule');
 const { importStudentsFromFile } = require('../services/studentImport');
-const {
-  getSchoolGenderStats,
-  getAbsenceStatsByGender,
-  getSuccessRateByGender,
-} = require('../../services/StatsService');
-const { getReinscriptionStats } = require('../../services/ReinscriptionService');
-const { getRiskSummary } = require('../services/riskService');
+const { loadRoleDashboard } = require('../services/dashboardService');
+const { attachStaffContext, resolveStaffSchoolId } = require('../utils/staffPermissions');
+const { createStudentUserAccount } = require('../utils/studentAccount');
 
 async function dashboard(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
 
   const schoolYear = school.currentSchoolYear;
+  const staffCtx = attachStaffContext(req.user, resolveStaffSchoolId(req.user));
+  const staffRole = staffCtx.staffRole || 'DIRECTOR';
 
-  const [
-    classes,
-    students,
-    teachers,
-    pendingList,
-    recentPayments,
-    gender,
-    absenceByGender,
-    successByGender,
-    reinscription,
-    riskWidget,
-  ] = await Promise.all([
+  const [classes, students, teachers, recentPayments, roleDashboard] = await Promise.all([
     prisma.class.count({ where: { schoolId: school.id } }),
     prisma.student.count({ where: { schoolId: school.id } }),
     prisma.teacher.count({ where: { schoolId: school.id } }),
-    getPendingPayments(school.id),
     prisma.payment.findMany({
       where: { student: { schoolId: school.id } },
       include: { student: true, feeType: true },
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),
-    getSchoolGenderStats(school.id),
-    getAbsenceStatsByGender({ schoolId: school.id }),
-    getSuccessRateByGender({ schoolId: school.id }),
-    getReinscriptionStats(school.id, schoolYear),
-    getRiskSummary({ schoolId: school.id, schoolYear }).catch(() => ({
-      ok: true,
-      rows: [],
-      counts: { ELEVE: 0, MOYEN: 0, FAIBLE: 0 },
-      term: 'T1',
-      truncated: false,
-      totalStudents: 0,
-    })),
+    loadRoleDashboard(staffRole, school, schoolYear),
   ]);
+
+  const widgets = roleDashboard.widgets || {};
 
   res.render('school/dashboard', {
     user: req.user,
     school,
-    stats: { classes, students, teachers, pendingPayments: pendingList.length },
-    recentPayments,
-    analyse: { gender, absenceByGender, successByGender, reinscription, schoolYear },
-    riskWidget,
+    staffRole,
+    staffRoleLabel: staffCtx.staffRoleLabel,
+    staffCan: staffCtx.staffCan,
+    stats: {
+      classes,
+      students,
+      teachers,
+      pendingPayments: widgets.pendingPayments ?? 0,
+    },
+    recentPayments: ['DIRECTOR', 'ACCOUNTANT'].includes(staffRole) ? recentPayments : [],
+    analyse: widgets.analyse || null,
+    riskWidget: widgets.riskWidget || null,
+    roleWidgets: widgets,
   });
 }
 
@@ -1149,6 +1135,123 @@ async function exportHomeworksPdf(req, res) {
   return sendPdfDownload(res, result);
 }
 
+const { STAFF_ROLE_LABELS } = require('../utils/staffPermissions');
+const { hashPassword } = require('../utils/password');
+
+const ASSIGNABLE_STAFF_ROLES = ['SECRETARIAT', 'ACCOUNTANT', 'EDUCATOR', 'LIFE_SCHOOL'];
+
+async function staffRolesPage(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+
+  const assignments = await prisma.schoolStaffAssignment.findMany({
+    where: { schoolId: school.id },
+    include: { user: { select: { id: true, email: true, firstName: true, lastName: true, role: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  res.render('school/staff-roles', {
+    school,
+    assignments,
+    roleLabels: STAFF_ROLE_LABELS,
+    assignableRoles: ASSIGNABLE_STAFF_ROLES,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function assignStaffRole(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const staffRole = String(req.body.staffRole || '').trim();
+  const firstName = String(req.body.firstName || '').trim();
+  const lastName = String(req.body.lastName || '').trim();
+  const password = String(req.body.password || '').trim();
+
+  if (!email || !ASSIGNABLE_STAFF_ROLES.includes(staffRole)) {
+    return res.redirect('/school/staff-roles?error=' + encodeURIComponent('Email et rôle staff requis.'));
+  }
+
+  let user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    if (!firstName || !lastName || password.length < 8) {
+      return res.redirect('/school/staff-roles?error=' + encodeURIComponent('Nouveau compte : prénom, nom et mot de passe (8 car.) requis.'));
+    }
+    user = await prisma.user.create({
+      data: {
+        email,
+        password: await hashPassword(password),
+        firstName,
+        lastName,
+        role: 'SCHOOL_ADMIN',
+      },
+    });
+  } else if (user.role !== 'SCHOOL_ADMIN') {
+    return res.redirect('/school/staff-roles?error=' + encodeURIComponent('Seuls les comptes SCHOOL_ADMIN peuvent recevoir un rôle staff.'));
+  } else if (user.id === school.adminId) {
+    return res.redirect('/school/staff-roles?error=' + encodeURIComponent('Le directeur titulaire a déjà tous les accès.'));
+  }
+
+  await prisma.schoolStaffAssignment.upsert({
+    where: { userId_schoolId: { userId: user.id, schoolId: school.id } },
+    create: { userId: user.id, schoolId: school.id, staffRole },
+    update: { staffRole },
+  });
+
+  return res.redirect('/school/staff-roles?success=' + encodeURIComponent('Rôle staff enregistré.'));
+}
+
+async function removeStaffRole(req, res) {
+  const school = req.user.school;
+  if (!school) return res.redirect('/auth/login');
+
+  const assignment = await prisma.schoolStaffAssignment.findFirst({
+    where: { id: req.params.id, schoolId: school.id },
+  });
+  if (!assignment) {
+    return res.redirect('/school/staff-roles?error=' + encodeURIComponent('Affectation introuvable.'));
+  }
+
+  await prisma.schoolStaffAssignment.delete({ where: { id: assignment.id } });
+  return res.redirect('/school/staff-roles?success=' + encodeURIComponent('Affectation supprimée.'));
+}
+
+async function createStudentAccount(req, res) {
+  const schoolId = req.user.school?.id;
+  const { id } = req.params;
+  const { email, password } = req.body;
+
+  try {
+    const student = await prisma.student.findFirst({
+      where: { id, schoolId },
+    });
+    if (!student) return res.redirect('/school/students?error=eleve');
+
+    const result = await createStudentUserAccount({
+      email,
+      password: password || 'ChangeMe123!',
+      studentId: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      actor: req.user,
+      ip: req.ip,
+    });
+
+    if (!result.ok) {
+      const code = result.error === 'email' ? 'email' : (result.error === 'linked' ? 'linked' : 'account');
+      return res.redirect(`/school/students?error=${code}`);
+    }
+
+    res.redirect('/school/students?success=account');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/school/students?error=account');
+  }
+}
+
 module.exports = {
   dashboard,
   settings,
@@ -1187,4 +1290,8 @@ module.exports = {
   exportHomeworksExcel,
   exportHomeworksPdf,
   smsDashboard,
+  staffRolesPage,
+  assignStaffRole,
+  removeStaffRole,
+  createStudentAccount,
 };

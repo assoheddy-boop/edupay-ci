@@ -1,0 +1,89 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', { _inLayout: true }); %>
+<%- include('../layouts/studentLayout', { body: content, title: 'Mon espace élève' }) %>
+<% } else { %>
+<div class="page-header">
+  <div class="person-line">
+    <%- include('../partials/_avatar', { src: student.photoUrl, firstName: student.firstName, lastName: student.lastName, size: 'md' }) %>
+    <div>
+      <h1>Bonjour <%= student.firstName %></h1>
+      <p class="page-sub"><%= student.class.name %> · <%= student.class.school?.name || 'Mon école' %></p>
+    </div>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><span class="stat-value"><%= grades.length %></span><span class="stat-label">Notes récentes</span></div>
+  <div class="stat-card"><span class="stat-value"><%= bulletins.length %></span><span class="stat-label">Bulletins</span></div>
+  <div class="stat-card"><span class="stat-value"><%= absenceCount %></span><span class="stat-label">Absences</span></div>
+  <div class="stat-card"><span class="stat-value"><%= upcomingHomework.length %></span><span class="stat-label">Devoirs à venir</span></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2>Emploi du temps</h2>
+      <a href="/student/timetable" class="btn btn-sm btn-outline">Voir tout</a>
+    </div>
+    <% if (!timetableEntries.length) { %>
+      <p class="empty">Emploi du temps non publié.</p>
+    <% } else { %>
+      <ul class="student-timetable-preview">
+        <% timetableEntries.slice(0, 6).forEach(function(entry) { %>
+          <li>
+            <strong><%= entry.dayOfWeek %></strong>
+            <%= entry.startTime %>–<%= entry.endTime %>
+            · <%= entry.subject?.name || 'Matière' %>
+            <% if (entry.room) { %>(<%= entry.room %>)<% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Devoirs & contrôles</h2>
+      <% const m = typeof modules !== 'undefined' ? modules : {}; %>
+      <% if (m.homeworks && m.homeworks.enabled !== false) { %>
+        <a href="/student/homeworks" class="btn btn-sm btn-outline">Calendrier</a>
+      <% } %>
+    </div>
+    <% if (!upcomingHomework.length) { %>
+      <p class="empty">Aucun devoir programmé.</p>
+    <% } else { %>
+      <ul>
+        <% upcomingHomework.forEach(function(hw) { %>
+          <li>
+            <strong><%= hw.title %></strong>
+            <% if (hw.dueDate) { %> — <%= new Date(hw.dueDate).toLocaleDateString('fr-FR') %><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Notes récentes</h2>
+    <a href="/student/grades" class="btn btn-sm btn-outline">Toutes mes notes</a>
+  </div>
+  <% if (!grades.length) { %>
+    <p class="empty">Aucune note publiée.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Matière</th><th>Note</th><th>Période</th></tr></thead>
+      <tbody>
+        <% grades.forEach(function(g) { %>
+          <tr>
+            <td><%= g.subject %></td>
+            <td><strong><%= g.value %>/<%= g.maxValue %></strong></td>
+            <td><%= g.period || '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

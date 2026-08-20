@@ -9,6 +9,7 @@ const {
   snapshotAllCampuses,
   consolidate,
 } = require('../utils/group');
+const { marketplaceBadge, isLiveTier } = require('../utils/marketplaceAddon');
 
 const STATS_TTL = 120;
 
@@ -72,6 +73,12 @@ async function dashboard(req, res) {
 
   const maxRevenue = Math.max(1, ...snapshots.map((s) => s.revenue));
 
+  const marketplaceOverview = organization.schools.map((school) => ({
+    school,
+    badge: marketplaceBadge(school),
+    portalUrl: school.slug && isLiveTier(school.marketplaceTier) ? `/e/${school.slug}` : null,
+  }));
+
   res.render('group/groupDashboard', {
     user: req.user,
     organization,
@@ -81,6 +88,7 @@ async function dashboard(req, res) {
     ranked,
     recentPayments,
     maxRevenue,
+    marketplaceOverview,
     success: req.query.success || null,
   });
 }

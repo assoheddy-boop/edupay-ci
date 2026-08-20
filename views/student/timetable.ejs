@@ -1,0 +1,31 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timetable', { _inLayout: true }); %>
+<%- include('../layouts/studentLayout', { body: content, title: 'Emploi du temps' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Emploi du temps</h1>
+  <p class="page-sub"><%= student.class.name %></p>
+</div>
+
+<div class="card">
+  <% if (!entries.length) { %>
+    <p class="empty">Emploi du temps non publié pour votre classe.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Jour</th><th>Horaire</th><th>Matière</th><th>Salle</th></tr></thead>
+      <tbody>
+        <% days.forEach(function(day) { %>
+          <% entries.filter(function(e) { return e.dayOfWeek === day; }).forEach(function(entry) { %>
+            <tr>
+              <td><%= entry.dayOfWeek %></td>
+              <td><%= entry.startTime %> – <%= entry.endTime %></td>
+              <td><%= entry.subject?.name || '—' %></td>
+              <td><%= entry.room || '—' %></td>
+            </tr>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+<% } %>

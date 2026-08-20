@@ -1,0 +1,69 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('grades', { _inLayout: true }); %>
+<%- include('../layouts/studentLayout', { body: content, title: 'Mes notes' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Notes & bulletins</h1>
+  <p class="page-sub"><%= student.firstName %> <%= student.lastName %> — <%= student.class.name %></p>
+</div>
+
+<div class="card">
+  <h2>Notes</h2>
+  <% if (!grades.length) { %>
+    <p class="empty">Aucune note publiée.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr><th>Matière</th><th>Type</th><th>Note</th><th>Période</th><th>Commentaire</th></tr>
+      </thead>
+      <tbody>
+        <% grades.forEach(function(g) { %>
+          <tr>
+            <td><%= g.subject %></td>
+            <td><%= typeof gradeKindLabel === 'function' ? gradeKindLabel(g.kind) : (g.kind || 'Devoir') %></td>
+            <td><strong><%= g.value %>/<%= g.maxValue %></strong></td>
+            <td><%= typeof termLabel === 'function' ? termLabel(g.period) : g.period %></td>
+            <td><%= g.comment || '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<% const delibs = (deliberations || []).filter(function(d) { return d.mention || d.decision; }); %>
+<% if (delibs.length) { %>
+<div class="card">
+  <h2>Conseil de classe</h2>
+  <table class="table">
+    <thead><tr><th>Année</th><th>Trimestre</th><th>Mention</th><th>Décision</th></tr></thead>
+    <tbody>
+      <% delibs.forEach(function(d) { %>
+        <tr>
+          <td><%= d.schoolYear %></td>
+          <td><%= d.term %></td>
+          <td><%= d.mention || '—' %></td>
+          <td><%= d.decision || '—' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<div class="card">
+  <h2>Bulletins</h2>
+  <% if (!bulletins.length) { %>
+    <p class="empty">Aucun bulletin disponible.</p>
+  <% } else { %>
+    <ul>
+      <% bulletins.forEach(function(b) { %>
+        <li class="person-line" style="justify-content:space-between;margin-bottom:0.5rem">
+          <span><%= b.period %> — <%= new Date(b.generatedAt).toLocaleDateString('fr-FR') %></span>
+          <a href="/student/bulletins/<%= b.id %>/pdf" class="btn btn-sm btn-outline">Télécharger PDF</a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
+<% } %>

@@ -1,0 +1,25 @@
+<%- include('partials/head') %>
+<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null }) %>
+<main class="container">
+  <div class="error-page permission-denied">
+    <h1>Accès refusé</h1>
+    <p><%= typeof message !== 'undefined' && message ? message : 'Votre rôle ne permet pas d’accéder à cette page.' %></p>
+    <% if (typeof staffRoleLabel !== 'undefined' && staffRoleLabel) { %>
+      <p class="form-hint">Rôle actuel : <strong><%= staffRoleLabel %></strong></p>
+    <% } %>
+    <p class="form-hint">Si vous pensez qu’il s’agit d’une erreur, contactez la direction ou l’administrateur de l’école.</p>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
+      <% if (user && user.school) { %>
+        <a href="/school/dashboard" class="btn btn-primary">Retour au tableau de bord</a>
+      <% } else if (user && user.role === 'ORGANIZATION_ADMIN') { %>
+        <a href="/group/dashboard" class="btn btn-primary">Retour au pilotage groupe</a>
+      <% } else if (user && user.role === 'STUDENT') { %>
+        <a href="/student/dashboard" class="btn btn-primary">Retour à mon espace</a>
+      <% } else { %>
+        <a href="/" class="btn btn-primary">Retour à l’accueil</a>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>

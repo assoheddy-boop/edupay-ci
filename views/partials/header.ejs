@@ -43,6 +43,13 @@
           <a href="/parent/timeline">Historique</a>
           <a href="/parent/notifications">Notifications</a>
           <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
+        <% } else if (user.role === 'STUDENT') { %>
+          <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
+          <% const on = (k) => m[k]?.enabled !== false; %>
+          <a href="/student/dashboard">Accueil</a>
+          <a href="/student/timetable">Emploi du temps</a>
+          <% if (on('grades')) { %><a href="/student/grades">Notes</a><% } %>
+          <% if (on('homeworks')) { %><a href="/student/homeworks">Devoirs</a><% } %>
         <% } else if (user.role === 'TEACHER') { %>
           <% const m = typeof modules !== 'undefined' ? modules : (typeof locals !== 'undefined' && locals.modules) || {}; %>
           <% const on = (k) => m[k]?.enabled !== false; %>

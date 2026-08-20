@@ -23,7 +23,24 @@ async function getParentSchoolIds(parentId) {
 
 async function resolveSchoolId(user, req) {
   if (user?.school?.id) return user.school.id;
+  if (user?.staffAssignments?.length === 1) return user.staffAssignments[0].schoolId;
+  if (user?.staffAssignments?.length > 1) {
+    const selected = req?.query?.schoolId || req?.cookies?.selectedSchoolId;
+    if (selected && user.staffAssignments.some((a) => a.schoolId === selected)) return selected;
+    return user.staffAssignments[0].schoolId;
+  }
   if (user?.teacher?.schoolId) return user.teacher.schoolId;
+
+  if (user?.studentId && user?.student?.class?.schoolId) {
+    return user.student.class.schoolId;
+  }
+  if (user?.studentId) {
+    const row = await prisma.student.findUnique({
+      where: { id: user.studentId },
+      select: { schoolId: true, class: { select: { schoolId: true } } },
+    });
+    return row?.schoolId || row?.class?.schoolId || null;
+  }
 
   if (user?.parentProfile?.id) {
     const selected = req?.query?.schoolId || req?.cookies?.selectedSchoolId;

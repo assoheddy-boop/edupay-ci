@@ -18,6 +18,8 @@ const schoolPortalController = require('../controllers/schoolPortalController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
+const { requirePermission } = require('../middleware/requirePermission');
+const { PERMISSIONS: P } = require('../utils/staffPermissions');
 const { uploadLimiter } = require('../middleware/rateLimit');
 const { auditMiddleware } = require('../utils/audit');
 const {
@@ -35,141 +37,146 @@ const router = express.Router();
 
 router.use(requireAuth, checkRole('school'), attachModules);
 
-router.get('/dashboard', schoolController.dashboard);
-router.get('/analyse', schoolAnalyseController.analysePage);
-router.get('/risques', riskController.risquesPage);
-router.get('/emargements', emargementController.emargementsPage);
-router.get('/emargements/imprimer', emargementController.emargementsPrint);
-router.get('/emargements.pdf', emargementController.emargementsPdf);
-router.get('/convocations', convocationController.convocationsPage);
-router.post('/convocations', auditMiddleware('convocation_create', 'ExamSession'), convocationController.createConvocation);
-router.get('/convocations/:id/imprimer', convocationController.convocationPrint);
-router.get('/convocations/:id/pdf', convocationController.convocationPdf);
-router.get('/convocations/:id.pdf', convocationController.convocationPdf);
-router.get('/convocations/:id', convocationController.convocationDetail);
-router.get('/justificatifs', requireModule('absences'), justificationController.schoolPage);
-router.post('/justificatifs/:id/review', requireModule('absences'), auditMiddleware('justification_review', 'AbsenceJustification'), justificationController.review);
-router.get('/settings', schoolController.settings);
-router.post('/settings', upload.logoUpload.fields([
+router.get('/dashboard', requirePermission(P.DASHBOARD), schoolController.dashboard);
+router.get('/analyse', requirePermission(P.STATS), schoolAnalyseController.analysePage);
+router.get('/risques', requirePermission(P.STATS), riskController.risquesPage);
+router.get('/emargements', requirePermission(P.EMARGEMENTS), emargementController.emargementsPage);
+router.get('/emargements/imprimer', requirePermission(P.EMARGEMENTS), emargementController.emargementsPrint);
+router.get('/emargements.pdf', requirePermission(P.EMARGEMENTS), emargementController.emargementsPdf);
+router.get('/convocations', requirePermission(P.CONVOCATIONS), convocationController.convocationsPage);
+router.post('/convocations', requirePermission(P.CONVOCATIONS), auditMiddleware('convocation_create', 'ExamSession'), convocationController.createConvocation);
+router.get('/convocations/:id/imprimer', requirePermission(P.CONVOCATIONS), convocationController.convocationPrint);
+router.get('/convocations/:id/pdf', requirePermission(P.CONVOCATIONS), convocationController.convocationPdf);
+router.get('/convocations/:id.pdf', requirePermission(P.CONVOCATIONS), convocationController.convocationPdf);
+router.get('/convocations/:id', requirePermission(P.CONVOCATIONS), convocationController.convocationDetail);
+router.get('/justificatifs', requireModule('absences'), requirePermission(P.ABSENCES), justificationController.schoolPage);
+router.post('/justificatifs/:id/review', requireModule('absences'), requirePermission(P.ABSENCES), auditMiddleware('justification_review', 'AbsenceJustification'), justificationController.review);
+router.get('/settings', requirePermission(P.SETTINGS_READ), schoolController.settings);
+router.post('/settings', requirePermission(P.SETTINGS_WRITE), upload.logoUpload.fields([
   { name: 'logo', maxCount: 1 },
   { name: 'banner', maxCount: 1 },
   { name: 'gallery', maxCount: 8 },
 ]), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
-router.get('/portail', schoolPortalController.page);
-router.post('/portail/news', auditMiddleware('portal_post_create', 'PortalPost'), schoolPortalController.createNews);
-router.post('/portail/news/:id/delete', auditMiddleware('portal_post_delete', 'PortalPost'), schoolPortalController.deleteNews);
-router.get('/coefficients', schoolController.coefficientsPage);
-router.post('/coefficients', auditMiddleware('coefficients_update', 'Subject'), schoolController.updateCoefficients);
-router.get('/sms', schoolController.smsDashboard);
+router.get('/portail', requirePermission(P.PORTAL), schoolPortalController.page);
+router.post('/portail/news', requirePermission(P.PORTAL), auditMiddleware('portal_post_create', 'PortalPost'), schoolPortalController.createNews);
+router.post('/portail/news/:id/delete', requirePermission(P.PORTAL), auditMiddleware('portal_post_delete', 'PortalPost'), schoolPortalController.deleteNews);
+router.get('/coefficients', requirePermission(P.COEFFICIENTS), schoolController.coefficientsPage);
+router.post('/coefficients', requirePermission(P.COEFFICIENTS), auditMiddleware('coefficients_update', 'Subject'), schoolController.updateCoefficients);
+router.get('/sms', requirePermission(P.SMS), schoolController.smsDashboard);
 
-router.get('/classes', schoolController.listClasses);
-router.post('/classes', classRules, handleValidationErrors, auditMiddleware('class_create', 'Class'), schoolController.createClass);
-router.get('/classes/:id/dashboard', classController.dashboard);
-router.get('/classes/:id/export/gender.xlsx', classController.exportExcel);
-router.get('/classes/:id/export/gender.pdf', classController.exportPdf);
-router.get('/classes/:id', classController.dashboard);
-router.post('/classes/:id/update', classRules, handleValidationErrors, schoolController.updateClass);
-router.post('/classes/:id/delete', schoolController.deleteClass);
+router.get('/staff-roles', requirePermission(P.SETTINGS_WRITE), schoolController.staffRolesPage);
+router.post('/staff-roles', requirePermission(P.SETTINGS_WRITE), auditMiddleware('staff_role_assign', 'SchoolStaffAssignment'), schoolController.assignStaffRole);
+router.post('/staff-roles/:id/delete', requirePermission(P.SETTINGS_WRITE), auditMiddleware('staff_role_remove', 'SchoolStaffAssignment'), schoolController.removeStaffRole);
 
-router.get('/students', schoolController.listStudents);
-router.get('/students/import/template', schoolController.downloadStudentImportTemplate);
-router.post('/students/import', csvUpload.single('csv'), schoolController.importStudents);
-router.post('/students', upload.logoUpload.single('photo'), studentRules, handleValidationErrors, auditMiddleware('student_create', 'Student'), schoolController.createStudent);
-router.post('/students/:id/update', upload.logoUpload.single('photo'), studentRules, handleValidationErrors, schoolController.updateStudent);
-router.post('/students/:id/delete', auditMiddleware('student_delete', 'Student'), schoolController.deleteStudent);
+router.get('/classes', requirePermission(P.CLASSES_READ), schoolController.listClasses);
+router.post('/classes', requirePermission(P.CLASSES_WRITE), classRules, handleValidationErrors, auditMiddleware('class_create', 'Class'), schoolController.createClass);
+router.get('/classes/:id/dashboard', requirePermission(P.CLASSES_READ), classController.dashboard);
+router.get('/classes/:id/export/gender.xlsx', requirePermission(P.CLASSES_READ), classController.exportExcel);
+router.get('/classes/:id/export/gender.pdf', requirePermission(P.CLASSES_READ), classController.exportPdf);
+router.get('/classes/:id', requirePermission(P.CLASSES_READ), classController.dashboard);
+router.post('/classes/:id/update', requirePermission(P.CLASSES_WRITE), classRules, handleValidationErrors, schoolController.updateClass);
+router.post('/classes/:id/delete', requirePermission(P.CLASSES_WRITE), schoolController.deleteClass);
 
-router.get('/teachers', schoolController.listTeachers);
-router.post('/teachers/invite', upload.logoUpload.single('photo'), teacherInviteRules, handleValidationErrors, schoolController.inviteTeacher);
-router.post('/teachers/:teacherId/photo', upload.logoUpload.single('photo'), schoolController.updateTeacherPhoto);
-router.post('/teachers/:teacherId/classes', schoolController.assignTeacherClass);
+router.get('/students', requirePermission(P.STUDENTS_READ), schoolController.listStudents);
+router.get('/students/import/template', requirePermission(P.STUDENTS_WRITE), schoolController.downloadStudentImportTemplate);
+router.post('/students/import', requirePermission(P.STUDENTS_WRITE), csvUpload.single('csv'), schoolController.importStudents);
+router.post('/students', requirePermission(P.STUDENTS_WRITE), upload.logoUpload.single('photo'), studentRules, handleValidationErrors, auditMiddleware('student_create', 'Student'), schoolController.createStudent);
+router.post('/students/:id/update', requirePermission(P.STUDENTS_WRITE), upload.logoUpload.single('photo'), studentRules, handleValidationErrors, schoolController.updateStudent);
+router.post('/students/:id/delete', requirePermission(P.STUDENTS_WRITE), auditMiddleware('student_delete', 'Student'), schoolController.deleteStudent);
+router.post('/students/:id/account', requirePermission(P.STUDENTS_WRITE), schoolController.createStudentAccount);
 
-router.get('/school-year', schoolController.schoolYearPage);
-router.post('/school-year', schoolController.updateSchoolYear);
-router.post('/school-year/promote', schoolController.promoteClass);
+router.get('/teachers', requirePermission(P.TEACHERS_READ), schoolController.listTeachers);
+router.post('/teachers/invite', requirePermission(P.TEACHERS_WRITE), upload.logoUpload.single('photo'), teacherInviteRules, handleValidationErrors, schoolController.inviteTeacher);
+router.post('/teachers/:teacherId/photo', requirePermission(P.TEACHERS_WRITE), upload.logoUpload.single('photo'), schoolController.updateTeacherPhoto);
+router.post('/teachers/:teacherId/classes', requirePermission(P.TEACHERS_WRITE), schoolController.assignTeacherClass);
+
+router.get('/school-year', requirePermission(P.SCHOOL_YEAR), schoolController.schoolYearPage);
+router.post('/school-year', requirePermission(P.SCHOOL_YEAR), schoolController.updateSchoolYear);
+router.post('/school-year/promote', requirePermission(P.SCHOOL_YEAR), schoolController.promoteClass);
 
 router.get('/timetable', (_req, res) => res.redirect('/timetable'));
 
-router.get('/homeworks', requireModule('homeworks'), schoolController.homeworksPage);
-router.get('/homeworks/export.xlsx', requireModule('homeworks'), schoolController.exportHomeworksExcel);
-router.get('/homeworks/export.pdf', requireModule('homeworks'), schoolController.exportHomeworksPdf);
-router.get('/assessments', requireModule('homeworks'), schoolController.homeworksPage);
+router.get('/homeworks', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.homeworksPage);
+router.get('/homeworks/export.xlsx', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.exportHomeworksExcel);
+router.get('/homeworks/export.pdf', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.exportHomeworksPdf);
+router.get('/assessments', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.homeworksPage);
 
-router.get('/fees', statsController.feesPage);
-router.post('/fees', feeRules, handleValidationErrors, statsController.createFee);
-router.post('/fees/:id/update', feeRules, handleValidationErrors, statsController.updateFee);
-router.post('/fees/:id/delete', statsController.deleteFee);
+router.get('/fees', requirePermission(P.FEES_READ), statsController.feesPage);
+router.post('/fees', requirePermission(P.FEES_WRITE), feeRules, handleValidationErrors, statsController.createFee);
+router.post('/fees/:id/update', requirePermission(P.FEES_WRITE), feeRules, handleValidationErrors, statsController.updateFee);
+router.post('/fees/:id/delete', requirePermission(P.FEES_WRITE), statsController.deleteFee);
 
-router.get('/payments', requireModule('payments'), schoolController.listPayments);
-router.post('/payments/:id/validate', requireModule('payments'), auditMiddleware('payment_validate', 'Payment'), schoolController.validatePayment);
-router.get('/caisse', requireModule('payments'), schoolController.caissePage);
-router.post('/caisse', requireModule('payments'), auditMiddleware('caisse_encaisser', 'Payment'), schoolController.createCaisseEntry);
-router.get('/caisse/:id/ticket', requireModule('payments'), schoolController.caisseTicket);
+router.get('/payments', requireModule('payments'), requirePermission(P.PAYMENTS_READ), schoolController.listPayments);
+router.post('/payments/:id/validate', requireModule('payments'), requirePermission(P.PAYMENTS_WRITE), auditMiddleware('payment_validate', 'Payment'), schoolController.validatePayment);
+router.get('/caisse', requireModule('payments'), requirePermission(P.CAISSE), schoolController.caissePage);
+router.post('/caisse', requireModule('payments'), requirePermission(P.CAISSE), auditMiddleware('caisse_encaisser', 'Payment'), schoolController.createCaisseEntry);
+router.get('/caisse/:id/ticket', requireModule('payments'), requirePermission(P.CAISSE), schoolController.caisseTicket);
 
-router.get('/cas-sociaux', socialCaseController.listPage);
-router.post('/cas-sociaux', auditMiddleware('social_case_create', 'SocialCase'), socialCaseController.createSocialCase);
-router.post('/cas-sociaux/:id/close', auditMiddleware('social_case_close', 'SocialCase'), socialCaseController.closeSocialCase);
+router.get('/cas-sociaux', requirePermission(P.SOCIAL_CASES), socialCaseController.listPage);
+router.post('/cas-sociaux', requirePermission(P.SOCIAL_CASES), auditMiddleware('social_case_create', 'SocialCase'), socialCaseController.createSocialCase);
+router.post('/cas-sociaux/:id/close', requirePermission(P.SOCIAL_CASES), auditMiddleware('social_case_close', 'SocialCase'), socialCaseController.closeSocialCase);
 
-router.get('/bulletins', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.listBulletins);
-router.post('/bulletins/generate', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.generateBulletin);
-router.post('/bulletins/bulk', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.generateBulkBulletin);
-router.get('/deliberations', requireModule('bulletins'), deliberationController.deliberationsPage);
-router.post('/deliberations', requireModule('bulletins'), auditMiddleware('deliberation_save', 'Deliberation'), deliberationController.saveDeliberations);
-router.get('/deliberations/pv', requireModule('bulletins'), deliberationController.deliberationsPv);
-router.get('/deliberations/pv.pdf', requireModule('bulletins'), deliberationController.deliberationsPvPdf);
-router.get('/palmares', requireModule('bulletins'), palmaresController.palmaresPage);
-router.get('/palmares/imprimer', requireModule('bulletins'), palmaresController.palmaresPrint);
-router.get('/palmares.pdf', requireModule('bulletins'), palmaresController.palmaresPdf);
+router.get('/bulletins', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_READ), schoolController.listBulletins);
+router.post('/bulletins/generate', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_WRITE), schoolController.generateBulletin);
+router.post('/bulletins/bulk', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_WRITE), schoolController.generateBulkBulletin);
+router.get('/deliberations', requireModule('bulletins'), requirePermission(P.DELIBERATIONS), deliberationController.deliberationsPage);
+router.post('/deliberations', requireModule('bulletins'), requirePermission(P.DELIBERATIONS), auditMiddleware('deliberation_save', 'Deliberation'), deliberationController.saveDeliberations);
+router.get('/deliberations/pv', requireModule('bulletins'), requirePermission(P.DELIBERATIONS), deliberationController.deliberationsPv);
+router.get('/deliberations/pv.pdf', requireModule('bulletins'), requirePermission(P.DELIBERATIONS), deliberationController.deliberationsPvPdf);
+router.get('/palmares', requireModule('bulletins'), requirePermission(P.PALMARES), palmaresController.palmaresPage);
+router.get('/palmares/imprimer', requireModule('bulletins'), requirePermission(P.PALMARES), palmaresController.palmaresPrint);
+router.get('/palmares.pdf', requireModule('bulletins'), requirePermission(P.PALMARES), palmaresController.palmaresPdf);
 
-router.get('/messages', requireModule('chat'), requirePremium('Chat'), messageController.inbox);
-router.get('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), messageController.chat);
-router.post('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), uploadLimiter, upload.chatUpload.fields([
+router.get('/messages', requireModule('chat'), requirePremium('Chat'), requirePermission(P.MESSAGES), messageController.inbox);
+router.get('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), requirePermission(P.MESSAGES), messageController.chat);
+router.post('/messages/:partnerId', requireModule('chat'), requirePremium('Chat'), requirePermission(P.MESSAGES), uploadLimiter, upload.chatUpload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'attachment', maxCount: 1 },
 ]), persistUpload('chat'), messageController.send);
 
-router.get('/stats', requireModule('stats'), requirePremium('Statistiques'), statsController.statsPage);
-router.get('/export/students', requireModule('stats'), requirePremium('Export Excel'), statsController.exportStudents);
-router.get('/export/payments', requireModule('stats'), requirePremium('Export Excel'), statsController.exportPayments);
-router.get('/export/grades', requireModule('stats'), requirePremium('Export Excel'), statsController.exportGrades);
-router.get('/export/stats', requireModule('stats'), requirePremium('Export Excel'), statsController.exportStats);
-router.get('/bulletins/download/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.downloadBulletinPdf);
-router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.exportBulletinPdf);
+router.get('/stats', requireModule('stats'), requirePremium('Statistiques'), requirePermission(P.STATS), statsController.statsPage);
+router.get('/export/students', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportStudents);
+router.get('/export/payments', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportPayments);
+router.get('/export/grades', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportGrades);
+router.get('/export/stats', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportStats);
+router.get('/bulletins/download/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_READ), schoolController.downloadBulletinPdf);
+router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.CERTIFICATES), schoolController.exportBulletinPdf);
 
-router.get('/accounting', requireModule('accounting'), accountingController.dashboard);
-router.post('/accounting/transaction', requireModule('accounting'), accountingController.addTransaction);
-router.get('/accounting/report', requireModule('accounting'), accountingController.report);
-router.get('/accounting/report.xlsx', requireModule('accounting'), accountingController.exportExcel);
-router.get('/accounting/report.pdf', requireModule('accounting'), accountingController.exportPdf);
+router.get('/accounting', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.dashboard);
+router.post('/accounting/transaction', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.addTransaction);
+router.get('/accounting/report', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.report);
+router.get('/accounting/report.xlsx', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.exportExcel);
+router.get('/accounting/report.pdf', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.exportPdf);
 
-router.get('/canteen', requireModule('canteen'), extras.schoolCanteenPage);
-router.post('/canteen', requireModule('canteen'), extras.createCanteenMenu);
-router.get('/lost-items', requireModule('lost_items'), extras.schoolLostItemsPage);
-router.post('/lost-items', requireModule('lost_items'), upload.single('photo'), persistUpload('lost-items'), extras.createLostItem);
-router.post('/lost-items/:id/claim', requireModule('lost_items'), extras.claimLostItem);
-router.get('/activities', requireModule('activities'), extras.schoolActivitiesPage);
-router.post('/activities', requireModule('activities'), extras.createActivity);
-router.get('/pickup', requireModule('pickup'), extras.schoolPickupPage);
-router.post('/pickup/validate', requireModule('pickup'), extras.validatePickup);
+router.get('/canteen', requireModule('canteen'), requirePermission(P.CANTEEN), extras.schoolCanteenPage);
+router.post('/canteen', requireModule('canteen'), requirePermission(P.CANTEEN), extras.createCanteenMenu);
+router.get('/lost-items', requireModule('lost_items'), requirePermission(P.LOST_ITEMS), extras.schoolLostItemsPage);
+router.post('/lost-items', requireModule('lost_items'), requirePermission(P.LOST_ITEMS), upload.single('photo'), persistUpload('lost-items'), extras.createLostItem);
+router.post('/lost-items/:id/claim', requireModule('lost_items'), requirePermission(P.LOST_ITEMS), extras.claimLostItem);
+router.get('/activities', requireModule('activities'), requirePermission(P.ACTIVITIES), extras.schoolActivitiesPage);
+router.post('/activities', requireModule('activities'), requirePermission(P.ACTIVITIES), extras.createActivity);
+router.get('/pickup', requireModule('pickup'), requirePermission(P.PICKUP), extras.schoolPickupPage);
+router.post('/pickup/validate', requireModule('pickup'), requirePermission(P.PICKUP), extras.validatePickup);
 
-router.get('/hr', requireModule('hr'), hrController.dashboard);
-router.get('/hr/staff', requireModule('hr'), hrController.staffList);
-router.get('/hr/staff/:id', requireModule('hr'), hrController.staffDetail);
-router.post('/hr/staff/:id', requireModule('hr'), upload.logoUpload.single('photo'), hrController.updateStaffProfile);
-router.post('/hr/staff/:id/documents', requireModule('hr'), upload.hrDocUpload.single('document'), hrController.uploadStaffDocument);
-router.get('/hr/leaves', requireModule('hr'), hrController.leavesPage);
-router.post('/hr/leaves/:id/review', requireModule('hr'), hrController.reviewLeave);
-router.get('/hr/attendance', requireModule('hr'), hrController.attendancePage);
-router.post('/hr/attendance', requireModule('hr'), hrController.updateAttendance);
-router.get('/hr/payroll', requireModule('hr'), hrController.payrollPage);
-router.post('/hr/payroll/generate', requireModule('hr'), hrController.generatePayrollAction);
-router.post('/hr/payroll/pay', requireModule('hr'), hrController.payPayrollAction);
-router.post('/hr/payroll/payslips/:id', requireModule('hr'), hrController.updatePayslip);
-router.post('/hr/advances/:id/review', requireModule('hr'), hrController.reviewAdvance);
-router.get('/hr/evaluations', requireModule('hr'), hrController.evaluationsPage);
-router.post('/hr/evaluations', requireModule('hr'), hrController.saveEvaluation);
-router.get('/hr/export/payroll', requireModule('hr'), hrController.exportPayroll);
-router.get('/hr/export/leaves', requireModule('hr'), hrController.exportLeaves);
-router.get('/hr/export/attendance', requireModule('hr'), hrController.exportAttendance);
-router.get('/hr/export/payslip/:teacherId', requireModule('hr'), hrController.exportPayslipPdf);
+router.get('/hr', requireModule('hr'), requirePermission(P.HR_READ), hrController.dashboard);
+router.get('/hr/staff', requireModule('hr'), requirePermission(P.HR_READ), hrController.staffList);
+router.get('/hr/staff/:id', requireModule('hr'), requirePermission(P.HR_READ), hrController.staffDetail);
+router.post('/hr/staff/:id', requireModule('hr'), requirePermission(P.HR_WRITE), upload.logoUpload.single('photo'), hrController.updateStaffProfile);
+router.post('/hr/staff/:id/documents', requireModule('hr'), requirePermission(P.HR_WRITE), upload.hrDocUpload.single('document'), hrController.uploadStaffDocument);
+router.get('/hr/leaves', requireModule('hr'), requirePermission(P.HR_READ), hrController.leavesPage);
+router.post('/hr/leaves/:id/review', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.reviewLeave);
+router.get('/hr/attendance', requireModule('hr'), requirePermission(P.HR_READ), hrController.attendancePage);
+router.post('/hr/attendance', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.updateAttendance);
+router.get('/hr/payroll', requireModule('hr'), requirePermission(P.HR_READ), hrController.payrollPage);
+router.post('/hr/payroll/generate', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.generatePayrollAction);
+router.post('/hr/payroll/pay', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.payPayrollAction);
+router.post('/hr/payroll/payslips/:id', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.updatePayslip);
+router.post('/hr/advances/:id/review', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.reviewAdvance);
+router.get('/hr/evaluations', requireModule('hr'), requirePermission(P.HR_READ), hrController.evaluationsPage);
+router.post('/hr/evaluations', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.saveEvaluation);
+router.get('/hr/export/payroll', requireModule('hr'), requirePermission(P.HR_READ), hrController.exportPayroll);
+router.get('/hr/export/leaves', requireModule('hr'), requirePermission(P.HR_READ), hrController.exportLeaves);
+router.get('/hr/export/attendance', requireModule('hr'), requirePermission(P.HR_READ), hrController.exportAttendance);
+router.get('/hr/export/payslip/:teacherId', requireModule('hr'), requirePermission(P.HR_READ), hrController.exportPayslipPdf);
 
 module.exports = router;

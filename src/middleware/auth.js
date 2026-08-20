@@ -9,6 +9,7 @@ const {
   clearAssistCookie,
 } = require('../utils/cookies');
 const { attachAdminAssist, hasEffectiveRole } = require('../utils/adminAssist');
+const { attachStaffContext, resolveStaffSchoolId } = require('../utils/staffPermissions');
 const {
   createRefreshToken,
   rotateRefreshToken,
@@ -21,6 +22,7 @@ const ROLE_ALIASES = {
   school: 'SCHOOL_ADMIN',
   parent: 'PARENT',
   teacher: 'TEACHER',
+  student: 'STUDENT',
   admin: 'SUPER_ADMIN',
   group: 'ORGANIZATION_ADMIN',
 };
@@ -91,15 +93,23 @@ async function destroyAuthSession(req, res) {
 }
 
 async function loadUser(userId) {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
       school: true,
+      staffAssignments: { include: { school: true } },
       teacher: { include: { school: true } },
       parentProfile: true,
       organizationAdmin: { include: { organization: true } },
+      student: { include: { class: { include: { school: true } } } },
     },
   });
+
+  if (user && !user.school && user.staffAssignments?.length === 1) {
+    user.school = user.staffAssignments[0].school;
+  }
+
+  return user;
 }
 
 function unauthenticated(req, res) {
@@ -148,6 +158,13 @@ async function requireAuth(req, res, next) {
     req.user = user;
     res.locals.user = user;
     res.locals.adminAssist = user.adminAssist || null;
+
+    const staffCtx = attachStaffContext(user, resolveStaffSchoolId(user));
+    res.locals.staffRole = staffCtx.staffRole;
+    res.locals.staffRoleLabel = staffCtx.staffRoleLabel;
+    res.locals.staffPermissions = staffCtx.staffPermissions;
+    res.locals.staffCan = staffCtx.staffCan;
+
     applyI18n(req, res);
     applyCurrency(req, res);
     next();

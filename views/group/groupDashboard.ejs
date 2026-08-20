@@ -23,9 +23,53 @@
   <div class="stat-card"><span class="stat-value"><%= totals.students %></span><span class="stat-label"><%= tx('group.students') %></span></div>
   <div class="stat-card"><span class="stat-value"><%= totals.teachers %></span><span class="stat-label"><%= tx('group.teachers') %></span></div>
   <div class="stat-card stat-card-success"><span class="stat-value"><%= money(totals.revenue) %></span><span class="stat-label"><%= tx('group.revenue') %></span></div>
+  <div class="stat-card stat-card-warning"><span class="stat-value"><%= money(totals.pendingAmount) %></span><span class="stat-label">Impayés (attente)</span></div>
   <div class="stat-card stat-card-warning"><span class="stat-value"><%= totals.pendingCount %></span><span class="stat-label"><%= tx('group.pending') %></span></div>
   <div class="stat-card"><span class="stat-value"><%= totals.collectionRate %>%</span><span class="stat-label"><%= tx('group.collection') %></span></div>
 </div>
+
+<div class="card">
+  <div class="card-header"><h2>Actions rapides</h2></div>
+  <div class="quick-actions" style="display:flex;flex-wrap:wrap;gap:0.75rem;padding:0 1rem 1rem">
+    <a href="/group/circulars" class="btn btn-outline">Circulaires groupe</a>
+    <a href="/group/finance" class="btn btn-outline">Synthèse financière</a>
+    <a href="/group/compare" class="btn btn-outline">Comparatif campus</a>
+    <a href="/group/campuses" class="btn btn-outline">Tous les campus</a>
+    <a href="/group/export" class="btn btn-outline"><%= tx('group.export') %></a>
+  </div>
+</div>
+
+<% if (typeof marketplaceOverview !== 'undefined' && marketplaceOverview.length) { %>
+<div class="card">
+  <div class="card-header"><h2>Marketplace — visibilité par école</h2></div>
+  <table class="table">
+    <thead><tr><th>École</th><th>Offre</th><th>Portail</th><th>Détail campus</th></tr></thead>
+    <tbody>
+      <% marketplaceOverview.forEach(function(row) { %>
+        <tr>
+          <td class="person-cell">
+            <%- include('../partials/_logo', { logoUrl: row.school.logoUrl, logoBase64: row.school.logoBase64, name: row.school.name, size: 'sm' }) %>
+            <%= row.school.campusLabel || row.school.name %>
+          </td>
+          <td>
+            <% if (row.badge) { %>
+              <span class="badge-status <%= row.badge.className %>"><%= row.badge.label %></span>
+            <% } else { %>
+              <span class="text-muted">Aucune vitrine</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (row.portalUrl) { %>
+              <a href="<%= row.portalUrl %>" target="_blank" rel="noopener">Voir le portail</a>
+            <% } else { %>—<% } %>
+          </td>
+          <td><a href="/group/campuses/<%= row.school.id %>">Piloter</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
 
 <% if (organization.groupId) { %>
 <div class="card">
