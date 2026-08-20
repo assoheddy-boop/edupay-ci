@@ -144,6 +144,7 @@
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
+  min-width: 0;
 }
 
 .portal-trust-row {
@@ -185,6 +186,9 @@
   box-shadow: 0 12px 32px rgba(11, 31, 74, 0.22);
   box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .portal-hero-search-title {
@@ -197,18 +201,23 @@
 .portal-hero-search-fields {
   display: grid;
   gap: 0.85rem;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
 }
 
 .portal-hero-search .form-group {
   margin: 0;
   min-width: 0;
+  width: 100%;
 }
 
 .portal-hero-search .form-group input,
 .portal-hero-search .form-group select {
+  display: block;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -647,14 +656,9 @@
   }
 
   .portal-hero-search {
-    flex: 0 1 22rem;
-    min-width: 0;
+    flex: 0 1 20rem;
+    width: 20rem;
     max-width: 100%;
-  }
-
-  .portal-hero-search-fields {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.85rem 1rem;
   }
 
   .portal-school-grid {
@@ -683,12 +687,8 @@
 
 @media (min-width: 960px) {
   .portal-hero-search {
-    flex: 0 1 26rem;
-    min-width: 25rem;
-  }
-
-  .portal-hero-search-fields {
-    gap: 0.85rem 1.15rem;
+    flex: 0 1 22rem;
+    width: 22rem;
   }
 }
 
