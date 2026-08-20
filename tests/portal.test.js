@@ -358,6 +358,68 @@ describe('Marketplace /ecoles', () => {
     }));
   });
 
+  test('filters by school name via q param', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({ name: 'IGEST Yopougon', slug: 'igest-yopougon-sideci' }),
+    ]);
+    const res = await request(app).get('/ecoles').query({ q: 'igest' });
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Résultats pour « igest »/);
+    expect(res.text).toMatch(/IGEST/);
+    expect(res.text).toMatch(/portal-school-grid/);
+    expect(res.text).toMatch(/portal-school-card/);
+    expect(res.text).toMatch(/1 établissement/);
+    expect(res.text).toMatch(/name="q"[^>]*value="igest"/);
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        name: { contains: 'igest', mode: 'insensitive' },
+      }),
+    }));
+  });
+
+  test('q combines with ville and cycle filters', async () => {
+    prisma.school.findMany.mockResolvedValue([publishedSchool()]);
+    const res = await request(app).get('/ecoles').query({ q: 'IGEST', ville: 'Abidjan', cycle: 'COLLEGE' });
+    expect(res.status).toBe(200);
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        name: { contains: 'IGEST', mode: 'insensitive' },
+        educationCycle: 'COLLEGE',
+        OR: expect.arrayContaining([
+          { city: { contains: 'Abidjan', mode: 'insensitive' } },
+        ]),
+      }),
+    }));
+  });
+
+  test('empty q search shows tailored empty state', async () => {
+    prisma.school.findMany.mockResolvedValue([]);
+    const res = await request(app).get('/ecoles').query({ q: 'InexistantXYZ' });
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Aucune école publiée pour « InexistantXYZ »/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
+  test('GET /ecoles/verifies uses card grid and badges', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({
+        name: 'École Premium',
+        slug: 'ecole-premium',
+        marketplaceTier: 'PREMIUM',
+      }),
+    ]);
+    const res = await request(app).get('/ecoles/verifies');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Établissements vérifiés EduConnect/);
+    expect(res.text).toMatch(/portal-school-grid/);
+    expect(res.text).toMatch(/portal-school-card/);
+    expect(res.text).toMatch(/portal-featured-badge/);
+    expect(res.text).toMatch(/Vérifié EduConnect/);
+    expect(res.text).toMatch(/Premium/);
+    expect(res.text).not.toMatch(/portal-school-link/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
+
   test('empty marketplace does not invent pupil results', async () => {
     prisma.school.findMany.mockResolvedValue([]);
     const res = await request(app).get('/ecoles').query({ ville: 'Korhogo' });

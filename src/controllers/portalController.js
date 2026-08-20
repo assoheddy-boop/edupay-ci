@@ -75,7 +75,8 @@ async function schoolPageLocals(req, res, school, extra = {}) {
 
 function marketplaceHasActiveFilters(filters = {}) {
   return Boolean(
-    String(filters.ville || '').trim()
+    String(filters.q || '').trim()
+    || String(filters.ville || '').trim()
     || String(filters.commune || '').trim()
     || String(filters.cycle || '').trim()
     || String(filters.type || '').trim(),
@@ -110,6 +111,7 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     commune: filters.commune || '',
     cycle: filters.cycle || '',
     type: filters.type || '',
+    q: filters.q || '',
     cycleOptions: cycleFilterOptions(),
     typeOptions: typeFilterOptions(),
     cycleLabels: CYCLE_LABELS,
@@ -204,6 +206,7 @@ async function sendContact(req, res, next) {
 
 async function marketplace(req, res, next) {
   try {
+    const q = String(req.query.q || '').trim();
     const ville = String(req.query.ville || req.query.city || '').trim();
     const commune = String(req.query.commune || '').trim();
     const cycleRaw = String(req.query.cycle || '').trim();
@@ -214,8 +217,8 @@ async function marketplace(req, res, next) {
     return renderMarketplaceListing(
       req,
       res,
-      { ville, commune, cycle, type },
-      { ville, commune, cycle, type },
+      { q, ville, commune, cycle, type },
+      { q, ville, commune, cycle, type },
     );
   } catch (err) {
     return next(err);
@@ -231,6 +234,7 @@ async function verifiedMarketplace(req, res, next) {
     seo.canonicalUrl = `${SITE_ORIGIN}/ecoles/verifies`;
     const schools = await listPublishedSchools({});
     const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
+    const jsonLd = jsonLdForMarketplace(views, seo);
     return res.render('portal/verified', {
       user: null,
       title: `${seo.heading} — Côte d’Ivoire`,
@@ -238,9 +242,15 @@ async function verifiedMarketplace(req, res, next) {
       lead: seo.lead,
       metaDescription: seo.lead.slice(0, 160),
       canonicalUrl: seo.canonicalUrl,
+      ogTitle: seo.heading,
+      ogDescription: seo.lead.slice(0, 160),
+      ogImage: `${SITE_ORIGIN}/icons/icon-192.png`,
+      jsonLd,
+      jsonLdJson: safeJson(jsonLd),
       robots: PUBLIC_ROBOTS,
       portalCss: true,
       schools: views,
+      schoolCount: views.length,
     });
   } catch (err) {
     return next(err);

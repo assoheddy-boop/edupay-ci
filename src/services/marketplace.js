@@ -109,10 +109,14 @@ async function queryPublishedSchools(where, select) {
   }
 }
 
-async function listPublishedSchools({ ville, commune, cycle, type, organizationId } = {}) {
+async function listPublishedSchools({ ville, commune, cycle, type, q, organizationId } = {}) {
   const city = String(ville || '').trim();
   const communeLabel = String(commune || '').trim();
+  const nameQuery = String(q || '').trim();
   const extra = {};
+  if (nameQuery) {
+    extra.name = { contains: nameQuery, mode: 'insensitive' };
+  }
   if (communeLabel) {
     extra.OR = [
       { commune: { contains: communeLabel, mode: 'insensitive' } },

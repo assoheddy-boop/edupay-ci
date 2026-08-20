@@ -1,3 +1,6 @@
+<%
+  const count = typeof schoolCount === 'number' ? schoolCount : schools.length;
+%>
 <%- include('../partials/head') %>
 <% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
 <script type="application/ld+json"><%- jsonLdJson %></script>
@@ -11,42 +14,71 @@
       <a href="/auth/login">Connexion</a>
       <a href="/devis">Devis</a>
     </nav>
+    <details class="portal-burger">
+      <summary aria-label="Ouvrir le menu">Menu</summary>
+      <nav class="portal-nav" aria-label="Menu mobile">
+        <a href="/ecoles">Écoles</a>
+        <a href="/ecoles/verifies">Vérifiés</a>
+        <a href="/auth/login">Connexion</a>
+        <a href="/devis">Devis</a>
+      </nav>
+    </details>
   </header>
 
-  <section class="portal-hero portal-hero-market">
-    <div>
-      <p class="portal-kicker">Marketplace · Confiance</p>
-      <h1><%= heading %></h1>
-      <p class="portal-lead"><%= lead %></p>
-      <p class="form-hint">Premium et VIP : badge <strong>Vérifié EduConnect</strong>. Standard : partenaire actif. Jamais de notes ou bulletins nominatifs ici.</p>
+  <section class="portal-hero portal-hero-market portal-hero-marketplace" aria-labelledby="verified-title">
+    <div class="portal-hero-marketplace-inner">
+      <div class="portal-hero-marketplace-copy">
+        <p class="portal-kicker">Marketplace · Confiance · EduConnect</p>
+        <h1 id="verified-title"><%= heading %></h1>
+        <p class="portal-lead"><%= lead %></p>
+        <div class="portal-trust-row">
+          <% if (count) { %>
+            <span class="portal-trust-stat"><strong><%= count %></strong> établissement<%= count > 1 ? 's' : '' %> publié<%= count > 1 ? 's' : '' %></span>
+          <% } %>
+          <a href="/ecoles" class="portal-trust-link">Toutes les écoles</a>
+          <a href="/devis" class="portal-trust-link">Inscrire mon école</a>
+        </div>
+        <p class="form-hint">Premium et VIP : badge <strong>Vérifié EduConnect</strong>. Standard : partenaire actif. Jamais de notes ou bulletins nominatifs ici.</p>
+      </div>
     </div>
   </section>
 
-  <% if (!schools.length) { %>
-    <div class="card portal-card">
-      <p>Aucun établissement publié pour le moment.</p>
-    </div>
-  <% } else { %>
-    <ul class="portal-list">
-      <% schools.forEach(function(s) { %>
-        <li>
-          <a class="card portal-school-link<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
-            <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
-            <span>
-              <strong><%= s.name %></strong>
-              <% if (s.verifiedBadge) { %>
-                <span class="portal-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span>
-              <% } %>
-              <% if (s.marketplaceBadge) { %>
-                <span class="portal-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span>
-              <% } %>
-              <small><%= s.cycleLabel %> · <%= s.localityLabel || s.city %></small>
-            </span>
-          </a>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
+  <nav class="portal-shortcuts" aria-label="Parcourir par cycle ou ville">
+    <a href="/ecoles">Toutes les écoles</a>
+    <a href="/ecoles/verifies">Établissements vérifiés</a>
+    <a href="/ecoles/colleges-abidjan">Collèges à Abidjan</a>
+    <a href="/ecoles/lycees-abidjan">Lycées à Abidjan</a>
+    <a href="/ecoles/primaires-abidjan">Primaires à Abidjan</a>
+    <a href="/ecoles?cycle=COLLEGE">Collèges</a>
+    <a href="/ecoles?cycle=LYCEE">Lycées</a>
+  </nav>
+
+  <section class="portal-results" aria-labelledby="verified-results-title">
+    <header class="portal-results-head">
+      <h2 id="verified-results-title">Établissements vérifiés et partenaires</h2>
+      <% if (count) { %>
+        <p class="portal-results-count"><%= count %> établissement<%= count > 1 ? 's' : '' %></p>
+      <% } %>
+    </header>
+
+    <% if (!schools.length) { %>
+      <div class="card portal-card">
+        <p>Aucun établissement publié pour le moment. <a href="/devis">Contactez EduConnect</a> pour activer une page Marketplace.</p>
+      </div>
+    <% } else { %>
+      <ul class="portal-school-grid">
+        <% schools.forEach(function(s) { %>
+          <%- include('../partials/_portalSchoolCard', { s: s }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <aside class="card portal-market-cta" aria-label="Inscrire un établissement">
+    <h2>Votre école n’apparaît pas&nbsp;?</h2>
+    <p>Publiez une page publique, soyez trouvé sur Google et laissez les familles vous contacter — sans exposer les notes.</p>
+    <a href="/devis" class="btn btn-primary">Demander un devis Marketplace</a>
+  </aside>
 </div>
 <%- include('../partials/footer') %>
 <%- include('../partials/scripts') %>

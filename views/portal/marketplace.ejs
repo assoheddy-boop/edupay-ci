@@ -46,6 +46,10 @@
         <p class="portal-hero-search-title">Trouver une école</p>
         <div class="portal-hero-search-fields">
           <div class="form-group">
+            <label for="q">Nom de l’établissement</label>
+            <input type="search" id="q" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="IGEST, Lycée moderne…" autocomplete="organization">
+          </div>
+          <div class="form-group">
             <label for="commune">Commune / quartier</label>
             <input type="text" id="commune" name="commune" value="<%= typeof commune !== 'undefined' ? commune : '' %>" placeholder="Yopougon, Bingerville…" autocomplete="address-level3">
           </div>
@@ -98,21 +102,7 @@
       </header>
       <ul class="portal-school-grid portal-school-grid-featured">
         <% featured.forEach(function(s) { %>
-          <li>
-            <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
-              <span class="portal-school-card-logo">
-                <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
-              </span>
-              <span class="portal-school-card-body">
-                <span class="portal-school-card-badges">
-                  <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
-                  <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
-                </span>
-                <strong class="portal-school-card-name"><%= s.name %></strong>
-                <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
-              </span>
-            </a>
-          </li>
+          <%- include('../partials/_portalSchoolCard', { s: s }) %>
         <% }) %>
       </ul>
     </section>
@@ -128,26 +118,16 @@
 
     <% if (!schools.length) { %>
       <div class="card portal-card">
-        <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+        <% if (typeof q !== 'undefined' && q) { %>
+          <p>Aucune école publiée pour « <%= q %> » avec ces critères. Essayez un autre nom ou élargissez la recherche. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+        <% } else { %>
+          <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+        <% } %>
       </div>
     <% } else { %>
       <ul class="portal-school-grid">
         <% schools.forEach(function(s) { %>
-          <li>
-            <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
-              <span class="portal-school-card-logo">
-                <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
-              </span>
-              <span class="portal-school-card-body">
-                <span class="portal-school-card-badges">
-                  <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
-                  <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
-                </span>
-                <strong class="portal-school-card-name"><%= s.name %></strong>
-                <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
-              </span>
-            </a>
-          </li>
+          <%- include('../partials/_portalSchoolCard', { s: s }) %>
         <% }) %>
       </ul>
     <% } %>

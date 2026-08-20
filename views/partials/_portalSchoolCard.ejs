@@ -1,0 +1,15 @@
+<li>
+  <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
+    <span class="portal-school-card-logo">
+      <%- include('_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+    </span>
+    <span class="portal-school-card-body">
+      <span class="portal-school-card-badges">
+        <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
+        <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
+      </span>
+      <strong class="portal-school-card-name"><%= s.name %></strong>
+      <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
+    </span>
+  </a>
+</li>

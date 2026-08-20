@@ -523,17 +523,19 @@ function seoForSchool(school, extras = {}) {
   };
 }
 
-function marketplacePath({ ville, commune, cycle, type } = {}) {
+function marketplacePath({ ville, commune, cycle, type, q } = {}) {
   const params = new URLSearchParams();
+  if (q) params.set('q', String(q).trim());
   if (ville) params.set('ville', String(ville).trim());
   if (commune) params.set('commune', String(commune).trim());
   if (cycle) params.set('cycle', String(cycle).trim().toUpperCase());
   if (type) params.set('type', String(type).trim().toUpperCase());
-  const q = params.toString();
-  return q ? `/ecoles?${q}` : '/ecoles';
+  const query = params.toString();
+  return query ? `/ecoles?${query}` : '/ecoles';
 }
 
-function seoForMarketplace({ ville, commune, cycle, type, heading: headingOverride, lead: leadOverride } = {}) {
+function seoForMarketplace({ ville, commune, cycle, type, q, heading: headingOverride, lead: leadOverride } = {}) {
+  const nameQuery = String(q || '').trim();
   const villeLabel = String(ville || '').trim();
   const communeLabel = String(commune || '').trim();
   const placeLabel = communeLabel
@@ -566,6 +568,10 @@ function seoForMarketplace({ ville, commune, cycle, type, heading: headingOverri
     heading = `Écoles à ${placeLabel}`;
     title = `Écoles à ${placeLabel} — Côte d’Ivoire`;
     lead = `Écoles, collèges et lycées à ${placeLabel}, Côte d’Ivoire. Annuaire EduConnect, sans notes nominatives.`;
+  } else if (nameQuery) {
+    heading = `Résultats pour « ${nameQuery} »`;
+    title = `Écoles « ${nameQuery} » — Côte d’Ivoire`;
+    lead = `Recherche « ${nameQuery} » dans l’annuaire EduConnect. Pages publiques sans notes nominatives.`;
   } else {
     heading = 'Écoles en Côte d’Ivoire';
     title = 'Écoles en Côte d’Ivoire — collèges et lycées';
@@ -579,6 +585,7 @@ function seoForMarketplace({ ville, commune, cycle, type, heading: headingOverri
     lead,
     metaDescription: description,
     canonicalUrl: `${SITE_ORIGIN}${marketplacePath({
+      q: nameQuery,
       ville: villeLabel,
       commune: communeLabel,
       cycle: cycleKey,
