@@ -145,8 +145,9 @@ describe('sidebar grouped by dashboard categories', () => {
 
   test('school nav wraps the six categories as expandable buttons', () => {
     const html = renderSchoolSidebar('COLLEGE');
-    expect(html.match(/class="nav-group is-open"/g)).toHaveLength(6);
-    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="true"/);
+    expect(html.match(/class="nav-group"/g)).toHaveLength(6);
+    expect(html).not.toMatch(/class="nav-group is-open"/);
+    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="false"/);
     expect(html).toContain('nav-group-chevron');
     expect(html).toContain('data-nav-group="administration-scolaire"');
     expect(html).toContain('data-nav-group="vie-scolaire"');
@@ -160,7 +161,8 @@ describe('sidebar grouped by dashboard categories', () => {
 
   test('teacher nav uses the same collapsible category pattern', () => {
     const html = renderTeacherSidebar('COLLEGE');
-    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="true"/);
+    expect(html).toMatch(/<button type="button" class="nav-group-title" aria-expanded="false"/);
+    expect(html).not.toMatch(/class="nav-group is-open"/);
     expect(html).toContain('data-nav-group="administration-scolaire"');
     expect(html).toContain('data-nav-group="vie-scolaire"');
     expect(html).toContain('data-nav-group="examens"');
@@ -175,9 +177,10 @@ describe('sidebar grouped by dashboard categories', () => {
     expect(js).toMatch(/dataset\.navGroup/);
   });
 
-  test('main.css hides closed group items and rotates the chevron', () => {
+  test('main.css animates closed group items and rotates the chevron', () => {
     const css = fs.readFileSync(path.join(__dirname, '../public/css/main.css'), 'utf8');
-    expect(css).toMatch(/\.nav-group:not\(\.is-open\)\s*>\s*\.nav-group-items/);
+    expect(css).toMatch(/\.nav-group\.is-open > \.nav-group-items/);
+    expect(css).toMatch(/max-height/);
     expect(css).toMatch(/\.nav-group\.is-open \.nav-group-chevron/);
   });
 });

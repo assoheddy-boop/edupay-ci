@@ -39,8 +39,8 @@
     <% } else if (showSchoolNav) { %>
       <a href="/school/dashboard">Accueil</a>
 
-      <div class="nav-group is-open" data-nav-group="administration-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+      <div class="nav-group" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-administration-scolaire">
           Administration scolaire<%- include('_helpKey', { key: 'nav.administration' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -59,8 +59,8 @@
         </div>
       </div>
 
-      <div class="nav-group is-open" data-nav-group="vie-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+      <div class="nav-group" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-vie-scolaire">
           Vie scolaire<%- include('_helpKey', { key: 'nav.vie-scolaire' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -74,8 +74,8 @@
         </div>
       </div>
 
-      <div class="nav-group is-open" data-nav-group="examens">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+      <div class="nav-group" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-examens">
           Examens &amp; Évaluations<%- include('_helpKey', { key: 'nav.examens' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -103,8 +103,8 @@
         </div>
       </div>
 
-      <div class="nav-group is-open" data-nav-group="finances">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-finances">
+      <div class="nav-group" data-nav-group="finances">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-finances">
           Finances &amp; Comptabilité<%- include('_helpKey', { key: 'nav.finances' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -117,8 +117,8 @@
         </div>
       </div>
 
-      <div class="nav-group is-open" data-nav-group="communication">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+      <div class="nav-group" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-communication">
           Communication<%- include('_helpKey', { key: 'nav.communication' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -128,8 +128,8 @@
         </div>
       </div>
 
-      <div class="nav-group is-open" data-nav-group="rapports">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-rapports">
+      <div class="nav-group" data-nav-group="rapports">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-rapports">
           Rapports &amp; Statistiques<%- include('_helpKey', { key: 'nav.rapports' }) %>
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -157,8 +157,8 @@
       <a href="/transfer/dashboard">Transferts</a>
     <% } else if (currentUser && currentUser.role === 'PARENT') { %>
       <a href="/parent/dashboard">Accueil</a>
-      <div class="nav-group is-open" data-nav-group="finances">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-finances">
+      <div class="nav-group" data-nav-group="finances">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-finances">
           Finances &amp; Comptabilité
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -166,8 +166,8 @@
           <% if (on('payments')) { %><a href="/parent/payments">Payer</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="examens">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+      <div class="nav-group" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-examens">
           Examens &amp; Évaluations
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -177,8 +177,8 @@
           <% if (on('homeworks')) { %><a href="/parent/homeworks">Devoirs & contrôles</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="vie-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+      <div class="nav-group" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-vie-scolaire">
           Vie scolaire
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -192,8 +192,8 @@
           <% if (on('activities')) { %><a href="/parent/activities">Activités</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="communication">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+      <div class="nav-group" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-communication">
           Communication
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -203,8 +203,8 @@
           <% if (on('chat')) { %><a href="/parent/messages">Messages</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="administration-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+      <div class="nav-group" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-administration-scolaire">
           Administration scolaire
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -227,8 +227,8 @@
       <% if (on('homeworks')) { %><a href="/student/homeworks">Devoirs & contrôles</a><% } %>
     <% } else if (currentUser && currentUser.role === 'TEACHER') { %>
       <a href="/teacher/dashboard">Accueil</a>
-      <div class="nav-group is-open" data-nav-group="administration-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-administration-scolaire">
+      <div class="nav-group" data-nav-group="administration-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-administration-scolaire">
           Administration scolaire
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -238,8 +238,8 @@
           <% if (on('hr')) { %><a href="/teacher/hr">Mon espace RH</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="vie-scolaire">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-vie-scolaire">
+      <div class="nav-group" data-nav-group="vie-scolaire">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-vie-scolaire">
           Vie scolaire
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -252,8 +252,8 @@
           <a href="/timetable">Emploi du temps</a>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="examens">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-examens">
+      <div class="nav-group" data-nav-group="examens">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-examens">
           Examens &amp; Évaluations
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -274,8 +274,8 @@
           <% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="communication">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-communication">
+      <div class="nav-group" data-nav-group="communication">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-communication">
           Communication
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>
@@ -283,8 +283,8 @@
           <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
         </div>
       </div>
-      <div class="nav-group is-open" data-nav-group="rapports">
-        <button type="button" class="nav-group-title" aria-expanded="true" aria-controls="nav-items-rapports">
+      <div class="nav-group" data-nav-group="rapports">
+        <button type="button" class="nav-group-title" aria-expanded="false" aria-controls="nav-items-rapports">
           Rapports &amp; Statistiques
           <span class="nav-group-chevron" aria-hidden="true"></span>
         </button>

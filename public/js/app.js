@@ -131,7 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const stored = id && Object.prototype.hasOwnProperty.call(groupPrefs, id)
       ? Boolean(groupPrefs[id])
       : null;
-    setNavGroupOpen(group, hasActive || stored === true);
+    const shouldOpen = hasActive || stored === true;
+    setNavGroupOpen(group, shouldOpen);
     const btn = group.querySelector(':scope > .nav-group-title');
     btn?.addEventListener('click', () => {
       const open = !group.classList.contains('is-open');

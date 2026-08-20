@@ -1628,10 +1628,39 @@ code {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-left: 0.45rem;
+  padding-left: 0.35rem;
+  border-left: 2px solid transparent;
+  transition:
+    max-height 0.32s ease,
+    opacity 0.24s ease,
+    border-color 0.24s ease,
+    margin 0.24s ease;
+}
+
+.nav-group.is-open > .nav-group-items {
+  max-height: 1200px;
+  opacity: 1;
+  border-left-color: #e2e8f0;
+}
+
+.nav-group-items a {
+  padding-left: 1.15rem;
+  font-size: 0.88rem;
 }
 
 .nav-group:not(.is-open) > .nav-group-items {
-  display: none;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-group-items,
+  .nav-group-chevron {
+    transition: none;
+  }
 }
 
 .nav-cycle-label {
