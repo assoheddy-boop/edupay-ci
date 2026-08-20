@@ -1554,12 +1554,14 @@ code {
   background: var(--white);
   border-right: 1px solid #e8ecf0;
   padding: 1rem 0.75rem 2rem;
+  overflow: visible;
 }
 
 .app-sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  overflow: visible;
 }
 
 .app-sidebar-nav a {
@@ -1618,6 +1620,8 @@ code {
   text-align: left;
   color: #334155;
   cursor: pointer;
+  position: relative;
+  overflow: visible;
 }
 
 .nav-group-title:hover,
@@ -1939,13 +1943,15 @@ code {
   left: 50%;
   bottom: calc(100% + 6px);
   transform: translateX(-50%);
-  max-width: 240px;
+  max-width: min(16rem, calc(100vw - 2rem));
   width: max-content;
   padding: 0.45rem 0.6rem;
   font-size: 0.78rem;
   font-weight: 400;
   line-height: 1.35;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
   color: #f5f5f5;
   background: #1e293b;
   border-radius: 6px;
@@ -1977,8 +1983,14 @@ h1 .hint, h2 .hint, h3 .hint, .stat-label .hint, th .hint {
   vertical-align: text-top;
 }
 
-.nav-group-title {
+.nav-group-title .hint {
   position: relative;
+  z-index: 1;
+}
+
+.nav-group-title .hint:hover,
+.nav-group-title .hint:focus {
+  z-index: 2;
 }
 
 .nav-group-title .hint-tip {
@@ -1986,31 +1998,21 @@ h1 .hint, h2 .hint, h3 .hint, .stat-label .hint, th .hint {
   letter-spacing: normal;
   font-weight: 400;
   left: calc(100% + 0.5rem);
-  top: 50%;
+  right: auto;
+  top: 0;
   bottom: auto;
-  transform: translateY(-50%);
-  z-index: 300;
-  max-width: min(16rem, calc(100vw - 18rem));
+  transform: translateY(calc(-100% - 4px));
+  z-index: 1000;
+  max-width: min(14rem, calc(100vw - 17rem));
 }
 
 .nav-group-title .hint-tip::after {
-  top: 50%;
-  left: -10px;
+  top: 100%;
+  left: 0.35rem;
   right: auto;
-  transform: translateY(-50%);
+  transform: none;
   border: 5px solid transparent;
-  border-right-color: #1e293b;
-}
-
-.nav-group-title .hint:focus-within .hint-tip {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.nav-group-title .hint:hover .hint-tip,
-.nav-group-title .hint:focus .hint-tip {
-  opacity: 1;
-  visibility: visible;
+  border-top-color: #1e293b;
 }
 
 .nav-group-title .hint-icon {

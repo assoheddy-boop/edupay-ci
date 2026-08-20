@@ -2,7 +2,7 @@
   const _text = typeof text !== 'undefined' ? String(text) : '';
   const _label = typeof label !== 'undefined' ? String(label) : 'Aide';
 %>
-<span class="hint" tabindex="0" role="button" aria-label="<%= _label %>: <%= _text %>" title="<%= _text %>">
+<span class="hint" tabindex="0" role="button" aria-label="<%= _label %>: <%= _text %>">
   <span class="hint-icon" aria-hidden="true">?</span>
   <span class="hint-tip" role="tooltip"><%= _text %></span>
 </span>
