@@ -159,6 +159,14 @@ router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePre
 
 router.get('/accounting', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.dashboard);
 router.post('/accounting/transaction', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.addTransaction);
+router.post('/accounting/accounts', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.createAccount);
+router.post('/accounting/accounts/:id', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.updateAccount);
+router.post('/accounting/categories', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.createCategory);
+router.post('/accounting/categories/:id', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.updateCategory);
+router.post('/accounting/invoices', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.createInvoice);
+router.post('/accounting/invoices/:id/pay', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.payInvoice);
+router.post('/accounting/invoices/:id/cancel', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.cancelInvoice);
+router.post('/accounting/budget', requireModule('accounting'), requirePermission(P.ACCOUNTING_WRITE), accountingController.saveBudgetLine);
 router.get('/accounting/report', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.report);
 router.get('/accounting/report.xlsx', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.exportExcel);
 router.get('/accounting/report.pdf', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.exportPdf);
@@ -175,6 +183,10 @@ router.post('/pickup/validate', requireModule('pickup'), requirePermission(P.PIC
 
 router.get('/hr', requireModule('hr'), requirePermission(P.HR_READ), hrController.dashboard);
 router.get('/hr/staff', requireModule('hr'), requirePermission(P.HR_READ), hrController.staffList);
+router.get('/hr/staff/new', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.newStaffForm);
+router.post('/hr/staff/new', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.createStaffMember);
+router.get('/hr/staff/p/:profileId', requireModule('hr'), requirePermission(P.HR_READ), hrController.staffProfileDetail);
+router.post('/hr/staff/p/:profileId', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.updateStaffProfileById);
 router.get('/hr/staff/:id', requireModule('hr'), requirePermission(P.HR_READ), hrController.staffDetail);
 router.post('/hr/staff/:id', requireModule('hr'), requirePermission(P.HR_WRITE), upload.logoUpload.single('photo'), hrController.updateStaffProfile);
 router.post('/hr/staff/:id/documents', requireModule('hr'), requirePermission(P.HR_WRITE), upload.hrDocUpload.single('document'), hrController.uploadStaffDocument);

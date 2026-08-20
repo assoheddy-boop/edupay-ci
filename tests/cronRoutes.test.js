@@ -4,6 +4,7 @@ jest.mock('../src/jobs/cron', () => ({
   dailyBackup: jest.fn().mockResolvedValue({ ok: true, driver: 'neon' }),
   homeworkReminders: jest.fn().mockResolvedValue({ ok: true, sent: 0 }),
   notificationJobs: jest.fn().mockResolvedValue({ ok: true, scanned: 0, sent: 0, skipped: 0, failed: 0 }),
+  hrLeaveMaintenance: jest.fn().mockResolvedValue({ restored: 0, checked: 0 }),
   startCronJobs: jest.fn(),
 }));
 

@@ -63,6 +63,15 @@ describe('staffPermissions matrix', () => {
     ]));
     expect(perms).not.toContain(PERMISSIONS.STUDENTS_WRITE);
     expect(perms).not.toContain(PERMISSIONS.SETTINGS_WRITE);
+    expect(perms).not.toContain(PERMISSIONS.HR_READ);
+  });
+
+  test('HR_MANAGER has HR permissions only', () => {
+    const perms = getPermissionsForRole('HR_MANAGER');
+    expect(perms).toContain(PERMISSIONS.HR_READ);
+    expect(perms).toContain(PERMISSIONS.HR_WRITE);
+    expect(perms).not.toContain(PERMISSIONS.ACCOUNTING_READ);
+    expect(perms).not.toContain(PERMISSIONS.SETTINGS_WRITE);
   });
 
   test('EDUCATOR covers absences and social cases', () => {

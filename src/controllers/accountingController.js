@@ -36,8 +36,9 @@ async function loadDashboardData(req) {
   const schoolId = req.user.school.id;
   await initFinanceDefaults(schoolId);
   const period = queryPeriod(req);
+  const schoolYear = period.schoolYear || req.user.school.currentSchoolYear;
 
-  const [accounts, categories, report, paymentsValidated] = await Promise.all([
+  const [accounts, categories, report, paymentsValidated, invoices, budgetReport] = await Promise.all([
     prisma.financeAccount.findMany({ where: { schoolId }, orderBy: { name: 'asc' } }),
     prisma.expenseCategory.findMany({ where: { schoolId }, orderBy: [{ kind: 'asc' }, { name: 'asc' }] }),
     getSchoolReport(schoolId, period),
@@ -49,6 +50,13 @@ async function loadDashboardData(req) {
       },
       _sum: { amount: true },
     }),
+    prisma.supplierInvoice.findMany({
+      where: { schoolId },
+      include: { category: true },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    }),
+    require('../services/accountingExtras').getBudgetReport(schoolId, schoolYear, period),
   ]);
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
@@ -57,12 +65,15 @@ async function loadDashboardData(req) {
     categories,
     report,
     period: report.period,
+    schoolYear,
     stats: {
       totalBalance,
       periodIncome: report.totals.totalIn,
       periodExpense: report.totals.totalOut,
       paymentsTotal: paymentsValidated._sum.amount || 0,
     },
+    invoices,
+    budgetReport,
   };
 }
 
@@ -77,10 +88,13 @@ async function dashboard(req, res) {
     byCategory: data.report.byCategory,
     byAccount: data.report.byAccount,
     period: data.period,
+    schoolYear: data.schoolYear,
     periodQs: periodQuery(data.period),
     accountTypeLabel,
     accountTypeLabels: ACCOUNT_TYPE_LABELS,
     stats: data.stats,
+    invoices: data.invoices,
+    budgetReport: data.budgetReport,
     success: req.query.success || null,
     error: req.query.error || null,
   });
@@ -190,4 +204,98 @@ async function exportPdf(req, res) {
   return sendPdfDownload(res, result);
 }
 
-module.exports = { dashboard, addTransaction, report, exportExcel, exportPdf };
+const extras = require('../services/accountingExtras');
+
+async function createAccount(req, res) {
+  const result = await extras.createAccount({
+    schoolId: req.user.school.id,
+    name: req.body.name,
+    type: req.body.type,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=account' : 'error=data'}`);
+}
+
+async function updateAccount(req, res) {
+  const result = await extras.updateAccount({
+    schoolId: req.user.school.id,
+    accountId: req.params.id,
+    name: req.body.name,
+    type: req.body.type,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=account' : 'error=account'}`);
+}
+
+async function createCategory(req, res) {
+  const result = await extras.createCategory({
+    schoolId: req.user.school.id,
+    name: req.body.name,
+    kind: req.body.kind,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=category' : 'error=data'}`);
+}
+
+async function updateCategory(req, res) {
+  const result = await extras.updateCategory({
+    schoolId: req.user.school.id,
+    categoryId: req.params.id,
+    name: req.body.name,
+    kind: req.body.kind,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=category' : 'error=category'}`);
+}
+
+async function createInvoice(req, res) {
+  const result = await extras.createSupplierInvoice({
+    schoolId: req.user.school.id,
+    supplierName: req.body.supplierName,
+    amount: req.body.amount,
+    description: req.body.description,
+    reference: req.body.reference,
+    dueDate: req.body.dueDate,
+    categoryId: req.body.categoryId,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=invoice' : 'error=data'}`);
+}
+
+async function payInvoice(req, res) {
+  const result = await extras.paySupplierInvoice({
+    schoolId: req.user.school.id,
+    invoiceId: req.params.id,
+    accountId: req.body.accountId,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=invoice_paid' : 'error=invoice'}`);
+}
+
+async function cancelInvoice(req, res) {
+  const result = await extras.cancelSupplierInvoice({
+    schoolId: req.user.school.id,
+    invoiceId: req.params.id,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=invoice_cancelled' : 'error=invoice'}`);
+}
+
+async function saveBudgetLine(req, res) {
+  const result = await extras.upsertBudgetLine({
+    schoolId: req.user.school.id,
+    schoolYear: req.body.schoolYear,
+    categoryId: req.body.categoryId,
+    plannedAmount: req.body.plannedAmount,
+  });
+  res.redirect(`/school/accounting?${result.ok ? 'success=budget' : 'error=data'}`);
+}
+
+module.exports = {
+  dashboard,
+  addTransaction,
+  report,
+  exportExcel,
+  exportPdf,
+  createAccount,
+  updateAccount,
+  createCategory,
+  updateCategory,
+  createInvoice,
+  payInvoice,
+  cancelInvoice,
+  saveBudgetLine,
+};

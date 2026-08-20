@@ -1,0 +1,50 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('staff-new', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Nouveau membre' }) %>
+<% } else { %>
+<div class="page-header"><h1>Ajouter un membre du personnel</h1></div>
+<%- include('_nav') %>
+<% if (error) { %><div class="alert alert-error">Veuillez renseigner au minimum le nom, prénom et la fonction.</div><% } %>
+
+<form method="POST" action="/school/hr/staff/new" class="card form" style="padding:1.25rem;max-width:720px">
+  <div class="form-row">
+    <div class="form-group"><label>Prénom *</label><input name="firstName" required></div>
+    <div class="form-group"><label>Nom *</label><input name="lastName" required></div>
+  </div>
+  <div class="form-group">
+    <label>Fonction *</label>
+    <select name="jobTitle" required>
+      <option value="SECRETARIAT">Secrétariat</option>
+      <option value="ACCOUNTANT">Comptabilité</option>
+      <option value="LIFE_SCHOOL">Vie scolaire</option>
+      <option value="MAINTENANCE">Entretien</option>
+      <option value="SECURITY">Sécurité</option>
+      <option value="OTHER">Autre</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+    <div class="form-group"><label>Téléphone</label><input name="phone"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Contrat</label>
+      <select name="contractType">
+        <option value="CDI">CDI</option>
+        <option value="CDD" selected>CDD</option>
+        <option value="VACATAIRE">Vacataire</option>
+        <option value="STAGE">Stage</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Salaire de base (FCFA)</label><input type="number" name="baseSalary" min="0" value="0"></div>
+  </div>
+  <div class="form-group"><label>Date d'embauche</label><input type="date" name="hireDate"></div>
+  <div class="form-row">
+    <div class="form-group"><label>Banque</label><input name="bankName"></div>
+    <div class="form-group"><label>Compte / RIB</label><input name="bankAccount"></div>
+  </div>
+  <div class="form-group"><label>N° CNI</label><input name="nationalId"></div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+  <a href="/school/hr/staff" class="btn btn-outline">Annuler</a>
+</form>
+<% } %>

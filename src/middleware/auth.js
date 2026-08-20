@@ -13,6 +13,17 @@ const { attachStaffContext, resolveStaffSchoolId } = require('../utils/staffPerm
 const { UI_HELP } = require('../utils/uiHelp');
 const { paymentStatusLabel } = require('../utils/paymentStatus');
 const {
+  payrollStatusLabel,
+  leaveStatusLabel,
+  leaveTypeLabel,
+  staffStatusLabel,
+  attendanceStatusLabel,
+  advanceStatusLabel,
+  contractTypeLabel,
+  jobTitleLabel,
+  supplierInvoiceStatusLabel,
+} = require('../utils/hrStatus');
+const {
   createRefreshToken,
   rotateRefreshToken,
   revokeRefreshToken,
@@ -169,6 +180,15 @@ async function requireAuth(req, res, next) {
     res.locals.staffCan = staffCtx.staffCan;
     res.locals.uiHelp = UI_HELP;
     res.locals.paymentStatusLabel = paymentStatusLabel;
+    res.locals.payrollStatusLabel = payrollStatusLabel;
+    res.locals.leaveStatusLabel = leaveStatusLabel;
+    res.locals.leaveTypeLabel = leaveTypeLabel;
+    res.locals.staffStatusLabel = staffStatusLabel;
+    res.locals.attendanceStatusLabel = attendanceStatusLabel;
+    res.locals.advanceStatusLabel = advanceStatusLabel;
+    res.locals.contractTypeLabel = contractTypeLabel;
+    res.locals.jobTitleLabel = jobTitleLabel;
+    res.locals.supplierInvoiceStatusLabel = supplierInvoiceStatusLabel;
 
     applyI18n(req, res);
     applyCurrency(req, res);

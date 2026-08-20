@@ -110,6 +110,7 @@ async function recordLeave(teacherId, dates = {}) {
     data: {
       teacherId,
       schoolId: teacher.schoolId,
+      staffProfileId: (await ensureStaffProfile(teacherId, teacher.schoolId)).id,
       type: dates.type || 'ANNUAL',
       startDate: new Date(dates.startDate),
       endDate: new Date(dates.endDate),
@@ -174,6 +175,7 @@ async function generatePayroll(teacherId, month) {
       payrollRunId: payrollRun.id,
       teacherId,
       schoolId,
+      staffProfileId: profile?.id || null,
       baseSalary: profile?.baseSalary || 0,
       advances: advanceTotal,
       netPay,
@@ -182,6 +184,7 @@ async function generatePayroll(teacherId, month) {
       baseSalary: profile?.baseSalary || 0,
       advances: advanceTotal,
       netPay,
+      staffProfileId: profile?.id || null,
     },
   });
 

@@ -1,0 +1,72 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('staff-profile', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Dossier personnel' }) %>
+<% } else { %>
+<% const stLabel = typeof staffStatusLabel === 'function' ? staffStatusLabel : function(s) { return s; }; %>
+<% const ctLabel = typeof contractTypeLabel === 'function' ? contractTypeLabel : function(s) { return s; }; %>
+<% const jtLabel = typeof jobTitleLabel === 'function' ? jobTitleLabel : function(s) { return s; }; %>
+<% const displayName = typeof staffDisplayName === 'function' ? staffDisplayName : function(p) { return '—'; }; %>
+<div class="page-header"><h1><%= displayName(profile) %></h1></div>
+<%- include('_nav') %>
+<% if (success) { %><div class="alert alert-success">Dossier mis à jour.</div><% } %>
+
+<% if (leaveBalance) { %>
+<div class="stats-grid" style="margin-bottom:1rem">
+  <div class="stat-card"><span class="stat-value"><%= leaveBalance.entitled %></span><span class="stat-label">Congés annuels</span></div>
+  <div class="stat-card"><span class="stat-value"><%= leaveBalance.used %></span><span class="stat-label">Jours pris</span></div>
+  <div class="stat-card stat-card-success"><span class="stat-value"><%= leaveBalance.remaining %></span><span class="stat-label">Solde restant</span></div>
+</div>
+<% } %>
+
+<form method="POST" action="/school/hr/staff/p/<%= profile.id %>" class="card form" style="padding:1.25rem">
+  <div class="form-row">
+    <div class="form-group"><label>Prénom</label><input name="firstName" value="<%= profile.firstName || '' %>"></div>
+    <div class="form-group"><label>Nom</label><input name="lastName" value="<%= profile.lastName || '' %>"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Fonction</label>
+      <select name="jobTitle">
+        <% ['SECRETARIAT','ACCOUNTANT','LIFE_SCHOOL','MAINTENANCE','SECURITY','OTHER'].forEach(function(j) { %>
+          <option value="<%= j %>" <%= profile.jobTitle === j ? 'selected' : '' %>><%= jtLabel(j) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Statut</label>
+      <select name="status">
+        <% ['ACTIVE','ON_LEAVE','SUSPENDED','TERMINATED'].forEach(function(s) { %>
+          <option value="<%= s %>" <%= profile.status === s ? 'selected' : '' %>><%= stLabel(s) %></option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Email</label><input type="email" name="email" value="<%= profile.email || '' %>"></div>
+    <div class="form-group"><label>Téléphone</label><input name="phone" value="<%= profile.phone || '' %>"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Contrat</label>
+      <select name="contractType">
+        <% ['CDI','CDD','VACATAIRE','STAGE'].forEach(function(c) { %>
+          <option value="<%= c %>" <%= profile.contractType === c ? 'selected' : '' %>><%= ctLabel(c) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group"><label>Salaire base (FCFA)</label><input type="number" name="baseSalary" value="<%= profile.baseSalary %>"></div>
+    <div class="form-group"><label>Congés annuels (jours)</label><input type="number" name="annualLeaveDays" value="<%= profile.annualLeaveDays || 30 %>"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Embauche</label><input type="date" name="hireDate" value="<%= profile.hireDate ? profile.hireDate.toISOString().slice(0,10) : '' %>"></div>
+    <div class="form-group"><label>Fin contrat</label><input type="date" name="endDate" value="<%= profile.endDate ? profile.endDate.toISOString().slice(0,10) : '' %>"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Banque</label><input name="bankName" value="<%= profile.bankName || '' %>"></div>
+    <div class="form-group"><label>Compte</label><input name="bankAccount" value="<%= profile.bankAccount || '' %>"></div>
+  </div>
+  <div class="form-group"><label>Notes</label><textarea name="notes" rows="3"><%= profile.notes || '' %></textarea></div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+  <a href="/school/hr/staff" class="btn btn-outline">Retour</a>
+</form>
+<% } %>

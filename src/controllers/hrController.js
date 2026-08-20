@@ -4,11 +4,16 @@ const { logAudit } = require('../utils/audit');
 const {
   ensureStaffProfile,
   getTeacherWithProfile,
+  getStaffProfileDetail,
+  staffDisplayName,
+  getLeaveBalance,
   notifyUser,
   calcNetPay,
   monthLabel,
   todayDateOnly,
+  resolveStaffProfileId,
 } = require('../utils/hr');
+const { processExpiredLeaves } = require('../services/hrLeaveService');
 const { generatePayroll, markPayrollPaid } = require('../services/hrPayrollService');
 const { generatePayroll: generateTeacherPayroll } = require('../../services/HRService');
 const { generatePayrollPDF } = require('../../services/export');
@@ -23,6 +28,7 @@ async function assertOwnedTeacher(teacherId, schoolId) {
 
 async function dashboard(req, res) {
   const schoolId = req.user.school.id;
+  await processExpiredLeaves();
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -56,10 +62,138 @@ async function staffList(req, res) {
   const schoolId = req.user.school.id;
   const teachers = await prisma.teacher.findMany({
     where: { schoolId },
-    include: { user: true, staffProfile: true },
-    orderBy: { user: { lastName: 'asc' } },
+    include: { staffProfile: true },
   });
-  res.render('school/hr/staff', { user: req.user, school: req.user.school, teachers });
+  for (const teacher of teachers) {
+    if (!teacher.staffProfile) await ensureStaffProfile(teacher.id, schoolId);
+  }
+
+  const staff = await prisma.staffProfile.findMany({
+    where: { schoolId },
+    include: { teacher: { include: { user: true } } },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+  });
+
+  res.render('school/hr/staff', {
+    user: req.user,
+    school: req.user.school,
+    staff,
+    staffDisplayName,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function newStaffForm(req, res) {
+  res.render('school/hr/staff-new', {
+    user: req.user,
+    school: req.user.school,
+    error: req.query.error || null,
+  });
+}
+
+async function createStaffMember(req, res) {
+  const schoolId = req.user.school.id;
+  const {
+    firstName, lastName, jobTitle, email, phone, contractType, baseSalary,
+    hireDate, nationalId, bankName, bankAccount,
+  } = req.body;
+
+  if (!firstName || !lastName || !jobTitle) {
+    return res.redirect('/school/hr/staff/new?error=data');
+  }
+
+  await prisma.staffProfile.create({
+    data: {
+      schoolId,
+      firstName: String(firstName).trim(),
+      lastName: String(lastName).trim(),
+      jobTitle: String(jobTitle).trim(),
+      email: email || null,
+      phone: phone || null,
+      contractType: contractType || 'CDD',
+      baseSalary: parseInt(baseSalary, 10) || 0,
+      hireDate: hireDate ? new Date(hireDate) : null,
+      nationalId: nationalId || null,
+      bankName: bankName || null,
+      bankAccount: bankAccount || null,
+      status: 'ACTIVE',
+    },
+  });
+
+  await logAudit({
+    action: 'hr_staff_create',
+    entity: 'StaffProfile',
+    user: req.user,
+    ip: req.ip,
+    schoolId,
+  });
+  res.redirect('/school/hr/staff?success=created');
+}
+
+async function staffProfileDetail(req, res) {
+  const schoolId = req.user.school.id;
+  const profile = await getStaffProfileDetail(req.params.profileId, schoolId);
+  if (!profile) return res.redirect('/school/hr/staff');
+  const leaveBalance = await getLeaveBalance(profile.id);
+
+  res.render('school/hr/staff-profile', {
+    user: req.user,
+    school: req.user.school,
+    profile,
+    leaveBalance,
+    staffDisplayName,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function updateStaffProfileById(req, res) {
+  const schoolId = req.user.school.id;
+  const profileId = req.params.profileId;
+  const profile = await prisma.staffProfile.findFirst({ where: { id: profileId, schoolId } });
+  if (!profile) return res.redirect('/school/hr/staff');
+
+  const {
+    contractType, status, baseSalary, hourlyRate, hireDate, endDate,
+    nationalId, bankName, bankAccount, emergencyName, emergencyPhone, address, notes,
+    firstName, lastName, jobTitle, email, phone, annualLeaveDays,
+  } = req.body;
+
+  await prisma.staffProfile.update({
+    where: { id: profileId },
+    data: {
+      contractType,
+      status,
+      baseSalary: parseInt(baseSalary, 10) || 0,
+      hourlyRate: hourlyRate ? parseInt(hourlyRate, 10) : null,
+      hireDate: hireDate ? new Date(hireDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+      nationalId: nationalId || null,
+      bankName: bankName || null,
+      bankAccount: bankAccount || null,
+      emergencyName: emergencyName || null,
+      emergencyPhone: emergencyPhone || null,
+      address: address || null,
+      notes: notes || null,
+      firstName: firstName ? String(firstName).trim() : profile.firstName,
+      lastName: lastName ? String(lastName).trim() : profile.lastName,
+      jobTitle: jobTitle ? String(jobTitle).trim() : profile.jobTitle,
+      email: email || null,
+      phone: phone || null,
+      annualLeaveDays: parseInt(annualLeaveDays, 10) || 30,
+    },
+  });
+
+  await logAudit({
+    action: 'hr_profile_update',
+    entity: 'StaffProfile',
+    entityId: profileId,
+    user: req.user,
+    ip: req.ip,
+    schoolId,
+  });
+  res.redirect(`/school/hr/staff/p/${profileId}?success=profile`);
 }
 
 async function staffDetail(req, res) {
@@ -172,13 +306,17 @@ async function leavesPage(req, res) {
   const schoolId = req.user.school.id;
   const leaves = await prisma.leaveRequest.findMany({
     where: { schoolId },
-    include: { teacher: { include: { user: true } } },
+    include: {
+      teacher: { include: { user: true } },
+      staffProfile: { include: { teacher: { include: { user: true } } } },
+    },
     orderBy: { createdAt: 'desc' },
   });
   res.render('school/hr/leaves', {
     user: req.user,
     school: req.user.school,
     leaves,
+    staffDisplayName,
     success: req.query.success || null,
   });
 }
@@ -201,17 +339,26 @@ async function reviewLeave(req, res) {
   });
 
   if (status === 'APPROVED') {
-    await prisma.staffProfile.updateMany({
-      where: { teacherId: leave.teacherId },
-      data: { status: 'ON_LEAVE' },
+    const profileId = await resolveStaffProfileId({
+      teacherId: leave.teacherId,
+      staffProfileId: leave.staffProfileId,
+      schoolId,
     });
+    if (profileId) {
+      await prisma.staffProfile.update({
+        where: { id: profileId },
+        data: { status: 'ON_LEAVE' },
+      });
+    }
   }
 
-  await notifyUser(
-    leave.teacher.userId,
-    status === 'APPROVED' ? 'Congé approuvé' : 'Congé refusé',
-    `Votre demande du ${new Date(leave.startDate).toLocaleDateString('fr-FR')} a été ${status === 'APPROVED' ? 'approuvée' : 'refusée'}.`,
-  );
+  if (leave.teacher?.userId) {
+    await notifyUser(
+      leave.teacher.userId,
+      status === 'APPROVED' ? 'Congé approuvé' : 'Congé refusé',
+      `Votre demande du ${new Date(leave.startDate).toLocaleDateString('fr-FR')} a été ${status === 'APPROVED' ? 'approuvée' : 'refusée'}.`,
+    );
+  }
 
   res.redirect('/school/hr/leaves?success=reviewed');
 }
@@ -278,15 +425,22 @@ async function payrollPage(req, res) {
   const month = parseInt(req.query.month, 10) || now.getMonth() + 1;
   const year = parseInt(req.query.year, 10) || now.getFullYear();
 
-  const [payrollRun, accounts, teachers] = await Promise.all([
+  const [payrollRun, accounts, staffProfiles] = await Promise.all([
     prisma.payrollRun.findUnique({
       where: { schoolId_month_year: { schoolId, month, year } },
-      include: { payslips: { include: { teacher: { include: { user: true } } } } },
+      include: {
+        payslips: {
+          include: {
+            teacher: { include: { user: true } },
+            staffProfile: { include: { teacher: { include: { user: true } } } },
+          },
+        },
+      },
     }),
     prisma.financeAccount.findMany({ where: { schoolId } }),
-    prisma.teacher.findMany({
-      where: { schoolId },
-      include: { user: true, staffProfile: true },
+    prisma.staffProfile.findMany({
+      where: { schoolId, status: 'ACTIVE' },
+      include: { teacher: { include: { user: true } } },
     }),
   ]);
 
@@ -301,7 +455,9 @@ async function payrollPage(req, res) {
     school: req.user.school,
     payrollRun,
     accounts,
-    teachers,
+    staffProfiles,
+    staffDisplayName,
+    teachers: staffProfiles.filter((p) => p.teacherId),
     pendingAdvances,
     month,
     year,
@@ -609,6 +765,10 @@ async function exportPayslipPdf(req, res) {
 module.exports = {
   dashboard,
   staffList,
+  newStaffForm,
+  createStaffMember,
+  staffProfileDetail,
+  updateStaffProfileById,
   staffDetail,
   updateStaffProfile,
   uploadStaffDocument,

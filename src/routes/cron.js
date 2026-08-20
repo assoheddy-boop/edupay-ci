@@ -1,6 +1,6 @@
 const express = require('express');
 const { requireCronSecret } = require('../middleware/cronAuth');
-const { paymentReminders, weeklyParentSummary, dailyBackup, homeworkReminders, notificationJobs } = require('../jobs/cron');
+const { paymentReminders, weeklyParentSummary, dailyBackup, homeworkReminders, notificationJobs, hrLeaveMaintenance } = require('../jobs/cron');
 
 const router = express.Router();
 
@@ -21,6 +21,7 @@ router.get('/summary', (req, res) => runJob('summary', weeklyParentSummary, res)
 router.get('/backup', (req, res) => runJob('backup', dailyBackup, res));
 router.get('/homework-reminders', (req, res) => runJob('homework-reminders', homeworkReminders, res));
 router.get('/notifications', (req, res) => runJob('notifications', notificationJobs, res));
+router.get('/hr-leaves', (req, res) => runJob('hr-leaves', hrLeaveMaintenance, res));
 
 router.get('/daily', async (req, res) => {
   try {
@@ -30,10 +31,11 @@ router.get('/daily', async (req, res) => {
     const summary = monday ? await weeklyParentSummary() : { skipped: true, reason: 'not_monday' };
     const backup = await dailyBackup();
     const notifications = await notificationJobs();
+    const hrLeaves = await hrLeaveMaintenance();
     res.json({
       ok: true,
       job: 'daily',
-      result: { payments: payments || null, homeworks, summary, backup, notifications },
+      result: { payments: payments || null, homeworks, summary, backup, notifications, hrLeaves },
     });
   } catch (err) {
     console.error('[Cron] daily failed:', err?.message || err);

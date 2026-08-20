@@ -154,6 +154,11 @@ async function notificationJobs() {
   return processPendingJobs();
 }
 
+async function hrLeaveMaintenance() {
+  const { processExpiredLeaves } = require('../services/hrLeaveService');
+  return processExpiredLeaves();
+}
+
 module.exports = {
   startCronJobs,
   paymentReminders,
@@ -161,4 +166,5 @@ module.exports = {
   dailyBackup,
   homeworkReminders,
   notificationJobs,
+  hrLeaveMaintenance,
 };

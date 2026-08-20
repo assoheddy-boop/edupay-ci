@@ -7,7 +7,7 @@ jest.mock('../src/config/database', () => ({
     findMany: jest.fn(),
   },
   scholarship: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-  financeTransaction: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
+  financeTransaction: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), aggregate: jest.fn() },
   financeAccount: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn(), createMany: jest.fn() },
   expenseCategory: { findFirst: jest.fn(), findMany: jest.fn(), createMany: jest.fn() },
   $transaction: jest.fn(),
@@ -71,7 +71,7 @@ describe('AccountingService.getBalance / getReport', () => {
   beforeEach(() => jest.clearAllMocks());
 
   test('computes balance as income minus expense', async () => {
-    prisma.accountingEntry.aggregate
+    prisma.financeTransaction.aggregate
       .mockResolvedValueOnce({ _sum: { amount: 100000 } })
       .mockResolvedValueOnce({ _sum: { amount: 40000 } });
 
@@ -84,9 +84,9 @@ describe('AccountingService.getBalance / getReport', () => {
   });
 
   test('getReport totals journal lines', async () => {
-    prisma.accountingEntry.findMany.mockResolvedValue([
-      { type: 'INCOME', amount: 20000, school: { name: 'A' } },
-      { type: 'EXPENSE', amount: 5000, school: { name: 'A' } },
+    prisma.financeTransaction.findMany.mockResolvedValue([
+      { type: 'INCOME', amount: 20000, school: { name: 'A' }, account: { name: 'Wave' }, category: { name: 'Scolarité' } },
+      { type: 'EXPENSE', amount: 5000, school: { name: 'A' }, account: { name: 'Caisse' }, category: { name: 'Fournitures' } },
     ]);
 
     const result = await getReport('school-1');
@@ -168,13 +168,12 @@ describe('AccountingService.recordMovement', () => {
     })).resolves.toEqual({ ok: false, error: 'amount' });
   });
 
-  test('creates finance line, updates balance, dual-writes journal', async () => {
+  test('creates finance line and updates balance', async () => {
     prisma.financeTransaction.findFirst.mockResolvedValue(null);
     prisma.financeAccount.findFirst.mockResolvedValue({ id: 'acc-wave', schoolId: 'school-1', type: 'WAVE' });
     prisma.expenseCategory.findFirst.mockResolvedValue({ id: 'cat-1', name: 'Scolarité', kind: 'INCOME' });
     prisma.financeTransaction.create.mockResolvedValue({ id: 'tx-1', amount: 25000 });
     prisma.financeAccount.update.mockResolvedValue({});
-    prisma.accountingEntry.create.mockResolvedValue({ id: 'ae-1' });
 
     const result = await recordMovement({
       schoolId: 'school-1',
@@ -194,16 +193,7 @@ describe('AccountingService.recordMovement', () => {
       where: { id: 'acc-wave' },
       data: { balance: { increment: 25000 } },
     });
-    expect(prisma.accountingEntry.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        type: 'INCOME',
-        amount: 25000,
-        paymentId: 'pay-1',
-        source: 'PAYMENT',
-        category: 'Scolarité',
-        accountType: 'WAVE',
-      }),
-    }));
+    expect(prisma.accountingEntry.create).not.toHaveBeenCalled();
   });
 
   test('skips duplicate paymentId', async () => {

@@ -2,24 +2,42 @@
 <% const content = include('staff', { _inLayout: true }); %>
 <%- include('../../layouts/schoolLayout', { body: content, title: 'RH — Personnel' }) %>
 <% } else { %>
-<div class="page-header"><h1>Personnel</h1></div>
+<% const displayName = typeof staffDisplayName === 'function' ? staffDisplayName : function(p) { return '—'; }; %>
+<% const stLabel = typeof staffStatusLabel === 'function' ? staffStatusLabel : function(s) { return s; }; %>
+<% const ctLabel = typeof contractTypeLabel === 'function' ? contractTypeLabel : function(s) { return s; }; %>
+<% const jtLabel = typeof jobTitleLabel === 'function' ? jobTitleLabel : function(s) { return s; }; %>
+<div class="page-header">
+  <h1>Personnel</h1>
+  <a href="/school/hr/staff/new" class="btn btn-primary btn-sm">Ajouter un membre</a>
+</div>
   <%- include('_nav') %>
+  <% if (success === 'created') { %><div class="alert alert-success">Membre ajouté.</div><% } %>
 
   <div class="card">
     <table class="table">
-      <thead><tr><th>Nom</th><th>Matière</th><th>Contrat</th><th>Salaire base</th><th>Statut</th><th></th></tr></thead>
+      <thead><tr><th>Nom</th><th>Fonction</th><th>Contrat</th><th>Salaire base</th><th>Statut</th><th></th></tr></thead>
       <tbody>
-        <% teachers.forEach(function(t) { const p = t.staffProfile; %>
+        <% staff.forEach(function(p) { %>
           <tr>
             <td class="person-cell">
-              <%- include('../../partials/_avatar', { src: t.user.photoUrl, firstName: t.user.firstName, lastName: t.user.lastName, size: 'sm' }) %>
-              <span><strong><%= t.user.lastName %> <%= t.user.firstName %></strong><br><small><%= t.user.email %></small></span>
+              <% if (p.teacher && p.teacher.user) { %>
+                <%- include('../../partials/_avatar', { src: p.teacher.user.photoUrl, firstName: p.teacher.user.firstName, lastName: p.teacher.user.lastName, size: 'sm' }) %>
+                <span><strong><%= displayName(p) %></strong><br><small><%= p.teacher.user.email %></small></span>
+              <% } else { %>
+                <span><strong><%= displayName(p) %></strong><br><small><%= p.email || '—' %></small></span>
+              <% } %>
             </td>
-            <td><%= t.subject || '—' %></td>
-            <td><%= p?.contractType || '—' %></td>
-            <td><%= p ? p.baseSalary.toLocaleString('fr-FR') : '0' %> FCFA</td>
-            <td><span class="badge"><%= p?.status || 'ACTIVE' %></span></td>
-            <td><a href="/school/hr/staff/<%= t.id %>" class="btn btn-sm btn-primary">Dossier</a></td>
+            <td><%= jtLabel(p.jobTitle) %><% if (p.teacher && p.teacher.subject) { %> — <%= p.teacher.subject %><% } %></td>
+            <td><%= ctLabel(p.contractType) %></td>
+            <td><%= p.baseSalary.toLocaleString('fr-FR') %> FCFA</td>
+            <td><span class="badge"><%= stLabel(p.status) %></span></td>
+            <td>
+              <% if (p.teacherId) { %>
+                <a href="/school/hr/staff/<%= p.teacherId %>" class="btn btn-sm btn-primary">Dossier</a>
+              <% } else { %>
+                <a href="/school/hr/staff/p/<%= p.id %>" class="btn btn-sm btn-primary">Dossier</a>
+              <% } %>
+            </td>
           </tr>
         <% }) %>
       </tbody>

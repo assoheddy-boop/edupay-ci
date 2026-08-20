@@ -149,8 +149,8 @@ async function addEntry({
 async function getBalance(schoolId) {
   const where = schoolId ? { schoolId } : {};
   const [income, expense] = await Promise.all([
-    prisma.accountingEntry.aggregate({ where: { ...where, type: 'INCOME' }, _sum: { amount: true } }),
-    prisma.accountingEntry.aggregate({ where: { ...where, type: 'EXPENSE' }, _sum: { amount: true } }),
+    prisma.financeTransaction.aggregate({ where: { ...where, type: 'INCOME' }, _sum: { amount: true } }),
+    prisma.financeTransaction.aggregate({ where: { ...where, type: 'EXPENSE' }, _sum: { amount: true } }),
   ]);
   const totalIn = income._sum.amount || 0;
   const totalOut = expense._sum.amount || 0;
@@ -161,22 +161,24 @@ async function getReport(schoolId, { from, to } = {}) {
   const dateFilter = dateRange(from, to);
   const where = {
     ...(schoolId ? { schoolId } : {}),
-    ...(dateFilter ? { date: dateFilter } : {}),
+    ...(dateFilter ? { createdAt: dateFilter } : {}),
   };
 
-  const entries = await prisma.accountingEntry.findMany({
+  const transactions = await prisma.financeTransaction.findMany({
     where,
-    include: { school: true },
-    orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+    include: { account: true, category: true, school: true },
+    orderBy: [{ createdAt: 'desc' }],
   });
 
-  const income = entries.filter((e) => e.type === 'INCOME').reduce((sum, e) => sum + e.amount, 0);
-  const expense = entries.filter((e) => e.type === 'EXPENSE').reduce((sum, e) => sum + e.amount, 0);
-
+  const summary = summarizeTransactions(transactions);
   return {
     ok: true,
-    entries,
-    totals: { income, expense, balance: income - expense },
+    entries: transactions,
+    totals: {
+      income: summary.totals.totalIn,
+      expense: summary.totals.totalOut,
+      balance: summary.totals.net,
+    },
   };
 }
 
@@ -247,6 +249,7 @@ async function recordMovement({
   reference,
   paymentId,
   payrollRunId,
+  supplierInvoiceId,
   date,
   source,
 } = {}, tx) {
@@ -286,6 +289,7 @@ async function recordMovement({
         reference: reference ? String(reference).trim().slice(0, 120) : null,
         paymentId: paymentId || null,
         payrollRunId: payrollRunId || null,
+        supplierInvoiceId: supplierInvoiceId || null,
       },
     });
 
@@ -293,20 +297,6 @@ async function recordMovement({
     await client.financeAccount.update({
       where: { id: account.id },
       data: { balance: { increment: delta } },
-    });
-
-    await client.accountingEntry.create({
-      data: {
-        schoolId,
-        type,
-        amount: amt,
-        description: String(description).trim().slice(0, 500),
-        date: parseDate(date),
-        category: category?.name || null,
-        accountType: account.type,
-        paymentId: paymentId || null,
-        source: SOURCES.includes(source) ? source : 'MANUAL',
-      },
     });
 
     logger.info('accounting movement', {

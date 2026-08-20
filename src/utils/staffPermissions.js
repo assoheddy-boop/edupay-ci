@@ -55,6 +55,7 @@ const STAFF_ROLE_LABELS = Object.freeze({
   ACCOUNTANT: 'Comptabilité',
   EDUCATOR: 'Éducateur',
   LIFE_SCHOOL: 'Vie scolaire',
+  HR_MANAGER: 'Ressources humaines',
 });
 
 const ALL_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -94,6 +95,14 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.ACCOUNTING_WRITE,
     PERMISSIONS.FEES_READ,
     PERMISSIONS.PAYMENTS_READ,
+    PERMISSIONS.STATS,
+  ],
+
+  HR_MANAGER: [
+    PERMISSIONS.DASHBOARD,
+    PERMISSIONS.HR_READ,
+    PERMISSIONS.HR_WRITE,
+    PERMISSIONS.TEACHERS_READ,
     PERMISSIONS.STATS,
   ],
 

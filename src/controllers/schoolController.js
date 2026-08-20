@@ -1138,7 +1138,7 @@ async function exportHomeworksPdf(req, res) {
 const { STAFF_ROLE_LABELS } = require('../utils/staffPermissions');
 const { hashPassword } = require('../utils/password');
 
-const ASSIGNABLE_STAFF_ROLES = ['SECRETARIAT', 'ACCOUNTANT', 'EDUCATOR', 'LIFE_SCHOOL'];
+const ASSIGNABLE_STAFF_ROLES = ['SECRETARIAT', 'ACCOUNTANT', 'EDUCATOR', 'LIFE_SCHOOL', 'HR_MANAGER'];
 
 async function staffRolesPage(req, res) {
   const school = req.user.school;

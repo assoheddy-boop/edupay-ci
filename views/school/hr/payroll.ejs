@@ -22,14 +22,14 @@
     <form method="POST" action="/school/hr/payroll/generate" class="card" style="padding:1rem;margin-bottom:1rem">
       <input type="hidden" name="month" value="<%= month %>">
       <input type="hidden" name="year" value="<%= year %>">
-      <p>Générer les bulletins pour <%= teachers.length %> enseignant(s) actif(s).</p>
+      <p>Générer les bulletins pour <%= staffProfiles.length %> membre(s) actif(s).</p>
       <button type="submit" class="btn btn-primary">Générer la paie</button>
     </form>
   <% } %>
 
   <% if (payrollRun) { %>
     <div class="card" style="margin-bottom:1rem;padding:1rem">
-      <p><strong>Statut :</strong> <%= payrollRun.status %> — <strong>Total net :</strong> <%= payrollRun.totalNet.toLocaleString('fr-FR') %> FCFA</p>
+      <p><strong>Statut :</strong> <%= typeof payrollStatusLabel === 'function' ? payrollStatusLabel(payrollRun.status) : payrollRun.status %> — <strong>Total net :</strong> <%= payrollRun.totalNet.toLocaleString('fr-FR') %> FCFA</p>
       <% if (payrollRun.status === 'VALIDATED') { %>
         <form method="POST" action="/school/hr/payroll/pay" class="inline-form">
           <input type="hidden" name="payrollRunId" value="<%= payrollRun.id %>">
@@ -46,11 +46,15 @@
 
     <div class="card">
       <table class="table">
-        <thead><tr><th>Enseignant</th><th>Base</th><th>Primes</th><th>Retenues</th><th>Avances</th><th>Net</th><th>PDF</th></tr></thead>
+        <thead><tr><th>Personnel</th><th>Base</th><th>Primes</th><th>Retenues</th><th>Avances</th><th>Net</th><th>PDF</th></tr></thead>
         <tbody>
           <% payrollRun.payslips.forEach(function(p) { %>
+            <% const person = p.staffProfile || p.teacher; %>
+            <% const personName = p.staffProfile
+              ? (typeof staffDisplayName === 'function' ? staffDisplayName(p.staffProfile) : '—')
+              : (p.teacher ? (p.teacher.user.lastName + ' ' + p.teacher.user.firstName) : '—'); %>
             <tr>
-              <td><%= p.teacher.user.lastName %> <%= p.teacher.user.firstName %></td>
+              <td><%= personName %></td>
               <td><%= p.baseSalary.toLocaleString('fr-FR') %></td>
               <td>
                 <% if (payrollRun.status !== 'PAID') { %>
@@ -67,7 +71,9 @@
               <td><%= p.advances.toLocaleString('fr-FR') %></td>
               <td><strong><%= p.netPay.toLocaleString('fr-FR') %></strong></td>
               <td>
-                <a href="/school/hr/export/payslip/<%= p.teacherId %>?month=<%= month %>&amp;year=<%= year %>" target="_blank">PDF</a>
+                <% if (p.teacherId) { %>
+                  <a href="/school/hr/export/payslip/<%= p.teacherId %>?month=<%= month %>&amp;year=<%= year %>" target="_blank">PDF</a>
+                <% } else { %>—<% } %>
               </td>
             </tr>
           <% }) %>

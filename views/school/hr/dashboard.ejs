@@ -13,7 +13,7 @@
     <div class="stat-card"><span class="stat-value"><%= stats.staffCount %></span><span class="stat-label">Personnel actif</span></div>
     <div class="stat-card stat-card-warning"><span class="stat-value"><%= stats.pendingLeaves %></span><span class="stat-label">Congés en attente</span></div>
     <div class="stat-card"><span class="stat-value"><%= (stats.totalSalary).toLocaleString('fr-FR') %></span><span class="stat-label">Masse salariale (FCFA)</span></div>
-    <div class="stat-card"><span class="stat-value"><%= stats.payrollTotal.toLocaleString('fr-FR') %></span><span class="stat-label">Paie du mois (<%= stats.payrollStatus || '—' %>)</span></div>
+    <div class="stat-card"><span class="stat-value"><%= stats.payrollTotal.toLocaleString('fr-FR') %></span><span class="stat-label">Paie du mois (<%= typeof payrollStatusLabel === 'function' ? payrollStatusLabel(stats.payrollStatus) : (stats.payrollStatus || '—') %>)</span></div>
   </div>
 
   <div class="quick-actions">

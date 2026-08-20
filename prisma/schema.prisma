@@ -22,6 +22,7 @@ enum SchoolStaffRole {
   ACCOUNTANT
   EDUCATOR
   LIFE_SCHOOL
+  HR_MANAGER
 }
 
 enum PaymentStatus {
@@ -173,6 +174,12 @@ enum AdvanceStatus {
   APPROVED
   REJECTED
   DEDUCTED
+}
+
+enum SupplierInvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
 }
 
 enum ScholarshipStatus {
@@ -330,6 +337,8 @@ model School {
   examSessions         ExamSession[]
   portalPosts          PortalPost[]
   staffAssignments     SchoolStaffAssignment[]
+  supplierInvoices     SupplierInvoice[]
+  budgetLines          BudgetLine[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -1098,6 +1107,8 @@ model ExpenseCategory {
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   transactions FinanceTransaction[]
+  budgetLines  BudgetLine[]
+  supplierInvoices SupplierInvoice[]
 
   @@index([schoolId, kind])
 }
@@ -1118,6 +1129,8 @@ model FinanceTransaction {
   category    ExpenseCategory? @relation(fields: [categoryId], references: [id])
   paymentId   String?
   payrollRunId String?
+  supplierInvoiceId String? @unique
+  supplierInvoice   SupplierInvoice? @relation(fields: [supplierInvoiceId], references: [id], onDelete: SetNull)
 }
 
 model StaffProfile {
@@ -1135,13 +1148,26 @@ model StaffProfile {
   emergencyPhone  String?
   address         String?
   notes           String?
+  firstName       String?
+  lastName        String?
+  jobTitle        String?
+  email           String?
+  phone           String?
+  annualLeaveDays Int           @default(30)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  teacherId String @unique
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String? @unique
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  leaveRequests   LeaveRequest[]
+  attendances     StaffAttendance[]
+  payslips        Payslip[]
+  salaryAdvances  SalaryAdvance[]
+  evaluations     StaffEvaluation[]
+  documents       StaffDocument[]
 }
 
 model StaffDocument {
@@ -1152,8 +1178,10 @@ model StaffDocument {
   mimeType  String?
   createdAt DateTime @default(now())
 
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -1169,8 +1197,10 @@ model LeaveRequest {
   reviewedAt DateTime?
   createdAt  DateTime    @default(now())
 
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -1185,12 +1215,15 @@ model StaffAttendance {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, date])
+  @@unique([staffProfileId, date])
 }
 
 model PayrollRun {
@@ -1222,12 +1255,15 @@ model Payslip {
 
   payrollRunId String
   payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
-  teacherId    String
-  teacher      Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId    String?
+  teacher      Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId     String
   school       School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([payrollRunId, teacherId])
+  @@unique([payrollRunId, staffProfileId])
 }
 
 model SalaryAdvance {
@@ -1239,8 +1275,10 @@ model SalaryAdvance {
   deductedAt DateTime?
   createdAt DateTime      @default(now())
 
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
@@ -1255,12 +1293,15 @@ model StaffEvaluation {
   comment      String?
   createdAt    DateTime @default(now())
 
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staffProfileId String?
+  staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId  String
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, period])
+  @@unique([staffProfileId, period])
 }
 
 model TeacherProfile {
@@ -1356,6 +1397,39 @@ enum SocialDiscountType {
 }
 
 /// Dossier cas social (direction) : remise et échéancier. Distinct des bourses plateforme.
+model SupplierInvoice {
+  id           String                @id @default(cuid())
+  supplierName String
+  amount       Int
+  description  String?
+  reference    String?
+  dueDate      DateTime?             @db.Date
+  paidAt       DateTime?
+  status       SupplierInvoiceStatus @default(PENDING)
+  createdAt    DateTime              @default(now())
+
+  schoolId   String
+  school     School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transaction FinanceTransaction?
+
+  @@index([schoolId, status])
+}
+
+model BudgetLine {
+  id            String @id @default(cuid())
+  schoolYear    String
+  plannedAmount Int    @default(0)
+
+  schoolId   String
+  school     School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, schoolYear, categoryId])
+}
+
 model SocialCase {
   id            String             @id @default(cuid())
   motif         String

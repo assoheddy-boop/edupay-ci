@@ -17,7 +17,6 @@ const { metricsMiddleware, metricsHandler } = require('./middleware/metrics');
 const { safeJson } = require('./utils/safeJson');
 const { i18nMiddleware, setLocale } = require('./middleware/i18n');
 const { currencyMiddleware, setCurrency } = require('./middleware/currency');
-const hrRoutes = require('../modules/hr/routes/hrRoutes');
 const transferRoutes = require('../routes/transferRoutes');
 const classRoutes = require('../routes/classRoutes');
 const statsRoutes = require('../routes/statsRoutes');
@@ -38,6 +37,14 @@ const {
   PRIVATE_ROBOTS,
 } = require('./utils/publicPortal');
 const { listFeaturedSchools } = require('./services/marketplace');
+const { requireAuth } = require('./middleware/auth');
+
+const legacyHrRedirect = express.Router();
+legacyHrRedirect.use(requireAuth);
+legacyHrRedirect.get(/.*/, (req, res) => {
+  if (req.user?.role === 'TEACHER') return res.redirect('/teacher/hr');
+  return res.redirect('/school/hr');
+});
 
 const app = express();
 
@@ -152,7 +159,7 @@ app.use('/school', schoolRoutes);
 app.use('/parent', parentRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);
-app.use('/hr', hrRoutes);
+app.use('/hr', legacyHrRedirect);
 app.use('/transfer', transferRoutes);
 app.use('/class', classRoutes);
 app.use('/stats', statsRoutes);
