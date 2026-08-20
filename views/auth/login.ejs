@@ -35,6 +35,9 @@
 
     <p class="auth-link">Pas encore de compte ? <a href="/auth/register?role=<%= role %>">S'inscrire</a></p>
 
+    <p class="auth-sub" style="margin-top:1rem;font-size:0.85rem">
+      Secrétariat, comptabilité, éducateur et vie scolaire : onglet <strong>École</strong>.
+    </p>
     <div class="role-tabs">
       <a href="/auth/login?role=parent" class="<%= role === 'parent' ? 'active' : '' %>">Parent</a>
       <a href="/auth/login?role=student" class="<%= role === 'student' ? 'active' : '' %>">Élève</a>
