@@ -45,10 +45,10 @@ function drawCellText(doc, text, x, y, w, h, {
   bold = false,
   numeric = false,
 } = {}) {
-  const padLeft = 3;
-  const padRight = numeric || align === 'right' ? 5 : 3;
+  const padLeft = 5;
+  const padRight = numeric || align === 'right' ? 8 : 5;
   doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize).fillColor('#000');
-  doc.text(text == null ? '' : String(text), x + padLeft, y + (h - fontSize) / 2 - 1, {
+  doc.text(text == null ? '' : String(text), x + padLeft, y + (h - fontSize) / 2, {
     width: w - padLeft - padRight,
     align,
     lineBreak: false,
@@ -60,11 +60,11 @@ function paySlipTableColumns() {
   // Widths must sum to CONTENT_WIDTH (515.28) for A4 with 40pt margins.
   return [
     { key: 'code', label: 'CODE', width: 34, align: 'center' },
-    { key: 'rubrique', label: 'RUBRIQUE', width: 176, align: 'left' },
-    { key: 'base', label: 'BASE', width: 60, align: 'right', numeric: true },
-    { key: 'rate', label: 'NBRE/TAUX', width: 60, align: 'center' },
-    { key: 'gains', label: 'GAINS', width: 60, align: 'right', numeric: true },
-    { key: 'deductions', label: 'RETENUES', width: 125.28, align: 'right', numeric: true },
+    { key: 'rubrique', label: 'RUBRIQUE', width: 164, align: 'left' },
+    { key: 'base', label: 'BASE', width: 68, align: 'right', numeric: true },
+    { key: 'rate', label: 'NBRE/TAUX', width: 62, align: 'center' },
+    { key: 'gains', label: 'GAINS', width: 68, align: 'right', numeric: true },
+    { key: 'deductions', label: 'RETENUES', width: 119.28, align: 'right', numeric: true },
   ];
 }
 
@@ -108,16 +108,16 @@ function drawTitleBand(doc, y) {
 
 function drawEmployeeBlock(doc, y, { employee, periodLabel }) {
   const x = PAGE_MARGIN;
-  const h = 52;
+  const h = 64;
   setStroke(doc);
   drawRect(doc, x, y, CONTENT_WIDTH, h);
   drawVLine(doc, x + CONTENT_WIDTH * 0.55, y, y + h);
   restoreStroke(doc);
 
-  const leftW = CONTENT_WIDTH * 0.55 - 8;
-  const rightX = x + CONTENT_WIDTH * 0.55 + 4;
-  const rightW = CONTENT_WIDTH * 0.45 - 8;
-  let ly = y + 4;
+  const leftW = CONTENT_WIDTH * 0.55 - 10;
+  const rightX = x + CONTENT_WIDTH * 0.55 + 6;
+  const rightW = CONTENT_WIDTH * 0.45 - 10;
+  let ly = y + 6;
 
   const leftRows = [
     ['MATRICULE', employee.matricule],
@@ -128,12 +128,12 @@ function drawEmployeeBlock(doc, y, { employee, periodLabel }) {
     ['SITUATION MATRIMONI.', employee.maritalStatus],
   ];
   leftRows.forEach(([label, value]) => {
-    doc.font('Helvetica-Bold').fontSize(6.5).text(`${label} :`, x + 4, ly, { continued: true, width: leftW });
+    doc.font('Helvetica-Bold').fontSize(6.5).text(`${label} :`, x + 6, ly, { continued: true, width: leftW });
     doc.font('Helvetica').fontSize(6.5).text(` ${value || '—'}`);
-    ly += 8;
+    ly += 10;
   });
 
-  let ry = y + 4;
+  let ry = y + 6;
   const rightRows = [
     ['PERIODE DE PAIE', periodLabel],
     ["Date d'embauche", formatDateFr(employee.hireDate)],
@@ -144,7 +144,7 @@ function drawEmployeeBlock(doc, y, { employee, periodLabel }) {
   rightRows.forEach(([label, value]) => {
     doc.font('Helvetica-Bold').fontSize(6.5).text(`${label} :`, rightX, ry, { continued: true, width: rightW });
     doc.font('Helvetica').fontSize(6.5).text(` ${value || '—'}`);
-    ry += 9;
+    ry += 11;
   });
 
   return y + h + 6;
@@ -153,8 +153,8 @@ function drawEmployeeBlock(doc, y, { employee, periodLabel }) {
 function drawRubriqueTable(doc, y, { lines, blocks }) {
   const x = PAGE_MARGIN;
   const cols = columnOffsets(paySlipTableColumns(), x);
-  const headerH = 16;
-  const rowH = 11;
+  const headerH = 18;
+  const rowH = 15;
   const displayLines = buildDisplayLines(lines);
 
   setStroke(doc);
@@ -192,7 +192,7 @@ function drawRubriqueTable(doc, y, { lines, blocks }) {
 
 function drawSubtotalRow(doc, y, cols, blockTotals = {}, blockNum) {
   const x = PAGE_MARGIN;
-  const rowH = 12;
+  const rowH = 16;
   setStroke(doc);
   drawRect(doc, x, y, CONTENT_WIDTH, rowH);
   cols.forEach((col, i) => {
@@ -235,12 +235,12 @@ function drawSubtotalRow(doc, y, cols, blockTotals = {}, blockNum) {
 
 function drawTotalsBlock(doc, y, { totalGains, totalDeductions, netPay }) {
   const x = PAGE_MARGIN;
-  const boxW = 180;
+  const boxW = 200;
   const boxX = x + CONTENT_WIDTH - boxW;
-  const labelW = 98;
+  const labelW = 108;
   const valueW = boxW - labelW;
   const valueX = boxX + labelW;
-  const rowH = 14;
+  const rowH = 18;
   const rows = [
     ['TOTAL GAINS', formatMoneyCi(totalGains)],
     ['TOTAL RETENUES', formatMoneyCi(totalDeductions)],
@@ -276,7 +276,7 @@ function drawAnnualCumuls(doc, y, cumuls = {}) {
     { label: 'Contribution Nationale (CN)', value: cumuls.cn },
     { label: 'Impôt Général sur le Revenu (IGR)', value: cumuls.igr },
   ];
-  const rowH = 11;
+  const rowH = 15;
   const labelW = CONTENT_WIDTH * 0.68;
   const valueW = CONTENT_WIDTH - labelW;
   const valueX = x + labelW;
