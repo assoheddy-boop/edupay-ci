@@ -60,6 +60,14 @@ function emitNewMessage(receiverId, message) {
   if (io) io.to(`user:${receiverId}`).emit('new_message', message);
 }
 
+function emitCorrespondanceMessage(receiverId, message) {
+  emitToUser(receiverId, 'correspondance_message', message);
+}
+
+function emitCorrespondanceProjet(userIds, payload) {
+  (userIds || []).forEach((uid) => emitToUser(uid, 'correspondance_projet', payload));
+}
+
 function emitToUser(userId, event, payload) {
   if (!io || !userId) return;
   io.to(String(userId)).emit(event, payload);
@@ -70,4 +78,4 @@ function getIo() {
   return io;
 }
 
-module.exports = { initSocket, emitNewMessage, emitToUser, getIo, tokenFromCookie };
+module.exports = { initSocket, emitNewMessage, emitCorrespondanceMessage, emitCorrespondanceProjet, emitToUser, getIo, tokenFromCookie };

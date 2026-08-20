@@ -126,6 +126,7 @@
         </button>
         <div class="nav-group-items" id="nav-items-communication">
           <% if (on('chat') && can('messages:write')) { %><a href="/school/messages">Messages</a><% } %>
+          <% if (on('correspondance') && can('messages:write')) { %><a href="/correspondance">Correspondance scolaire</a><% } %>
           <% if (on('sms_official') && can('sms:write')) { %><a href="/school/sms">SMS officiels</a><% } %>
         </div>
       </div>
@@ -283,6 +284,7 @@
         </button>
         <div class="nav-group-items" id="nav-items-communication">
           <% if (on('chat')) { %><a href="/teacher/messages">Messages</a><% } %>
+          <% if (on('correspondance')) { %><a href="/correspondance">Correspondance scolaire</a><% } %>
         </div>
       </div>
       <div class="nav-group" data-nav-group="rapports">

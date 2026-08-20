@@ -1,0 +1,223 @@
+/* Correspondance scolaire — module jumelage CI ↔ FR */
+
+.corr-header {
+  margin-bottom: 1.5rem;
+}
+
+.corr-partner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.corr-partner-card {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--surface, #fff);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.corr-partner-card.is-active {
+  border-color: var(--primary, #0052cc);
+  box-shadow: 0 0 0 1px var(--primary, #0052cc);
+}
+
+.corr-partner-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.corr-partner-head h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.corr-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+  margin: 0.25rem 0;
+}
+
+.corr-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #475569);
+  margin: 0.5rem 0;
+}
+
+.corr-classes {
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.corr-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.corr-badge-pending { background: #fef3c7; color: #92400e; }
+.corr-badge-approved { background: #d1fae5; color: #065f46; }
+.corr-badge-rejected { background: #fee2e2; color: #991b1b; }
+.corr-badge-revoked { background: #f1f5f9; color: #475569; }
+
+.corr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+
+.corr-inline-form {
+  display: inline;
+}
+
+.corr-request {
+  margin-top: 1.5rem;
+}
+
+.corr-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.corr-form-row .input {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.corr-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 1.5rem 0 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.corr-tab {
+  padding: 0.65rem 1.25rem;
+  text-decoration: none;
+  color: var(--text-muted, #64748b);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.corr-tab.is-active,
+.corr-tab:hover {
+  color: var(--primary, #0052cc);
+  border-bottom-color: var(--primary, #0052cc);
+}
+
+.corr-panel {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.corr-messages {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.corr-msg {
+  max-width: 85%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: var(--surface-alt, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.corr-msg.is-mine {
+  align-self: flex-end;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.corr-msg-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted, #64748b);
+}
+
+.corr-message-form,
+.corr-projet-form,
+.corr-calendar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.corr-projets-list {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.corr-projet-item {
+  padding: 1rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--surface-alt, #f8fafc);
+}
+
+.corr-projet-item h3 {
+  margin: 0 0 0.35rem;
+}
+
+.corr-files {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.corr-calendar {
+  min-height: 420px;
+  margin-bottom: 1.5rem;
+}
+
+.corr-live-hint {
+  font-size: 0.9rem;
+  color: var(--primary, #0052cc);
+  margin-top: 0.75rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .corr-form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .corr-tabs {
+    overflow-x: auto;
+  }
+}

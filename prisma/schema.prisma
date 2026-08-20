@@ -216,6 +216,25 @@ enum ConsentStatus {
   REVOKED
 }
 
+/// Pays pour le module Correspondance scolaire (jumelage CI ↔ FR).
+enum CorrespondanceCountry {
+  CI
+  FR
+}
+
+enum EcoleCorrespondanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum MessageCorrespondanceScope {
+  TEACHER
+  STUDENT
+  ADMIN
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -247,6 +266,12 @@ model User {
   refreshTokens      RefreshToken[]
   staffAssignments   SchoolStaffAssignment[]
   agfneImports       AgfneImportLog[]
+  correspondancesRequested EcoleCorrespondance[] @relation("CorrespondanceRequestedBy")
+  correspondancesApproved  EcoleCorrespondance[] @relation("CorrespondanceApprovedBy")
+  messagesCorrespondanceSent     MessageCorrespondance[] @relation("CorrespondanceSent")
+  messagesCorrespondanceReceived MessageCorrespondance[] @relation("CorrespondanceReceived")
+  projetsCorrespondanceCreated   ProjetCorrespondance[] @relation("ProjetCorrespondanceCreatedBy")
+  calendrierCorrespondanceCreated CalendrierCorrespondance[] @relation("CalendrierCorrespondanceCreatedBy")
 }
 
 /// Affectation staff école : permissions granulaires pour un compte SCHOOL_ADMIN.
@@ -387,6 +412,9 @@ model School {
   supplierInvoices     SupplierInvoice[]
   budgetLines          BudgetLine[]
   agfneImportLogs      AgfneImportLog[]
+  correspondanceCountry CorrespondanceCountry @default(CI)
+  correspondancesAsEcole       EcoleCorrespondance[] @relation("CorrespondanceEcole")
+  correspondancesAsPartenaire  EcoleCorrespondance[] @relation("CorrespondancePartenaire")
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -1648,6 +1676,83 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// Jumelage école ivoirienne ↔ école française.
+model EcoleCorrespondance {
+  id           String                    @id @default(cuid())
+  ecoleId      String
+  ecole        School                    @relation("CorrespondanceEcole", fields: [ecoleId], references: [id], onDelete: Cascade)
+  partenaireId String
+  partenaire   School                    @relation("CorrespondancePartenaire", fields: [partenaireId], references: [id], onDelete: Cascade)
+  dateJumelage DateTime?
+  status       EcoleCorrespondanceStatus @default(PENDING)
+  requestedById String?
+  requestedBy   User?                    @relation("CorrespondanceRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  approvedById  String?
+  approvedBy    User?                    @relation("CorrespondanceApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt    DateTime?
+  note          String?                  @db.Text
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  messages   MessageCorrespondance[]
+  projets    ProjetCorrespondance[]
+  calendrier CalendrierCorrespondance[]
+
+  @@unique([ecoleId, partenaireId])
+  @@index([ecoleId, status])
+  @@index([partenaireId, status])
+}
+
+model MessageCorrespondance {
+  id             String                     @id @default(cuid())
+  jumelageId     String
+  jumelage       EcoleCorrespondance        @relation(fields: [jumelageId], references: [id], onDelete: Cascade)
+  expediteurId   String
+  expediteur     User                       @relation("CorrespondanceSent", fields: [expediteurId], references: [id], onDelete: Cascade)
+  destinataireId String
+  destinataire   User                       @relation("CorrespondanceReceived", fields: [destinataireId], references: [id], onDelete: Cascade)
+  contenu        String                     @db.Text
+  scope          MessageCorrespondanceScope @default(TEACHER)
+  readAt         DateTime?
+  createdAt      DateTime                   @default(now())
+
+  @@index([jumelageId, createdAt])
+  @@index([destinataireId, readAt])
+}
+
+model ProjetCorrespondance {
+  id          String              @id @default(cuid())
+  jumelageId  String
+  jumelage    EcoleCorrespondance @relation(fields: [jumelageId], references: [id], onDelete: Cascade)
+  titre       String
+  description String?             @db.Text
+  /// [{ url, name, mimeType }]
+  fichiers    Json?
+  createdById String
+  createdBy   User                @relation("ProjetCorrespondanceCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([jumelageId, createdAt])
+}
+
+model CalendrierCorrespondance {
+  id           String              @id @default(cuid())
+  jumelageId   String
+  jumelage     EcoleCorrespondance @relation(fields: [jumelageId], references: [id], onDelete: Cascade)
+  evenement    String
+  description  String?             @db.Text
+  date         DateTime
+  endDate      DateTime?
+  /// userIds ou libellés participants
+  participants Json?
+  createdById  String
+  createdBy    User                @relation("CalendrierCorrespondanceCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt    DateTime            @default(now())
+
+  @@index([jumelageId, date])
 }
 
 model QuoteRequest {

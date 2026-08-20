@@ -1,0 +1,226 @@
+<% const pageLayout = typeof layout !== 'undefined' ? layout : '../../layouts/schoolLayout'; %>
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('dashboard', Object.assign({}, locals, { _inLayout: true })); %>
+<%- include(pageLayout, { body: content, title: 'Correspondance scolaire', correspondanceCss: true }) %>
+<% } else { %>
+<% const countryLabel = (c) => (c === 'FR' ? 'France' : 'Côte d\'Ivoire'); %>
+<% const statusLabel = (s) => ({ PENDING: 'En attente', APPROVED: 'Approuvé', REJECTED: 'Refusé', REVOKED: 'Révoqué' }[s] || s); %>
+<% function partnerSchool(j, sid) { return j.ecoleId === sid ? j.partenaire : j.ecole; } %>
+
+<div class="page-header corr-header">
+  <div>
+    <h1>Correspondance scolaire</h1>
+    <p class="page-sub">Jumelage et échanges entre établissements ivoiriens et français — <%= countryLabel(school.correspondanceCountry) %></p>
+  </div>
+</div>
+
+<% if (success === 'jumelage_demande') { %><div class="alert alert-success">Demande de jumelage envoyée. En attente de validation par la direction partenaire.</div><% } %>
+<% if (success === 'jumelage_approuve') { %><div class="alert alert-success">Jumelage approuvé. Les échanges sont ouverts.</div><% } %>
+<% if (success === 'jumelage_refuse') { %><div class="alert alert-success">Jumelage refusé.</div><% } %>
+<% if (success === 'message_envoye') { %><div class="alert alert-success">Message envoyé.</div><% } %>
+<% if (success === 'projet_cree') { %><div class="alert alert-success">Projet partagé.</div><% } %>
+<% if (success === 'evenement_cree') { %><div class="alert alert-success">Événement ajouté au calendrier.</div><% } %>
+<% if (success === 'evenement_supprime') { %><div class="alert alert-success">Événement supprimé.</div><% } %>
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+<section class="corr-jumelages card">
+  <h2>Écoles jumelées</h2>
+  <% if (jumelages.length === 0) { %>
+    <p class="empty">Aucun jumelage pour le moment. Proposez un partenaire ci-dessous.</p>
+  <% } else { %>
+    <div class="corr-partner-grid">
+      <% jumelages.forEach(function(j) {
+        const partner = partnerSchool(j, school.id);
+        const isActive = j.id === selectedJumelageId;
+      %>
+        <article class="corr-partner-card<%= isActive ? ' is-active' : '' %>">
+          <div class="corr-partner-head">
+            <%- include('../../partials/_logo', { logoUrl: partner.logoUrl, logoBase64: partner.logoBase64, slug: partner.slug, name: partner.name, size: 'sm' }) %>
+            <div>
+              <h3><%= partner.name %></h3>
+              <p class="corr-meta"><%= partner.city %> · <%= countryLabel(partner.correspondanceCountry) %></p>
+              <span class="corr-badge corr-badge-<%= j.status.toLowerCase() %>"><%= statusLabel(j.status) %></span>
+            </div>
+          </div>
+          <% if (partner.publicDescription) { %><p class="corr-desc"><%= partner.publicDescription %></p><% } %>
+          <% if (partner.classes && partner.classes.length) { %>
+            <p class="corr-classes"><strong>Classes :</strong> <%= partner.classes.map(c => c.name).join(', ') %></p>
+          <% } %>
+          <div class="corr-actions">
+            <a href="/correspondance?jumelage=<%= j.id %>&tab=<%= activeTab %>" class="btn btn-outline btn-sm">Ouvrir</a>
+            <% if (j.status === 'PENDING' && (j.ecoleId === school.id || j.partenaireId === school.id)) { %>
+              <form method="post" action="/correspondance/jumelage/<%= j.id %>/approve" class="corr-inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-primary btn-sm">Approuver</button>
+              </form>
+              <form method="post" action="/correspondance/jumelage/<%= j.id %>/reject" class="corr-inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-outline btn-sm">Refuser</button>
+              </form>
+            <% } %>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<section class="card corr-request">
+  <h2>Demander un jumelage</h2>
+  <p class="form-hint">Seuls les enseignants et la direction valident les échanges. Choisissez une école <%= countryLabel(partnerCountry) %>.</p>
+  <% if (candidates.length === 0) { %>
+    <p class="empty">Aucune école partenaire disponible pour le moment.</p>
+  <% } else { %>
+    <form method="post" action="/correspondance/jumelage" class="corr-form-row">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="sr-only" for="partenaireId">École partenaire</label>
+      <select id="partenaireId" name="partenaireId" required class="input">
+        <option value="">— Choisir une école —</option>
+        <% candidates.forEach(function(c) { %>
+          <option value="<%= c.id %>"><%= c.name %> (<%= c.city %>)</option>
+        <% }) %>
+      </select>
+      <input type="text" name="note" placeholder="Message de présentation (optionnel)" class="input">
+      <button type="submit" class="btn btn-primary">Demander le jumelage</button>
+    </form>
+  <% } %>
+</section>
+
+<% if (selected && selected.status === 'APPROVED') { %>
+  <nav class="corr-tabs" role="tablist">
+    <a href="/correspondance?jumelage=<%= selected.id %>&tab=messages" class="corr-tab<%= activeTab === 'messages' ? ' is-active' : '' %>">Messages</a>
+    <a href="/correspondance?jumelage=<%= selected.id %>&tab=projets" class="corr-tab<%= activeTab === 'projets' ? ' is-active' : '' %>">Projets</a>
+    <a href="/correspondance?jumelage=<%= selected.id %>&tab=calendrier" class="corr-tab<%= activeTab === 'calendrier' ? ' is-active' : '' %>">Calendrier</a>
+  </nav>
+
+  <% if (activeTab === 'messages') { %>
+    <section class="card corr-panel" id="tab-messages">
+      <h2>Messages sécurisés</h2>
+      <p class="form-hint">Canal interne enseignants ↔ enseignants (structure prête pour élèves).</p>
+      <div class="corr-messages" id="corrMessages">
+        <% if (messages.length === 0) { %>
+          <p class="empty">Aucun message. Démarrez la conversation.</p>
+        <% } else { %>
+          <% messages.forEach(function(m) { %>
+            <div class="corr-msg<%= m.expediteurId === user.id ? ' is-mine' : '' %>">
+              <div class="corr-msg-head">
+                <strong><%= m.expediteur.firstName %> <%= m.expediteur.lastName %></strong>
+                <time><%= new Date(m.createdAt).toLocaleString('fr-FR') %></time>
+              </div>
+              <p><%= m.contenu %></p>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+      <form method="post" action="/correspondance/message" class="corr-message-form" id="corrMessageForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="jumelageId" value="<%= selected.id %>">
+        <input type="hidden" name="scope" value="TEACHER">
+        <label class="sr-only" for="destinataireId">Destinataire</label>
+        <select id="destinataireId" name="destinataireId" required class="input">
+          <option value="">— Destinataire —</option>
+          <% partnerContacts.forEach(function(c) { %>
+            <option value="<%= c.id %>"><%= c.firstName %> <%= c.lastName %> (<%= c.label || c.role %>)</option>
+          <% }) %>
+        </select>
+        <textarea name="contenu" rows="3" required placeholder="Votre message…" class="input"></textarea>
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+      </form>
+    </section>
+  <% } %>
+
+  <% if (activeTab === 'projets') { %>
+    <section class="card corr-panel" id="tab-projets">
+      <h2>Projets collaboratifs</h2>
+      <p class="form-hint">Exposés, concours, activités culturelles — PDF, Word, images.</p>
+      <form method="post" action="/correspondance/projet" enctype="multipart/form-data" class="corr-projet-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="jumelageId" value="<%= selected.id %>">
+        <label>Titre<input type="text" name="titre" required class="input"></label>
+        <label>Description<textarea name="description" rows="3" class="input"></textarea></label>
+        <label>Fichiers<input type="file" name="fichiers" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" class="input"></label>
+        <button type="submit" class="btn btn-primary">Publier le projet</button>
+      </form>
+      <div class="corr-projets-list">
+        <% if (projets.length === 0) { %>
+          <p class="empty">Aucun projet partagé.</p>
+        <% } else { %>
+          <% projets.forEach(function(p) { %>
+            <article class="corr-projet-item">
+              <h3><%= p.titre %></h3>
+              <% if (p.description) { %><p><%= p.description %></p><% } %>
+              <p class="corr-meta">Par <%= p.createdBy.firstName %> <%= p.createdBy.lastName %> — <%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></p>
+              <% if (p.fichiers && p.fichiers.length) { %>
+                <ul class="corr-files">
+                  <% p.fichiers.forEach(function(f) { %>
+                    <li><a href="<%= f.url %>" target="_blank" rel="noopener"><%= f.name || 'Fichier' %></a></li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </article>
+          <% }) %>
+        <% } %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (activeTab === 'calendrier') { %>
+    <section class="card corr-panel" id="tab-calendrier">
+      <h2>Calendrier partagé</h2>
+      <div id="corrCalendar" class="corr-calendar"></div>
+      <form method="post" action="/correspondance/calendrier" class="corr-calendar-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="jumelageId" value="<%= selected.id %>">
+        <label>Événement<input type="text" name="evenement" required class="input"></label>
+        <label>Description<textarea name="description" rows="2" class="input"></textarea></label>
+        <label>Date et heure<input type="datetime-local" name="date" required class="input"></label>
+        <label>Fin (optionnel)<input type="datetime-local" name="endDate" class="input"></label>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    </section>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/fr.global.min.js"></script>
+    <script>
+    (function () {
+      var el = document.getElementById('corrCalendar');
+      if (!el || typeof FullCalendar === 'undefined') return;
+      var jumelageId = <%- JSON.stringify(selected.id) %>;
+      var calendar = new FullCalendar.Calendar(el, {
+        locale: 'fr',
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+        events: '/correspondance/calendrier/events?jumelageId=' + encodeURIComponent(jumelageId),
+      });
+      calendar.render();
+    })();
+    </script>
+  <% } %>
+
+  <script>
+  (function () {
+    var s = document.createElement('script');
+    s.src = '/socket.io/socket.io.js';
+    s.onload = function () {
+      if (typeof io === 'undefined') return;
+      var socket = io({ withCredentials: true });
+      var uid = document.body.getAttribute('data-user-id');
+      if (uid) socket.emit('subscribe', uid);
+      socket.on('correspondance_message', function () {
+        var hint = document.getElementById('corrLiveHint');
+        if (hint) hint.hidden = false;
+      });
+      socket.on('correspondance_projet', function () {
+        var hint = document.getElementById('corrLiveHint');
+        if (hint) { hint.textContent = 'Nouveau projet partagé — actualisez la page.'; hint.hidden = false; }
+      });
+    };
+    document.head.appendChild(s);
+  })();
+  </script>
+  <p id="corrLiveHint" class="corr-live-hint" hidden>Nouveau message reçu — actualisez pour voir la conversation.</p>
+<% } else if (selected && selected.status === 'PENDING') { %>
+  <div class="alert alert-info card">Jumelage en attente de validation par l'une des directions.</div>
+<% } %>
+<% } %>

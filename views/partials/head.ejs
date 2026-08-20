@@ -41,6 +41,9 @@
   <% if (typeof portalCss !== 'undefined' && portalCss) { %>
   <link rel="stylesheet" href="/css/portal.css?v=10">
   <% } %>
+  <% if (typeof correspondanceCss !== 'undefined' && correspondanceCss) { %>
+  <link rel="stylesheet" href="/css/correspondance.css?v=1">
+  <% } %>
   <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
   <meta name="csrf-token" content="<%= csrfToken %>">
   <% } %>

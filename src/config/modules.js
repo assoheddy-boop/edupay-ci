@@ -28,6 +28,11 @@ const MODULES = {
     default: false,
     addon: true,
   },
+  correspondance: {
+    label: 'Correspondance scolaire',
+    description: 'Jumelage écoles ivoiriennes et françaises, messages, projets et calendrier partagé',
+    default: true,
+  },
 };
 
 const MODULE_KEYS = Object.keys(MODULES);

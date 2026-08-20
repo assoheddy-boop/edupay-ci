@@ -28,6 +28,7 @@ const legalRoutes = require('./routes/legal');
 const guideRoutes = require('./routes/guides');
 const devisRoutes = require('./routes/devis');
 const portalRoutes = require('./routes/portal');
+const correspondanceRoutes = require('./routes/correspondance');
 const portalController = require('./controllers/portalController');
 const {
   cycleFilterOptions,
@@ -160,6 +161,7 @@ app.use('/school', schoolRoutes);
 app.use('/parent', parentRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);
+app.use('/correspondance', correspondanceRoutes);
 app.use('/hr', legacyHrRedirect);
 app.use('/transfer', transferRoutes);
 app.use('/class', classRoutes);
