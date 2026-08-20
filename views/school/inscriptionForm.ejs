@@ -41,17 +41,17 @@
   <div class="grid-2 inscription-grid">
     <div class="card">
       <h2>Identité &amp; scolarité</h2>
-      <div class="form-row">
+      <div class="form-row matricule-row">
         <div class="form-group">
           <label>Mle étab.</label>
           <input type="text" name="matricule" value="<%= student && student.matricule ? student.matricule : '' %>" placeholder="Matricule interne">
         </div>
         <% if (cycle.hasNationalMatricule) { %>
         <div class="form-group">
-          <label>Mle nat. (MEN)</label>
-          <div style="display:flex;gap:0.5rem;align-items:center">
-            <input type="text" name="nationalMatricule" id="nationalMatriculeInput" value="<%= student && student.nationalMatricule ? student.nationalMatricule : '' %>" placeholder="Matricule national" style="flex:1">
-            <button type="button" class="btn btn-outline btn-sm" id="menLookupBtn" title="Ouvrir la fiche par matricule national">Rechercher</button>
+          <label for="nationalMatriculeInput">Mle nat. (MEN)</label>
+          <div class="input-with-action">
+            <input type="text" name="nationalMatricule" id="nationalMatriculeInput" value="<%= student && student.nationalMatricule ? student.nationalMatricule : '' %>" placeholder="Matricule national">
+            <button type="button" class="input-action-btn" id="menLookupBtn" title="Ouvrir la fiche par matricule national" aria-label="Rechercher par matricule national">&#128269;</button>
           </div>
         </div>
         <% } %>
@@ -212,6 +212,15 @@
 .doc-checklist { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.5rem 1rem; }
 .doc-check { margin:0; }
 .inscription-grid { align-items:start; }
+.inscription-grid .card { min-width:0; overflow:hidden; }
+.input-with-action { position:relative; display:block; }
+.input-with-action input { width:100%; padding-right:2.25rem; box-sizing:border-box; }
+.input-action-btn {
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  width:1.75rem; height:1.75rem; padding:0; border:1px solid #cbd5e1; border-radius:6px;
+  background:#f8fafc; color:#0052CC; font-size:0.85rem; line-height:1; cursor:pointer;
+}
+.input-action-btn:hover { background:#eff6ff; border-color:#0052CC; }
 </style>
 
 <script>
