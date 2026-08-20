@@ -1,7 +1,7 @@
 const prisma = require('../config/database');
 const { initFinanceDefaults } = require('../utils/modules');
-const { calcNetPay } = require('../utils/hr');
 const { generatePayroll: generateTeacherPayroll } = require('../../services/HRService');
+const { buildOfficialPayslip } = require('./paySlipService');
 
 function parseMonth(month) {
   if (typeof month === 'string' && month.includes('-')) {
@@ -40,34 +40,37 @@ async function generateStaffPayroll(staffProfileId, month) {
   }
 
   const advanceTotal = await getPendingAdvances(profile);
-  const netPay = calcNetPay({
-    baseSalary: profile.baseSalary || 0,
-    hourlyRate: profile.hourlyRate,
-    advances: advanceTotal,
-  });
-
-  const payslipData = {
-    payrollRunId: payrollRun.id,
-    schoolId,
-    staffProfileId: profile.id,
-    teacherId: profile.teacherId || null,
-    baseSalary: profile.baseSalary || 0,
-    advances: advanceTotal,
-    netPay,
-  };
 
   if (profile.teacherId) {
     return generateTeacherPayroll(profile.teacherId, `${y}-${String(m).padStart(2, '0')}`);
   }
 
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+
   const payslip = await prisma.payslip.upsert({
     where: { payrollRunId_staffProfileId: { payrollRunId: payrollRun.id, staffProfileId: profile.id } },
-    create: payslipData,
-    update: {
-      baseSalary: payslipData.baseSalary,
+    create: {
+      payrollRunId: payrollRun.id,
+      schoolId,
+      staffProfileId: profile.id,
+      teacherId: null,
+      baseSalary: profile.baseSalary || 0,
       advances: advanceTotal,
-      netPay,
+      netPay: 0,
     },
+    update: {
+      baseSalary: profile.baseSalary || 0,
+      advances: advanceTotal,
+    },
+  });
+
+  const official = await buildOfficialPayslip({
+    payslipId: payslip.id,
+    school,
+    profile,
+    teacher: null,
+    payrollRun,
+    advances: advanceTotal,
   });
 
   const totals = await prisma.payslip.aggregate({
@@ -79,7 +82,13 @@ async function generateStaffPayroll(staffProfileId, month) {
     data: { totalNet: totals._sum.netPay || 0, status: 'VALIDATED' },
   });
 
-  return { ok: true, payslip, netPay, payrollRunId: payrollRun.id };
+  return {
+    ok: true,
+    payslip: official.payslip,
+    netPay: official.netPay,
+    payrollRunId: payrollRun.id,
+    pdfUrl: official.pdfUrl,
+  };
 }
 
 async function generatePayroll({ schoolId, month, year, teacherIds }) {

@@ -25,7 +25,11 @@
             <td><%= p.payrollRun.month %>/<%= p.payrollRun.year %></td>
             <td><strong><%= p.netPay.toLocaleString('fr-FR') %> FCFA</strong></td>
             <td><%= p.payrollRun.status %></td>
-            <td><% if (p.pdfUrl) { %><a href="<%= p.pdfUrl %>" target="_blank" class="btn btn-sm btn-primary">Télécharger</a><% } else { %>—<% } %></td>
+            <td>
+              <% if (p.pdfUrl || p.lines) { %>
+                <a href="/teacher/hr/payslips/<%= p.id %>/pdf" target="_blank" class="btn btn-sm btn-primary">PDF</a>
+              <% } else { %>—<% } %>
+            </td>
           </tr>
         <% }) %>
         <% if (!payslips.length) { %><tr><td colspan="4" class="empty">Aucun bulletin pour le moment.</td></tr><% } %>

@@ -60,6 +60,7 @@ router.get('/hr/profile', requireModule('hr'), teacherHrController.profile);
 router.get('/hr/leaves', requireModule('hr'), teacherHrController.leavesPage);
 router.post('/hr/leaves', requireModule('hr'), teacherHrController.requestLeave);
 router.get('/hr/payslips', requireModule('hr'), teacherHrController.payslipsPage);
+router.get('/hr/payslips/:id/pdf', requireModule('hr'), teacherHrController.exportOwnPayslipPdf);
 router.post('/hr/advances', requireModule('hr'), teacherHrController.requestAdvance);
 router.get('/hr/attendance', requireModule('hr'), teacherHrController.attendancePage);
 router.post('/hr/attendance/check-in', requireModule('hr'), teacherHrController.clockIn);

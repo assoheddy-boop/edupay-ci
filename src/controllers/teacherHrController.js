@@ -185,6 +185,50 @@ async function requestAdvance(req, res) {
   res.redirect('/teacher/hr/payslips?success=advance');
 }
 
+async function exportOwnPayslipPdf(req, res) {
+  const teacher = req.user.teacher;
+  const payslip = await prisma.payslip.findFirst({
+    where: { id: req.params.id, teacherId: teacher.id },
+    include: {
+      lines: { orderBy: { sortOrder: 'asc' } },
+      payrollRun: true,
+      staffProfile: true,
+      teacher: { include: { user: true, staffProfile: true } },
+      school: true,
+    },
+  });
+  if (!payslip) return res.redirect('/teacher/hr/payslips?error=pdf');
+
+  const { computePayslipPayload } = require('../services/paySlipService');
+  const { generatePaySlipPdf } = require('../services/paySlipPdf');
+  const { sendPdfDownload } = require('../utils/pdfOutput');
+
+  try {
+    const profile = payslip.staffProfile || payslip.teacher?.staffProfile;
+    const payload = await computePayslipPayload({
+      profile,
+      teacher: payslip.teacher,
+      schoolId: payslip.schoolId,
+      month: payslip.payrollRun.month,
+      year: payslip.payrollRun.year,
+      advances: payslip.advances,
+      bonuses: payslip.bonuses,
+      paymentMethod: payslip.paymentMethod,
+    });
+    const result = await generatePaySlipPdf({
+      payslip,
+      school: payslip.school,
+      profile,
+      teacher: payslip.teacher,
+      payload,
+    });
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/teacher/hr/payslips?error=pdf');
+  }
+}
+
 async function evaluationsPage(req, res) {
   const teacher = req.user.teacher;
   const evaluations = await prisma.staffEvaluation.findMany({
@@ -200,6 +244,7 @@ module.exports = {
   leavesPage,
   requestLeave,
   payslipsPage,
+  exportOwnPayslipPdf,
   attendancePage,
   clockIn,
   clockOut,

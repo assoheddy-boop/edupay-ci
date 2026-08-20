@@ -1,0 +1,39 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('rubriques-paie', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: 'Rubriques de paie' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Rubriques de paie — CNPS &amp; fiscalité</h1>
+  <p class="page-sub">Taux et montants par défaut pour les bulletins officiels CI.</p>
+</div>
+<%- include('_nav') %>
+<% if (success) { %><div class="alert alert-success">Rubriques enregistrées.</div><% } %>
+
+<form method="POST" action="/school/hr/rubriques-paie" class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Libellé</th>
+        <th>Taux (%)</th>
+        <th>Montant fixe (FCFA)</th>
+        <th>Actif</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rubriques.forEach(function(r) { %>
+        <tr>
+          <td><strong><%= r.code %></strong></td>
+          <td><input type="text" name="label_<%= r.code %>" value="<%= r.label %>" class="form-control"></td>
+          <td><input type="number" step="0.1" name="rate_<%= r.code %>" value="<%= r.rate != null ? r.rate : '' %>" style="width:90px"></td>
+          <td><input type="number" name="fixed_<%= r.code %>" value="<%= r.fixedAmount != null ? r.fixedAmount : '' %>" style="width:110px"></td>
+          <td><input type="checkbox" name="enabled_<%= r.code %>" <%= r.enabled !== false ? 'checked' : '' %>></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+
+<p class="form-hint">Codes officiels : 100, 110, 210, 211, 810 (CNPS 6,3 %), 820 (IS 1,2 %), 835, 840, 204, 453, 510, 512 (CMU).</p>
+<% } %>

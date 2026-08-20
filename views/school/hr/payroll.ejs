@@ -71,9 +71,8 @@
               <td><%= p.advances.toLocaleString('fr-FR') %></td>
               <td><strong><%= p.netPay.toLocaleString('fr-FR') %></strong></td>
               <td>
-                <% if (p.teacherId) { %>
-                  <a href="/school/hr/export/payslip/<%= p.teacherId %>?month=<%= month %>&amp;year=<%= year %>" target="_blank">PDF</a>
-                <% } else { %>—<% } %>
+                <a href="/school/hr/payslip/<%= p.id %>/pdf" target="_blank">PDF</a>
+                · <a href="/school/hr/payslip/<%= p.id %>/preview" target="_blank">Aperçu</a>
               </td>
             </tr>
           <% }) %>

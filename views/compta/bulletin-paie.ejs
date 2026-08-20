@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulletin de paie — <%= school.name %></title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 24px; }
+    .header-box { border: 1px dashed #000; padding: 12px; text-align: center; margin-bottom: 8px; }
+    .header-box h1 { color: #0052CC; font-size: 16px; margin: 0 0 6px; text-transform: uppercase; }
+    .header-box p { margin: 2px 0; font-size: 11px; }
+    .title-band { border: 2px solid #000; text-align: center; font-weight: bold; font-style: italic; padding: 6px; margin: 8px 0; }
+    .employee-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #000; margin-bottom: 8px; }
+    .employee-grid > div { padding: 8px; }
+    .employee-grid > div:first-child { border-right: 1px solid #000; }
+    .employee-grid p { margin: 3px 0; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    th, td { border: 1px solid #000; padding: 4px 6px; font-size: 11px; }
+    th { background: #f5f5f5; text-align: center; }
+    .num { text-align: right; }
+    .subtotal td { font-weight: bold; text-align: center; }
+    .totals { float: right; width: 220px; margin-top: 8px; }
+    .totals table td:first-child { font-weight: bold; }
+    .cumuls { clear: both; margin-top: 16px; }
+    .footer-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid #000; margin-top: 16px; min-height: 80px; }
+    .footer-grid > div { padding: 8px; border-right: 1px solid #000; }
+    .footer-grid > div:last-child { border-right: 0; }
+    .print-actions { margin-bottom: 16px; }
+    @media print { .print-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <% if (preview) { %>
+  <div class="print-actions">
+    <button onclick="window.print()">Imprimer</button>
+    <a href="/school/hr/payslip/<%= payslip.id %>/pdf">Télécharger PDF</a>
+  </div>
+  <% } %>
+
+  <div class="header-box">
+    <h1><%= school.officialName || school.name %></h1>
+    <% if (school.menetAgrement) { %><p><em>Etablissement d'Enseignement Scolaire Agréé sous le N° <%= school.menetAgrement %></em></p><% } %>
+    <% if (school.educationLevels) { %><p><em><%= school.educationLevels %></em></p><% } %>
+    <p>
+      <% if (school.nccNumber) { %>N°CC : <%= school.nccNumber %><% } %>
+      <% if (school.postalAddress) { %> ✉ <%= school.postalAddress %><% } %>
+      <% if (school.publicPhones) { %> ☎ <%= school.publicPhones %><% } %>
+    </p>
+    <% if (school.dren) { %><p><%= school.dren %></p><% } %>
+  </div>
+
+  <div class="title-band">BULLETIN DE PAIE MENSUELLE</div>
+
+  <div class="employee-grid">
+    <div>
+      <p><strong>MATRICULE :</strong> <%= employee.matricule %></p>
+      <p><strong>DATE DE NAISSANCE :</strong> <%= employee.birthDate ? new Date(employee.birthDate).toLocaleDateString('fr-FR') : '—' %></p>
+      <p><strong>N° CNPS :</strong> <%= employee.cnpsNumber %></p>
+      <p><strong>NBRE. DE PARTS :</strong> <%= employee.taxParts %></p>
+      <p><strong>NATIONALITE :</strong> <%= employee.nationality %></p>
+      <p><strong>SITUATION MATRIMONI. :</strong> <%= employee.maritalStatus %></p>
+    </div>
+    <div>
+      <p><strong>PERIODE DE PAIE :</strong> <%= periodLabel %></p>
+      <p><strong>Date d'embauche :</strong> <%= employee.hireDate ? new Date(employee.hireDate).toLocaleDateString('fr-FR') : '—' %></p>
+      <p><strong>NOM :</strong> <%= employee.lastName %></p>
+      <p><strong>PRENOMS :</strong> <%= employee.firstName %></p>
+      <p><strong>FONCTION :</strong> <%= employee.jobTitle %></p>
+    </div>
+  </div>
+
+  <% const displayLines = typeof displayLines !== 'undefined' ? displayLines : []; %>
+  <table>
+    <thead>
+      <tr><th>CODE</th><th>RUBRIQUE</th><th>BASE</th><th>NBRE/TAUX</th><th>GAINS</th><th>RETENUES</th></tr>
+    </thead>
+    <tbody>
+      <% let currentBlock = 1; %>
+      <% displayLines.forEach(function(row) { %>
+        <% if (row.block !== currentBlock) { %>
+          <tr class="subtotal">
+            <td colspan="4">SOUS-TOTAL</td>
+            <td class="num"><%= (blocks[currentBlock] && blocks[currentBlock].gains) ? blocks[currentBlock].gains.toLocaleString('fr-FR') : '' %></td>
+            <td class="num"><%= (blocks[currentBlock] && blocks[currentBlock].deductions) ? blocks[currentBlock].deductions.toLocaleString('fr-FR') : '' %></td>
+          </tr>
+          <% currentBlock = row.block; %>
+        <% } %>
+        <tr>
+          <td><%= row.code %></td>
+          <td><%= row.rubrique %></td>
+          <td class="num"><%= row.base %></td>
+          <td><%= row.rate %></td>
+          <td class="num"><%= row.gains %></td>
+          <td class="num"><%= row.deductions %></td>
+        </tr>
+      <% }); %>
+      <tr class="subtotal">
+        <td colspan="4">SOUS-TOTAL</td>
+        <td class="num"><%= blocks[currentBlock] ? blocks[currentBlock].gains.toLocaleString('fr-FR') : '' %></td>
+        <td class="num"><%= blocks[currentBlock] ? blocks[currentBlock].deductions.toLocaleString('fr-FR') : '' %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table>
+      <tr><td>TOTAL GAINS</td><td class="num"><%= totals.totalGains.toLocaleString('fr-FR') %></td></tr>
+      <tr><td>TOTAL RETENUES</td><td class="num"><%= totals.totalDeductions.toLocaleString('fr-FR') %></td></tr>
+      <tr><td>NET A PAYER</td><td class="num"><strong><%= totals.netPay.toLocaleString('fr-FR') %></strong></td></tr>
+    </table>
+  </div>
+
+  <div class="cumuls">
+    <p><strong>CUMULS ANNUELS BASE CONGES</strong></p>
+    <table>
+      <tr><td>Brut imposable</td><td class="num"><%= (annualCumuls.brutImposable || 0).toLocaleString('fr-FR') %></td></tr>
+      <tr><td>Régime Général (CNPS)</td><td class="num"><%= (annualCumuls.cnps || 0).toLocaleString('fr-FR') %></td></tr>
+      <tr><td>Impôt sur salaire (IS)</td><td class="num"><%= (annualCumuls.is || 0).toLocaleString('fr-FR') %></td></tr>
+      <tr><td>Contribution Nationale (CN)</td><td class="num"><%= (annualCumuls.cn || 0).toLocaleString('fr-FR') %></td></tr>
+      <tr><td>Impôt Général sur le Revenu (IGR)</td><td class="num"><%= (annualCumuls.igr || 0).toLocaleString('fr-FR') %></td></tr>
+      <tr><td><strong>TOTAL CUMULS ANNUELS</strong></td><td class="num"><strong><%= (annualCumuls.netPay || 0).toLocaleString('fr-FR') %></strong></td></tr>
+    </table>
+  </div>
+
+  <div class="footer-grid">
+    <div>
+      <strong>REGLEMENT en Francs CFA</strong><br>
+      ☐ Espèce ☐ Chèque ☐ Virement bancaire
+    </div>
+    <div style="text-align:center"><strong>L' EMPLOYE</strong><br><br>Signature</div>
+    <div style="text-align:center"><strong>L' EMPLOYEUR</strong><br><br><%= school.directorName || '—' %></div>
+  </div>
+  <p><strong>PROCHAIN SALAIRE :</strong> <%= payslip.nextPayDate ? new Date(payslip.nextPayDate).toLocaleDateString('fr-FR') : '—' %></p>
+</body>
+</html>

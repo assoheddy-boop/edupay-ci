@@ -1,7 +1,7 @@
 const prisma = require('../src/config/database');
 const { hashPassword } = require('../src/utils/password');
 const { ensureStaffProfile, calcNetPay, validateLeaveRequest } = require('../src/utils/hr');
-const { generatePayrollPDF } = require('./export');
+const { buildOfficialPayslip } = require('../src/services/paySlipService');
 const logger = require('./logger');
 
 function parseMonth(month) {
@@ -162,12 +162,6 @@ async function generatePayroll(teacherId, month) {
   }
 
   const advanceTotal = await getApprovedAdvancesTotal(teacherId);
-  const netPay = calcNetPay({
-    baseSalary: profile?.baseSalary || 0,
-    hourlyRate: profile?.hourlyRate,
-    hoursWorked: profile?.contractType === 'VACATAIRE' ? 0 : undefined,
-    advances: advanceTotal,
-  });
 
   const payslip = await prisma.payslip.upsert({
     where: { payrollRunId_teacherId: { payrollRunId: payrollRun.id, teacherId } },
@@ -178,29 +172,33 @@ async function generatePayroll(teacherId, month) {
       staffProfileId: profile?.id || null,
       baseSalary: profile?.baseSalary || 0,
       advances: advanceTotal,
-      netPay,
+      netPay: 0,
     },
     update: {
       baseSalary: profile?.baseSalary || 0,
       advances: advanceTotal,
-      netPay,
       staffProfileId: profile?.id || null,
     },
   });
 
-  const pdf = await generatePayrollPDF(teacherId, { month: m, year: y });
-  const pdfUrl = pdf.ok ? pdf.pdfUrl : payslip.pdfUrl || null;
+  const official = await buildOfficialPayslip({
+    payslipId: payslip.id,
+    school: teacher.school,
+    profile,
+    teacher,
+    payrollRun,
+    advances: advanceTotal,
+  });
 
-  if (!pdf.ok) {
-    logger.error('Échec génération PDF de paie', { teacherId, month: m, year: y, error: pdf.error });
-  } else {
-    logger.info('Fiche de paie générée', { teacherId, month: m, year: y, netPay, pdfUrl });
+  if (!official.ok) {
+    logger.error('Échec génération bulletin de paie', { teacherId, month: m, year: y });
+    return { ok: false, error: 'pdf' };
   }
 
-  const updatedPayslip = await prisma.payslip.update({
-    where: { id: payslip.id },
-    data: pdfUrl ? { pdfUrl } : {},
-  });
+  const { netPay, pdfUrl } = official;
+  logger.info('Bulletin de paie généré', { teacherId, month: m, year: y, netPay, pdfUrl });
+
+  const updatedPayslip = await prisma.payslip.findUnique({ where: { id: payslip.id } });
 
   const totals = await prisma.payslip.aggregate({
     where: { payrollRunId: payrollRun.id },

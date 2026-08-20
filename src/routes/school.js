@@ -201,9 +201,13 @@ router.post('/hr/leaves/:id/review', requireModule('hr'), requirePermission(P.HR
 router.get('/hr/attendance', requireModule('hr'), requirePermission(P.HR_READ), hrController.attendancePage);
 router.post('/hr/attendance', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.updateAttendance);
 router.get('/hr/payroll', requireModule('hr'), requirePermission(P.HR_READ), hrController.payrollPage);
+router.get('/hr/rubriques-paie', requireModule('hr'), requirePermission(P.ACCOUNTING_WRITE), hrController.payRubriquesPage);
+router.post('/hr/rubriques-paie', requireModule('hr'), requirePermission(P.ACCOUNTING_WRITE), hrController.savePayRubriques);
 router.post('/hr/payroll/generate', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.generatePayrollAction);
 router.post('/hr/payroll/pay', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.payPayrollAction);
 router.post('/hr/payroll/payslips/:id', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.updatePayslip);
+router.get('/hr/payslip/:id/pdf', requireModule('hr'), requirePermission(P.HR_READ), hrController.exportPayslipPdf);
+router.get('/hr/payslip/:id/preview', requireModule('hr'), requirePermission(P.HR_READ), hrController.payslipPreview);
 router.post('/hr/advances/:id/review', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.reviewAdvance);
 router.get('/hr/evaluations', requireModule('hr'), requirePermission(P.HR_READ), hrController.evaluationsPage);
 router.post('/hr/evaluations', requireModule('hr'), requirePermission(P.HR_WRITE), hrController.saveEvaluation);

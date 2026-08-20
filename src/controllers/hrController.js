@@ -16,7 +16,15 @@ const {
 const { processExpiredLeaves } = require('../services/hrLeaveService');
 const { generatePayroll, markPayrollPaid } = require('../services/hrPayrollService');
 const { generatePayroll: generateTeacherPayroll } = require('../../services/HRService');
-const { generatePayrollPDF } = require('../../services/export');
+const {
+  getPayslipViewModel,
+  loadSchoolRubriques,
+  saveSchoolRubriqueOverrides,
+  computePayslipPayload,
+  buildOfficialPayslip,
+} = require('../services/paySlipService');
+const { generatePaySlipPdf } = require('../services/paySlipPdf');
+const { DEFAULT_PAY_RUBRIQUES } = require('../config/paySlipRubriques');
 const { sendPdfDownload } = require('../utils/pdfOutput');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { putObject } = require('../../services/StorageService');
@@ -744,22 +752,108 @@ async function exportAttendance(req, res) {
 }
 
 async function exportPayslipPdf(req, res) {
+  const schoolId = req.user.school.id;
+  const payslipId = req.params.payslipId || req.params.id;
+
+  if (payslipId) {
+    const payslip = await prisma.payslip.findFirst({
+      where: { id: payslipId, schoolId },
+      include: {
+        lines: { orderBy: { sortOrder: 'asc' } },
+        payrollRun: true,
+        staffProfile: true,
+        teacher: { include: { user: true, staffProfile: true } },
+        school: true,
+      },
+    });
+    if (!payslip) return res.redirect('/school/hr/payroll?error=pdf');
+
+    try {
+      if (payslip.lines?.length) {
+        const profile = payslip.staffProfile || payslip.teacher?.staffProfile;
+        const payload = await computePayslipPayload({
+          profile,
+          teacher: payslip.teacher,
+          schoolId,
+          month: payslip.payrollRun.month,
+          year: payslip.payrollRun.year,
+          advances: payslip.advances,
+          bonuses: payslip.bonuses,
+          extraDeductions: 0,
+          paymentMethod: payslip.paymentMethod,
+        });
+        const result = await generatePaySlipPdf({
+          payslip,
+          school: payslip.school,
+          profile,
+          teacher: payslip.teacher,
+          payload,
+        });
+        return sendPdfDownload(res, result);
+      }
+
+      const profile = payslip.staffProfile || payslip.teacher?.staffProfile;
+      const official = await buildOfficialPayslip({
+        payslipId: payslip.id,
+        school: payslip.school,
+        profile,
+        teacher: payslip.teacher,
+        payrollRun: payslip.payrollRun,
+        advances: payslip.advances,
+        bonuses: payslip.bonuses,
+      });
+      if (!official.pdfUrl) return res.redirect('/school/hr/payroll?error=pdf');
+      return res.redirect(official.pdfUrl);
+    } catch (err) {
+      console.error(err);
+      return res.redirect('/school/hr/payroll?error=pdf');
+    }
+  }
+
   const teacher = await prisma.teacher.findFirst({
-    where: { id: req.params.teacherId, schoolId: req.user.school.id },
+    where: { id: req.params.teacherId, schoolId },
   });
   if (!teacher) return res.redirect('/school/hr/payroll');
 
-  const { month, year } = req.query;
-  const period = year && month ? `${year}-${String(month).padStart(2, '0')}` : month;
+  const month = parseInt(req.query.month, 10);
+  const year = parseInt(req.query.year, 10);
+  const payslip = await prisma.payslip.findFirst({
+    where: { teacherId: teacher.id, schoolId, payrollRun: { month, year } },
+  });
+  if (!payslip) return res.redirect('/school/hr/payroll?error=pdf');
+  return res.redirect(`/school/hr/payslip/${payslip.id}/pdf`);
+}
 
-  try {
-    const result = await generatePayrollPDF(teacher.id, period);
-    if (!result.ok) return res.redirect('/school/hr/payroll?error=pdf');
-    return sendPdfDownload(res, result);
-  } catch (err) {
-    console.error(err);
-    res.redirect('/school/hr/payroll?error=pdf');
-  }
+async function payslipPreview(req, res) {
+  const vm = await getPayslipViewModel(req.params.id, req.user.school.id);
+  if (!vm) return res.redirect('/school/hr/payroll?error=pdf');
+  res.render('compta/bulletin-paie', {
+    ...vm,
+    user: req.user,
+    preview: true,
+  });
+}
+
+async function payRubriquesPage(req, res) {
+  const rubriques = await loadSchoolRubriques(req.user.school.id);
+  res.render('school/hr/rubriques-paie', {
+    user: req.user,
+    rubriques,
+    defaults: DEFAULT_PAY_RUBRIQUES,
+    success: req.query.success,
+  });
+}
+
+async function savePayRubriques(req, res) {
+  const rows = DEFAULT_PAY_RUBRIQUES.map((def) => ({
+    code: def.code,
+    label: req.body[`label_${def.code}`],
+    rate: req.body[`rate_${def.code}`],
+    fixedAmount: req.body[`fixed_${def.code}`],
+    enabled: req.body[`enabled_${def.code}`] === 'on',
+  }));
+  await saveSchoolRubriqueOverrides(req.user.school.id, rows);
+  res.redirect('/school/hr/rubriques-paie?success=1');
 }
 
 module.exports = {
@@ -787,4 +881,7 @@ module.exports = {
   exportLeaves,
   exportAttendance,
   exportPayslipPdf,
+  payslipPreview,
+  payRubriquesPage,
+  savePayRubriques,
 };

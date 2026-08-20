@@ -4,7 +4,7 @@ jest.mock('../src/config/database', () => ({
   teacher: { findUnique: jest.fn() },
   staffProfile: { findUnique: jest.fn() },
   payrollRun: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
-  payslip: { upsert: jest.fn(), update: jest.fn(), aggregate: jest.fn() },
+  payslip: { upsert: jest.fn(), update: jest.fn(), aggregate: jest.fn(), findUnique: jest.fn() },
   salaryAdvance: { findMany: jest.fn() },
   leaveRequest: { create: jest.fn() },
   evaluation: { create: jest.fn() },
@@ -30,6 +30,15 @@ jest.mock('../services/export', () => ({
   }),
 }));
 
+jest.mock('../src/services/paySlipService', () => ({
+  buildOfficialPayslip: jest.fn().mockResolvedValue({
+    ok: true,
+    netPay: 250000,
+    pdfUrl: '/uploads/payslips/fiche-paie-test.pdf',
+    payslip: { id: 'payslip-1', netPay: 250000, pdfUrl: '/uploads/payslips/fiche-paie-test.pdf' },
+  }),
+}));
+
 jest.mock('../services/logger', () => ({
   info: jest.fn(),
   warn: jest.fn(),
@@ -38,7 +47,7 @@ jest.mock('../services/logger', () => ({
 
 const { calcNetPay, validateLeaveRequest } = require('../src/utils/hr');
 const prisma = require('../src/config/database');
-const { generatePayrollPDF } = require('../services/export');
+const { buildOfficialPayslip } = require('../src/services/paySlipService');
 const {
   createTeacherProfile,
   recordLeave,
@@ -147,9 +156,11 @@ describe('HRService.recordLeave', () => {
 describe('HRService.generatePayroll', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    generatePayrollPDF.mockResolvedValue({
+    buildOfficialPayslip.mockResolvedValue({
       ok: true,
+      netPay: 250000,
       pdfUrl: '/uploads/payslips/fiche-paie-test.pdf',
+      payslip: { id: 'payslip-1', netPay: 250000, pdfUrl: '/uploads/payslips/fiche-paie-test.pdf' },
     });
   });
 
@@ -176,10 +187,10 @@ describe('HRService.generatePayroll', () => {
     prisma.salaryAdvance.findMany.mockResolvedValue([]);
     prisma.payslip.upsert.mockResolvedValue({
       id: 'payslip-1',
-      netPay: 250000,
+      netPay: 0,
       pdfUrl: null,
     });
-    prisma.payslip.update.mockResolvedValue({
+    prisma.payslip.findUnique.mockResolvedValue({
       id: 'payslip-1',
       netPay: 250000,
       pdfUrl: '/uploads/payslips/fiche-paie-test.pdf',
@@ -197,7 +208,7 @@ describe('HRService.generatePayroll', () => {
         data: expect.objectContaining({ month: 8, year: 2026 }),
       }),
     );
-    expect(generatePayrollPDF).toHaveBeenCalledWith('teacher-1', { month: 8, year: 2026 });
+    expect(buildOfficialPayslip).toHaveBeenCalled();
   });
 });
 

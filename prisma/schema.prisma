@@ -366,6 +366,7 @@ model School {
   payslips             Payslip[]
   salaryAdvances       SalaryAdvance[]
   staffEvaluations     StaffEvaluation[]
+  payRubriques         SchoolPayRubrique[]
   transfersFrom        TransferRequest[] @relation("TransferFromSchool")
   transfersTo          TransferRequest[] @relation("TransferToSchool")
   accountingEntries    AccountingEntry[]
@@ -1235,6 +1236,15 @@ model StaffProfile {
   email           String?
   phone           String?
   annualLeaveDays Int           @default(30)
+  /// Matricule interne (ex. 026-IGES-22).
+  staffMatricule  String?
+  birthDate       DateTime?     @db.Date
+  cnpsNumber      String?
+  taxParts        Float         @default(1)
+  nationality     String        @default("IVOIRIENNE")
+  maritalStatus   String?
+  sursalaire      Int           @default(0)
+  transportAllowance Int        @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -1331,6 +1341,13 @@ model Payslip {
   advances    Int      @default(0)
   hoursWorked Float?
   netPay      Int      @default(0)
+  totalGains      Int      @default(0)
+  totalDeductions Int      @default(0)
+  periodStart     DateTime? @db.Date
+  periodEnd       DateTime? @db.Date
+  paymentMethod   String?
+  nextPayDate     DateTime? @db.Date
+  annualCumuls    Json?
   pdfUrl      String?
   createdAt   DateTime @default(now())
 
@@ -1342,9 +1359,46 @@ model Payslip {
   staffProfile   StaffProfile? @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
   schoolId     String
   school       School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  lines        PayslipLine[]
 
   @@unique([payrollRunId, teacherId])
   @@unique([payrollRunId, staffProfileId])
+}
+
+/// Rubriques de paie configurables par école (taux CNPS, IS, montants fixes…).
+model SchoolPayRubrique {
+  id          String   @id @default(cuid())
+  code        String
+  label       String?
+  rate        Float?
+  fixedAmount Int?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, code])
+}
+
+model PayslipLine {
+  id         String  @id @default(cuid())
+  code       String
+  label      String
+  base       Int?
+  rate       Float?
+  rateLabel  String?
+  gains      Int     @default(0)
+  deductions Int     @default(0)
+  block      Int     @default(1)
+  category   String  @default("GAIN")
+  sortOrder  Int     @default(0)
+
+  payslipId String
+  payslip   Payslip @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+
+  @@index([payslipId])
 }
 
 model SalaryAdvance {
