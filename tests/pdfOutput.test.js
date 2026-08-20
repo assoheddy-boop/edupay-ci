@@ -30,6 +30,28 @@ describe('pdfOutput', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
+  test('savePdfBuffer falls back to local storage when remote upload fails', async () => {
+    jest.resetModules();
+    jest.doMock('../services/StorageService', () => ({
+      putObject: jest.fn().mockRejectedValue(new Error('BLOB_READ_WRITE_TOKEN manquant')),
+      uploadsRoot: () => path.join(os.tmpdir(), 'educonnect-pdf-fallback'),
+      getDriver: () => 'blob',
+    }));
+    const { renderPdfToBuffer, savePdfBuffer } = require('../src/utils/pdfOutput');
+    const buffer = await renderPdfToBuffer((doc) => doc.text('Bulletin fallback'));
+    const saved = await savePdfBuffer({
+      folder: 'bulletins',
+      filename: 'bulletin-fallback.pdf',
+      buffer,
+    });
+    expect(saved.buffer.subarray(0, 4).toString()).toBe('%PDF');
+    expect(saved.pdfUrl).toBe('/uploads/bulletins/bulletin-fallback.pdf');
+    expect(saved.filepath).toContain('bulletin-fallback.pdf');
+    expect(require('fs').existsSync(saved.filepath)).toBe(true);
+    jest.dontMock('../services/StorageService');
+    jest.resetModules();
+  });
+
   test('sendPdfDownload streams the buffer with application/pdf', () => {
     const res = {
       setHeader: jest.fn(),

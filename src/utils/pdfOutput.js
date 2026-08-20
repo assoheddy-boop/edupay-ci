@@ -32,15 +32,28 @@ async function savePdfBuffer({ folder, filename, buffer, outputDir } = {}) {
     return { filepath, filename: name, pdfUrl: url, url, buffer };
   }
 
-  const stored = await putObject({
-    folder: dirName,
-    filename: name,
-    buffer,
-    contentType: 'application/pdf',
-  });
-  const filepath = getDriver() === 'local'
-    ? path.join(uploadsRoot(), dirName, name)
-    : null;
+  let stored;
+  let filepath = null;
+  try {
+    stored = await putObject({
+      folder: dirName,
+      filename: name,
+      buffer,
+      contentType: 'application/pdf',
+    });
+    if (getDriver() === 'local') {
+      filepath = path.join(uploadsRoot(), dirName, name);
+    }
+  } catch (err) {
+    // Blob/S3 may fail (missing token, wrong store) — keep buffer for direct download.
+    const localDir = path.join(uploadsRoot(), dirName);
+    await fs.promises.mkdir(localDir, { recursive: true });
+    filepath = path.join(localDir, name);
+    await fs.promises.writeFile(filepath, buffer);
+    const url = `/uploads/${dirName}/${name}`.replace(/\/{2,}/g, '/');
+    stored = { url, driver: 'local' };
+    console.warn('[pdfOutput] Stockage distant indisponible, fallback local:', err.message);
+  }
   return {
     filepath,
     filename: name,
