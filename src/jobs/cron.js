@@ -3,6 +3,7 @@ const prisma = require('../config/database');
 const { sendSms } = require('../services/sms');
 const { sendNotification, processPendingJobs } = require('../../services/NotificationService');
 const { homeworkReminders } = require('./homeworkReminders');
+const { marketplaceRenewalReminders } = require('./marketplaceRenewalReminders');
 
 async function overduePaymentsForSchool(schoolId) {
   const now = new Date();
@@ -141,13 +142,14 @@ function startCronJobs() {
 
   cron.schedule('0 8 * * *', paymentReminders, { timezone: 'Africa/Abidjan' });
   cron.schedule('0 8 * * *', homeworkReminders, { timezone: 'Africa/Abidjan' });
+  cron.schedule('0 8 * * *', marketplaceRenewalReminders, { timezone: 'Africa/Abidjan' });
   cron.schedule('0 18 * * *', homeworkReminders, { timezone: 'Africa/Abidjan' });
   cron.schedule('0 9 * * 1', weeklyParentSummary, { timezone: 'Africa/Abidjan' });
   cron.schedule('0 2 * * *', dailyBackup, { timezone: 'Africa/Abidjan' });
   cron.schedule('* * * * *', () => {
     processPendingJobs().catch((err) => console.error('[Cron] notifications:', err?.message || err));
   }, { timezone: 'Africa/Abidjan' });
-  console.log('[Cron] Jobs planifiés (paiements 8h, rappels devoirs 8h+18h, résumé lundi 9h, sauvegarde 2h, file notifications 1 min, Abidjan)');
+  console.log('[Cron] Jobs planifiés (paiements 8h, marketplace J-30 8h, rappels devoirs 8h+18h, résumé lundi 9h, sauvegarde 2h, file notifications 1 min, Abidjan)');
 }
 
 async function notificationJobs() {
@@ -167,4 +169,5 @@ module.exports = {
   homeworkReminders,
   notificationJobs,
   hrLeaveMaintenance,
+  marketplaceRenewalReminders,
 };

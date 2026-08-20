@@ -74,6 +74,7 @@ function marketplaceBadge(school) {
 }
 
 function publishedWhere(extra = {}) {
+  const now = new Date();
   return {
     publicPortalEnabled: true,
     slug: { not: null },
@@ -81,6 +82,14 @@ function publishedWhere(extra = {}) {
     modules: {
       some: { moduleKey: MARKETPLACE_MODULE, enabled: true },
     },
+    AND: [
+      {
+        OR: [
+          { marketplaceExpiresAt: null },
+          { marketplaceExpiresAt: { gt: now } },
+        ],
+      },
+    ],
     ...extra,
   };
 }
@@ -124,6 +133,9 @@ async function applyMarketplaceOffer(schoolId, { tier, publish, enableModule, re
   if (live) {
     const { subscriptionDatesForTierChange } = require('./marketplaceSubscription');
     Object.assign(data, subscriptionDatesForTierChange(school, marketplaceTier, { renew: Boolean(renew) }));
+    if (renew) {
+      data.marketplaceRenewalReminderAt = null;
+    }
   }
 
   try {

@@ -962,6 +962,82 @@ async function setMarketplaceTier(req, res) {
   return res.redirect('/admin/marketplace?success=tier');
 }
 
+async function toggleMarketplaceFeatured(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  const featured = req.body.publicFeatured === '1' || req.body.publicFeatured === 'on' || req.body.publicFeatured === 'true';
+  await prisma.school.update({
+    where: { id },
+    data: { publicFeatured: featured },
+  });
+  await logAudit({
+    action: 'school_featured_update',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    details: { publicFeatured: featured },
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=featured');
+}
+
+async function bulkRenewMarketplace(req, res) {
+  const raw = req.body.schoolIds;
+  const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  let renewed = 0;
+  for (const id of ids) {
+    const school = await prisma.school.findUnique({ where: { id: String(id) } });
+    if (!school) continue;
+    const tier = parseMarketplaceTier(school.marketplaceTier);
+    if (!isLiveTier(tier)) continue;
+    await applyMarketplaceOffer(id, { tier, enableModule: true, renew: true });
+    await logAudit({
+      action: 'school_marketplace_renew',
+      entity: 'School',
+      entityId: id,
+      user: req.user,
+      schoolId: id,
+      details: { bulk: true },
+      ip: req.ip,
+    });
+    renewed += 1;
+  }
+  return res.redirect(`/admin/marketplace?success=bulk_renewed&count=${renewed}`);
+}
+
+async function sendMarketplaceReminder(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      marketplaceTier: true,
+      marketplaceExpiresAt: true,
+      marketplaceRenewalReminderAt: true,
+      admin: { select: { email: true, firstName: true, lastName: true } },
+    },
+  });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  const { sendMarketplaceRenewalReminder } = require('../jobs/marketplaceRenewalReminders');
+  const result = await sendMarketplaceRenewalReminder(school);
+  if (!result.ok && !result.skip) {
+    return res.redirect('/admin/marketplace?error=reminder');
+  }
+  await logAudit({
+    action: 'school_marketplace_reminder',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=reminder');
+}
+
 async function startSchoolAssist(req, res) {
   const result = await beginSchoolAssist(req, res);
   if (result.status === 403) return res.status(403).send('Forbidden');
@@ -1016,4 +1092,7 @@ module.exports = {
   unpublishMarketplace,
   setMarketplaceTier,
   renewMarketplace,
+  bulkRenewMarketplace,
+  toggleMarketplaceFeatured,
+  sendMarketplaceReminder,
 };

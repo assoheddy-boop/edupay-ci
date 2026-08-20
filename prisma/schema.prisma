@@ -294,6 +294,8 @@ model School {
   /// Début / fin abonnement Marketplace (super-admin).
   marketplaceStartedAt DateTime?
   marketplaceExpiresAt DateTime?
+  /// Dernier e-mail de relance renouvellement (J-30).
+  marketplaceRenewalReminderAt DateTime?
   publicType          PublicSchoolType @default(PRIVE)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

@@ -5,12 +5,13 @@ jest.mock('../src/jobs/cron', () => ({
   homeworkReminders: jest.fn().mockResolvedValue({ ok: true, sent: 0 }),
   notificationJobs: jest.fn().mockResolvedValue({ ok: true, scanned: 0, sent: 0, skipped: 0, failed: 0 }),
   hrLeaveMaintenance: jest.fn().mockResolvedValue({ restored: 0, checked: 0 }),
+  marketplaceRenewalReminders: jest.fn().mockResolvedValue({ scanned: 0, sent: 0, skipped: 0, failed: 0 }),
   startCronJobs: jest.fn(),
 }));
 
 const request = require('supertest');
 const app = require('../src/app');
-const { paymentReminders, dailyBackup, homeworkReminders, notificationJobs } = require('../src/jobs/cron');
+const { paymentReminders, dailyBackup, homeworkReminders, notificationJobs, marketplaceRenewalReminders } = require('../src/jobs/cron');
 
 describe('internal cron routes', () => {
   const prevEnv = process.env.NODE_ENV;
@@ -108,6 +109,16 @@ describe('internal cron routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.job).toBe('notifications');
     expect(notificationJobs).toHaveBeenCalled();
+  });
+
+  test('dedicated marketplace-renewals route runs the job', async () => {
+    process.env.CRON_SECRET = 'cron-secret';
+    const res = await request(app)
+      .get('/api/internal/cron/marketplace-renewals')
+      .set('Authorization', 'Bearer cron-secret');
+    expect(res.status).toBe(200);
+    expect(res.body.job).toBe('marketplace-renewals');
+    expect(marketplaceRenewalReminders).toHaveBeenCalled();
   });
 
   test('daily job also drains the notification queue', async () => {

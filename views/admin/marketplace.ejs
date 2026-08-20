@@ -17,29 +17,62 @@
 <% if (success === 'unpublished') { %><div class="alert alert-success">École retirée de /ecoles.</div><% } %>
 <% if (success === 'tier') { %><div class="alert alert-success">Offre marketplace mise à jour.</div><% } %>
 <% if (success === 'renewed') { %><div class="alert alert-success">Abonnement renouvelé (+1 an).</div><% } %>
+<% if (success === 'bulk_renewed') { %><div class="alert alert-success">Renouvellement groupé effectué (+1 an par école sélectionnée).</div><% } %>
+<% if (success === 'featured') { %><div class="alert alert-success">Mise en avant mise à jour.</div><% } %>
+<% if (success === 'reminder') { %><div class="alert alert-success">E-mail de relance J-30 envoyé.</div><% } %>
 <% if (typeof error !== 'undefined' && error === 'school') { %><div class="alert alert-error">École introuvable.</div><% } %>
+<% if (typeof error !== 'undefined' && error === 'reminder') { %><div class="alert alert-error">Impossible d’envoyer la relance (e-mail admin manquant ou SMTP).</div><% } %>
 
 <div class="stats-grid" style="margin-bottom:1rem">
-  <div class="stat-card">
+  <div class="stat-card stat-card-warning">
     <span class="stat-label">Échéance ≤ <%= renewalWarningDays %> j</span>
     <span class="stat-value"><%= typeof expiring !== 'undefined' ? expiring.length : 0 %></span>
   </div>
-  <div class="stat-card">
+  <div class="stat-card stat-card-danger">
     <span class="stat-label">Expirées</span>
     <span class="stat-value"><%= typeof expired !== 'undefined' ? expired.length : 0 %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Sur /ecoles</span>
+    <span class="stat-value"><%= schools.filter(function(s) { return s.onEcoles; }).length %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">À la une</span>
+    <span class="stat-value"><%= schools.filter(function(s) { return s.publicFeatured; }).length %></span>
   </div>
 </div>
 
 <% if (typeof expiring !== 'undefined' && expiring.length) { %>
-<div class="card" style="margin-bottom:1rem">
+<div class="card card-warning" style="margin-bottom:1rem;border-left:4px solid #e6a700">
   <div class="card-header">
     <h2>Renouvellement à prévoir (J-<%= renewalWarningDays %>)</h2>
+    <p class="page-sub">Relance automatique par e-mail chaque matin à 8h (Abidjan).</p>
   </div>
-  <ul class="devis-mods">
-    <% expiring.forEach(function(s) { %>
-      <li><strong><%= s.name %></strong> — <%= s.subscription.label %> · fin <%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></li>
-    <% }) %>
-  </ul>
+  <div class="table-scroll">
+    <table class="table table-compact">
+      <thead>
+        <tr><th>École</th><th>Palier</th><th>Fin</th><th>Jours</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% expiring.forEach(function(s) { %>
+          <tr>
+            <td><strong><%= s.name %></strong></td>
+            <td><%= s.marketplaceTier %></td>
+            <td><%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></td>
+            <td><span class="badge badge-warning"><%= s.subscription.label %></span></td>
+            <td class="assist-actions">
+              <form method="POST" action="/admin/marketplace/<%= s.id %>/renew" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-primary">+1 an</button>
+              </form>
+              <form method="POST" action="/admin/marketplace/<%= s.id %>/reminder" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-outline">Relancer</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 </div>
 <% } %>
 
@@ -47,27 +80,51 @@
 <div class="card alert-error" style="margin-bottom:1rem">
   <div class="card-header">
     <h2>Abonnements expirés</h2>
+    <p class="page-sub">Ces écoles ne sont plus listées sur /ecoles tant que l’abonnement n’est pas renouvelé.</p>
   </div>
-  <ul class="devis-mods">
-    <% expired.forEach(function(s) { %>
-      <li><strong><%= s.name %></strong> — expiré le <%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></li>
-    <% }) %>
-  </ul>
+  <div class="table-scroll">
+    <table class="table table-compact">
+      <thead>
+        <tr><th>École</th><th>Palier</th><th>Expiré le</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% expired.forEach(function(s) { %>
+          <tr>
+            <td><strong><%= s.name %></strong></td>
+            <td><%= s.marketplaceTier %></td>
+            <td><%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></td>
+            <td>
+              <form method="POST" action="/admin/marketplace/<%= s.id %>/renew">
+                <button type="submit" class="btn btn-sm btn-primary">Renouveler +1 an</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 </div>
 <% } %>
 
+<form method="POST" action="/admin/marketplace/bulk-renew" id="marketplace-bulk-form">
+  <div id="bulk-hidden-inputs"></div>
 <div class="card">
-  <div class="card-header">
-    <h2>Listing /ecoles</h2>
-    <p class="page-sub">Module marketplace actif, palier payant, slug et case « Publier » cochée.</p>
+  <div class="card-header" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem">
+    <div>
+      <h2>Listing /ecoles</h2>
+      <p class="page-sub">Module marketplace actif, palier payant, slug, publication et abonnement en cours.</p>
+    </div>
+    <button type="submit" class="btn btn-primary" id="bulk-renew-btn" disabled>Renouveler la sélection (+1 an)</button>
   </div>
   <div class="table-scroll">
     <table class="table">
       <thead>
         <tr>
+          <th><input type="checkbox" id="select-all-marketplace" aria-label="Tout sélectionner"></th>
           <th>École</th>
           <th>Slug</th>
           <th>Sur /ecoles</th>
+          <th>À la une</th>
           <th>Palier</th>
           <th>Début</th>
           <th>Fin</th>
@@ -77,7 +134,12 @@
       </thead>
       <tbody>
         <% schools.forEach(function(s) { %>
-          <tr>
+          <tr class="<%= s.subscription.state === 'expiring' ? 'row-warning' : (s.subscription.state === 'expired' ? 'row-danger' : '') %>">
+            <td>
+              <% if (s.marketplaceTier && s.marketplaceTier !== 'NONE') { %>
+                <input type="checkbox" value="<%= s.id %>" class="marketplace-row-check" aria-label="Sélectionner <%= s.name %>">
+              <% } %>
+            </td>
             <td>
               <a href="/admin/schools/<%= s.id %>"><strong><%= s.name %></strong></a>
               <br><small><%= s.city || '' %></small>
@@ -89,10 +151,18 @@
             </td>
             <td>
               <% if (s.onEcoles) { %>
-                <span class="badge badge-success">Oui<%= s.publicFeatured ? ' · mise en avant' : '' %></span>
+                <span class="badge badge-success">Oui</span>
               <% } else { %>
                 <span class="badge">Non</span>
               <% } %>
+            </td>
+            <td>
+              <form method="POST" action="/admin/marketplace/<%= s.id %>/featured" class="form-inline">
+                <label class="checkbox-label" style="margin:0">
+                  <input type="checkbox" name="publicFeatured" value="1" <%= s.publicFeatured ? 'checked' : '' %> onchange="this.form.submit()">
+                  À la une
+                </label>
+              </form>
             </td>
             <td>
               <form method="POST" action="/admin/marketplace/<%= s.id %>/tier" class="form-inline">
@@ -140,4 +210,44 @@
     </table>
   </div>
 </div>
+</form>
+
+<script>
+(function () {
+  var bulkForm = document.getElementById('marketplace-bulk-form');
+  var hiddenHost = document.getElementById('bulk-hidden-inputs');
+  var selectAll = document.getElementById('select-all-marketplace');
+  var checks = document.querySelectorAll('.marketplace-row-check');
+  var bulkBtn = document.getElementById('bulk-renew-btn');
+  function syncBulkBtn() {
+    var any = Array.prototype.some.call(checks, function (c) { return c.checked; });
+    if (bulkBtn) bulkBtn.disabled = !any;
+  }
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      checks.forEach(function (c) { c.checked = selectAll.checked; });
+      syncBulkBtn();
+    });
+  }
+  checks.forEach(function (c) {
+    c.addEventListener('change', syncBulkBtn);
+  });
+  if (bulkForm && hiddenHost) {
+    bulkForm.addEventListener('submit', function (e) {
+      hiddenHost.innerHTML = '';
+      Array.prototype.forEach.call(checks, function (c) {
+        if (!c.checked) return;
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'schoolIds';
+        input.value = c.value;
+        hiddenHost.appendChild(input);
+      });
+      if (!hiddenHost.children.length) {
+        e.preventDefault();
+      }
+    });
+  }
+})();
+</script>
 <% } %>
