@@ -13,6 +13,22 @@
 <p class="form-hint">Année scolaire <strong><%= schoolYear %></strong> — <%= school.name %></p>
 
 <% if (success) { %><div class="alert alert-success">Fiche enregistrée.</div><% } %>
+<% if (notfound) { %><div class="alert alert-warning">Aucun élève trouvé pour ce matricule national (MEN).</div><% } %>
+
+<form method="GET" action="/school/inscriptions" class="card search-form" style="margin-bottom:1rem;padding:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
+  <div class="form-group" style="margin:0;flex:1;min-width:160px">
+    <label for="searchQ">Recherche</label>
+    <input type="search" id="searchQ" name="q" value="<%= typeof searchQ !== 'undefined' ? searchQ : '' %>" placeholder="Nom, prénom, matricule école…">
+  </div>
+  <div class="form-group" style="margin:0;flex:1;min-width:160px">
+    <label for="searchMen">Matricule national (MEN)</label>
+    <input type="search" id="searchMen" name="men" value="<%= typeof searchMen !== 'undefined' ? searchMen : '' %>" placeholder="Ex. 1234567890123">
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Rechercher</button>
+  <% if ((searchQ && searchQ.length) || (searchMen && searchMen.length)) { %>
+    <a href="/school/inscriptions" class="btn btn-outline btn-sm">Effacer</a>
+  <% } %>
+</form>
 
 <div class="card">
   <h2>Élèves (<%= rows.length %>)</h2>
@@ -26,6 +42,7 @@
             <th>Élève</th>
             <th>Classe</th>
             <th>Matricule</th>
+            <th>MEN</th>
             <th>Statut</th>
             <th>Fiche <%= schoolYear %></th>
             <th></th>
@@ -37,6 +54,7 @@
               <td><strong><%= r.lastName %></strong> <%= r.firstName %></td>
               <td><%= r.className || '—' %></td>
               <td><code><%= r.matricule || '—' %></code></td>
+              <td><code><%= r.nationalMatricule || '—' %></code></td>
               <td><%= r.enrollmentStatus || '—' %></td>
               <td><%= r.enrolled ? '✓ Complète' : '— À compléter' %></td>
               <td><a href="/school/inscriptions/<%= r.id %>" class="btn btn-outline btn-sm">Ouvrir fiche</a></td>

@@ -81,9 +81,13 @@ router.post('/classes/:id/delete', requirePermission(P.CLASSES_WRITE), schoolCon
 router.get('/students', requirePermission(P.STUDENTS_READ), schoolController.listStudents);
 
 router.get('/inscriptions', requirePermission(P.ENROLLMENTS_READ), enrollmentController.listPage);
+router.get('/inscriptions/recherche', requirePermission(P.ENROLLMENTS_READ), enrollmentController.searchMen);
 router.get('/inscriptions/nouvelle', requirePermission(P.ENROLLMENTS_WRITE), enrollmentController.newPage);
 router.post('/inscriptions', requirePermission(P.ENROLLMENTS_WRITE), upload.logoUpload.single('photo'), auditMiddleware('enrollment_create', 'StudentEnrollment'), enrollmentController.create);
 router.get('/inscriptions/effectif', requirePermission(P.ENROLLMENTS_READ), enrollmentController.classEffectif);
+router.get('/inscriptions/:studentId/fiche.pdf', requirePermission(P.ENROLLMENTS_READ), enrollmentController.fichePdf);
+router.get('/inscriptions/:studentId/certificat-scolarite.pdf', requirePermission(P.CERTIFICATES), enrollmentController.certificatScolaritePdf);
+router.get('/inscriptions/:studentId/attestation-inscription.pdf', requirePermission(P.CERTIFICATES), enrollmentController.attestationInscriptionPdf);
 router.get('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_READ), enrollmentController.editPage);
 router.post('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_WRITE), upload.logoUpload.single('photo'), auditMiddleware('enrollment_update', 'StudentEnrollment'), enrollmentController.update);
 

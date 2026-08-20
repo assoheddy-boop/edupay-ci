@@ -80,7 +80,16 @@ async function loadEnrollmentContext(schoolId, schoolYear, studentId = null) {
   const [school, classes, student, enrollment, yearRecord] = await Promise.all([
     prisma.school.findUnique({
       where: { id: schoolId },
-      select: { id: true, name: true, currentSchoolYear: true, educationCycle: true },
+      select: {
+        id: true,
+        name: true,
+        currentSchoolYear: true,
+        educationCycle: true,
+        address: true,
+        city: true,
+        publicPhone: true,
+        logoUrl: true,
+      },
     }),
     prisma.class.findMany({
       where: { schoolId },
@@ -90,7 +99,7 @@ async function loadEnrollmentContext(schoolId, schoolYear, studentId = null) {
     studentId
       ? prisma.student.findFirst({
         where: { id: studentId, schoolId },
-        include: { class: { select: { id: true, name: true } } },
+        include: { class: { select: { id: true, name: true, series: true } } },
       })
       : null,
     studentId
@@ -304,9 +313,26 @@ async function saveExistingEnrollment({ schoolId, schoolYear, studentId, body, f
   return { ok: true, studentId };
 }
 
-async function listEnrollmentsForYear(schoolId, schoolYear) {
+async function listEnrollmentsForYear(schoolId, schoolYear, filters = {}) {
+  const where = { schoolId };
+
+  if (filters.men) {
+    const men = normalizeNationalMatricule(filters.men);
+    if (men) where.nationalMatricule = { equals: men, mode: 'insensitive' };
+  } else if (filters.q) {
+    const term = String(filters.q).trim();
+    if (term) {
+      where.OR = [
+        { firstName: { contains: term, mode: 'insensitive' } },
+        { lastName: { contains: term, mode: 'insensitive' } },
+        { matricule: { contains: term, mode: 'insensitive' } },
+        { nationalMatricule: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+  }
+
   const students = await prisma.student.findMany({
-    where: { schoolId },
+    where,
     include: {
       class: { select: { name: true } },
       enrollments: { where: { schoolYear } },

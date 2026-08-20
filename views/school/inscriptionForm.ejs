@@ -8,6 +8,7 @@
     <a href="/school/inscriptions" class="btn btn-outline btn-sm">Liste</a>
     <% if (!isNew) { %>
       <a href="/school/students" class="btn btn-outline btn-sm">Élèves</a>
+      <a href="/school/inscriptions/<%= student.id %>/fiche.pdf" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Fiche PDF</a>
     <% } %>
     <a href="/reinscription/dashboard" class="btn btn-warning btn-sm">Réinscription</a>
   </div>
@@ -47,8 +48,11 @@
         </div>
         <% if (cycle.hasNationalMatricule) { %>
         <div class="form-group">
-          <label>Mle nat.</label>
-          <input type="text" name="nationalMatricule" value="<%= student && student.nationalMatricule ? student.nationalMatricule : '' %>" placeholder="MEN">
+          <label>Mle nat. (MEN)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <input type="text" name="nationalMatricule" id="nationalMatriculeInput" value="<%= student && student.nationalMatricule ? student.nationalMatricule : '' %>" placeholder="Matricule national" style="flex:1">
+            <button type="button" class="btn btn-outline btn-sm" id="menLookupBtn" title="Ouvrir la fiche par matricule national">Rechercher</button>
+          </div>
         </div>
         <% } %>
       </div>
@@ -184,6 +188,17 @@
     </div>
   </div>
 
+  <% if (!isNew) { %>
+  <div class="card">
+    <h2>Certificats</h2>
+    <p class="form-hint">Documents officiels à imprimer ou télécharger.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
+      <a href="/school/inscriptions/<%= student.id %>/certificat-scolarite.pdf" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Certificat de scolarité</a>
+      <a href="/school/inscriptions/<%= student.id %>/attestation-inscription.pdf" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Attestation d'inscription</a>
+    </div>
+  </div>
+  <% } %>
+
   <div class="form-actions">
     <button type="submit" class="btn btn-primary btn-lg">Enregistrer la fiche</button>
     <a href="/school/inscriptions" class="btn btn-outline">Annuler</a>
@@ -219,6 +234,16 @@
       .catch(function () {});
   }
   sel.addEventListener('change', refreshEffectif);
+
+  var menBtn = document.getElementById('menLookupBtn');
+  var menInput = document.getElementById('nationalMatriculeInput');
+  if (menBtn && menInput) {
+    menBtn.addEventListener('click', function () {
+      var v = menInput.value.trim();
+      if (!v) return;
+      window.location.href = '/school/inscriptions/recherche?men=' + encodeURIComponent(v);
+    });
+  }
 })();
 </script>
 <% } %>

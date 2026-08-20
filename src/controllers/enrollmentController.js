@@ -1,5 +1,12 @@
 const prisma = require('../config/database');
 const { logAudit } = require('../utils/audit');
+const { sendPdfDownload } = require('../utils/pdfOutput');
+const { normalizeNationalMatricule } = require('../utils/nationalMatricule');
+const { generateEnrollmentFichePdf } = require('../services/enrollmentPdf');
+const {
+  generateCertificatScolaritePdf,
+  generateAttestationInscriptionPdf,
+} = require('../services/certificatePdf');
 const {
   ENROLLMENT_DOCUMENTS,
   ENROLLMENT_STATUS_OPTIONS,
@@ -65,13 +72,21 @@ async function listPage(req, res) {
   if (!school) return res.redirect('/auth/login');
 
   const schoolYear = school.currentSchoolYear || '2025-2026';
-  const rows = await listEnrollmentsForYear(school.id, schoolYear);
+  const searchQ = String(req.query.q || '').trim();
+  const searchMen = String(req.query.men || '').trim();
+  const rows = await listEnrollmentsForYear(school.id, schoolYear, {
+    q: searchQ || undefined,
+    men: searchMen || undefined,
+  });
 
   res.render('school/inscriptions', {
     title: 'Fiches d’inscription',
     school,
     schoolYear,
     rows,
+    searchQ,
+    searchMen,
+    notfound: req.query.notfound === '1',
     success: req.query.success === '1',
   });
 }
@@ -144,6 +159,88 @@ async function update(req, res) {
   }
 }
 
+async function searchMen(req, res) {
+  const school = schoolFromUser(req.user);
+  if (!school) return res.redirect('/auth/login');
+
+  const men = normalizeNationalMatricule(req.query.men || req.query.q);
+  if (!men) return res.redirect('/school/inscriptions?error=search');
+
+  const student = await prisma.student.findFirst({
+    where: {
+      schoolId: school.id,
+      nationalMatricule: { equals: men, mode: 'insensitive' },
+    },
+    select: { id: true },
+  });
+
+  if (student) return res.redirect(`/school/inscriptions/${student.id}`);
+  return res.redirect(`/school/inscriptions?men=${encodeURIComponent(men)}&notfound=1`);
+}
+
+async function pdfContext(req) {
+  const school = schoolFromUser(req.user);
+  if (!school) return null;
+  const { studentId } = req.params;
+  const schoolYear = school.currentSchoolYear || '2025-2026';
+  const ctx = await loadEnrollmentContext(school.id, schoolYear, studentId);
+  if (!ctx.student) return null;
+  return { school: ctx.school, schoolYear, ...ctx };
+}
+
+async function fichePdf(req, res) {
+  try {
+    const ctx = await pdfContext(req);
+    if (!ctx) return res.status(404).send('Élève introuvable');
+    const result = await generateEnrollmentFichePdf({
+      school: ctx.school,
+      schoolYear: ctx.schoolYear,
+      student: ctx.student,
+      enrollment: ctx.enrollment,
+      yearRecord: ctx.yearRecord,
+      classStats: ctx.effectif,
+      documents: ctx.documents,
+    });
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send('Erreur lors de la génération du PDF');
+  }
+}
+
+async function certificatScolaritePdf(req, res) {
+  try {
+    const ctx = await pdfContext(req);
+    if (!ctx) return res.status(404).send('Élève introuvable');
+    const result = await generateCertificatScolaritePdf({
+      school: ctx.school,
+      schoolYear: ctx.schoolYear,
+      student: ctx.student,
+    });
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send('Erreur lors de la génération du certificat');
+  }
+}
+
+async function attestationInscriptionPdf(req, res) {
+  try {
+    const ctx = await pdfContext(req);
+    if (!ctx) return res.status(404).send('Élève introuvable');
+    const result = await generateAttestationInscriptionPdf({
+      school: ctx.school,
+      schoolYear: ctx.schoolYear,
+      student: ctx.student,
+      enrollment: ctx.enrollment,
+    });
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send('Erreur lors de la génération de l’attestation');
+  }
+}
+
 /** API légère : effectif classe pour mise à jour live du formulaire. */
 async function classEffectif(req, res) {
   const school = schoolFromUser(req.user);
@@ -161,5 +258,9 @@ module.exports = {
   editPage,
   create,
   update,
+  searchMen,
+  fichePdf,
+  certificatScolaritePdf,
+  attestationInscriptionPdf,
   classEffectif,
 };
