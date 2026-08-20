@@ -10,6 +10,7 @@ const {
   publicSchoolView,
   seoForSchool,
   seoForMarketplace,
+  seoForHome,
   jsonLdForSchool,
   robotsForPath,
   portalPath,
@@ -171,5 +172,15 @@ describe('publicPortal helpers', () => {
     expect(robotsForPath('/school/dashboard')).toBe('noindex, nofollow');
     expect(robotsForPath('/parent/grades')).toBe('noindex, nofollow');
     expect(robotsForPath('/admin/schools')).toBe('noindex, nofollow');
+  });
+
+  test('homepage SEO uses students hero image for social previews', () => {
+    const seo = seoForHome();
+    expect(seo.ogImage).toMatch(/\/images\/hero-correspondance-ci-fr\.jpg$/);
+    expect(seo.ogImageWidth).toBe(640);
+    expect(seo.ogImageHeight).toBe(360);
+    expect(seo.ogLocale).toBe('fr_FR');
+    expect(seo.canonicalUrl).toMatch(/\/$/);
+    expect(seo.ogTitle).toMatch(/EduConnect/);
   });
 });

@@ -147,9 +147,20 @@ describe('Homepage', () => {
     expect(res.text).toMatch(/name="robots" content="index, follow"/);
     expect(res.text).toMatch(/href="\/ecoles"/);
     expect(res.text).toMatch(/meta name="description"/);
-    expect(res.text).toMatch(/property="og:title"/);
-    expect(res.text).toMatch(/property="og:image"/);
-    expect(res.text).toMatch(/rel="canonical"/);
+    expect(res.text).toMatch(/property="og:title" content="EduConnect — La plateforme scolaire numérique de référence"/);
+    expect(res.text).toMatch(/property="og:type" content="website"/);
+    expect(res.text).toMatch(/property="og:locale" content="fr_FR"/);
+    expect(res.text).toMatch(/property="og:url" content="[^"]+\/"/);
+    expect(res.text).toMatch(
+      /property="og:image" content="[^"]+\/images\/hero-correspondance-ci-fr\.jpg"/
+    );
+    expect(res.text).toMatch(/property="og:image:width" content="640"/);
+    expect(res.text).toMatch(/property="og:image:height" content="360"/);
+    expect(res.text).toMatch(/name="twitter:card" content="summary_large_image"/);
+    expect(res.text).toMatch(
+      /name="twitter:image" content="[^"]+\/images\/hero-correspondance-ci-fr\.jpg"/
+    );
+    expect(res.text).toMatch(/rel="canonical" href="[^"]+\/"/);
   });
 
   test('GET / shows featured published schools without pupil data', async () => {

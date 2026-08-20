@@ -4,6 +4,13 @@ const { parseMarketplaceTier, marketplaceBadge, educonnectVerifiedBadge } = requ
 
 const SITE_ORIGIN = (process.env.APP_URL || 'https://educonnect-ci.com').replace(/\/$/, '');
 const CONTACT_INBOX = 'contact@educonnect.ci';
+const DEFAULT_OG_IMAGE_PATH = '/images/hero-correspondance-ci-fr.jpg';
+const DEFAULT_OG_IMAGE_WIDTH = 640;
+const DEFAULT_OG_IMAGE_HEIGHT = 360;
+
+function defaultOgImage() {
+  return `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`;
+}
 
 const PUBLIC_ROBOTS = 'index, follow';
 const PRIVATE_ROBOTS = 'noindex, nofollow';
@@ -705,14 +712,17 @@ function seoForMarketplace({
 function seoForHome() {
   const title = 'Gestion scolaire et écoles en Côte d’Ivoire';
   const metaDescription =
-    'EduConnect : gestion scolaire et annuaire d’écoles, collèges et lycées en Côte d’Ivoire. Wave, Orange Money, portail public. Notes et bulletins dans l’espace parent.';
+    'EduConnect : gestion scolaire, suivi parental et correspondance scolaire Côte d’Ivoire–France. Wave, Orange Money, portail public. Notes et bulletins dans l’espace parent.';
   return {
     title,
     metaDescription,
     canonicalUrl: `${SITE_ORIGIN}/`,
-    ogTitle: 'EduConnect — Gestion scolaire et écoles en Côte d’Ivoire',
+    ogTitle: 'EduConnect — La plateforme scolaire numérique de référence',
     ogDescription: metaDescription,
-    ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+    ogImage: defaultOgImage(),
+    ogImageWidth: DEFAULT_OG_IMAGE_WIDTH,
+    ogImageHeight: DEFAULT_OG_IMAGE_HEIGHT,
+    ogLocale: 'fr_FR',
     robots: PUBLIC_ROBOTS,
   };
 }
@@ -727,7 +737,10 @@ function seoForTarifs() {
     canonicalUrl: `${SITE_ORIGIN}/tarifs`,
     ogTitle: 'Nos tarifs — EduConnect',
     ogDescription: metaDescription,
-    ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+    ogImage: defaultOgImage(),
+    ogImageWidth: DEFAULT_OG_IMAGE_WIDTH,
+    ogImageHeight: DEFAULT_OG_IMAGE_HEIGHT,
+    ogLocale: 'fr_FR',
     robots: PUBLIC_ROBOTS,
   };
 }
