@@ -7,6 +7,7 @@ jest.mock('../src/config/database', () => ({
   subject: { findMany: jest.fn() },
   deliberation: { findFirst: jest.fn() },
   studentYearRecord: { findFirst: jest.fn() },
+  absence: { findMany: jest.fn() },
 }));
 
 jest.mock('../services/cache', () => ({
@@ -41,6 +42,7 @@ describe('bulletinService weighted bulletin', () => {
     prisma.bulletin.create.mockResolvedValue({ id: 'b1' });
     prisma.deliberation.findFirst.mockResolvedValue(null);
     prisma.studentYearRecord.findFirst.mockResolvedValue(null);
+    prisma.absence.findMany.mockResolvedValue([]);
     prisma.student.findFirst.mockResolvedValue({
       id: 'stu-1',
       firstName: 'Awa',

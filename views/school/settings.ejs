@@ -167,6 +167,54 @@
       <% } else { %>
       <p class="form-hint">Le module <strong>SMS officiel</strong> n'est pas activé. Les parents reçoivent toujours les alertes dans l'application (et e-mail / notification push le cas échéant). Demandez à EduConnect d'activer le module pour envoyer des SMS au nom de l'école.</p>
       <% } %>
+
+      <fieldset class="form-group" style="margin-top:1.25rem">
+        <legend>Bulletin MENET-FP (Côte d'Ivoire)</legend>
+        <p class="form-hint">Ces informations apparaissent sur le bulletin officiel PDF : en-tête, visa directeur et professeur principal.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="menetCode">Code MENET</label>
+            <input type="text" id="menetCode" name="menetCode" value="<%= school.menetCode || '' %>" placeholder="000344" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="dren">DREN</label>
+            <input type="text" id="dren" name="dren" value="<%= school.dren || '' %>" placeholder="DREN Abidjan 3" maxlength="80">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="homeroomTeacherName">Professeur principal (libellé bulletin)</label>
+          <input type="text" id="homeroomTeacherName" name="homeroomTeacherName" value="<%= school.homeroomTeacherName || '' %>" placeholder="M. GNAGNE A. Patrice" maxlength="120">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="directorSignature">Signature du directeur (PNG/JPG — max 2 Mo)</label>
+            <% if (school.directorSignatureUrl || school.directorSignatureBase64) { %>
+              <div class="logo-preview">
+                <img src="<%= school.directorSignatureUrl || school.directorSignatureBase64 %>" alt="Signature directeur" class="school-logo-preview" style="max-height:4rem;background:#fff">
+              </div>
+              <label class="checkbox-label">
+                <input type="checkbox" name="removeDirectorSignature">
+                Supprimer la signature actuelle
+              </label>
+            <% } %>
+            <input type="file" id="directorSignature" name="directorSignature" accept="image/jpeg,image/png,image/webp">
+          </div>
+          <div class="form-group">
+            <label for="directorStamp">Cachet de l'établissement (PNG/JPG — max 2 Mo)</label>
+            <% if (school.directorStampUrl || school.directorStampBase64) { %>
+              <div class="logo-preview">
+                <img src="<%= school.directorStampUrl || school.directorStampBase64 %>" alt="Cachet établissement" class="school-logo-preview" style="max-height:4rem;background:#fff">
+              </div>
+              <label class="checkbox-label">
+                <input type="checkbox" name="removeDirectorStamp">
+                Supprimer le cachet actuel
+              </label>
+            <% } %>
+            <input type="file" id="directorStamp" name="directorStamp" accept="image/jpeg,image/png,image/webp">
+          </div>
+        </div>
+      </fieldset>
+
       <button type="submit" class="btn btn-primary">Enregistrer</button>
     </form>
   </div>

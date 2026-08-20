@@ -21,7 +21,7 @@ const {
   PUBLIC_TYPE_OPTIONS,
   MAX_GALLERY,
 } = require('../utils/publicPortal');
-const { generateBulletinForStudent, generateBulkBulletins, streamBulletinPdf } = require('../services/bulletinService');
+const { generateBulletinForStudent, generateBulkBulletins, streamBulletinPdf, buildBulletinViewModel } = require('../services/bulletinService');
 const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
   COLLEGE_CI_SUBJECTS,
@@ -236,7 +236,21 @@ async function updateCoefficients(req, res) {
 }
 
 async function updateSettings(req, res) {
-  const { waveNumber, omNumber, name, address, city, removeLogo, smsSenderId, educationCycle } = req.body;
+  const {
+    waveNumber,
+    omNumber,
+    name,
+    address,
+    city,
+    removeLogo,
+    smsSenderId,
+    educationCycle,
+    menetCode,
+    dren,
+    homeroomTeacherName,
+    removeDirectorSignature,
+    removeDirectorStamp,
+  } = req.body;
   try {
     const mods = await getModuleMap(req.user.school.id);
     const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
@@ -269,6 +283,39 @@ async function updateSettings(req, res) {
     }
     if (smsSenderId !== undefined) {
       data.smsSenderId = sanitizeSmsSenderId(smsSenderId);
+    }
+    if (menetCode !== undefined) {
+      data.menetCode = String(menetCode || '').trim() || null;
+    }
+    if (dren !== undefined) {
+      data.dren = String(dren || '').trim() || null;
+    }
+    if (homeroomTeacherName !== undefined) {
+      data.homeroomTeacherName = String(homeroomTeacherName || '').trim() || null;
+    }
+
+    if (removeDirectorSignature === 'on') {
+      data.directorSignatureUrl = null;
+      data.directorSignatureBase64 = null;
+    }
+    if (removeDirectorStamp === 'on') {
+      data.directorStampUrl = null;
+      data.directorStampBase64 = null;
+    }
+
+    const signatureFile = firstUploaded(req, 'directorSignature');
+    if (signatureFile) {
+      const { saveDirectorSignature } = require('../utils/bulletinBranding');
+      const saved = await saveDirectorSignature(req.user.school.id, signatureFile);
+      data.directorSignatureUrl = saved.url;
+      data.directorSignatureBase64 = saved.base64;
+    }
+    const stampFile = firstUploaded(req, 'directorStamp');
+    if (stampFile) {
+      const { saveDirectorStamp } = require('../utils/bulletinBranding');
+      const saved = await saveDirectorStamp(req.user.school.id, stampFile);
+      data.directorStampUrl = saved.url;
+      data.directorStampBase64 = saved.base64;
     }
 
     if (removeLogo === 'on') {
@@ -961,6 +1008,42 @@ async function exportBulletinPdf(req, res) {
   }
 }
 
+async function previewBulletin(req, res) {
+  const student = await prisma.student.findFirst({
+    where: { id: req.params.studentId, schoolId: req.user.school.id },
+    include: { class: true },
+  });
+  if (!student) return res.redirect('/school/bulletins?error=eleve');
+
+  const period = req.query.period;
+  if (!period) return res.redirect('/school/bulletins?error=generation');
+
+  const vm = await buildBulletinViewModel({
+    studentId: student.id,
+    period,
+    school: req.user.school,
+  });
+  if (vm.error) return res.redirect(`/school/bulletins?error=${vm.error}`);
+
+  const { termTitleCi, formatRankCi, formatBirthDate, formatGenderShort } = require('../utils/bulletinCiLayout');
+  const { formatRepeatLabel } = require('../utils/bulletinMenet');
+  const { logoSrcFor } = require('../utils/schoolLogo');
+
+  res.render('bulletin/menet-fp', {
+    user: req.user,
+    ...vm,
+    termTitle: termTitleCi(vm.term),
+    formatRankCi,
+    formatBirthDate,
+    formatGenderShort,
+    formatRepeatLabel,
+    logoSrc: logoSrcFor(req.user.school),
+    directorSignatureSrc: req.user.school.directorSignatureUrl || req.user.school.directorSignatureBase64 || null,
+    directorStampSrc: req.user.school.directorStampUrl || req.user.school.directorStampBase64 || null,
+    printMode: req.query.print === '1',
+  });
+}
+
 async function listTeachers(req, res) {
   const schoolId = req.user.school.id;
   const [teachers, classes] = await Promise.all([
@@ -1348,6 +1431,7 @@ module.exports = {
   generateBulkBulletin,
   downloadBulletinPdf,
   exportBulletinPdf,
+  previewBulletin,
   listTeachers,
   inviteTeacher,
   assignTeacherClass,

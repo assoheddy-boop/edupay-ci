@@ -157,6 +157,7 @@ router.get('/export/payments', requireModule('stats'), requirePremium('Export Ex
 router.get('/export/grades', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportGrades);
 router.get('/export/stats', requireModule('stats'), requirePremium('Export Excel'), requirePermission(P.STATS), statsController.exportStats);
 router.get('/bulletins/download/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_READ), schoolController.downloadBulletinPdf);
+router.get('/bulletins/preview/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.BULLETINS_READ), schoolController.previewBulletin);
 router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), requirePermission(P.CERTIFICATES), schoolController.exportBulletinPdf);
 
 router.get('/accounting', requireModule('accounting'), requirePermission(P.ACCOUNTING_READ), accountingController.dashboard);

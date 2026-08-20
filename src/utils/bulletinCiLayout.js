@@ -1,5 +1,12 @@
 const { ordinalFr } = require('../services/classement');
 const { round2 } = require('../services/gradesAverage');
+const { drawSchoolLogo } = require('./schoolLogo');
+const {
+  resolveDirectorSignatureBuffer,
+  resolveDirectorStampBuffer,
+  drawBrandingImage,
+} = require('./bulletinBranding');
+const { publicTypeLabel, formatRepeatLabel, termAverageLabel } = require('./bulletinMenet');
 
 const PAGE_MARGIN = 36;
 const PAGE_WIDTH = 595.28;
@@ -342,6 +349,26 @@ function drawHeaderBlock(doc, { school, student, classSize, repeatYear, term }) 
   const x = PAGE_MARGIN;
   let y = PAGE_MARGIN;
 
+  // Logo + school identity (MENET-FP)
+  const logoW = 48;
+  const hasLogo = drawSchoolLogo(doc, school, { x, y, width: logoW });
+  const identityX = hasLogo ? x + logoW + 8 : x;
+  const identityW = CONTENT_WIDTH - (identityX - x);
+
+  doc.font('Helvetica-Bold').fontSize(9).fillColor('#000');
+  doc.text(String(school.name || '').toUpperCase(), identityX, y, { width: identityW });
+  doc.font('Helvetica').fontSize(7);
+  const addr = [school.address, school.city].filter(Boolean).join(' — ');
+  if (addr) doc.text(addr, identityX, doc.y + 2, { width: identityW });
+  if (school.dren) doc.text(String(school.dren), identityX, doc.y + 1, { width: identityW });
+  const codeLine = [
+    school.menetCode ? `Code : ${school.menetCode}` : null,
+    `Statut : ${publicTypeLabel(school.publicType)}`,
+  ].filter(Boolean).join('   ');
+  if (codeLine) doc.text(codeLine, identityX, doc.y + 1, { width: identityW });
+
+  y += hasLogo ? logoW + 4 : 36;
+
   // Title
   const title = termTitleCi(term);
   setStroke(doc, 1);
@@ -350,56 +377,63 @@ function drawHeaderBlock(doc, { school, student, classSize, repeatYear, term }) 
   restoreStroke(doc);
   doc.font('Helvetica-Bold').fontSize(10).fillColor('#000');
   doc.text(title, x, y + 6, { width: CONTENT_WIDTH, align: 'center' });
-  y += titleH + 6;
+  y += titleH + 4;
+
+  const schoolYear = student.class?.schoolYear || school.currentSchoolYear || '—';
+  doc.font('Helvetica-Bold').fontSize(8).text(`Année scolaire : ${schoolYear}`, x, y, {
+    width: CONTENT_WIDTH,
+    align: 'right',
+  });
+  y += 12;
 
   // School + class row
-  const blockH = 52;
+  const blockH = 48;
   setStroke(doc, 0.75);
-  drawRect(doc, x, y, CONTENT_WIDTH * 0.62, blockH);
-  drawRect(doc, x + CONTENT_WIDTH * 0.62, y, CONTENT_WIDTH * 0.38, blockH);
+  drawRect(doc, x, y, CONTENT_WIDTH * 0.58, blockH);
+  drawRect(doc, x + CONTENT_WIDTH * 0.58, y, CONTENT_WIDTH * 0.42, blockH);
   restoreStroke(doc);
 
-  const schoolName = String(school.name || '').toUpperCase();
-  const location = [school.campusLabel, school.city, school.address].filter(Boolean).join(' — ') || school.city || '';
   const phone = school.publicPhone || school.waveNumber || school.omNumber || '';
-  const infoline = phone ? `Infoline : ${phone}` : '';
-
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#000');
-  doc.text(schoolName, x + 6, y + 6, { width: CONTENT_WIDTH * 0.58 });
-  doc.font('Helvetica').fontSize(8);
-  doc.text(location, x + 6, y + 20, { width: CONTENT_WIDTH * 0.58 });
-  if (infoline) doc.text(infoline, x + 6, y + 32, { width: CONTENT_WIDTH * 0.58 });
+  doc.font('Helvetica-Bold').fontSize(8).fillColor('#000');
+  doc.text(String(school.name || '').toUpperCase(), x + 6, y + 6, { width: CONTENT_WIDTH * 0.54 });
+  doc.font('Helvetica').fontSize(7);
+  if (addr) doc.text(addr, x + 6, y + 18, { width: CONTENT_WIDTH * 0.54 });
+  if (phone) doc.text(`Infoline : ${phone}`, x + 6, y + 28, { width: CONTENT_WIDTH * 0.54 });
 
   const className = student.class?.name || '—';
-  doc.font('Helvetica-Bold').fontSize(9);
-  doc.text(`Classe : ${className}`, x + CONTENT_WIDTH * 0.62 + 6, y + 8);
-  doc.font('Helvetica').fontSize(8);
-  doc.text(`statut : ${formatRepeatStatus(repeatYear)}`, x + CONTENT_WIDTH * 0.62 + 6, y + 24, {
-    width: CONTENT_WIDTH * 0.36,
-  });
+  doc.font('Helvetica-Bold').fontSize(8);
+  doc.text(`Classe : ${className}`, x + CONTENT_WIDTH * 0.58 + 6, y + 6);
+  doc.font('Helvetica').fontSize(7);
+  doc.text(`Effectif : ${classSize || '—'}`, x + CONTENT_WIDTH * 0.58 + 6, y + 18);
+  doc.text(`Redouble : ${formatRepeatLabel(repeatYear)}`, x + CONTENT_WIDTH * 0.58 + 6, y + 28);
 
   y += blockH + 4;
 
-  // Student info block
-  const studentH = 36;
+  // Student info block (MENET fields)
+  const studentH = 44;
   setStroke(doc, 1);
   drawRect(doc, x, y, CONTENT_WIDTH, studentH);
   restoreStroke(doc);
 
   const fullName = `${String(student.lastName || '').toUpperCase()} ${String(student.firstName || '').toUpperCase()}`.trim();
   doc.font('Helvetica-Bold').fontSize(8).fillColor('#000');
-  doc.text(`Nom et Prénoms : ${fullName}`, x + 6, y + 4);
-  doc.font('Helvetica').fontSize(8);
-  doc.text(`Sexe : ${formatGenderShort(student.gender)}`, x + 6, y + 16);
+  doc.text(`Nom et prénoms : ${fullName}`, x + 6, y + 4);
+  doc.font('Helvetica').fontSize(7);
+  doc.text(`Sexe : ${formatGenderShort(student.gender)}`, x + 6, y + 15);
   doc.text(
     `Né le : ${formatBirthDate(student.birthDate)}    à : ${student.birthPlace || '—'}`,
     x + 6,
-    y + 26,
+    y + 25,
   );
-  doc.text(`Nationalité : ${student.nationality || '—'}`, x + CONTENT_WIDTH * 0.55, y + 16);
-  doc.text(`Effectif : ${classSize || '—'}`, x + CONTENT_WIDTH * 0.55, y + 26);
+  doc.text(`Nationalité : ${student.nationality || '—'}`, x + 6, y + 35);
 
-  doc.y = y + studentH + 8;
+  const col2 = x + CONTENT_WIDTH * 0.48;
+  doc.text(`Matricule DREN : ${student.nationalMatricule || '—'}`, col2, y + 4);
+  doc.text(`Mle Ets : ${student.matricule || '—'}`, col2, y + 15);
+  doc.text('Régime : —', col2, y + 25);
+  doc.text('Interne : Non', col2, y + 35);
+
+  doc.y = y + studentH + 6;
 }
 
 function drawBilanAnnuel(doc, {
@@ -500,6 +534,115 @@ function drawBilanAnnuel(doc, {
   doc.y = y + 24;
 }
 
+function drawTrimestreSummary(doc, {
+  term,
+  average,
+  rank,
+  classSize,
+  classStats,
+  domainBilans,
+  absencesSummary,
+}) {
+  if (doc.y > doc.page.height - 160) doc.addPage();
+
+  const x = PAGE_MARGIN;
+  let y = doc.y + 6;
+  const w = CONTENT_WIDTH;
+  const h = 52;
+
+  setStroke(doc, 0.75);
+  drawRect(doc, x, y, w, h);
+  drawVLine(doc, x + w * 0.45, y, y + h);
+  drawHLine(doc, x, x + w, y + h / 2);
+  restoreStroke(doc);
+
+  doc.font('Helvetica-Bold').fontSize(8).fillColor('#000');
+  doc.text(
+    `${termAverageLabel(term)} : ${formatGradeCiOrDash(average)}/20    /${classSize || '—'}`,
+    x + 6,
+    y + 6,
+    { width: w * 0.42 },
+  );
+  doc.font('Helvetica').fontSize(7);
+  doc.text(`Rang : ${formatRankCi(rank) || '—'}`, x + 6, y + 20);
+  doc.text(`M. basse : ${formatGradeCiOrDash(classStats?.lowest, { pad: true })}`, x + 6, y + 32);
+  doc.text(`M. classe : ${formatGradeCiOrDash(classStats?.classAverage)}`, x + w * 0.48, y + 6);
+  doc.text(`M. élève : ${formatGradeCiOrDash(average)}`, x + w * 0.48, y + 20);
+  doc.text(`Heure(s) d'absence : ${absencesSummary || '0'}`, x + w * 0.48, y + 32);
+
+  const bilans = domainBilans || {};
+  doc.font('Helvetica-Bold').fontSize(7);
+  doc.text(`Bilan Lettres : ${formatGradeCiOrDash(bilans.LETTRES)}`, x + 6, y + h + 8);
+  doc.text(`Bilan Sciences : ${formatGradeCiOrDash(bilans.SCIENCES)}`, x + w * 0.33, y + h + 8);
+  doc.text(`Bilan Autres : ${formatGradeCiOrDash(bilans.AUTRES)}`, x + w * 0.66, y + h + 8);
+
+  doc.y = y + h + 22;
+}
+
+function drawFooterBlock(doc, {
+  school,
+  homeroomTeacherName,
+  mention,
+  decision,
+  city,
+}) {
+  if (doc.y > doc.page.height - 130) doc.addPage();
+
+  const x = PAGE_MARGIN;
+  let y = doc.y + 4;
+  const w = CONTENT_WIDTH;
+  const colW = w / 3;
+  const boxH = 56;
+
+  setStroke(doc, 0.75);
+  drawRect(doc, x, y, colW, boxH);
+  drawRect(doc, x + colW, y, colW, boxH);
+  drawRect(doc, x + colW * 2, y, colW, boxH);
+  restoreStroke(doc);
+
+  doc.font('Helvetica-Bold').fontSize(7).fillColor('#000');
+  doc.text('PROFESSEUR PRINCIPAL', x, y + 4, { width: colW, align: 'center' });
+  doc.font('Helvetica').fontSize(8);
+  doc.text(homeroomTeacherName || '—', x + 4, y + 18, { width: colW - 8, align: 'center' });
+  doc.fontSize(7).text('Appréciation, Signature', x, y + 38, { width: colW, align: 'center' });
+
+  doc.font('Helvetica-Bold').fontSize(7);
+  doc.text('VISA DU DIRECTEUR DES ETUDES', x + colW, y + 4, { width: colW, align: 'center' });
+  const stampBuf = resolveDirectorStampBuffer(school);
+  const sigBuf = resolveDirectorSignatureBuffer(school);
+  if (stampBuf) {
+    drawBrandingImage(doc, stampBuf, { x: x + colW + colW * 0.15, y: y + 14, width: colW * 0.7, height: 28 });
+  } else if (sigBuf) {
+    drawBrandingImage(doc, sigBuf, { x: x + colW + colW * 0.1, y: y + 16, width: colW * 0.8, height: 24 });
+  }
+  doc.font('Helvetica').fontSize(7).text('SIGNATURE', x + colW, y + 44, { width: colW, align: 'center' });
+
+  doc.font('Helvetica-Bold').fontSize(7);
+  doc.text('DISTINCTION OU SANCTION', x + colW * 2, y + 4, { width: colW, align: 'center' });
+  const distinction = [mention, decision].filter(Boolean).join(' — ') || '';
+  doc.font('Helvetica').fontSize(8).text(distinction || '—', x + colW * 2 + 4, y + 20, {
+    width: colW - 8,
+    align: 'center',
+  });
+
+  y += boxH + 10;
+  const place = city || school?.city || 'Abidjan';
+  const today = new Date();
+  const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  doc.font('Helvetica').fontSize(8).text(`${place}, le ${dateStr}`, x, y, { width: w, align: 'right' });
+
+  y += 14;
+  doc.fontSize(7).fillColor('#333');
+  doc.text('NB : Si la conduite annuelle est inférieure à 10, l\'élève est automatiquement exclu de l\'école', x, y, {
+    width: w,
+    align: 'center',
+  });
+  y += 10;
+  doc.font('Helvetica-BoldOblique').fontSize(7).text('Aucun duplicata ne sera délivré', x, y, { width: w, align: 'center' });
+
+  doc.y = y + 12;
+}
+
 function computeClassStats(classAverages) {
   const avgs = (classAverages || [])
     .map((e) => Number(e.avg))
@@ -534,6 +677,8 @@ module.exports = {
   drawGradesTable,
   drawHeaderBlock,
   drawBilanAnnuel,
+  drawTrimestreSummary,
+  drawFooterBlock,
   computeClassStats,
   splitTeacherName,
 };

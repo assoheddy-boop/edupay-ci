@@ -13,6 +13,7 @@ const { effectiveSeries } = require('./series');
 const { schoolBulletinDownloadUrl } = require('../utils/bulletinLinks');
 const { computeSubjectRows } = require('./gradesAverage');
 const { computeClassStats } = require('../utils/bulletinCiLayout');
+const { computeDomainBilans, formatAbsenceSummary, buildMenetViewModel } = require('../utils/bulletinMenet');
 
 const gradeTeacherInclude = {
   teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
@@ -124,6 +125,15 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     studentId,
   });
 
+  const gradeRows = computeSubjectRows(grades, coeffMap);
+  const domainBilans = computeDomainBilans(gradeRows);
+
+  const absences = await prisma.absence.findMany({
+    where: { studentId },
+    select: { type: true, date: true },
+  });
+  const absencesSummary = formatAbsenceSummary(absences);
+
   const yearRecord = await prisma.studentYearRecord.findFirst({
     where: {
       studentId,
@@ -159,6 +169,10 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     periodLabel,
     storedPeriod,
     series,
+    domainBilans,
+    absencesSummary,
+    absences,
+    gradeRows,
   };
 }
 
@@ -179,6 +193,8 @@ function bulletinPdfArgs(built, school) {
     subjectRanks,
     repeatYear,
     periodLabel,
+    domainBilans,
+    absencesSummary,
   } = built;
 
   const showBilan = term === 'T3' || term === 'ANNUELLE';
@@ -199,7 +215,66 @@ function bulletinPdfArgs(built, school) {
     classStats,
     repeatYear,
     annualAverage,
+    domainBilans,
+    absencesSummary,
+    homeroomTeacherName: school?.homeroomTeacherName || null,
   };
+}
+
+async function buildBulletinViewModel({ studentId, period, school }) {
+  const built = await buildBulletinPdfPayload({ studentId, period, school });
+  if (built.error) return built;
+
+  const {
+    term,
+    student,
+    mention,
+    decision,
+    grades,
+    coeffMap,
+    average,
+    classement,
+    classStats,
+    subjectRanks,
+    repeatYear,
+    periodLabel,
+    domainBilans,
+    absences,
+    gradeRows,
+  } = built;
+
+  let rows = computeSubjectRows(grades, coeffMap);
+  const teacherBySubject = new Map();
+  (grades || []).forEach((g) => {
+    const subject = String(g.subject || '').trim();
+    if (!subject || teacherBySubject.has(subject)) return;
+    const { formatTeacherName } = require('../utils/bulletinCiLayout');
+    const name = formatTeacherName(g.teacher);
+    if (name) teacherBySubject.set(subject, name);
+  });
+  rows = rows.map((row) => ({
+    ...row,
+    teacherName: teacherBySubject.get(row.subject) || '',
+    rank: subjectRanks[row.subject] || null,
+  }));
+
+  return buildMenetViewModel({
+    school,
+    student,
+    rows,
+    average,
+    rank: classement.rank,
+    classSize: classement.classSize,
+    classStats,
+    domainBilans,
+    absences,
+    mention,
+    decision,
+    term,
+    periodLabel,
+    homeroomTeacherName: school?.homeroomTeacherName,
+    repeatYear,
+  });
 }
 
 async function streamBulletinPdf({ studentId, period, school }) {
@@ -331,4 +406,6 @@ module.exports = {
   generateBulkBulletins,
   findSavedDeliberation,
   streamBulletinPdf,
+  buildBulletinViewModel,
+  buildBulletinPdfPayload,
 };

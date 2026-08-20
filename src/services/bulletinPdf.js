@@ -10,6 +10,8 @@ const {
   drawHeaderBlock,
   drawGradesTable,
   drawBilanAnnuel,
+  drawTrimestreSummary,
+  drawFooterBlock,
 } = require('../utils/bulletinCiLayout');
 
 function ensureDir() {
@@ -70,6 +72,9 @@ async function generateBulletinPdf({
   classStats,
   repeatYear,
   annualAverage,
+  domainBilans,
+  absencesSummary,
+  homeroomTeacherName,
   outputDir,
 }) {
   const filename = `bulletin-${student.id}-${safePeriodSlug(period)}-${Date.now()}.pdf`;
@@ -105,6 +110,18 @@ async function generateBulletinPdf({
       });
     }
 
+    if (term !== 'ANNUELLE') {
+      drawTrimestreSummary(doc, {
+        term,
+        average,
+        rank,
+        classSize,
+        classStats,
+        domainBilans,
+        absencesSummary,
+      });
+    }
+
     if (showBilan && termAverages) {
       drawBilanAnnuel(doc, {
         classStats,
@@ -114,6 +131,14 @@ async function generateBulletinPdf({
         appreciation,
       });
     }
+
+    drawFooterBlock(doc, {
+      school,
+      homeroomTeacherName,
+      mention,
+      decision,
+      city: school?.city,
+    });
   }, { margin: 0 });
 
   return savePdfBuffer({ folder: 'bulletins', filename, buffer, outputDir });

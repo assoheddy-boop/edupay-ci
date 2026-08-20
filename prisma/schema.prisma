@@ -278,6 +278,18 @@ model School {
   smsSenderId       String?
   logoUrl           String?
   logoBase64        String?  @db.Text
+  /// Code établissement MENET-FP (bulletin officiel CI).
+  menetCode         String?
+  /// DREN de rattachement (ex. « DREN Abidjan 3 »).
+  dren              String?
+  /// Signature numérique du directeur (PNG/JPG) pour le visa bulletin.
+  directorSignatureUrl     String?
+  directorSignatureBase64  String?  @db.Text
+  /// Cachet de l’établissement (PNG/JPG) pour le visa bulletin.
+  directorStampUrl         String?
+  directorStampBase64      String?  @db.Text
+  /// Professeur principal par défaut (libellé bulletin MENET-FP).
+  homeroomTeacherName String?
   subscription      String   @default("premium")
   currentSchoolYear String   @default("2025-2026")
   /// Collège par défaut : rien ne disparaît pour IGEST / écoles déjà en ligne.
