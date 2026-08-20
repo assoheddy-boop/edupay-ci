@@ -14,7 +14,8 @@ function formatDateFr(date) {
 
 function formatMoneyCi(amount) {
   if (amount == null || !Number.isFinite(Number(amount)) || Number(amount) === 0) return '';
-  return Math.round(Number(amount)).toLocaleString('fr-FR');
+  // fr-FR uses U+202F (narrow no-break space); PDFKit Helvetica renders it as "/".
+  return Math.round(Number(amount)).toLocaleString('fr-FR').replace(/\u202f/g, ' ');
 }
 
 function setStroke(doc, width = 0.75) {
@@ -38,24 +39,32 @@ function drawRect(doc, x, y, w, h) {
   doc.rect(x, y, w, h).stroke();
 }
 
-function drawCellText(doc, text, x, y, w, h, { align = 'left', fontSize = 7, bold = false } = {}) {
-  const pad = 2;
+function drawCellText(doc, text, x, y, w, h, {
+  align = 'left',
+  fontSize = 7,
+  bold = false,
+  numeric = false,
+} = {}) {
+  const padLeft = 3;
+  const padRight = numeric || align === 'right' ? 5 : 3;
   doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize).fillColor('#000');
-  doc.text(text == null ? '' : String(text), x + pad, y + (h - fontSize) / 2 - 1, {
-    width: w - pad * 2,
+  doc.text(text == null ? '' : String(text), x + padLeft, y + (h - fontSize) / 2 - 1, {
+    width: w - padLeft - padRight,
     align,
     lineBreak: false,
+    ellipsis: true,
   });
 }
 
 function paySlipTableColumns() {
+  // Widths must sum to CONTENT_WIDTH (515.28) for A4 with 40pt margins.
   return [
-    { key: 'code', label: 'CODE', width: 32, align: 'center' },
-    { key: 'rubrique', label: 'RUBRIQUE', width: 148, align: 'left' },
-    { key: 'base', label: 'BASE', width: 58, align: 'right' },
-    { key: 'rate', label: 'NBRE/TAUX', width: 58, align: 'center' },
-    { key: 'gains', label: 'GAINS', width: 58, align: 'right' },
-    { key: 'deductions', label: 'RETENUES', width: 58.28, align: 'right' },
+    { key: 'code', label: 'CODE', width: 34, align: 'center' },
+    { key: 'rubrique', label: 'RUBRIQUE', width: 176, align: 'left' },
+    { key: 'base', label: 'BASE', width: 60, align: 'right', numeric: true },
+    { key: 'rate', label: 'NBRE/TAUX', width: 60, align: 'center' },
+    { key: 'gains', label: 'GAINS', width: 60, align: 'right', numeric: true },
+    { key: 'deductions', label: 'RETENUES', width: 125.28, align: 'right', numeric: true },
   ];
 }
 
@@ -167,7 +176,11 @@ function drawRubriqueTable(doc, y, { lines, blocks }) {
     drawRect(doc, x, y, CONTENT_WIDTH, rowH);
     cols.forEach((col, i) => {
       if (i > 0) drawVLine(doc, col.x, y, y + rowH);
-      drawCellText(doc, row[col.key], col.x, y, col.width, rowH, { align: col.align, fontSize: 7 });
+      drawCellText(doc, row[col.key], col.x, y, col.width, rowH, {
+        align: col.align,
+        fontSize: col.numeric ? 7 : 7,
+        numeric: col.numeric,
+      });
     });
     restoreStroke(doc);
     y += rowH;
@@ -187,25 +200,46 @@ function drawSubtotalRow(doc, y, cols, blockTotals = {}, blockNum) {
   });
   restoreStroke(doc);
 
-  drawCellText(doc, 'SOUS-TOTAL', cols[1].x, y, cols[1].width + cols[2].width + cols[3].width, rowH, {
+  const spanW = cols[3].right - cols[0].x;
+  drawCellText(doc, 'SOUS-TOTAL', cols[0].x, y, spanW, rowH, {
     align: 'center',
     bold: true,
     fontSize: 7,
   });
 
   if (blockNum === 1 || blockNum === 3) {
-    drawCellText(doc, formatMoneyCi(blockTotals.gains), cols[4].x, y, cols[4].width, rowH, { align: 'right', bold: true });
+    drawCellText(doc, formatMoneyCi(blockTotals.gains), cols[4].x, y, cols[4].width, rowH, {
+      align: 'right',
+      bold: true,
+      fontSize: 7,
+      numeric: true,
+    });
   }
   if (blockNum === 2 || blockNum === 3) {
-    drawCellText(doc, formatMoneyCi(blockTotals.deductions), cols[5].x, y, cols[5].width, rowH, { align: 'right', bold: true });
+    drawCellText(doc, formatMoneyCi(blockTotals.deductions), cols[5].x, y, cols[5].width, rowH, {
+      align: 'right',
+      bold: true,
+      fontSize: 7,
+      numeric: true,
+    });
   }
+
+  setStroke(doc);
+  cols.forEach((col, i) => {
+    if (i > 0) drawVLine(doc, col.x, y, y + rowH);
+  });
+  restoreStroke(doc);
+
   return y + rowH;
 }
 
 function drawTotalsBlock(doc, y, { totalGains, totalDeductions, netPay }) {
   const x = PAGE_MARGIN;
-  const boxW = 170;
+  const boxW = 180;
   const boxX = x + CONTENT_WIDTH - boxW;
+  const labelW = 98;
+  const valueW = boxW - labelW;
+  const valueX = boxX + labelW;
   const rowH = 14;
   const rows = [
     ['TOTAL GAINS', formatMoneyCi(totalGains)],
@@ -215,12 +249,15 @@ function drawTotalsBlock(doc, y, { totalGains, totalDeductions, netPay }) {
 
   setStroke(doc);
   rows.forEach((row, i) => {
-    drawRect(doc, boxX, y + i * rowH, boxW, rowH);
-    drawCellText(doc, row[0], boxX, y + i * rowH, boxW * 0.55, rowH, { bold: true, fontSize: 7 });
-    drawCellText(doc, row[1], boxX + boxW * 0.45, y + i * rowH, boxW * 0.55, rowH, {
+    const rowY = y + i * rowH;
+    drawRect(doc, boxX, rowY, boxW, rowH);
+    drawVLine(doc, valueX, rowY, rowY + rowH);
+    drawCellText(doc, row[0], boxX, rowY, labelW, rowH, { bold: true, fontSize: 7 });
+    drawCellText(doc, row[1], valueX, rowY, valueW, rowH, {
       align: 'right',
       bold: i === 2,
       fontSize: i === 2 ? 8 : 7,
+      numeric: true,
     });
   });
   restoreStroke(doc);
@@ -240,22 +277,30 @@ function drawAnnualCumuls(doc, y, cumuls = {}) {
     { label: 'Impôt Général sur le Revenu (IGR)', value: cumuls.igr },
   ];
   const rowH = 11;
+  const labelW = CONTENT_WIDTH * 0.68;
+  const valueW = CONTENT_WIDTH - labelW;
+  const valueX = x + labelW;
   setStroke(doc);
   cols.forEach((row, i) => {
-    drawRect(doc, x, y + i * rowH, CONTENT_WIDTH, rowH);
-    drawCellText(doc, row.label, x, y + i * rowH, CONTENT_WIDTH * 0.65, rowH, { fontSize: 7 });
-    drawCellText(doc, formatMoneyCi(row.value), x + CONTENT_WIDTH * 0.65, y + i * rowH, CONTENT_WIDTH * 0.35, rowH, {
+    const rowY = y + i * rowH;
+    drawRect(doc, x, rowY, CONTENT_WIDTH, rowH);
+    drawVLine(doc, valueX, rowY, rowY + rowH);
+    drawCellText(doc, row.label, x, rowY, labelW, rowH, { fontSize: 7 });
+    drawCellText(doc, formatMoneyCi(row.value), valueX, rowY, valueW, rowH, {
       align: 'right',
       fontSize: 7,
+      numeric: true,
     });
   });
   const totalY = y + cols.length * rowH;
   drawRect(doc, x, totalY, CONTENT_WIDTH, rowH);
-  drawCellText(doc, 'TOTAL CUMULS ANNUELS', x, totalY, CONTENT_WIDTH * 0.65, rowH, { bold: true, fontSize: 7 });
-  drawCellText(doc, formatMoneyCi(cumuls.netPay), x + CONTENT_WIDTH * 0.65, totalY, CONTENT_WIDTH * 0.35, rowH, {
+  drawVLine(doc, valueX, totalY, totalY + rowH);
+  drawCellText(doc, 'TOTAL CUMULS ANNUELS', x, totalY, labelW, rowH, { bold: true, fontSize: 7 });
+  drawCellText(doc, formatMoneyCi(cumuls.netPay), valueX, totalY, valueW, rowH, {
     align: 'right',
     bold: true,
     fontSize: 7,
+    numeric: true,
   });
   restoreStroke(doc);
   return totalY + rowH + 10;

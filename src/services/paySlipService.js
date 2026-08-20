@@ -402,7 +402,7 @@ async function getPayslipViewModel(payslipId, schoolId) {
   const employee = resolveEmployeeIdentity(profile || payslip.staffProfile, teacher);
   const totals = computePayslipTotals(payslip.lines || []);
   const blocks = totals.blocks;
-  const { buildDisplayLines } = require('../utils/paySlipLayout');
+  const { buildDisplayLines, formatMoneyCi } = require('../utils/paySlipLayout');
 
   return {
     payslip,
@@ -410,6 +410,7 @@ async function getPayslipViewModel(payslipId, schoolId) {
     employee,
     lines: payslip.lines,
     displayLines: buildDisplayLines(payslip.lines || []),
+    formatMoneyCi,
     totals,
     blocks,
     annualCumuls: payslip.annualCumuls || {},

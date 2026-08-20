@@ -66,7 +66,7 @@ describe('paySlip calculations', () => {
 
 describe('paySlipLayout helpers', () => {
   test('formatMoneyCi uses French grouping', () => {
-    expect(formatMoneyCi(75000)).toBe('75\u202f000');
+    expect(formatMoneyCi(75000)).toBe('75 000');
   });
 
   test('paySlipTableColumns includes official headers', () => {
@@ -84,6 +84,6 @@ describe('paySlipLayout helpers', () => {
   test('buildDisplayLines fills catalog codes even when empty', () => {
     const display = buildDisplayLines([{ code: '100', gains: 75000, base: 75000, block: 1, category: 'GAIN' }]);
     expect(display.some((r) => r.code === '110')).toBe(true);
-    expect(display.find((r) => r.code === '100').gains).toBe('75\u202f000');
+    expect(display.find((r) => r.code === '100').gains).toBe('75 000');
   });
 });
