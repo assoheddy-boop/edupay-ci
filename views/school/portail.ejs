@@ -20,6 +20,30 @@
 <% if (typeof marketplaceEnabled !== 'undefined' && !marketplaceEnabled) { %>
   <div class="alert alert-error">Le Marketplace n’est pas activé pour cet établissement. <a href="mailto:contact@educonnect.ci?subject=Marketplace%20EduConnect">Contactez EduConnect pour le Marketplace</a>.</div>
 <% } else { %>
+<% if (typeof analytics !== 'undefined' && analytics && analytics.totals) { %>
+<div class="card" style="margin-bottom:1.5rem">
+  <h2>Statistiques vitrine (30 derniers jours)</h2>
+  <p class="form-hint">Comptage interne EduConnect — sans Google Analytics ni cookie tiers.</p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-label">Vues page</span>
+      <span class="stat-value"><%= analytics.totals.views %></span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Clics « Payer »</span>
+      <span class="stat-value"><%= analytics.totals.payClicks %></span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Clics « Connexion »</span>
+      <span class="stat-value"><%= analytics.totals.loginClicks %></span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Messages contact</span>
+      <span class="stat-value"><%= analytics.totals.contactSubmits %></span>
+    </div>
+  </div>
+</div>
+<% } %>
 <div class="card">
   <h2>Nouvelle actualité</h2>
   <p class="form-hint">Texte public uniquement : pas de noms d’élèves, notes, bulletins, matricules ni téléphones parents.</p>

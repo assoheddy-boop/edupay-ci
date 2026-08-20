@@ -30,6 +30,7 @@
       <li data-step="4">Administration</li>
       <li data-step="5">Communication</li>
       <li data-step="6">Historique</li>
+      <li data-step="7">Visibilité web</li>
     </ol>
 
     <% if (typeof error !== 'undefined' && error) { %>
@@ -133,6 +134,22 @@
         <label for="digitalBudget">Budget digitalisation (FCFA / an, estimation)</label>
         <input type="text" id="digitalBudget" name="digitalBudget" maxlength="80" value="<%= v.digitalBudget || '' %>">
       </div>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="7">
+      <legend>Visibilité web (Marketplace)</legend>
+      <p class="devis-hint">Option <strong>séparée</strong> du plan Pro. Page publique <code>/e/votre-ecole</code> et annuaire <code>/ecoles</code>. Les notes et bulletins restent privés.</p>
+      <label class="devis-chip devis-chip-block">
+        <input type="radio" name="marketplaceTier" value="NONE" <%= !v.marketplaceTier || v.marketplaceTier === 'NONE' ? 'checked' : '' %>>
+        Sans vitrine — 0 FCFA / an
+      </label>
+      <% (typeof marketplaceOffers !== 'undefined' ? marketplaceOffers : []).forEach(function(opt) { %>
+        <label class="devis-chip devis-chip-block">
+          <input type="radio" name="marketplaceTier" value="<%= opt.value %>" <%= v.marketplaceTier === opt.value ? 'checked' : '' %>>
+          <%= opt.label %> — <%= typeof formatMoney === 'function' ? formatMoney(opt.amount) : opt.amount %> / an
+          <span class="devis-hint"><%= opt.hint %></span>
+        </label>
+      <% }) %>
     </fieldset>
 
     <div class="devis-nav">

@@ -50,6 +50,15 @@ function marketplaceSortRank(school) {
   return 0;
 }
 
+function educonnectVerifiedBadge(school) {
+  const tier = parseMarketplaceTier(school?.marketplaceTier);
+  if (!isLiveTier(tier)) return null;
+  if (tier === MARKETPLACE_TIER.PREMIUM || tier === MARKETPLACE_TIER.VIP) {
+    return { key: 'verified', label: 'Vérifié EduConnect', className: 'is-verified' };
+  }
+  return { key: 'partner', label: 'Partenaire EduConnect', className: 'is-partner-verified' };
+}
+
 function marketplaceBadge(school) {
   const tier = parseMarketplaceTier(school?.marketplaceTier);
   if (tier === MARKETPLACE_TIER.VIP) {
@@ -91,11 +100,20 @@ function tierUpdateData(tier) {
   };
 }
 
-async function applyMarketplaceOffer(schoolId, { tier, publish, enableModule } = {}) {
+async function applyMarketplaceOffer(schoolId, { tier, publish, enableModule, renew } = {}) {
   if (!schoolId) return { ok: false };
   const marketplaceTier = parseMarketplaceTier(tier);
   const live = isLiveTier(marketplaceTier);
   const moduleOn = enableModule == null ? live : Boolean(enableModule);
+
+  const school = await prisma.school.findUnique({
+    where: { id: schoolId },
+    select: {
+      marketplaceStartedAt: true,
+      marketplaceExpiresAt: true,
+      marketplaceTier: true,
+    },
+  });
 
   await setModule(schoolId, MARKETPLACE_MODULE, { enabled: moduleOn, locked: true });
 
@@ -103,12 +121,19 @@ async function applyMarketplaceOffer(schoolId, { tier, publish, enableModule } =
   if (publish === true) data.publicPortalEnabled = true;
   if (publish === false) data.publicPortalEnabled = false;
 
+  if (live) {
+    const { subscriptionDatesForTierChange } = require('./marketplaceSubscription');
+    Object.assign(data, subscriptionDatesForTierChange(school, marketplaceTier, { renew: Boolean(renew) }));
+  }
+
   try {
     await prisma.school.update({ where: { id: schoolId }, data });
   } catch (err) {
     if (data.marketplaceTier != null) {
       const fallback = { ...data };
       delete fallback.marketplaceTier;
+      delete fallback.marketplaceStartedAt;
+      delete fallback.marketplaceExpiresAt;
       if (Object.keys(fallback).length) {
         await prisma.school.update({ where: { id: schoolId }, data: fallback });
       }
@@ -116,7 +141,14 @@ async function applyMarketplaceOffer(schoolId, { tier, publish, enableModule } =
       throw err;
     }
   }
-  return { ok: true, marketplaceTier, publicFeatured: data.publicFeatured, moduleOn };
+  return {
+    ok: true,
+    marketplaceTier,
+    publicFeatured: data.publicFeatured,
+    moduleOn,
+    marketplaceStartedAt: data.marketplaceStartedAt,
+    marketplaceExpiresAt: data.marketplaceExpiresAt,
+  };
 }
 
 async function syncMarketplaceAfterModuleChange(schoolId, enabled) {
@@ -149,6 +181,7 @@ module.exports = {
   featuredFromTier,
   marketplaceSortRank,
   marketplaceBadge,
+  educonnectVerifiedBadge,
   publishedWhere,
   publishedWhereLegacy,
   tierUpdateData,

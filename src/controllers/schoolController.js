@@ -245,6 +245,7 @@ async function updateSettings(req, res) {
       data.publicLife = portal.publicLife;
       data.publicPhone = portal.publicPhone;
       data.publicType = portal.publicType;
+      data.commune = portal.commune;
       data.lat = portal.lat;
       data.lng = portal.lng;
       if (portal.publicFeatured != null) {

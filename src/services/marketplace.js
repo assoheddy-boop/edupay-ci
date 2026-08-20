@@ -109,15 +109,24 @@ async function queryPublishedSchools(where, select) {
   }
 }
 
-async function listPublishedSchools({ ville, cycle, type } = {}) {
+async function listPublishedSchools({ ville, commune, cycle, type, organizationId } = {}) {
   const city = String(ville || '').trim();
+  const communeLabel = String(commune || '').trim();
   const extra = {};
-  if (city) {
+  if (communeLabel) {
+    extra.OR = [
+      { commune: { contains: communeLabel, mode: 'insensitive' } },
+      { campusLabel: { contains: communeLabel, mode: 'insensitive' } },
+    ];
+  } else if (city) {
     extra.OR = [
       { city: { contains: city, mode: 'insensitive' } },
       { campusLabel: { contains: city, mode: 'insensitive' } },
       { address: { contains: city, mode: 'insensitive' } },
     ];
+  }
+  if (organizationId) {
+    extra.organizationId = organizationId;
   }
   if (cycle) {
     const parsed = parseEducationCycle(cycle);
@@ -206,9 +215,17 @@ function sitemapXml(entries) {
 }
 
 function staticSitemapEntries(today) {
+  const { listSeoLandingPaths } = require('../config/marketplaceSeoRoutes');
   return [
     { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: today },
     { path: '/ecoles', changefreq: 'daily', priority: '0.8', lastmod: today },
+    { path: '/ecoles/verifies', changefreq: 'weekly', priority: '0.75', lastmod: today },
+    ...listSeoLandingPaths().map((path) => ({
+      path,
+      changefreq: 'weekly',
+      priority: '0.72',
+      lastmod: today,
+    })),
     { path: '/devis', changefreq: 'monthly', priority: '0.7', lastmod: today },
     { path: '/guides', changefreq: 'monthly', priority: '0.6', lastmod: today },
     { path: '/mentions-legales', changefreq: 'yearly', priority: '0.3', lastmod: today },
@@ -237,6 +254,59 @@ async function buildSitemapXml() {
   } catch (err) {
     console.error('[sitemap]', err?.message || err);
     return sitemapXml(staticEntries);
+  }
+}
+
+async function enableEpvMarketplaceDemos() {
+  const { EPV_SCHOOLS, pickSchoolFields } = require('../config/epvSchools');
+  const { applyCatalogLogo } = require('../utils/onboardSchools');
+  const results = [];
+  for (const def of EPV_SCHOOLS) {
+    if (!def.slug) continue;
+    const school = await prisma.school.findFirst({ where: { slug: def.slug }, select: { id: true } });
+    if (!school?.id) {
+      results.push({ slug: def.slug, ok: false, reason: 'school_not_found' });
+      continue;
+    }
+    const data = pickSchoolFields(def);
+    try {
+      await prisma.school.update({ where: { id: school.id }, data });
+    } catch (err) {
+      const fallback = { ...data };
+      delete fallback.marketplaceStartedAt;
+      delete fallback.marketplaceExpiresAt;
+      await prisma.school.update({ where: { id: school.id }, data: fallback });
+    }
+    await applyCatalogLogo(school.id, def.logoFile);
+    await applyMarketplaceOffer(school.id, {
+      tier: data.marketplaceTier || MARKETPLACE_TIER.PREMIUM,
+      publish: true,
+      enableModule: true,
+    });
+    results.push({ slug: def.slug, ok: true, tier: data.marketplaceTier || MARKETPLACE_TIER.PREMIUM });
+  }
+  return { ok: true, results };
+}
+
+async function enableMarketplaceDemos() {
+  const igest = await enableIgestPublicPortal();
+  const epv = await enableEpvMarketplaceDemos();
+  return { igest, epv };
+}
+
+async function findPublishedOrganization(slug) {
+  const key = String(slug || '').trim().toLowerCase();
+  if (!key) return null;
+  try {
+    const org = await prisma.organization.findFirst({
+      where: { slug: key, publicPortalEnabled: true },
+    });
+    if (!org) return null;
+    const schools = await listPublishedSchools({ organizationId: org.id });
+    if (!schools.length) return null;
+    return { organization: org, schools };
+  } catch {
+    return null;
   }
 }
 
@@ -358,4 +428,7 @@ module.exports = {
   buildSitemapXml,
   fallbackSitemapXml,
   enableIgestPublicPortal,
+  enableEpvMarketplaceDemos,
+  enableMarketplaceDemos,
+  findPublishedOrganization,
 };

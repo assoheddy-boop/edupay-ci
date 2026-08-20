@@ -359,6 +359,18 @@
   background: #6b21a8;
 }
 
+.portal-featured-badge.is-verified,
+.portal-badge.is-verified {
+  background: #065f46;
+  color: #ecfdf5;
+}
+
+.portal-featured-badge.is-partner-verified,
+.portal-badge.is-partner-verified {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .portal-school-link.is-vip {
   border-color: #d8b4fe;
 }

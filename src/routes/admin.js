@@ -37,6 +37,7 @@ router.get('/marketplace', adminController.marketplacePage);
 router.post('/marketplace/:id/publish', auditMiddleware('school_marketplace_publish', 'School'), adminController.publishMarketplace);
 router.post('/marketplace/:id/unpublish', auditMiddleware('school_marketplace_unpublish', 'School'), adminController.unpublishMarketplace);
 router.post('/marketplace/:id/tier', auditMiddleware('school_featured_update', 'School'), adminController.setMarketplaceTier);
+router.post('/marketplace/:id/renew', auditMiddleware('school_marketplace_renew', 'School'), adminController.renewMarketplace);
 router.post('/modules/matrix', auditMiddleware('school_modules_matrix', 'SchoolModule'), adminController.updateModulesMatrix);
 router.get('/organizations', adminController.organizations);
 router.post('/organizations', adminController.createOrganization);

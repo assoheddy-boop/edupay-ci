@@ -16,6 +16,8 @@ const app = require('../src/app');
 const prisma = require('../src/config/database');
 const { sendEmail, smtpConfigured } = require('../src/services/email');
 const { COMMERCIAL_PLAN } = require('../src/config/plans');
+const { parseQuoteBody, quoteSummary } = require('../src/utils/quoteAnswers');
+const { MARKETPLACE_OFFER_OPTIONS } = require('../src/config/marketplaceOffers');
 
 const QUOTE_ID = 'clquotepro000000000000001';
 
@@ -67,13 +69,14 @@ describe('Public devis questionnaire', () => {
     expect(res.text).not.toMatch(/500\s*000/);
     expect(res.text).toMatch(/name="_csrf"/);
     expect(res.text).toMatch(/Établissement/);
-    expect(res.text).toMatch(/SMS officiel/);
+    expect(res.text).toMatch(/Visibilité web/i);
+    expect(res.text).toMatch(/Marketplace/i);
     expect(res.text).not.toMatch(/Choisir Premium/);
     expect(res.text).not.toMatch(/Essentiel/);
     expect(res.headers['set-cookie']?.join(';')).toMatch(/devis_csrf=/);
   });
 
-  test('POST /devis creates a quote at 500000 FCFA', async () => {
+  test('POST /devis creates a quote at 500000 FCFA without marketplace', async () => {
     const page = await request(app).get('/devis');
     const token = csrfFrom(page);
     prisma.quoteRequest.create.mockResolvedValue(sampleQuote());
@@ -106,6 +109,59 @@ describe('Public devis questionnaire', () => {
       }),
     }));
     expect(prisma.quoteRequest.create.mock.calls[0][0].data.amount).toBe(500000);
+    expect(prisma.quoteRequest.create.mock.calls[0][0].data.marketplaceAmount).toBe(0);
+  });
+
+  test('POST /devis adds marketplace line when Premium selected', async () => {
+    const page = await request(app).get('/devis');
+    const token = csrfFrom(page);
+    prisma.quoteRequest.create.mockResolvedValue(sampleQuote({
+      marketplaceAmount: 150000,
+      answers: {
+        ...sampleQuote().answers,
+        marketplace: { selected: true, tier: 'PREMIUM', label: 'Premium', amount: 150000 },
+      },
+    }));
+
+    const res = await request(app)
+      .post('/devis')
+      .set('Cookie', page.headers['set-cookie'])
+      .type('form')
+      .send({
+        _csrf: token,
+        schoolName: 'Groupe Scolaire Les Palmiers',
+        city: 'Abidjan',
+        isGroup: 'non',
+        students: '420',
+        teachers: '28',
+        classes: '16',
+        marketplaceTier: 'PREMIUM',
+      });
+
+    expect(res.status).toBe(302);
+    expect(prisma.quoteRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        amount: 500000,
+        marketplaceAmount: 150000,
+      }),
+    }));
+  });
+
+  test('quoteSummary totals Pro and Marketplace', () => {
+    const parsed = parseQuoteBody({
+      schoolName: 'Test',
+      city: 'Abidjan',
+      students: '100',
+      teachers: '10',
+      classes: '5',
+      marketplaceTier: 'VIP',
+    });
+    expect(parsed.ok).toBe(true);
+    expect(parsed.marketplaceAmount).toBe(300000);
+    expect(parsed.totalAmount).toBe(COMMERCIAL_PLAN.amount + 300000);
+    const summary = quoteSummary(parsed.answers);
+    expect(summary.totalAmount).toBe(COMMERCIAL_PLAN.amount + 300000);
+    expect(MARKETPLACE_OFFER_OPTIONS.some((o) => o.value === 'VIP' && o.amount === 300000)).toBe(true);
   });
 
   test('GET /devis/:id/pdf returns a PDF', async () => {

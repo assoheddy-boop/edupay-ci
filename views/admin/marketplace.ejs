@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Marketplace</h1>
-    <p class="page-sub">Écoles visibles sur /ecoles — publier, retirer, palier VIP / Premium / Standard.</p>
+    <p class="page-sub">Écoles visibles sur /ecoles — abonnements, paliers, publication.</p>
   </div>
   <div class="page-header-actions">
     <a href="/ecoles" class="btn btn-outline" target="_blank" rel="noopener">Ouvrir /ecoles</a>
@@ -16,12 +16,50 @@
 <% if (success === 'published') { %><div class="alert alert-success">École publiée sur /ecoles.</div><% } %>
 <% if (success === 'unpublished') { %><div class="alert alert-success">École retirée de /ecoles.</div><% } %>
 <% if (success === 'tier') { %><div class="alert alert-success">Offre marketplace mise à jour.</div><% } %>
+<% if (success === 'renewed') { %><div class="alert alert-success">Abonnement renouvelé (+1 an).</div><% } %>
 <% if (typeof error !== 'undefined' && error === 'school') { %><div class="alert alert-error">École introuvable.</div><% } %>
+
+<div class="stats-grid" style="margin-bottom:1rem">
+  <div class="stat-card">
+    <span class="stat-label">Échéance ≤ <%= renewalWarningDays %> j</span>
+    <span class="stat-value"><%= typeof expiring !== 'undefined' ? expiring.length : 0 %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Expirées</span>
+    <span class="stat-value"><%= typeof expired !== 'undefined' ? expired.length : 0 %></span>
+  </div>
+</div>
+
+<% if (typeof expiring !== 'undefined' && expiring.length) { %>
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-header">
+    <h2>Renouvellement à prévoir (J-<%= renewalWarningDays %>)</h2>
+  </div>
+  <ul class="devis-mods">
+    <% expiring.forEach(function(s) { %>
+      <li><strong><%= s.name %></strong> — <%= s.subscription.label %> · fin <%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></li>
+    <% }) %>
+  </ul>
+</div>
+<% } %>
+
+<% if (typeof expired !== 'undefined' && expired.length) { %>
+<div class="card alert-error" style="margin-bottom:1rem">
+  <div class="card-header">
+    <h2>Abonnements expirés</h2>
+  </div>
+  <ul class="devis-mods">
+    <% expired.forEach(function(s) { %>
+      <li><strong><%= s.name %></strong> — expiré le <%= s.subscription.expiresAt ? new Date(s.subscription.expiresAt).toLocaleDateString('fr-FR') : '—' %></li>
+    <% }) %>
+  </ul>
+</div>
+<% } %>
 
 <div class="card">
   <div class="card-header">
     <h2>Listing /ecoles</h2>
-    <p class="page-sub">Une école apparaît si le module marketplace est actif, le palier n’est pas « Aucun », un slug existe et la vitrine est publiée.</p>
+    <p class="page-sub">Module marketplace actif, palier payant, slug et case « Publier » cochée.</p>
   </div>
   <div class="table-scroll">
     <table class="table">
@@ -31,6 +69,9 @@
           <th>Slug</th>
           <th>Sur /ecoles</th>
           <th>Palier</th>
+          <th>Début</th>
+          <th>Fin</th>
+          <th>Statut</th>
           <th></th>
         </tr>
       </thead>
@@ -63,7 +104,25 @@
                 </select>
               </form>
             </td>
+            <td><%= s.marketplaceStartedAt ? new Date(s.marketplaceStartedAt).toLocaleDateString('fr-FR') : '—' %></td>
+            <td><%= s.marketplaceExpiresAt ? new Date(s.marketplaceExpiresAt).toLocaleDateString('fr-FR') : '—' %></td>
+            <td>
+              <% if (s.subscription.state === 'expiring') { %>
+                <span class="badge badge-warning"><%= s.subscription.label %></span>
+              <% } else if (s.subscription.state === 'expired') { %>
+                <span class="badge badge-danger"><%= s.subscription.label %></span>
+              <% } else if (s.subscription.state === 'active') { %>
+                <span class="badge badge-success"><%= s.subscription.label %></span>
+              <% } else { %>
+                <span class="badge"><%= s.subscription.label %></span>
+              <% } %>
+            </td>
             <td class="assist-actions">
+              <% if (s.marketplaceTier && s.marketplaceTier !== 'NONE') { %>
+                <form method="POST" action="/admin/marketplace/<%= s.id %>/renew">
+                  <button type="submit" class="btn btn-sm btn-outline">+1 an</button>
+                </form>
+              <% } %>
               <% if (s.onEcoles) { %>
                 <form method="POST" action="/admin/marketplace/<%= s.id %>/unpublish">
                   <button type="submit" class="btn btn-sm btn-outline">Dépublier</button>

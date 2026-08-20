@@ -2,6 +2,7 @@ const { sendEmail } = require('../services/email');
 const { ensureCsrfToken, requireCsrf } = require('../utils/csrf');
 const { parseEducationCycle, CYCLE_LABELS } = require('../utils/educationCycle');
 const { safeJson } = require('../utils/safeJson');
+const { findSeoLanding } = require('../config/marketplaceSeoRoutes');
 const {
   SITE_ORIGIN,
   CONTACT_INBOX,
@@ -9,6 +10,7 @@ const {
   PUBLIC_ROBOTS,
   isPortalSlug,
   portalPath,
+  organizationPortalPath,
   seoForSchool,
   seoForMarketplace,
   jsonLdForSchool,
@@ -21,17 +23,19 @@ const {
 } = require('../utils/publicPortal');
 const {
   findPublishedSchool,
+  findPublishedOrganization,
   listPublishedSchools,
   listPortalPosts,
   buildSitemapXml,
   fallbackSitemapXml,
 } = require('../services/marketplace');
 const { publicSchoolStats } = require('../services/publicPortalStats');
+const { recordPortalEvent } = require('../services/portalAnalytics');
 
-function renderMissing(res, status = 404) {
+function renderMissing(res, status = 404, message) {
   res.setHeader('X-Robots-Tag', PRIVATE_ROBOTS);
   return res.status(status).render('error', {
-    message: 'Cette école n’a pas publié de page, ou le lien est incorrect.',
+    message: message || 'Cette école n’a pas publié de page, ou le lien est incorrect.',
     user: null,
     title: 'Page introuvable',
     robots: PRIVATE_ROBOTS,
@@ -68,11 +72,68 @@ async function schoolPageLocals(req, res, school, extra = {}) {
   };
 }
 
+async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
+  const schools = await listPublishedSchools(filters);
+  const seo = seoForMarketplace(seoExtra);
+  if (seoExtra.canonicalPath) {
+    seo.canonicalUrl = `${SITE_ORIGIN}${seoExtra.canonicalPath}`;
+  }
+  const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
+  const jsonLd = jsonLdForMarketplace(views, seo);
+  return res.render('portal/marketplace', {
+    user: null,
+    title: seo.title,
+    heading: seo.heading,
+    lead: seo.lead,
+    metaDescription: seo.metaDescription,
+    canonicalUrl: seo.canonicalUrl,
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogImage: seo.ogImage,
+    jsonLd,
+    jsonLdJson: safeJson(jsonLd),
+    robots: PUBLIC_ROBOTS,
+    portalCss: true,
+    ville: filters.ville || '',
+    commune: filters.commune || '',
+    cycle: filters.cycle || '',
+    type: filters.type || '',
+    cycleOptions: cycleFilterOptions(),
+    typeOptions: typeFilterOptions(),
+    cycleLabels: CYCLE_LABELS,
+    schools: views,
+    verifiedLanding: Boolean(seoExtra.verifiedLanding),
+  });
+}
+
 async function schoolPage(req, res, next) {
   try {
     const school = await findPublishedSchool(req.params.slug);
     if (!school) return renderMissing(res);
+    await recordPortalEvent(school.id, 'view');
     return res.render('portal/school', await schoolPageLocals(req, res, school));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function goPayer(req, res, next) {
+  try {
+    const school = await findPublishedSchool(req.params.slug);
+    if (!school) return renderMissing(res);
+    await recordPortalEvent(school.id, 'pay');
+    return res.redirect('/auth/login');
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function goConnexion(req, res, next) {
+  try {
+    const school = await findPublishedSchool(req.params.slug);
+    if (!school) return renderMissing(res);
+    await recordPortalEvent(school.id, 'login');
+    return res.redirect('/auth/login');
   } catch (err) {
     return next(err);
   }
@@ -118,6 +179,7 @@ async function sendContact(req, res, next) {
       subject: `[EduConnect] Contact — ${school.name}`,
       text,
     });
+    await recordPortalEvent(school.id, 'contact');
 
     return res.render('portal/school', await schoolPageLocals(req, res, school, { contactSuccess: true }));
   } catch (err) {
@@ -128,35 +190,103 @@ async function sendContact(req, res, next) {
 async function marketplace(req, res, next) {
   try {
     const ville = String(req.query.ville || req.query.city || '').trim();
+    const commune = String(req.query.commune || '').trim();
     const cycleRaw = String(req.query.cycle || '').trim();
     const cycle = cycleRaw && parseEducationCycle(cycleRaw) === cycleRaw.toUpperCase()
       ? cycleRaw.toUpperCase()
       : '';
     const type = parsePublicType(req.query.type) || '';
-    const schools = await listPublishedSchools({ ville, cycle, type });
-    const seo = seoForMarketplace({ ville, cycle, type });
+    return renderMarketplaceListing(
+      req,
+      res,
+      { ville, commune, cycle, type },
+      { ville, commune, cycle, type },
+    );
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function verifiedMarketplace(req, res, next) {
+  try {
+    const seo = seoForMarketplace({
+      heading: 'Établissements vérifiés EduConnect',
+      lead: 'Écoles, collèges et lycées avec vitrine Marketplace active. Badge « Vérifié » pour Premium et VIP. Aucune note nominative en public.',
+    });
+    seo.canonicalUrl = `${SITE_ORIGIN}/ecoles/verifies`;
+    const schools = await listPublishedSchools({});
     const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
-    const jsonLd = jsonLdForMarketplace(views, seo);
-    return res.render('portal/marketplace', {
+    return res.render('portal/verified', {
       user: null,
-      title: seo.title,
+      title: `${seo.heading} — Côte d’Ivoire`,
       heading: seo.heading,
       lead: seo.lead,
-      metaDescription: seo.metaDescription,
+      metaDescription: seo.lead.slice(0, 160),
       canonicalUrl: seo.canonicalUrl,
-      ogTitle: seo.ogTitle,
-      ogDescription: seo.ogDescription,
-      ogImage: seo.ogImage,
-      jsonLd,
-      jsonLdJson: safeJson(jsonLd),
       robots: PUBLIC_ROBOTS,
       portalCss: true,
-      ville,
-      cycle,
-      type,
-      cycleOptions: cycleFilterOptions(),
-      typeOptions: typeFilterOptions(),
-      cycleLabels: CYCLE_LABELS,
+      schools: views,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function marketplaceSeoLanding(req, res, next) {
+  try {
+    const landing = findSeoLanding(req.params.seoSlug);
+    if (!landing) return next();
+    return renderMarketplaceListing(
+      req,
+      res,
+      {
+        ville: landing.ville || '',
+        commune: landing.commune || '',
+        cycle: landing.cycle || '',
+        type: landing.type || '',
+      },
+      {
+        ville: landing.ville,
+        commune: landing.commune,
+        cycle: landing.cycle,
+        type: landing.type,
+        heading: landing.heading,
+        lead: landing.lead,
+        canonicalPath: `/ecoles/${landing.slug}`,
+      },
+    );
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function organizationPage(req, res, next) {
+  try {
+    const data = await findPublishedOrganization(req.params.slug);
+    if (!data) {
+      return renderMissing(res, 404, 'Ce groupe scolaire n’a pas publié de vitrine, ou le lien est incorrect.');
+    }
+    const { organization, schools } = data;
+    const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
+    const title = `${organization.name} — Groupe scolaire`;
+    return res.render('portal/organization', {
+      user: null,
+      title,
+      metaDescription: `${organization.name} : campus et établissements sur EduConnect. Notes et bulletins dans l’espace parent.`,
+      canonicalUrl: `${SITE_ORIGIN}${organizationPortalPath(organization.slug)}`,
+      robots: PUBLIC_ROBOTS,
+      portalCss: true,
+      organization: {
+        name: organization.name,
+        slug: organization.slug,
+        city: organization.city,
+        address: organization.address,
+        publicDescription: organization.publicDescription,
+        publicPhone: organization.publicPhone,
+        logoUrl: organization.logoUrl,
+        logoBase64: organization.logoBase64,
+        portalPath: organizationPortalPath(organization.slug),
+      },
       schools: views,
     });
   } catch (err) {
@@ -184,6 +314,7 @@ function robots(_req, res) {
     'User-agent: *',
     'Allow: /',
     'Allow: /ecoles',
+    'Allow: /ecoles/verifies',
     'Allow: /e/',
     'Disallow: /auth',
     'Disallow: /school',
@@ -214,8 +345,13 @@ async function publicAlias(req, res, next) {
 
 module.exports = {
   schoolPage,
+  goPayer,
+  goConnexion,
   sendContact,
   marketplace,
+  verifiedMarketplace,
+  marketplaceSeoLanding,
+  organizationPage,
   sitemap,
   robots,
   publicAlias,

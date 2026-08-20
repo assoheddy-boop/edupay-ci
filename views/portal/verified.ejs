@@ -1,0 +1,52 @@
+<%- include('../partials/head') %>
+<% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
+<script type="application/ld+json"><%- jsonLdJson %></script>
+<% } %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles/verifies" aria-current="page">Vérifiés</a>
+      <a href="/auth/login">Connexion</a>
+      <a href="/devis">Devis</a>
+    </nav>
+  </header>
+
+  <section class="portal-hero portal-hero-market">
+    <div>
+      <p class="portal-kicker">Marketplace · Confiance</p>
+      <h1><%= heading %></h1>
+      <p class="portal-lead"><%= lead %></p>
+      <p class="form-hint">Premium et VIP : badge <strong>Vérifié EduConnect</strong>. Standard : partenaire actif. Jamais de notes ou bulletins nominatifs ici.</p>
+    </div>
+  </section>
+
+  <% if (!schools.length) { %>
+    <div class="card portal-card">
+      <p>Aucun établissement publié pour le moment.</p>
+    </div>
+  <% } else { %>
+    <ul class="portal-list">
+      <% schools.forEach(function(s) { %>
+        <li>
+          <a class="card portal-school-link<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
+            <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+            <span>
+              <strong><%= s.name %></strong>
+              <% if (s.verifiedBadge) { %>
+                <span class="portal-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span>
+              <% } %>
+              <% if (s.marketplaceBadge) { %>
+                <span class="portal-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span>
+              <% } %>
+              <small><%= s.cycleLabel %> · <%= s.localityLabel || s.city %></small>
+            </span>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

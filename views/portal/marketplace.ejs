@@ -30,17 +30,21 @@
 
   <nav class="portal-shortcuts" aria-label="Parcourir par cycle ou ville">
     <a href="/ecoles">Toutes les écoles</a>
-    <a href="/ecoles?cycle=COLLEGE">Collèges</a>
-    <a href="/ecoles?cycle=LYCEE">Lycées</a>
-    <a href="/ecoles?cycle=PRIMAIRE">Primaires</a>
+    <a href="/ecoles/verifies">Établissements vérifiés</a>
+    <a href="/ecoles/colleges-abidjan">Collèges à Abidjan</a>
+    <a href="/ecoles/lycees-abidjan">Lycées à Abidjan</a>
+    <a href="/ecoles/primaires-abidjan">Primaires à Abidjan</a>
+    <a href="/ecoles/colleges-yopougon">Collèges à Yopougon</a>
     <a href="/ecoles?ville=Abidjan">Abidjan</a>
-    <a href="/ecoles?ville=Yopougon">Yopougon</a>
-    <a href="/ecoles?cycle=COLLEGE&amp;ville=Abidjan">Collèges à Abidjan</a>
-    <a href="/ecoles?cycle=LYCEE&amp;ville=Yopougon">Lycées à Yopougon</a>
+    <a href="/ecoles?commune=Yopougon">Yopougon</a>
   </nav>
 
   <form class="card portal-filters" method="GET" action="/ecoles">
     <div class="form-row">
+      <div class="form-group">
+        <label for="commune">Commune / quartier</label>
+        <input type="text" id="commune" name="commune" value="<%= typeof commune !== 'undefined' ? commune : '' %>" placeholder="Yopougon, Bingerville…">
+      </div>
       <div class="form-group">
         <label for="ville">Ville</label>
         <input type="text" id="ville" name="ville" value="<%= ville %>" placeholder="Abidjan, Bouaké…">
@@ -78,6 +82,7 @@
           <a class="card portal-school-link<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
             <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
             <span>
+              <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
               <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
               <strong><%= s.name %></strong>
               <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>

@@ -1,6 +1,6 @@
 const { parseEducationCycle, CYCLE_LABELS, EDUCATION_CYCLE_OPTIONS } = require('./educationCycle');
 const { isDangerousUpload } = require('./uploadSafety');
-const { parseMarketplaceTier, marketplaceBadge } = require('./marketplaceAddon');
+const { parseMarketplaceTier, marketplaceBadge, educonnectVerifiedBadge } = require('./marketplaceAddon');
 
 const SITE_ORIGIN = (process.env.APP_URL || 'https://educonnect-ci.com').replace(/\/$/, '');
 const CONTACT_INBOX = 'contact@educonnect.ci';
@@ -65,6 +65,7 @@ const PUBLIC_SCHOOL_SELECT = {
   name: true,
   slug: true,
   city: true,
+  commune: true,
   address: true,
   campusLabel: true,
   logoUrl: true,
@@ -151,6 +152,10 @@ function isPortalSlug(slug) {
 
 function portalPath(slug) {
   return `/e/${encodeURIComponent(String(slug || '').toLowerCase())}`;
+}
+
+function organizationPortalPath(slug) {
+  return `/e/groupe/${encodeURIComponent(String(slug || '').toLowerCase())}`;
 }
 
 function portalUrl(slug) {
@@ -277,6 +282,7 @@ function parsePublicPortalFields(body = {}, { user } = {}) {
   const description = String(body.publicDescription || '').trim().slice(0, 2000);
   const life = String(body.publicLife || '').trim().slice(0, 4000);
   const phone = String(body.publicPhone || '').trim().slice(0, 40);
+  const commune = String(body.commune || '').trim().slice(0, 80);
   const bannerUrl = sanitizeImageUrl(body.publicBanner);
   const type = parsePublicType(body.publicType) || PUBLIC_TYPE.PRIVE;
   const data = {
@@ -284,6 +290,7 @@ function parsePublicPortalFields(body = {}, { user } = {}) {
     publicDescription: description || null,
     publicLife: life || null,
     publicPhone: phone || null,
+    commune: commune || null,
     publicBanner: bannerUrl,
     publicGallery: parseGallery(body.publicGallery),
     publicType: type,
@@ -405,8 +412,12 @@ function schoolHeading(school) {
 }
 
 function schoolLocality(school) {
-  const campus = String(school?.campusLabel || '').trim();
+  const communeField = String(school?.commune || '').trim();
   const city = String(school?.city || '').trim();
+  if (communeField) {
+    return { commune: communeField, city: city || null };
+  }
+  const campus = String(school?.campusLabel || '').trim();
   if (campus && (!city || foldAscii(campus) !== foldAscii(city))) {
     return { commune: campus, city: city || null };
   }
@@ -512,17 +523,22 @@ function seoForSchool(school, extras = {}) {
   };
 }
 
-function marketplacePath({ ville, cycle, type } = {}) {
+function marketplacePath({ ville, commune, cycle, type } = {}) {
   const params = new URLSearchParams();
   if (ville) params.set('ville', String(ville).trim());
+  if (commune) params.set('commune', String(commune).trim());
   if (cycle) params.set('cycle', String(cycle).trim().toUpperCase());
   if (type) params.set('type', String(type).trim().toUpperCase());
   const q = params.toString();
   return q ? `/ecoles?${q}` : '/ecoles';
 }
 
-function seoForMarketplace({ ville, cycle, type } = {}) {
+function seoForMarketplace({ ville, commune, cycle, type, heading: headingOverride, lead: leadOverride } = {}) {
   const villeLabel = String(ville || '').trim();
+  const communeLabel = String(commune || '').trim();
+  const placeLabel = communeLabel
+    ? (villeLabel && foldAscii(communeLabel) !== foldAscii(villeLabel) ? `${communeLabel}, ${villeLabel}` : communeLabel)
+    : villeLabel;
   const cycleKey = cycle && String(cycle).trim()
     && parseEducationCycle(cycle) === String(cycle).trim().toUpperCase()
     ? String(cycle).trim().toUpperCase()
@@ -534,18 +550,22 @@ function seoForMarketplace({ ville, cycle, type } = {}) {
   let heading;
   let title;
   let lead;
-  if (noun && villeLabel) {
-    heading = `${noun.heading} à ${villeLabel}`;
-    title = `${noun.heading} à ${villeLabel} — Côte d’Ivoire`;
-    lead = `${noun.heading} à ${villeLabel}, Côte d’Ivoire. Pages publiques EduConnect ; notes et bulletins dans l’espace parent.`;
+  if (headingOverride) {
+    heading = headingOverride;
+    title = `${headingOverride} — Côte d’Ivoire`;
+    lead = leadOverride || `${headingOverride}. Annuaire EduConnect ; notes dans l’espace parent.`;
+  } else if (noun && placeLabel) {
+    heading = `${noun.heading} à ${placeLabel}`;
+    title = `${noun.heading} à ${placeLabel} — Côte d’Ivoire`;
+    lead = `${noun.heading} à ${placeLabel}, Côte d’Ivoire. Pages publiques EduConnect ; notes et bulletins dans l’espace parent.`;
   } else if (noun) {
     heading = `${noun.heading} en Côte d’Ivoire`;
     title = `${noun.heading} en Côte d’Ivoire — enseignement`;
     lead = `${noun.heading} en Côte d’Ivoire, publiés sur EduConnect. Présentation et contact ; résultats scolaires derrière connexion parent.`;
-  } else if (villeLabel) {
-    heading = `Écoles à ${villeLabel}`;
-    title = `Écoles à ${villeLabel} — Côte d’Ivoire`;
-    lead = `Écoles, collèges et lycées à ${villeLabel}, Côte d’Ivoire. Annuaire EduConnect, sans notes nominatives.`;
+  } else if (placeLabel) {
+    heading = `Écoles à ${placeLabel}`;
+    title = `Écoles à ${placeLabel} — Côte d’Ivoire`;
+    lead = `Écoles, collèges et lycées à ${placeLabel}, Côte d’Ivoire. Annuaire EduConnect, sans notes nominatives.`;
   } else {
     heading = 'Écoles en Côte d’Ivoire';
     title = 'Écoles en Côte d’Ivoire — collèges et lycées';
@@ -558,7 +578,12 @@ function seoForMarketplace({ ville, cycle, type } = {}) {
     heading,
     lead,
     metaDescription: description,
-    canonicalUrl: `${SITE_ORIGIN}${marketplacePath({ ville: villeLabel, cycle: cycleKey, type: parsedType || '' })}`,
+    canonicalUrl: `${SITE_ORIGIN}${marketplacePath({
+      ville: villeLabel,
+      commune: communeLabel,
+      cycle: cycleKey,
+      type: parsedType || '',
+    })}`,
     ogTitle: title,
     ogDescription: description,
     ogImage: `${SITE_ORIGIN}/icons/icon-192.png`,
@@ -753,6 +778,7 @@ function publicSchoolView(school, extras = {}) {
       || parseMarketplaceTier(school.marketplaceTier) === 'VIP',
     marketplaceTier: parseMarketplaceTier(school.marketplaceTier),
     marketplaceBadge: marketplaceBadge(school),
+    verifiedBadge: educonnectVerifiedBadge(school),
     lat: school.lat,
     lng: school.lng,
     classCount,
@@ -764,8 +790,8 @@ function publicSchoolView(school, extras = {}) {
     whatsappUrl: whatsappUrl(school.publicPhone),
     portalPath: portalPath(school.slug),
     portalUrl: portalUrl(school.slug),
-    loginUrl: '/auth/login',
-    payUrl: '/auth/login',
+    loginUrl: school.slug ? `${portalPath(school.slug)}/go/connexion` : '/auth/login',
+    payUrl: school.slug ? `${portalPath(school.slug)}/go/payer` : '/auth/login',
   };
 }
 
@@ -817,6 +843,8 @@ module.exports = {
   isPortalSlug,
   portalPath,
   portalUrl,
+  organizationPortalPath,
+  marketplacePath,
   parseLat,
   parseLng,
   parsePublicType,

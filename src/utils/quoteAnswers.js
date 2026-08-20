@@ -1,4 +1,9 @@
 const { COMMERCIAL_PLAN } = require('../config/plans');
+const {
+  MARKETPLACE_OFFER_OPTIONS,
+  marketplaceOfferForTier,
+  parseQuoteMarketplaceTier,
+} = require('../config/marketplaceOffers');
 
 const CORE_MODULES = [
   'Paiements Wave / Orange Money',
@@ -80,6 +85,16 @@ function parseQuoteBody(body = {}) {
     digitalBudget: trimStr(body.digitalBudget, 80),
   };
 
+  const marketplaceTier = parseQuoteMarketplaceTier(body.marketplaceTier);
+  const marketplaceOffer = marketplaceOfferForTier(marketplaceTier);
+  const marketplace = {
+    selected: marketplaceTier !== 'NONE',
+    tier: marketplaceTier,
+    label: marketplaceOffer.label,
+    amount: marketplaceOffer.amount,
+    hint: marketplaceOffer.hint,
+  };
+
   const answers = {
     schoolName,
     city,
@@ -92,8 +107,12 @@ function parseQuoteBody(body = {}) {
     admin,
     comm,
     history,
+    marketplace,
     contact: { name: contactName, email: contactEmail, phone: contactPhone },
   };
+
+  const proAmount = COMMERCIAL_PLAN.amount;
+  const marketplaceAmount = marketplace.amount;
 
   return {
     ok: errors.length === 0,
@@ -104,7 +123,9 @@ function parseQuoteBody(body = {}) {
     contactName: contactName || null,
     contactEmail: contactEmail || null,
     contactPhone: contactPhone || null,
-    amount: COMMERCIAL_PLAN.amount,
+    amount: proAmount,
+    marketplaceAmount,
+    totalAmount: proAmount + marketplaceAmount,
   };
 }
 
@@ -124,12 +145,18 @@ function selectedModules(answers) {
 
 function quoteSummary(answers) {
   const selected = selectedModules(answers);
+  const marketplace = answers.marketplace || { selected: false, tier: 'NONE', amount: 0 };
+  const proAmount = COMMERCIAL_PLAN.amount;
+  const marketplaceAmount = marketplace.amount || 0;
   return {
     core: CORE_MODULES,
     selected,
     included: PRO_INCLUDED,
     planName: COMMERCIAL_PLAN.name,
-    amount: COMMERCIAL_PLAN.amount,
+    amount: proAmount,
+    marketplace,
+    marketplaceAmount,
+    totalAmount: proAmount + marketplaceAmount,
     tagline: COMMERCIAL_PLAN.tagline,
   };
 }
@@ -137,6 +164,7 @@ function quoteSummary(answers) {
 module.exports = {
   CORE_MODULES,
   PRO_INCLUDED,
+  MARKETPLACE_OFFER_OPTIONS,
   parseQuoteBody,
   selectedModules,
   quoteSummary,

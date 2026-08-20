@@ -8,6 +8,7 @@ const IGEST_SCHOOL = {
   slug: 'igest-yopougon-sideci',
   city: 'Abidjan',
   campusLabel: 'Yopougon-Sideci',
+  commune: 'Yopougon',
   address: 'Yopougon-Sideci, Abidjan',
   logoFile: 'public/img/schools/igest-yopougon-sideci.png',
   waveNumber: null,

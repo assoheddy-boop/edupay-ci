@@ -9,11 +9,16 @@ const {
   portalPath,
 } = require('../utils/publicPortal');
 
+const { getPortalAnalyticsSummary } = require('../services/portalAnalytics');
+
 async function page(req, res) {
   const school = req.user.school;
   if (!school) return res.redirect('/auth/login');
   const mods = await getModuleMap(school.id);
   const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
+  const analytics = marketplaceEnabled
+    ? await getPortalAnalyticsSummary(school.id, 30)
+    : { totals: { views: 0, payClicks: 0, loginClicks: 0, contactSubmits: 0 }, days: [] };
   const posts = typeof prisma.portalPost?.findMany === 'function'
     ? await prisma.portalPost.findMany({
       where: { schoolId: school.id },
@@ -28,6 +33,7 @@ async function page(req, res) {
     kindOptions: PORTAL_POST_KIND_OPTIONS,
     portalPath: school.slug ? portalPath(school.slug) : null,
     marketplaceEnabled,
+    analytics,
     success: req.query.success || null,
     error: req.query.error || null,
   });

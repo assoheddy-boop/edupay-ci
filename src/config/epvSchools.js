@@ -112,24 +112,44 @@ function generateTempPassword(slug) {
   return `${label}-${token}!`;
 }
 
+function epvPublicDescription(name) {
+  return `${name} — établissement partenaire EduConnect en Côte d'Ivoire. Page publique sans notes ni bulletins en ligne.`;
+}
+
+function epvMarketplaceDefaults(def) {
+  const name = def.name || 'École';
+  return {
+    marketplaceTier: def.marketplaceTier || 'PREMIUM',
+    publicPortalEnabled: def.publicPortalEnabled ?? true,
+    publicFeatured: def.publicFeatured ?? true,
+    publicType: def.publicType || 'PRIVE',
+    publicDescription: def.publicDescription || epvPublicDescription(name),
+    publicPhone: def.publicPhone ?? def.admin?.phone ?? null,
+    publicLife: def.publicLife || 'Cantine, activités et vie scolaire : renseignements au secrétariat. Aucune liste d’élèves n’est publiée.',
+    address: def.address ?? def.campusLabel ?? def.city ?? 'Abidjan',
+  };
+}
+
 function pickSchoolFields(def, existing = {}) {
+  const marketplace = epvMarketplaceDefaults(def);
   return {
     name: def.name,
     city: def.city || existing.city || 'Abidjan',
     campusLabel: def.campusLabel ?? existing.campusLabel ?? null,
-    address: def.address ?? existing.address ?? null,
+    address: def.address ?? existing.address ?? def.campusLabel ?? def.city ?? 'Abidjan',
+    commune: def.commune ?? existing.commune ?? def.campusLabel ?? null,
     waveNumber: def.waveNumber ?? existing.waveNumber ?? null,
     omNumber: def.omNumber ?? existing.omNumber ?? null,
     currentSchoolYear: def.currentSchoolYear || existing.currentSchoolYear || '2026-2027',
     educationCycle: def.educationCycle || existing.educationCycle || 'COLLEGE',
-    publicPortalEnabled: def.publicPortalEnabled ?? existing.publicPortalEnabled ?? false,
-    publicDescription: def.publicDescription ?? existing.publicDescription ?? null,
-    publicPhone: def.publicPhone ?? existing.publicPhone ?? def.admin?.phone ?? null,
-    publicLife: def.publicLife ?? existing.publicLife ?? null,
+    publicPortalEnabled: marketplace.publicPortalEnabled,
+    publicDescription: marketplace.publicDescription,
+    publicPhone: marketplace.publicPhone,
+    publicLife: marketplace.publicLife,
     publicBanner: def.publicBanner ?? existing.publicBanner ?? null,
-    publicType: def.publicType ?? existing.publicType ?? 'PRIVE',
-    publicFeatured: def.publicFeatured ?? existing.publicFeatured ?? false,
-    marketplaceTier: def.marketplaceTier ?? existing.marketplaceTier ?? 'NONE',
+    publicType: marketplace.publicType,
+    publicFeatured: marketplace.publicFeatured,
+    marketplaceTier: marketplace.marketplaceTier,
     lat: def.lat ?? existing.lat ?? null,
     lng: def.lng ?? existing.lng ?? null,
   };
@@ -163,4 +183,6 @@ module.exports = {
   validateEpvCatalog,
   generateTempPassword,
   pickSchoolFields,
+  epvMarketplaceDefaults,
+  epvPublicDescription,
 };

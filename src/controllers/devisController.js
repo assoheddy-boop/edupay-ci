@@ -5,6 +5,7 @@ const { buildQuotePdf } = require('../services/quotePdf');
 const { COMMERCIAL_PLAN } = require('../config/plans');
 const { ensureCsrfToken, requireCsrf } = require('../utils/csrf');
 const { parseQuoteBody, quoteSummary } = require('../utils/quoteAnswers');
+const { MARKETPLACE_OFFER_OPTIONS } = require('../config/marketplaceOffers');
 
 const CUID_RE = /^c[a-z0-9]{20,32}$/i;
 
@@ -23,12 +24,17 @@ function renderForm(req, res, extra = {}) {
     error: extra.error || null,
     values: extra.values || {},
     commercialPlan: COMMERCIAL_PLAN,
+    marketplaceOffers: MARKETPLACE_OFFER_OPTIONS.filter((opt) => opt.value !== 'NONE'),
     formatMoney,
   });
 }
 
 function viewModel(quote, extra = {}) {
   const answers = quote.answers || {};
+  const summary = quoteSummary(answers);
+  const proAmount = quote.amount || COMMERCIAL_PLAN.amount;
+  const marketplaceAmount = quote.marketplaceAmount ?? summary.marketplaceAmount ?? 0;
+  const totalAmount = proAmount + marketplaceAmount;
   return {
     user: null,
     title: 'Votre devis Pro',
@@ -36,9 +42,11 @@ function viewModel(quote, extra = {}) {
     devisCss: true,
     quote,
     answers,
-    summary: quoteSummary(answers),
+    summary,
     commercialPlan: COMMERCIAL_PLAN,
-    amountLabel: formatMoney(quote.amount || COMMERCIAL_PLAN.amount),
+    amountLabel: formatMoney(proAmount),
+    marketplaceAmountLabel: formatMoney(marketplaceAmount),
+    totalAmountLabel: formatMoney(totalAmount),
     csrfToken: extra.csrfToken,
     activationMessage: extra.activationMessage || null,
     activationOk: extra.activationOk || false,
@@ -65,7 +73,8 @@ async function create(req, res, next) {
         schoolName: parsed.schoolName,
         city: parsed.city,
         answers: parsed.answers,
-        amount: COMMERCIAL_PLAN.amount,
+        amount: parsed.amount,
+        marketplaceAmount: parsed.marketplaceAmount,
         contactName: parsed.contactName,
         contactEmail: parsed.contactEmail,
         contactPhone: parsed.contactPhone,
@@ -130,12 +139,17 @@ async function activate(req, res, next) {
     let mailed = false;
     if (smtpConfigured()) {
       const answers = updated.answers || {};
+      const marketplaceLine = updated.marketplaceAmount
+        ? `Marketplace : ${formatMoney(updated.marketplaceAmount)} / an (${answers.marketplace?.label || 'visibilité'})`
+        : 'Marketplace : non';
       const result = await sendEmail('contact@educonnect.ci', {
         subject: `Activation Pro — ${updated.schoolName}`,
         text: [
           'Demande d\'activation EduConnect Pro',
           `Établissement : ${updated.schoolName} (${updated.city})`,
-          `Montant : ${formatMoney(updated.amount)} / an`,
+          `Pro (gestion) : ${formatMoney(updated.amount)} / an`,
+          marketplaceLine,
+          `Total devis : ${formatMoney((updated.amount || 0) + (updated.marketplaceAmount || 0))} / an`,
           `Référence : ${updated.id}`,
           `Contact : ${updated.contactName || answers.contact?.name || '—'}`,
           `Email : ${updated.contactEmail || answers.contact?.email || '—'}`,

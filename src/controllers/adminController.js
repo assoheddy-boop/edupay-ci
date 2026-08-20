@@ -31,6 +31,7 @@ const {
   applyMarketplaceOffer,
   syncMarketplaceAfterModuleChange,
 } = require('../utils/marketplaceAddon');
+const { marketplaceSubscriptionStatus, RENEWAL_WARNING_DAYS } = require('../utils/marketplaceSubscription');
 
 const USER_ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
@@ -843,6 +844,7 @@ async function quoteDetail(req, res) {
     answers,
     summary: quoteSummary(answers),
     statusLabels: QUOTE_STATUS_LABELS,
+    formatMoney: require('../middleware/currency').formatMoney,
   });
 }
 
@@ -857,13 +859,46 @@ function marketplaceOnEcoles(school) {
 
 async function marketplacePage(req, res) {
   const schools = await loadSchoolsWithModules();
+  const rows = schools.map((s) => {
+    const subscription = marketplaceSubscriptionStatus(s);
+    return { ...s, onEcoles: marketplaceOnEcoles(s), subscription };
+  });
+  const expiring = rows.filter((s) => s.subscription.state === 'expiring');
+  const expired = rows.filter((s) => s.subscription.state === 'expired');
   res.render('admin/marketplace', {
     user: req.user,
-    schools: schools.map((s) => ({ ...s, onEcoles: marketplaceOnEcoles(s) })),
+    schools: rows,
+    expiring,
+    expired,
+    renewalWarningDays: RENEWAL_WARNING_DAYS,
     marketplaceTierOptions: MARKETPLACE_TIER_OPTIONS.filter((opt) => opt.value !== 'NONE'),
     success: req.query.success || null,
     error: req.query.error || null,
   });
+}
+
+async function renewMarketplace(req, res) {
+  const { id } = req.params;
+  const school = await prisma.school.findUnique({ where: { id } });
+  if (!school) return res.redirect('/admin/marketplace?error=school');
+  const tier = parseMarketplaceTier(school.marketplaceTier);
+  if (!isLiveTier(tier)) {
+    return res.redirect('/admin/marketplace?error=tier');
+  }
+  await applyMarketplaceOffer(id, {
+    tier,
+    enableModule: true,
+    renew: true,
+  });
+  await logAudit({
+    action: 'school_marketplace_renew',
+    entity: 'School',
+    entityId: id,
+    user: req.user,
+    schoolId: id,
+    ip: req.ip,
+  });
+  return res.redirect('/admin/marketplace?success=renewed');
 }
 
 async function publishMarketplace(req, res) {
@@ -980,4 +1015,5 @@ module.exports = {
   publishMarketplace,
   unpublishMarketplace,
   setMarketplaceTier,
+  renewMarketplace,
 };

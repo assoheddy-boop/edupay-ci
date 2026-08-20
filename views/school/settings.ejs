@@ -39,6 +39,11 @@
         <label for="city">Ville</label>
         <input type="text" id="city" name="city" value="<%= school.city || 'Abidjan' %>">
       </div>
+      <div class="form-group">
+        <label for="commune">Commune / quartier</label>
+        <input type="text" id="commune" name="commune" value="<%= school.commune || '' %>" placeholder="Yopougon, Bingerville…" maxlength="80">
+        <p class="form-hint">Utilisé pour le filtre <code>/ecoles?commune=</code> et l’affichage public.</p>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label for="waveNumber">Numéro Wave / OM (paiements)</label>
@@ -95,8 +100,11 @@
         <label for="publicPhone">Téléphone / WhatsApp public</label>
         <input type="text" id="publicPhone" name="publicPhone" value="<%= school.publicPhone || '' %>" placeholder="05 XX XX XX XX" maxlength="40">
         <p class="form-hint">Numéro officiel affiché sur la page. Un lien WhatsApp <code>wa.me/225…</code> est généré. Ce n’est pas le numéro Wave/OM.</p>
-        <label for="publicBanner">Bannière (URL https, JPG/PNG/WebP — pas de SVG)</label>
-        <input type="url" id="publicBanner" name="publicBanner" value="<%= school.publicBanner || '' %>" placeholder="https://… ou laissez vide pour envoyer un fichier">
+        <label for="banner">Photo bannière (JPG, PNG, WebP — recommandé)</label>
+        <input type="file" id="banner" name="banner" accept="image/jpeg,image/png,image/webp">
+        <p class="form-hint">Ou indiquez une URL ci-dessous si l’image est déjà hébergée.</p>
+        <label for="publicBanner">Bannière (URL https)</label>
+        <input type="url" id="publicBanner" name="publicBanner" value="<%= school.publicBanner || '' %>" placeholder="https://…">
         <% if (school.publicBanner) { %>
           <div class="logo-preview" style="margin:0.5rem 0">
             <img src="<%= school.publicBanner %>" alt="Bannière" class="school-logo-preview">
@@ -106,12 +114,17 @@
             Supprimer la bannière
           </label>
         <% } %>
-        <label for="banner">Ou envoyer une photo bannière</label>
-        <input type="file" id="banner" name="banner" accept="image/jpeg,image/png,image/webp">
-        <label for="publicGallery">Galerie (une URL d’image par ligne, pas de SVG ni de vidéo)</label>
-        <textarea id="publicGallery" name="publicGallery" rows="4" placeholder="https://…/photo.jpg"><%= Array.isArray(school.publicGallery) ? school.publicGallery.join('\n') : (school.publicGallery || '') %></textarea>
-        <label for="gallery">Ajouter des photos (JPG, PNG, WebP)</label>
+        <label for="gallery">Photos galerie (JPG, PNG, WebP — plusieurs fichiers)</label>
         <input type="file" id="gallery" name="gallery" accept="image/jpeg,image/png,image/webp" multiple>
+        <label for="publicGallery">Galerie — URLs (une par ligne, optionnel)</label>
+        <textarea id="publicGallery" name="publicGallery" rows="4" placeholder="https://…/photo.jpg"><%= Array.isArray(school.publicGallery) ? school.publicGallery.join('\n') : (school.publicGallery || '') %></textarea>
+        <% if (Array.isArray(school.publicGallery) && school.publicGallery.length) { %>
+          <div class="portal-gallery-preview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:0.5rem 0">
+            <% school.publicGallery.forEach(function(url) { %>
+              <img src="<%= url %>" alt="" class="school-logo-preview" style="max-height:4rem">
+            <% }) %>
+          </div>
+        <% } %>
         <div class="form-row">
           <div class="form-group">
             <label for="lat">Latitude (optionnel, OpenStreetMap)</label>

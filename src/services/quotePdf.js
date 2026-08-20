@@ -47,10 +47,24 @@ function buildQuotePdf(quote) {
     y = doc.y + 16;
 
     doc.roundedRect(50, y, 495, 78, 8).fill('#EEF3FC');
-    doc.fillColor(BLUE).font('Helvetica-Bold').fontSize(12).text('Un seul plan : Pro', 66, y + 14);
+    doc.fillColor(BLUE).font('Helvetica-Bold').fontSize(12).text('Gestion — Offre Pro', 66, y + 14);
     doc.fillColor(NAVY).fontSize(22).text(formatMoney(quote.amount || COMMERCIAL_PLAN.amount), 66, y + 32);
-    doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, tous modules compris', 66, y + 56);
+    doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, modules de gestion', 66, y + 56);
     y += 98;
+
+    const marketplaceAmount = quote.marketplaceAmount ?? answers.marketplace?.amount ?? 0;
+    if (marketplaceAmount > 0 && answers.marketplace?.selected) {
+      doc.roundedRect(50, y, 495, 78, 8).fill('#FFF7ED');
+      doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(12).text(`Visibilité web — Marketplace ${answers.marketplace.label || ''}`, 66, y + 14);
+      doc.fillColor(NAVY).fontSize(22).text(formatMoney(marketplaceAmount), 66, y + 32);
+      doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, page /e/:slug et annuaire /ecoles (option séparée)', 66, y + 56);
+      y += 98;
+
+      doc.roundedRect(50, y, 495, 52, 8).fill('#F8FAFC');
+      doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(13).text('Total annuel', 66, y + 16);
+      doc.fontSize(18).text(formatMoney((quote.amount || COMMERCIAL_PLAN.amount) + marketplaceAmount), 200, y + 14);
+      y += 68;
+    }
 
     doc.moveTo(50, y).lineTo(545, y).strokeColor(LINE).stroke();
     y += 14;

@@ -1,0 +1,58 @@
+<%- include('../partials/head') %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles/verifies">Vérifiés</a>
+      <a href="/auth/login">Connexion</a>
+    </nav>
+  </header>
+
+  <section class="portal-hero portal-hero-market">
+    <div class="portal-hero-brand">
+      <%- include('../partials/_logo', { logoUrl: organization.logoUrl, logoBase64: organization.logoBase64, slug: organization.slug, name: organization.name, size: 'lg' }) %>
+      <div>
+        <p class="portal-kicker">Groupe scolaire · <%= organization.city || 'Côte d’Ivoire' %></p>
+        <h1><%= organization.name %></h1>
+        <% if (organization.publicDescription) { %>
+          <p class="portal-lead"><%= organization.publicDescription %></p>
+        <% } else { %>
+          <p class="portal-lead">Plusieurs campus sur EduConnect. Chaque établissement a sa page ; les notes restent dans l’espace parent.</p>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <section class="portal-section">
+    <article class="card portal-card">
+      <h2>Campus et établissements</h2>
+      <p class="form-hint">Aucune moyenne ni bulletin nominatif sur ces pages publiques.</p>
+      <ul class="portal-list">
+        <% schools.forEach(function(s) { %>
+          <li>
+            <a class="card portal-school-link" href="<%= s.portalPath %>">
+              <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: null, slug: s.slug, name: s.name, size: 'md' }) %>
+              <span>
+                <strong><%= s.name %></strong>
+                <% if (s.campusLabel) { %><small><%= s.campusLabel %></small><% } %>
+                <small><%= s.cycleLabel %> · <%= s.localityLabel || s.city %></small>
+              </span>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    </article>
+  </section>
+
+  <% if (organization.publicPhone) { %>
+  <section class="portal-section">
+    <article class="card portal-card">
+      <h2>Contact groupe</h2>
+      <p><a href="tel:<%= organization.publicPhone.replace(/\s+/g, '') %>"><%= organization.publicPhone %></a></p>
+    </article>
+  </section>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

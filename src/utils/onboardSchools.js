@@ -191,4 +191,5 @@ async function onboardSchools(schools, { planSlug = 'premium', password } = {}) 
 module.exports = {
   onboardSchool,
   onboardSchools,
+  applyCatalogLogo,
 };
