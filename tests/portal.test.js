@@ -585,6 +585,7 @@ describe('SEO sitemap and robots', () => {
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/mentions-legales<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/confidentialite<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/devis<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/tarifs<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/guides<\/loc>/);
     expect(res.text).not.toMatch(/\/auth/);
     expect(res.text).not.toMatch(/\/admin/);
@@ -644,6 +645,25 @@ describe('SEO sitemap and robots', () => {
     expect(login.status).toBe(200);
     expect(login.text).toMatch(/name="robots" content="noindex, nofollow"/);
     expect(login.headers['x-robots-tag']).toMatch(/noindex/i);
+  });
+
+  test('GET /tarifs renders public pricing page', async () => {
+    const res = await request(app).get('/tarifs');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Nos Tarifs/);
+    expect(res.text).toMatch(/50\s*000 FCFA/);
+    expect(res.text).toMatch(/80\s*000 FCFA/);
+    expect(res.text).toMatch(/2\s*500 FCFA/);
+    expect(res.text).toMatch(/convention signée/i);
+    expect(res.text).toMatch(/name="robots" content="index, follow"/);
+    expect(res.text).toMatch(/\/devis\?convention=lycee/);
+    expect(res.text).toMatch(/\/auth\/register\?role=SCHOOL_ADMIN/);
+  });
+
+  test('GET /tarification redirects to /tarifs', async () => {
+    const res = await request(app).get('/tarification');
+    expect(res.status).toBe(301);
+    expect(res.headers.location).toMatch(/\/tarifs$/);
   });
 });
 

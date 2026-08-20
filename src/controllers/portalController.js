@@ -13,6 +13,7 @@ const {
   organizationPortalPath,
   seoForSchool,
   seoForMarketplace,
+  seoForTarifs,
   jsonLdForSchool,
   jsonLdForMarketplace,
   sanitizeContact,
@@ -527,6 +528,22 @@ async function sitemap(_req, res) {
   }
 }
 
+function tarifs(_req, res) {
+  const seo = seoForTarifs();
+  return res.render('portal/tarifs', {
+    user: null,
+    title: seo.title,
+    metaDescription: seo.metaDescription,
+    canonicalUrl: seo.canonicalUrl,
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogImage: seo.ogImage,
+    robots: seo.robots,
+    portalCss: true,
+    ...portalPwaLocals(),
+  });
+}
+
 function robots(_req, res) {
   const body = [
     'User-agent: *',
@@ -578,6 +595,7 @@ module.exports = {
   verifiedMarketplace,
   marketplaceSeoLanding,
   organizationPage,
+  tarifs,
   sitemap,
   robots,
   publicAlias,

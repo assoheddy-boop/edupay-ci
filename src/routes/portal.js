@@ -12,6 +12,8 @@ router.get('/ecoles/comparer/remove', portalController.compareRemove);
 router.get('/ecoles/comparer/clear', portalController.compareClear);
 router.get('/ecoles/:seoSlug', portalController.marketplaceSeoLanding);
 router.get('/ecoles', portalController.marketplace);
+router.get('/tarifs', portalController.tarifs);
+router.get('/tarification', (_req, res) => res.redirect(301, '/tarifs'));
 router.get('/sitemap.xml', portalController.sitemap);
 router.get('/robots.txt', portalController.robots);
 router.get('/e/groupe/:slug', portalController.organizationPage);

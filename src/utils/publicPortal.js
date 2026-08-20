@@ -114,6 +114,8 @@ const RESERVED_SLUGS = new Set([
   'fonts',
   'assets',
   'devis',
+  'tarifs',
+  'tarification',
   'guides',
   'guide',
   'mentions-legales',
@@ -715,6 +717,21 @@ function seoForHome() {
   };
 }
 
+function seoForTarifs() {
+  const title = 'Nos tarifs';
+  const metaDescription =
+    'Tarifs EduConnect pour écoles agréées en Côte d’Ivoire : primaire 50 000 FCFA/an, collège 80 000 FCFA/an, contribution parentale 2 500 FCFA/an. Lycées publics sur convention.';
+  return {
+    title,
+    metaDescription,
+    canonicalUrl: `${SITE_ORIGIN}/tarifs`,
+    ogTitle: 'Nos tarifs — EduConnect',
+    ogDescription: metaDescription,
+    ogImage: `${SITE_ORIGIN}/img/home-hero.jpg`,
+    robots: PUBLIC_ROBOTS,
+  };
+}
+
 function jsonLdSameAs(school, extras = {}) {
   const raw = extras.sameAs || school?.sameAs || school?.publicLinks;
   const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
@@ -1051,6 +1068,7 @@ module.exports = {
   seoForSchool,
   seoForMarketplace,
   seoForHome,
+  seoForTarifs,
   jsonLdForSchool,
   jsonLdForMarketplace,
   jsonLdForHome,

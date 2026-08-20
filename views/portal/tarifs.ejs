@@ -1,0 +1,102 @@
+<%- include('../partials/head') %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/tarifs" aria-current="page">Tarifs</a>
+      <a href="/auth/login">Connexion</a>
+      <a href="/devis">Devis</a>
+    </nav>
+    <details class="portal-burger">
+      <summary aria-label="Ouvrir le menu">Menu</summary>
+      <nav class="portal-nav" aria-label="Menu mobile">
+        <a href="/ecoles">Écoles</a>
+        <a href="/tarifs" aria-current="page">Tarifs</a>
+        <a href="/auth/login">Connexion</a>
+        <a href="/devis">Devis</a>
+      </nav>
+    </details>
+  </header>
+
+  <section class="portal-hero portal-hero-market portal-tarifs-hero" aria-labelledby="tarifs-title">
+    <div class="portal-hero-marketplace-inner">
+      <p class="portal-kicker">Tarification · Côte d’Ivoire · EduConnect</p>
+      <h1 id="tarifs-title">Nos Tarifs</h1>
+      <p class="portal-lead">Une solution accessible à toutes les écoles agréées.</p>
+    </div>
+  </section>
+
+  <section class="portal-tarifs-section" aria-labelledby="tarifs-table-title">
+    <h2 id="tarifs-table-title" class="portal-tarifs-heading">Grille tarifaire</h2>
+    <div class="portal-tarifs-table-wrap card">
+      <table class="portal-tarifs-table">
+        <thead>
+          <tr>
+            <th scope="col">Niveau</th>
+            <th scope="col">Tarif</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Primaire</td>
+            <td><strong>50&nbsp;000 FCFA</strong> / an</td>
+          </tr>
+          <tr>
+            <td>Collège</td>
+            <td><strong>80&nbsp;000 FCFA</strong> / an</td>
+          </tr>
+          <tr class="portal-tarifs-table-parent">
+            <td>Contribution parentale</td>
+            <td><strong>2&nbsp;500 FCFA</strong> / parent / an</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="portal-tarifs-info card" aria-labelledby="tarifs-info-title">
+    <h2 id="tarifs-info-title">Tarification transparente</h2>
+    <p>
+      EduConnect applique une tarification claire et publique, adaptée aux établissements agréés en Côte d’Ivoire.
+      Le montant annuel couvre la plateforme de gestion scolaire pour l’établissement&nbsp;: inscriptions, notes,
+      finances, communication et visibilité digitale.
+    </p>
+    <p>
+      La <strong>contribution parentale de 2&nbsp;500 FCFA par parent et par an</strong> finance les services
+      directement utiles aux familles&nbsp;: consultation des bulletins, suivi des notes et absences, notifications
+      et accès à l’espace parent sécurisé.
+    </p>
+  </aside>
+
+  <aside class="portal-tarifs-parent card" aria-labelledby="tarifs-parent-title">
+    <h2 id="tarifs-parent-title">Contribution parentale</h2>
+    <p class="portal-tarifs-parent-amount">2&nbsp;500 FCFA <span>/ parent / an</span></p>
+    <ul class="portal-tarifs-parent-list">
+      <li>Bulletins numériques</li>
+      <li>Suivi des notes et absences</li>
+      <li>Notifications en temps réel</li>
+      <li>Espace parent sécurisé</li>
+    </ul>
+  </aside>
+
+  <aside class="portal-tarifs-lycee card" id="convention-lycee" aria-labelledby="tarifs-lycee-title">
+    <h2 id="tarifs-lycee-title">Lycées publics</h2>
+    <p>
+      L’accès à EduConnect pour les <strong>lycées publics</strong> est réservé aux établissements disposant
+      d’une <strong>convention signée</strong> avec Alliance Digitale Internationale.
+    </p>
+    <p>
+      Les directions intéressées doivent adresser une <strong>demande officielle de convention</strong>
+      auprès de notre équipe. Nous étudions chaque dossier et accompagnons le déploiement institutionnel.
+    </p>
+    <a href="/devis?convention=lycee" class="btn btn-primary portal-tarifs-lycee-btn">Demande de convention (lycées publics)</a>
+  </aside>
+
+  <section class="portal-tarifs-cta" aria-label="Actions">
+    <a href="/devis" class="btn btn-primary">Demander une démonstration</a>
+    <a href="/auth/register?role=SCHOOL_ADMIN" class="btn btn-outline">Souscrire maintenant</a>
+  </section>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

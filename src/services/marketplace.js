@@ -332,6 +332,7 @@ function staticSitemapEntries(today) {
       priority: '0.72',
       lastmod: today,
     })),
+    { path: '/tarifs', changefreq: 'monthly', priority: '0.75', lastmod: today },
     { path: '/devis', changefreq: 'monthly', priority: '0.7', lastmod: today },
     { path: '/guides', changefreq: 'monthly', priority: '0.6', lastmod: today },
     { path: '/mentions-legales', changefreq: 'yearly', priority: '0.3', lastmod: today },

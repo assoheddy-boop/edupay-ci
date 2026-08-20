@@ -4,7 +4,7 @@ const SHELL = [
   '/css/main.css',
   '/css/main.css?v=10',
   '/css/portal.css',
-  '/css/portal.css?v=9',
+  '/css/portal.css?v=10',
   '/js/app.js',
   '/js/app.js?v=8',
   '/js/offline.js',

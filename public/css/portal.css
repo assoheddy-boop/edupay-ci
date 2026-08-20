@@ -1080,3 +1080,217 @@
     margin-bottom: 0.15rem;
   }
 }
+
+/* Tarification publique */
+.portal-tarifs-hero {
+  margin-bottom: 1.5rem;
+}
+
+.portal-tarifs-section {
+  margin-bottom: 1.25rem;
+}
+
+.portal-tarifs-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: var(--portal-navy);
+}
+
+.portal-tarifs-table-wrap {
+  padding: 0;
+  overflow: hidden;
+}
+
+.portal-tarifs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.98rem;
+}
+
+.portal-tarifs-table th,
+.portal-tarifs-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e8edf3;
+}
+
+.portal-tarifs-table thead th {
+  background: #f4f7fb;
+  color: var(--portal-navy);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.portal-tarifs-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.portal-tarifs-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.portal-tarifs-table-parent td {
+  background: rgba(232, 106, 18, 0.08);
+}
+
+.portal-tarifs-info {
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.35rem;
+  border-left: 4px solid var(--portal-blue);
+  background: linear-gradient(135deg, #f8fafc, #eef3f9);
+}
+
+.portal-tarifs-info h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  color: var(--portal-navy);
+}
+
+.portal-tarifs-info p {
+  margin: 0 0 0.65rem;
+  color: #3d4f63;
+  line-height: 1.55;
+}
+
+.portal-tarifs-info p:last-child {
+  margin-bottom: 0;
+}
+
+.portal-tarifs-parent {
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(46, 125, 50, 0.35);
+  background: linear-gradient(135deg, #f3faf4, #e8f5e9);
+}
+
+.portal-tarifs-parent h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: #1b5e20;
+}
+
+.portal-tarifs-parent-amount {
+  margin: 0 0 0.75rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.portal-tarifs-parent-amount span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4a6b4c;
+}
+
+.portal-tarifs-parent-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #2d4a30;
+  line-height: 1.6;
+}
+
+.portal-tarifs-lycee {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(106, 27, 154, 0.35);
+  background: linear-gradient(135deg, #faf5fc, #f3e5f5);
+}
+
+.portal-tarifs-lycee h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  color: #6a1b9a;
+}
+
+.portal-tarifs-lycee p {
+  margin: 0 0 0.65rem;
+  color: #4a3058;
+  line-height: 1.55;
+}
+
+.portal-tarifs-lycee-btn {
+  margin-top: 0.35rem;
+  background: #6a1b9a !important;
+  border-color: #6a1b9a !important;
+}
+
+.portal-tarifs-lycee-btn:hover {
+  filter: brightness(1.08);
+}
+
+.portal-tarifs-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 540px) {
+  .portal-tarifs-table thead {
+    display: none;
+  }
+
+  .portal-tarifs-table,
+  .portal-tarifs-table tbody,
+  .portal-tarifs-table tr,
+  .portal-tarifs-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .portal-tarifs-table tr {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e8edf3;
+  }
+
+  .portal-tarifs-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .portal-tarifs-table td {
+    padding: 0.15rem 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .portal-tarifs-table td:last-child {
+    white-space: normal;
+  }
+
+  .portal-tarifs-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #5a6b7d;
+    margin-bottom: 0.2rem;
+  }
+
+  .portal-tarifs-table td:first-child::before {
+    content: 'Niveau';
+  }
+
+  .portal-tarifs-table td:last-child::before {
+    content: 'Tarif';
+  }
+
+  .portal-tarifs-cta {
+    flex-direction: column;
+  }
+
+  .portal-tarifs-cta .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .portal-tarifs-cta {
+    justify-content: flex-start;
+  }
+}
