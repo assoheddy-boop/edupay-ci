@@ -19,6 +19,11 @@
     }
   ],
   "rewrites": [
+    { "source": "/images/:path*", "destination": "/images/:path*" },
+    { "source": "/css/:path*", "destination": "/css/:path*" },
+    { "source": "/icons/:path*", "destination": "/icons/:path*" },
+    { "source": "/img/:path*", "destination": "/img/:path*" },
+    { "source": "/js/:path*", "destination": "/js/:path*" },
     { "source": "/(.*)", "destination": "/api" }
   ]
 }
