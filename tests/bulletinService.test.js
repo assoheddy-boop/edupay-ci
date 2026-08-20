@@ -6,6 +6,7 @@ jest.mock('../src/config/database', () => ({
   notification: { create: jest.fn() },
   subject: { findMany: jest.fn() },
   deliberation: { findFirst: jest.fn() },
+  studentYearRecord: { findFirst: jest.fn() },
 }));
 
 jest.mock('../services/cache', () => ({
@@ -39,6 +40,7 @@ describe('bulletinService weighted bulletin', () => {
     prisma.parentStudent.findMany.mockResolvedValue([]);
     prisma.bulletin.create.mockResolvedValue({ id: 'b1' });
     prisma.deliberation.findFirst.mockResolvedValue(null);
+    prisma.studentYearRecord.findFirst.mockResolvedValue(null);
     prisma.student.findFirst.mockResolvedValue({
       id: 'stu-1',
       firstName: 'Awa',
@@ -181,9 +183,8 @@ describe('bulletinService weighted bulletin', () => {
     expect(generateBulletinPdf).toHaveBeenCalledWith(expect.objectContaining({
       rank: 1,
       classSize: 3,
-      genderRank: 1,
-      genderSize: 2,
-      genderGroup: 'filles',
+      subjectRanks: expect.objectContaining({ Mathématiques: 1 }),
+      classStats: expect.objectContaining({ highest: 16 }),
     }));
   });
 

@@ -11,6 +11,39 @@ const { getCache, setCache } = require('../../services/cache');
 const { computeClassement } = require('./classement');
 const { effectiveSeries } = require('./series');
 const { schoolBulletinDownloadUrl } = require('../utils/bulletinLinks');
+const { computeSubjectRows } = require('./gradesAverage');
+const { computeClassStats } = require('../utils/bulletinCiLayout');
+
+const gradeTeacherInclude = {
+  teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+};
+
+async function computeSubjectRanks({ classmates, period, coeffMap, studentId }) {
+  const bySubject = new Map();
+
+  await Promise.all(
+    classmates.map(async (c) => {
+      const gs = await prisma.grade.findMany({
+        where: { studentId: c.id },
+        select: { subject: true, value: true, maxValue: true, period: true, term: true, kind: true },
+      });
+      const filtered = filterGradesForBulletin(gs, period);
+      const rows = computeSubjectRows(filtered, coeffMap);
+      rows.forEach((row) => {
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push({ studentId: c.id, average: row.average });
+      });
+    }),
+  );
+
+  const ranks = {};
+  for (const [subject, entries] of bySubject) {
+    const sorted = [...entries].sort((a, b) => b.average - a.average);
+    const idx = sorted.findIndex((e) => e.studentId === studentId);
+    ranks[subject] = idx >= 0 ? idx + 1 : null;
+  }
+  return ranks;
+}
 
 const BULLETIN_TTL = 60 * 60;
 
@@ -51,6 +84,7 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
   const allGrades = await prisma.grade.findMany({
     where: { studentId },
     orderBy: { subject: 'asc' },
+    include: gradeTeacherInclude,
   });
   const grades = filterGradesForBulletin(allGrades, period);
   if (!grades.length) return { error: 'notes' };
@@ -82,10 +116,29 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     }),
   );
   const classement = computeClassement(classAverages, studentId);
+  const classStats = computeClassStats(classAverages);
+  const subjectRanks = await computeSubjectRanks({
+    classmates,
+    period,
+    coeffMap,
+    studentId,
+  });
+
+  const yearRecord = await prisma.studentYearRecord.findFirst({
+    where: {
+      studentId,
+      schoolYear,
+      classId: student.classId,
+    },
+    select: { repeatYear: true },
+  });
 
   const periodLabel = formatTermLabel(period);
   const storedPeriod = term === 'AUTRE' ? periodLabel : term;
   const series = effectiveSeries(student, student.class);
+  const annualAverage = term === 'ANNUELLE'
+    ? average
+    : computeAnnuelleAverage(allGrades, coeffMap);
 
   return {
     term,
@@ -98,17 +151,18 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     coeffMap,
     termAverages,
     average,
+    annualAverage,
     classement,
+    classStats,
+    subjectRanks,
+    repeatYear: yearRecord?.repeatYear ?? null,
     periodLabel,
     storedPeriod,
     series,
   };
 }
 
-async function streamBulletinPdf({ studentId, period, school }) {
-  const built = await buildBulletinPdfPayload({ studentId, period, school });
-  if (built.error) return built;
-
+function bulletinPdfArgs(built, school) {
   const {
     term,
     student,
@@ -119,12 +173,17 @@ async function streamBulletinPdf({ studentId, period, school }) {
     coeffMap,
     termAverages,
     average,
+    annualAverage,
     classement,
+    classStats,
+    subjectRanks,
+    repeatYear,
     periodLabel,
-    series,
   } = built;
 
-  const pdf = await generateBulletinPdf({
+  const showBilan = term === 'T3' || term === 'ANNUELLE';
+
+  return {
     student,
     school,
     grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
@@ -132,17 +191,24 @@ async function streamBulletinPdf({ studentId, period, school }) {
     average,
     rank: classement.rank,
     classSize: classement.classSize,
-    genderRank: classement.genderRank,
-    genderSize: classement.genderSize,
-    genderGroup: classement.genderGroup,
     coeffMap,
-    termAverages: term === 'ANNUELLE' ? termAverages : null,
+    termAverages: showBilan ? termAverages : null,
     mention,
     decision,
-    series,
-  });
+    subjectRanks,
+    classStats,
+    repeatYear,
+    annualAverage,
+  };
+}
 
-  return { ok: true, ...pdf, average, rank: classement.rank };
+async function streamBulletinPdf({ studentId, period, school }) {
+  const built = await buildBulletinPdfPayload({ studentId, period, school });
+  if (built.error) return built;
+
+  const pdf = await generateBulletinPdf(bulletinPdfArgs(built, school));
+
+  return { ok: true, ...pdf, average: built.average, rank: built.classement.rank };
 }
 
 async function generateBulletinForStudent({ studentId, period, school }) {
@@ -177,31 +243,7 @@ async function generateBulletinForStudent({ studentId, period, school }) {
     };
   }
 
-  const {
-    grades,
-    allGrades,
-    coeffMap,
-    termAverages,
-    series,
-  } = built;
-
-  await generateBulletinPdf({
-    student,
-    school,
-    grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
-    period: periodLabel,
-    average,
-    rank: classement.rank,
-    classSize: classement.classSize,
-    genderRank: classement.genderRank,
-    genderSize: classement.genderSize,
-    genderGroup: classement.genderGroup,
-    coeffMap,
-    termAverages: term === 'ANNUELLE' ? termAverages : null,
-    mention,
-    decision,
-    series,
-  });
+  await generateBulletinPdf(bulletinPdfArgs(built, school));
 
   await prisma.bulletin.create({
     data: {
