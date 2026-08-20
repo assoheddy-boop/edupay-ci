@@ -18,7 +18,7 @@ const {
   PUBLIC_TYPE_OPTIONS,
   MAX_GALLERY,
 } = require('../utils/publicPortal');
-const { generateBulletinForStudent, generateBulkBulletins } = require('../services/bulletinService');
+const { generateBulletinForStudent, generateBulkBulletins, streamBulletinPdf } = require('../services/bulletinService');
 const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
   COLLEGE_CI_SUBJECTS,
@@ -917,6 +917,29 @@ async function generateBulkBulletin(req, res) {
   }
 }
 
+async function downloadBulletinPdf(req, res) {
+  const student = await prisma.student.findFirst({
+    where: { id: req.params.studentId, schoolId: req.user.school.id },
+  });
+  if (!student) return res.redirect('/school/bulletins?error=eleve');
+
+  const period = req.query.period;
+  if (!period) return res.redirect('/school/bulletins?error=generation');
+
+  try {
+    const result = await streamBulletinPdf({
+      studentId: student.id,
+      period,
+      school: req.user.school,
+    });
+    if (result.error) return res.redirect(`/school/bulletins?error=${result.error}`);
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/school/bulletins?error=generation');
+  }
+}
+
 async function exportBulletinPdf(req, res) {
   const student = await prisma.student.findFirst({
     where: { id: req.params.studentId, schoolId: req.user.school.id },
@@ -1150,6 +1173,7 @@ module.exports = {
   listBulletins,
   generateBulletin,
   generateBulkBulletin,
+  downloadBulletinPdf,
   exportBulletinPdf,
   listTeachers,
   inviteTeacher,

@@ -185,7 +185,7 @@
 
                 <td><%= b.rank ? b.rank + 'e' : '—' %></td>
 
-                <td><% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" target="_blank" class="btn btn-sm btn-success">PDF</a><% } else { %>—<% } %></td>
+                <td><% const bulletinHref = (typeof resolveSchoolBulletinHref === 'function' ? resolveSchoolBulletinHref({ pdfUrl: b.pdfUrl, studentId: b.student.id, period: b.period }) : null); if (bulletinHref) { %><a href="<%= bulletinHref %>" class="btn btn-sm btn-success">PDF</a><% } else { %>—<% } %></td>
 
               </tr>
 

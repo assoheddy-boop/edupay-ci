@@ -10,6 +10,7 @@ const { normalizeTerm, formatTermLabel, filterGradesForBulletin } = require('./a
 const { getCache, setCache } = require('../../services/cache');
 const { computeClassement } = require('./classement');
 const { effectiveSeries } = require('./series');
+const { schoolBulletinDownloadUrl } = require('../utils/bulletinLinks');
 
 const BULLETIN_TTL = 60 * 60;
 
@@ -28,7 +29,7 @@ async function findSavedDeliberation({ studentId, classId, term, schoolYear, sch
   });
 }
 
-async function generateBulletinForStudent({ studentId, period, school }) {
+async function buildBulletinPdfPayload({ studentId, period, school }) {
   const term = normalizeTerm(period);
   const student = await prisma.student.findFirst({
     where: { id: studentId, schoolId: school.id },
@@ -46,19 +47,6 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   });
   const mention = savedDelib?.mention || null;
   const decision = savedDelib?.decision || null;
-
-  const cacheKey = `bulletin:${studentId}:${term}:${String(period || '').trim()}:${mention || ''}:${decision || ''}:${savedDelib?.updatedAt || ''}`;
-  const cached = await getCache(cacheKey);
-  if (cached?.pdfUrl) {
-    return {
-      success: true,
-      cached: true,
-      student: cached.student,
-      average: cached.average,
-      rank: cached.rank,
-      pdfUrl: cached.pdfUrl,
-    };
-  }
 
   const allGrades = await prisma.grade.findMany({
     where: { studentId },
@@ -96,8 +84,108 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   const classement = computeClassement(classAverages, studentId);
 
   const periodLabel = formatTermLabel(period);
+  const storedPeriod = term === 'AUTRE' ? periodLabel : term;
   const series = effectiveSeries(student, student.class);
-  const { pdfUrl } = await generateBulletinPdf({
+
+  return {
+    term,
+    student,
+    mention,
+    decision,
+    savedDelib,
+    grades,
+    allGrades,
+    coeffMap,
+    termAverages,
+    average,
+    classement,
+    periodLabel,
+    storedPeriod,
+    series,
+  };
+}
+
+async function streamBulletinPdf({ studentId, period, school }) {
+  const built = await buildBulletinPdfPayload({ studentId, period, school });
+  if (built.error) return built;
+
+  const {
+    term,
+    student,
+    mention,
+    decision,
+    grades,
+    allGrades,
+    coeffMap,
+    termAverages,
+    average,
+    classement,
+    periodLabel,
+    series,
+  } = built;
+
+  const pdf = await generateBulletinPdf({
+    student,
+    school,
+    grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
+    period: periodLabel,
+    average,
+    rank: classement.rank,
+    classSize: classement.classSize,
+    genderRank: classement.genderRank,
+    genderSize: classement.genderSize,
+    genderGroup: classement.genderGroup,
+    coeffMap,
+    termAverages: term === 'ANNUELLE' ? termAverages : null,
+    mention,
+    decision,
+    series,
+  });
+
+  return { ok: true, ...pdf, average, rank: classement.rank };
+}
+
+async function generateBulletinForStudent({ studentId, period, school }) {
+  const built = await buildBulletinPdfPayload({ studentId, period, school });
+  if (built.error) return built;
+
+  const {
+    term,
+    student,
+    mention,
+    decision,
+    savedDelib,
+    storedPeriod,
+    average,
+    classement,
+    periodLabel,
+  } = built;
+
+  const cacheKey = `bulletin:${studentId}:${term}:${String(period || '').trim()}:${mention || ''}:${decision || ''}:${savedDelib?.updatedAt || ''}`;
+  const cached = await getCache(cacheKey);
+  const downloadUrl = schoolBulletinDownloadUrl(studentId, storedPeriod);
+  if (cached?.pdfUrl) {
+    return {
+      success: true,
+      cached: true,
+      student: cached.student,
+      average: cached.average,
+      rank: cached.rank,
+      pdfUrl: cached.pdfUrl.startsWith('/uploads/bulletins/')
+        ? downloadUrl
+        : cached.pdfUrl,
+    };
+  }
+
+  const {
+    grades,
+    allGrades,
+    coeffMap,
+    termAverages,
+    series,
+  } = built;
+
+  await generateBulletinPdf({
     student,
     school,
     grades: term === 'ANNUELLE' ? filterGradesForBulletin(allGrades, 'ANNUELLE') : grades,
@@ -116,7 +204,13 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   });
 
   await prisma.bulletin.create({
-    data: { studentId, period: term === 'AUTRE' ? periodLabel : term, pdfUrl, average, rank: classement.rank },
+    data: {
+      studentId,
+      period: storedPeriod,
+      pdfUrl: downloadUrl,
+      average,
+      rank: classement.rank,
+    },
   });
 
   const parents = await prisma.parentStudent.findMany({
@@ -136,14 +230,22 @@ async function generateBulletinForStudent({ studentId, period, school }) {
   }
 
   const payload = {
-    pdfUrl,
+    pdfUrl: downloadUrl,
     average,
     rank: classement.rank,
     student: { id: student.id, firstName: student.firstName, lastName: student.lastName },
   };
   await setCache(cacheKey, payload, BULLETIN_TTL);
 
-  return { success: true, student, average, rank: classement.rank, pdfUrl, mention, decision };
+  return {
+    success: true,
+    student,
+    average,
+    rank: classement.rank,
+    pdfUrl: downloadUrl,
+    mention,
+    decision,
+  };
 }
 
 async function generateBulkBulletins({ classId, period, schoolId, school }) {
@@ -182,4 +284,9 @@ async function generateBulkBulletins({ classId, period, schoolId, school }) {
   return results;
 }
 
-module.exports = { generateBulletinForStudent, generateBulkBulletins, findSavedDeliberation };
+module.exports = {
+  generateBulletinForStudent,
+  generateBulkBulletins,
+  findSavedDeliberation,
+  streamBulletinPdf,
+};

@@ -62,7 +62,7 @@
           <% s.bulletins.forEach(b => { %>
             <li class="list-item">
               <span><%= typeof termLabel === 'function' ? termLabel(b.period) : b.period %><% if (b.rank) { %> · rang <%= b.rank %><% } %></span>
-              <% if (b.pdfUrl) { %><a href="<%= b.pdfUrl %>" class="btn btn-sm btn-outline">Télécharger PDF</a><% } %>
+              <% const parentBulletinHref = (typeof resolveParentBulletinHref === 'function' ? resolveParentBulletinHref({ pdfUrl: b.pdfUrl, bulletinId: b.id, studentId: s.id, period: b.period }) : null); if (parentBulletinHref) { %><a href="<%= parentBulletinHref %>" class="btn btn-sm btn-outline">Télécharger PDF</a><% } %>
             </li>
           <% }) %>
         </ul>

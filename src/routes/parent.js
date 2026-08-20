@@ -40,6 +40,7 @@ router.get('/payments', requireModule('payments'), parentController.payments);
 router.post('/payments', requireModule('payments'), upload.single('proof'), parentController.createPayment);
 
 router.get('/grades', requireModule('grades'), parentController.grades);
+router.get('/bulletins/:bulletinId/pdf', requireModule('grades'), parentController.downloadBulletinPdf);
 
 router.get('/homeworks', requireModule('homeworks'), parentController.homeworks);
 router.get('/homeworks/events', requireModule('homeworks'), parentController.homeworkEvents);

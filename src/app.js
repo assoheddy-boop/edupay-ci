@@ -56,6 +56,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/js', express.static(path.join(__dirname, '../node_modules/chart.js/dist')));
 const { blockedUploadPath } = require('./utils/uploadSafety');
 const { uploadsRoot } = require('../services/StorageService');
+if (process.env.VERCEL) {
+  app.use('/uploads/bulletins', (_req, res) => {
+    res.status(410).type('text/plain; charset=utf-8').send(
+      'Ce lien de bulletin n\'est plus disponible. Connectez-vous à EduConnect (espace école ou parent) pour le télécharger.',
+    );
+  });
+}
 app.use('/uploads', (req, res, next) => {
   if (blockedUploadPath(req.path)) return res.status(404).end();
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -78,6 +85,9 @@ app.use((req, res, next) => {
   res.locals.gradeKindLabel = require('./services/gradesAverage').gradeKindLabel;
   res.locals.seriesOptions = require('./services/series').SERIES_OPTIONS;
   res.locals.seriesLabel = require('./services/series').seriesLabel;
+  const { resolveSchoolBulletinHref, resolveParentBulletinHref } = require('./utils/bulletinLinks');
+  res.locals.resolveSchoolBulletinHref = resolveSchoolBulletinHref;
+  res.locals.resolveParentBulletinHref = resolveParentBulletinHref;
   const { cycleFlags, EDUCATION_CYCLE_OPTIONS } = require('./utils/educationCycle');
   res.locals.cycle = cycleFlags('COLLEGE');
   res.locals.educationCycleOptions = EDUCATION_CYCLE_OPTIONS;

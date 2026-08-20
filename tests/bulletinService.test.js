@@ -65,7 +65,11 @@ describe('bulletinService weighted bulletin', () => {
       period: 'Trimestre 1',
     }));
     expect(prisma.bulletin.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ average: 14.8, period: 'T1' }),
+      data: expect.objectContaining({
+        average: 14.8,
+        period: 'T1',
+        pdfUrl: '/school/bulletins/download/stu-1?period=T1',
+      }),
     }));
   });
 
@@ -181,5 +185,22 @@ describe('bulletinService weighted bulletin', () => {
       genderSize: 2,
       genderGroup: 'filles',
     }));
+  });
+
+  test('returns route URL and rewrites cached legacy upload links', async () => {
+    getCache.mockResolvedValue({
+      pdfUrl: '/uploads/bulletins/old.pdf',
+      average: 14,
+      rank: 1,
+      student: { id: 'stu-1', firstName: 'Awa', lastName: 'Kouassi' },
+    });
+    prisma.grade.findMany.mockResolvedValue([
+      { subject: 'Mathématiques', value: 16, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-1' },
+    ]);
+
+    const result = await generateBulletinForStudent({ studentId: 'stu-1', period: 'T1', school });
+    expect(result.cached).toBe(true);
+    expect(result.pdfUrl).toBe('/school/bulletins/download/stu-1?period=T1');
+    expect(generateBulletinPdf).not.toHaveBeenCalled();
   });
 });

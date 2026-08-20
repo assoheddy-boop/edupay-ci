@@ -132,6 +132,7 @@ router.get('/export/students', requireModule('stats'), requirePremium('Export Ex
 router.get('/export/payments', requireModule('stats'), requirePremium('Export Excel'), statsController.exportPayments);
 router.get('/export/grades', requireModule('stats'), requirePremium('Export Excel'), statsController.exportGrades);
 router.get('/export/stats', requireModule('stats'), requirePremium('Export Excel'), statsController.exportStats);
+router.get('/bulletins/download/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.downloadBulletinPdf);
 router.get('/export/bulletin/:studentId', requireModule('bulletins'), requirePremium('Bulletins PDF'), schoolController.exportBulletinPdf);
 
 router.get('/accounting', requireModule('accounting'), accountingController.dashboard);

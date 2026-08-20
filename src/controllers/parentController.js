@@ -4,6 +4,8 @@ const { logAudit } = require('../utils/audit');
 const { applyPayment } = require('../services/offlineActions');
 const { calendarEventsJson, kindLabel } = require('../services/homeworkService');
 const { getStudentFeeBalance, motifLabel, discountLabel } = require('../services/socialCaseService');
+const { streamBulletinPdf } = require('../services/bulletinService');
+const { sendPdfDownload } = require('../utils/pdfOutput');
 
 async function dashboard(req, res) {
   const parent = req.user.parentProfile;
@@ -357,6 +359,46 @@ async function updateConsent(req, res) {
   }
 }
 
+async function downloadBulletinPdf(req, res) {
+  const parent = req.user?.parentProfile;
+  if (!parent?.id) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const bulletin = await prisma.bulletin.findUnique({
+    where: { id: req.params.bulletinId },
+    include: {
+      student: {
+        include: { class: { include: { school: true } }, school: true },
+      },
+    },
+  });
+  if (!bulletin) return res.redirect('/parent/grades?error=bulletin');
+
+  const link = await prisma.parentStudent.findFirst({
+    where: { parentId: parent.id, studentId: bulletin.studentId },
+  });
+  if (!link) {
+    return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+  }
+
+  const school = bulletin.student.class?.school || bulletin.student.school;
+  if (!school) return res.redirect('/parent/grades?error=bulletin');
+
+  try {
+    const result = await streamBulletinPdf({
+      studentId: bulletin.studentId,
+      period: bulletin.period,
+      school,
+    });
+    if (result.error) return res.redirect(`/parent/grades?error=${result.error}`);
+    return sendPdfDownload(res, result);
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/parent/grades?error=pdf');
+  }
+}
+
 async function handleFirstLoginConsent(req, res) {
   const { upsertConsent } = require('../../services/ConsentService');
   const { getPrefsCookieOptions, safeBack } = require('../utils/cookies');
@@ -391,4 +433,5 @@ module.exports = {
   privacyPage,
   updateConsent,
   handleFirstLoginConsent,
+  downloadBulletinPdf,
 };
