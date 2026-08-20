@@ -56,21 +56,33 @@ describe('Homepage', () => {
     ]);
   });
 
-  test('GET / returns 200 with slogan, /ecoles, and no Pro price', async () => {
+  test('GET / returns 200 with premium hero, modules, and CTAs', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toMatch(/EduConnect — Gestion scolaire et visibilité digitale des écoles/);
+    expect(res.text).toMatch(/EduConnect – La plateforme scolaire numérique de référence/);
+    expect(res.text).toMatch(/Gestion scolaire, suivi parental, correspondance internationale/);
+    expect(res.text).toMatch(/Demander une démonstration/);
+    expect(res.text).toMatch(/Souscrire maintenant/);
+    expect(res.text).toMatch(/href="\/devis"/);
+    expect(res.text).toMatch(/href="\/auth\/register\?role=SCHOOL_ADMIN"/);
+    expect(res.text).toMatch(/id="modules"/);
+    expect(res.text).toMatch(/Modules principaux/);
+    expect(res.text).toMatch(/Gestion des élèves/);
+    expect(res.text).toMatch(/AGFNE\/SIGFNE/);
+    expect(res.text).toMatch(/Bulletins et relevés/);
+    expect(res.text).toMatch(/MENET-FP/);
+    expect(res.text).toMatch(/Paie et CNPS/);
+    expect(res.text).toMatch(/Vie scolaire/);
+    expect(res.text).toMatch(/Correspondance France–Côte d’Ivoire/);
+    expect(res.text).toMatch(/Tableau de bord administratif/);
+    expect(res.text).toMatch(/Application mobile/);
     expect(res.text).toMatch(/href="\/ecoles"/);
     expect(res.text).toMatch(/action="\/ecoles"/);
     expect(res.text).toMatch(/name="ville"/);
     expect(res.text).toMatch(/name="cycle"/);
-    expect(res.text).toMatch(/Inscrire mon établissement/);
-    expect(res.text).toMatch(/Connexion espace parent/);
     expect(res.text).toMatch(/href="\/auth\/login"/);
-    expect(res.text).toMatch(/href="\/devis"/);
     expect(res.text).toMatch(/id="homeNavToggle"/);
     expect(res.text).toMatch(/id="homeNav"/);
-    expect(res.text).toMatch(/\/img\/home-hero\.jpg/);
     expect(res.text).toMatch(/Vos données élèves sont protégées/);
     expect(res.text).toMatch(/Paiements sécurisés via Wave/);
     expect(res.text).toMatch(/Les directions suivent paiements et absences depuis le téléphone/);
@@ -79,7 +91,20 @@ describe('Homepage', () => {
     expect(res.text).not.toMatch(/EduPay/i);
   });
 
-  test('GET / includes compact pricing summary with link to /tarifs', async () => {
+  test('GET / includes correspondance section with public CTA', async () => {
+    const res = await request(app).get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/id="correspondance"/);
+    expect(res.text).toMatch(/Un pont éducatif entre la Côte d’Ivoire et la France/);
+    expect(res.text).toMatch(/Messagerie sécurisée/);
+    expect(res.text).toMatch(/Projets collaboratifs/);
+    expect(res.text).toMatch(/Calendrier commun/);
+    expect(res.text).toMatch(/Découvrir la correspondance scolaire/);
+    expect(res.text).toMatch(/href="\/devis\?module=correspondance"/);
+    expect(res.text).toMatch(/écoles abonnées/i);
+  });
+
+  test('GET / includes compact pricing summary with enhanced CTAs', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/id="tarifs"/);
@@ -88,8 +113,28 @@ describe('Homepage', () => {
     expect(res.text).toMatch(/80(?:\s|&nbsp;)*000 FCFA/);
     expect(res.text).toMatch(/2(?:\s|&nbsp;)*500 FCFA/);
     expect(res.text).toMatch(/convention signée/i);
-    expect(res.text).toMatch(/Voir tous les tarifs/);
+    expect(res.text).toMatch(/Lycées publics/);
+    expect(res.text).toMatch(/Voir les tarifs détaillés/);
+    expect(res.text).toMatch(/Demande de convention \(lycées publics\)/);
     expect(res.text).toMatch(/href="\/tarifs"/);
+    expect(res.text).toMatch(/href="\/devis\?convention=lycee"/);
+  });
+
+  test('GET / includes testimonials, stats, and registration steps', async () => {
+    const res = await request(app).get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/id="temoignages"/);
+    expect(res.text).toMatch(/IGEST/);
+    expect(res.text).toMatch(/EPV La Bonne Main de Dieu/);
+    expect(res.text).toMatch(/500\+/);
+    expect(res.text).toMatch(/id="inscription"/);
+    expect(res.text).toMatch(/Inscription en quatre étapes/);
+    expect(res.text).toMatch(/Choisir établissement/);
+    expect(res.text).toMatch(/Créer compte/);
+    expect(res.text).toMatch(/Activation/);
+    expect(res.text).toMatch(/Formation/);
+    expect(res.text).toMatch(/Créer mon compte école/);
+    expect(res.text).toMatch(/href="\/auth\/register\?role=PARENT"/);
   });
 
   test('GET / has unique SEO and Open Graph tags', async () => {

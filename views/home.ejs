@@ -27,58 +27,274 @@
   <div class="home-nav-overlay" id="homeNavOverlay" hidden></div>
 
   <section class="home-hero" aria-labelledby="home-hero-title">
-    <div class="home-hero-media">
-      <img
-        src="/img/home-hero.jpg"
-        alt="Classe en Côte d’Ivoire : une enseignante et des élèves en uniforme, autour d’un tableau."
-        width="1600"
-        height="900"
-        fetchpriority="high"
-      >
-    </div>
-    <div class="home-hero-shade" aria-hidden="true"></div>
-    <div class="home-hero-inner">
-      <p class="home-kicker">Côte d’Ivoire · Alliance Digitale Internationale</p>
-      <h1 id="home-hero-title">EduConnect — Gestion scolaire et visibilité digitale des écoles en Côte d’Ivoire</h1>
-      <p class="home-hero-lead">
-        Inscriptions, examens, finances, SMS et espace parent — plus une page publique pour que les familles trouvent collèges, lycées et écoles en Côte d’Ivoire.
-      </p>
-      <div class="home-hero-actions">
-        <a href="/ecoles" class="home-btn home-btn-primary home-btn-xl">Découvrir les écoles</a>
-        <a href="/auth/login" class="home-btn home-btn-ghost home-btn-xl">Connexion espace parent</a>
-        <a href="/devis" class="home-btn home-btn-accent home-btn-xl">Inscrire mon établissement</a>
+    <div class="home-hero-bg" aria-hidden="true"></div>
+    <div class="home-hero-inner home-hero-split">
+      <div class="home-hero-copy">
+        <p class="home-kicker">Côte d’Ivoire · France · Alliance Digitale Internationale</p>
+        <h1 id="home-hero-title">EduConnect – La plateforme scolaire numérique de référence</h1>
+        <p class="home-hero-lead">Gestion scolaire, suivi parental, correspondance internationale</p>
+        <div class="home-hero-actions">
+          <a href="/devis" class="home-btn home-btn-primary home-btn-xl">Demander une démonstration</a>
+          <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-accent home-btn-xl">Souscrire maintenant</a>
+        </div>
+      </div>
+      <div class="home-hero-visual" aria-hidden="true">
+        <svg class="home-hero-illustration" viewBox="0 0 480 360" role="img" aria-label="Illustration institutionnelle : établissement scolaire connecté">
+          <defs>
+            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4d8fff"/>
+              <stop offset="100%" stop-color="#0052CC"/>
+            </linearGradient>
+            <linearGradient id="heroGlow" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#0b1f4a" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#8eb6ff" stop-opacity="0.35"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="240" cy="320" rx="180" ry="24" fill="url(#heroGlow)"/>
+          <rect x="120" y="120" width="240" height="160" rx="8" fill="#fff" opacity="0.95"/>
+          <rect x="120" y="120" width="240" height="36" rx="8" fill="url(#heroGrad)"/>
+          <circle cx="148" cy="138" r="6" fill="#fff" opacity="0.7"/>
+          <circle cx="168" cy="138" r="6" fill="#fff" opacity="0.5"/>
+          <rect x="140" y="175" width="80" height="8" rx="4" fill="#dfe6ef"/>
+          <rect x="140" y="195" width="120" height="8" rx="4" fill="#dfe6ef"/>
+          <rect x="140" y="215" width="100" height="8" rx="4" fill="#dfe6ef"/>
+          <rect x="280" y="170" width="60" height="45" rx="6" fill="rgba(0,82,204,0.12)"/>
+          <rect x="290" y="180" width="40" height="6" rx="3" fill="#0052CC" opacity="0.6"/>
+          <rect x="290" y="192" width="30" height="6" rx="3" fill="#0052CC" opacity="0.4"/>
+          <path d="M240 80 L320 110 L320 120 L160 120 L160 110 Z" fill="url(#heroGrad)"/>
+          <rect x="225" y="55" width="30" height="35" rx="2" fill="#e86a12"/>
+          <circle cx="360" cy="90" r="28" fill="none" stroke="#8eb6ff" stroke-width="2" opacity="0.8"/>
+          <path d="M360 70 A20 20 0 0 1 380 90" fill="none" stroke="#fff" stroke-width="2"/>
+          <path d="M348 90 L360 102 L378 78" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="22" fill="rgba(232,106,18,0.2)"/>
+          <text x="100" y="106" text-anchor="middle" fill="#ffe8d2" font-size="18" font-weight="700">FR</text>
+          <circle cx="380" cy="200" r="22" fill="rgba(0,82,204,0.25)"/>
+          <text x="380" y="206" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">CI</text>
+        </svg>
       </div>
     </div>
   </section>
 
-  <section class="home-section" id="presentation" aria-labelledby="pillars-title">
+  <section class="home-section" id="modules" aria-labelledby="modules-title">
     <div class="home-wrap">
-      <header class="home-section-head">
-        <h2 id="pillars-title">Trois piliers, une seule plateforme</h2>
-        <p>EduConnect relie le secrétariat, les familles et la visibilité de l’école — sans exposer les dossiers élèves sur le web public.</p>
+      <header class="home-section-head home-section-head-center">
+        <h2 id="modules-title">Modules principaux</h2>
+        <p>Une suite complète pour la direction, le secrétariat, les enseignants et les familles — conforme aux exigences ivoiriennes et ouverte à l’international.</p>
       </header>
-      <div class="home-pillars">
-        <article class="home-card">
+      <div class="home-modules">
+        <article class="home-module-card">
           <span class="home-card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </span>
-          <h3>Gestion</h3>
-          <p>Inscriptions, notes, examens, caisse et RH dans le même fil — pensé pour le collège et le lycée ivoiriens.</p>
+          <h3>Gestion des élèves</h3>
+          <p>Import AGFNE/SIGFNE, dossiers numériques et suivi académique centralisé pour toute l’établissement.</p>
         </article>
-        <article class="home-card">
+        <article class="home-module-card">
           <span class="home-card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h6M8 16h4"/></svg>
           </span>
-          <h3>Communication</h3>
-          <p>SMS officiel, notifications et espace parent : absences, notes et paiements, sans compte élève.</p>
+          <h3>Bulletins et relevés</h3>
+          <p>Bulletins et relevés conformes MENET-FP, génération automatique et diffusion sécurisée aux parents.</p>
         </article>
-        <article class="home-card">
+        <article class="home-module-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          </span>
+          <h3>Paie et CNPS</h3>
+          <p>Gestion de la paie des personnels et déclarations CNPS intégrées au tableau de bord administratif.</p>
+        </article>
+        <article class="home-module-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </span>
+          <h3>Vie scolaire</h3>
+          <p>Absences, discipline, notifications SMS et suivi des incidents — en temps réel pour la direction.</p>
+        </article>
+        <article class="home-module-card home-module-card-highlight">
           <span class="home-card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
           </span>
-          <h3>Visibilité</h3>
-          <p>Portail public, fiche publique EduConnect et présence Google : l’école se trouve, les résultats restent privés.</p>
+          <h3>Correspondance France–Côte d’Ivoire</h3>
+          <p>Jumelage d’établissements, messagerie sécurisée et projets collaboratifs entre écoles ivoiriennes et françaises.</p>
+          <a href="/devis?module=correspondance" class="home-module-link">En savoir plus</a>
         </article>
+        <article class="home-module-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
+          </span>
+          <h3>Tableau de bord administratif</h3>
+          <p>Statistiques, reporting financier et indicateurs de pilotage pour la direction et le conseil d’administration.</p>
+        </article>
+        <article class="home-module-card">
+          <span class="home-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          </span>
+          <h3>Application mobile</h3>
+          <p>PWA installable, notifications push et connexion OTP pour parents et personnels, sur tous les smartphones.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-section-alt" id="correspondance" aria-labelledby="correspondance-title">
+    <div class="home-wrap home-correspondance">
+      <div class="home-correspondance-copy">
+        <p class="home-section-label">Correspondance internationale</p>
+        <h2 id="correspondance-title">Un pont éducatif entre la Côte d’Ivoire et la France</h2>
+        <p>EduConnect facilite la collaboration pédagogique entre établissements ivoiriens et français : jumelage officiel, échanges culturels et projets communs encadrés par la plateforme.</p>
+        <ul class="home-correspondance-features">
+          <li>
+            <span class="home-correspondance-icon" aria-hidden="true">💬</span>
+            <span><strong>Messagerie sécurisée</strong> entre directions et enseignants jumelés</span>
+          </li>
+          <li>
+            <span class="home-correspondance-icon" aria-hidden="true">🤝</span>
+            <span><strong>Projets collaboratifs</strong> avec partage de documents et suivi d’avancement</span>
+          </li>
+          <li>
+            <span class="home-correspondance-icon" aria-hidden="true">📅</span>
+            <span><strong>Calendrier commun</strong> pour synchroniser les échanges et événements</span>
+          </li>
+        </ul>
+        <p class="home-correspondance-note">Disponible pour les écoles abonnées — module activé après jumelage validé.</p>
+        <a href="/devis?module=correspondance" class="home-btn home-btn-primary">Découvrir la correspondance scolaire</a>
+      </div>
+      <div class="home-correspondance-visual" aria-hidden="true">
+        <div class="home-mockup home-mockup-messaging">
+          <div class="home-mockup-bar"><span></span><span></span><span></span></div>
+          <div class="home-mockup-body">
+            <div class="home-mockup-msg home-mockup-msg-in">Bonjour de Yopougon ! Notre classe prépare le projet culturel.</div>
+            <div class="home-mockup-msg home-mockup-msg-out">Réponse de Lyon — le jumelage est actif ✓</div>
+            <div class="home-mockup-msg home-mockup-msg-in">Calendrier partagé mis à jour pour mars.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="tarifs" aria-labelledby="pricing-title">
+    <div class="home-wrap">
+      <header class="home-section-head home-section-head-center">
+        <h2 id="pricing-title">Tarification transparente</h2>
+        <p>Une solution accessible à toutes les écoles agréées en Côte d’Ivoire — tarifs annuels clairs, sans surprise.</p>
+      </header>
+      <div class="home-pricing home-pricing-premium">
+        <div class="home-pricing-table-wrap">
+          <table class="home-pricing-table">
+            <thead>
+              <tr>
+                <th scope="col">Niveau</th>
+                <th scope="col">Tarif</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Primaire</td>
+                <td><strong>50&nbsp;000 FCFA</strong> / an</td>
+              </tr>
+              <tr>
+                <td>Collège</td>
+                <td><strong>80&nbsp;000 FCFA</strong> / an</td>
+              </tr>
+              <tr class="home-pricing-table-parent">
+                <td>Contribution parentale</td>
+                <td><strong>2&nbsp;500 FCFA</strong> / parent / an</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="home-pricing-lycee-box" aria-labelledby="lycee-convention-title">
+          <h3 id="lycee-convention-title">Lycées publics</h3>
+          <p>Accès sur <strong>convention signée</strong> avec Alliance Digitale Internationale — déploiement encadré, formation incluse et accompagnement dédié pour les établissements publics.</p>
+        </aside>
+      </div>
+      <div class="home-pricing-actions">
+        <a href="/tarifs" class="home-btn home-btn-outline">Voir les tarifs détaillés</a>
+        <a href="/devis?convention=lycee" class="home-btn home-btn-accent">Demande de convention (lycées publics)</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-section-alt" id="temoignages" aria-labelledby="testimonials-title">
+    <div class="home-wrap">
+      <header class="home-section-head home-section-head-center">
+        <h2 id="testimonials-title">Ils nous font confiance</h2>
+        <p>Des établissements pilotes en Côte d’Ivoire qui digitalisent leur gestion avec EduConnect.</p>
+      </header>
+
+      <ul class="home-stats" aria-label="Chiffres clés">
+        <li><strong>500+</strong><span>élèves gérés</span></li>
+        <li><strong>2</strong><span>écoles partenaires pilotes</span></li>
+        <li><strong>100+</strong><span>parents connectés</span></li>
+      </ul>
+
+      <div class="home-testimonials">
+        <blockquote class="home-testimonial">
+          <p>«&nbsp;EduConnect nous a permis de centraliser inscriptions, notes et communication parentale. La direction gagne plusieurs heures par semaine.&nbsp;»</p>
+          <footer>
+            <cite>Direction — IGEST, Yopougon-Sideci</cite>
+          </footer>
+        </blockquote>
+        <blockquote class="home-testimonial">
+          <p>«&nbsp;Les parents suivent les paiements et les absences depuis leur téléphone. L’espace parent est devenu indispensable pour notre établissement.&nbsp;»</p>
+          <footer>
+            <cite>Administration — EPV La Bonne Main de Dieu</cite>
+          </footer>
+        </blockquote>
+      </div>
+
+      <div class="home-mockups" aria-hidden="true">
+        <div class="home-mockup home-mockup-bulletin">
+          <div class="home-mockup-bar"><span></span><span></span><span></span></div>
+          <div class="home-mockup-body">
+            <p class="home-mockup-title">Bulletin — Trimestre 1</p>
+            <div class="home-mockup-row"><span>Mathématiques</span><span>16/20</span></div>
+            <div class="home-mockup-row"><span>Français</span><span>14/20</span></div>
+            <div class="home-mockup-row"><span>Conduite</span><span>Très bien</span></div>
+          </div>
+        </div>
+        <div class="home-mockup home-mockup-dashboard">
+          <div class="home-mockup-bar"><span></span><span></span><span></span></div>
+          <div class="home-mockup-body">
+            <p class="home-mockup-title">Tableau de bord</p>
+            <div class="home-mockup-chart"><span style="height:60%"></span><span style="height:85%"></span><span style="height:45%"></span><span style="height:70%"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="inscription" aria-labelledby="registration-title">
+    <div class="home-wrap">
+      <header class="home-section-head home-section-head-center">
+        <h2 id="registration-title">Inscription en quatre étapes</h2>
+        <p>Un parcours clair pour digitaliser votre établissement — de la demande à la mise en service.</p>
+      </header>
+      <ol class="home-registration-steps">
+        <li>
+          <span class="home-step-num" aria-hidden="true">1</span>
+          <h3>Choisir établissement</h3>
+          <p>Sélectionnez votre cycle (primaire, collège, lycée) et renseignez les informations de l’école.</p>
+        </li>
+        <li>
+          <span class="home-step-num" aria-hidden="true">2</span>
+          <h3>Créer compte</h3>
+          <p>Compte administrateur école avec vérification e-mail et mot de passe sécurisé.</p>
+        </li>
+        <li>
+          <span class="home-step-num" aria-hidden="true">3</span>
+          <h3>Activation</h3>
+          <p>Validation du dossier, configuration initiale et import des élèves (AGFNE/SIGFNE).</p>
+        </li>
+        <li>
+          <span class="home-step-num" aria-hidden="true">4</span>
+          <h3>Formation</h3>
+          <p>Session de prise en main pour la direction et le secrétariat — accompagnement inclus.</p>
+        </li>
+      </ol>
+      <div class="home-registration-cta">
+        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-primary home-btn-xl">Créer mon compte école</a>
+        <p class="home-registration-parent">Vous êtes parent ? <a href="/auth/register?role=PARENT">Créer un espace parent</a></p>
       </div>
     </div>
   </section>
@@ -131,42 +347,7 @@
     </div>
   </section>
 
-  <section class="home-section" id="fonctionnalites" aria-labelledby="features-title">
-    <div class="home-wrap">
-      <header class="home-section-head">
-        <h2 id="features-title">Ce que l’établissement gère au quotidien</h2>
-        <p>Un logiciel pensé pour Wave, Orange Money, et le rythme d’une année scolaire en Côte d’Ivoire.</p>
-      </header>
-      <div class="home-features">
-        <article class="home-feature">
-          <h3>Gestion</h3>
-          <ul>
-            <li>Inscriptions et réinscriptions</li>
-            <li>Examens, notes, bulletins</li>
-            <li>Finances : Wave, Orange Money, caisse</li>
-          </ul>
-        </article>
-        <article class="home-feature">
-          <h3>Communication</h3>
-          <ul>
-            <li>SMS officiel de l’école</li>
-            <li>Espace parent (notes, absences, paiements)</li>
-            <li>Notifications dès qu’il se passe quelque chose</li>
-          </ul>
-        </article>
-        <article class="home-feature">
-          <h3>Visibilité</h3>
-          <ul>
-            <li>Portail public /e/votre-ecole</li>
-            <li>Référencement (SEO) de la fiche établissement</li>
-            <li>Annuaire EduConnect des écoles</li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="home-section home-section-alt" id="securite" aria-labelledby="security-title">
+  <section class="home-section" id="securite" aria-labelledby="security-title">
     <div class="home-wrap">
       <header class="home-section-head">
         <h2 id="security-title">Sécurité et paiements</h2>
@@ -191,7 +372,7 @@
     </div>
   </section>
 
-  <section class="home-section" id="partenaires" aria-labelledby="partners-title">
+  <section class="home-section home-section-alt" id="partenaires" aria-labelledby="partners-title">
     <div class="home-wrap">
       <header class="home-section-head">
         <h2 id="partners-title">Établissements partenaires</h2>
@@ -212,54 +393,13 @@
     </div>
   </section>
 
-  <section class="home-section home-section-alt" id="tarifs" aria-labelledby="pricing-title">
-    <div class="home-wrap">
-      <header class="home-section-head">
-        <h2 id="pricing-title">Tarification transparente</h2>
-        <p>Une solution accessible à toutes les écoles agréées en Côte d’Ivoire.</p>
-      </header>
-      <div class="home-pricing">
-        <div class="home-pricing-table-wrap">
-          <table class="home-pricing-table">
-            <thead>
-              <tr>
-                <th scope="col">Niveau</th>
-                <th scope="col">Tarif</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Primaire</td>
-                <td><strong>50&nbsp;000 FCFA</strong> / an</td>
-              </tr>
-              <tr>
-                <td>Collège</td>
-                <td><strong>80&nbsp;000 FCFA</strong> / an</td>
-              </tr>
-              <tr class="home-pricing-table-parent">
-                <td>Contribution parentale</td>
-                <td><strong>2&nbsp;500 FCFA</strong> / parent / an</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="home-pricing-lycee">
-          <strong>Lycées publics&nbsp;:</strong> accès sur <strong>convention signée</strong> avec Alliance Digitale Internationale.
-        </p>
-      </div>
-      <p class="home-section-cta">
-        <a href="/tarifs" class="home-btn home-btn-outline">Voir tous les tarifs</a>
-      </p>
-    </div>
-  </section>
-
-  <section class="home-cta-band" id="inscription" aria-labelledby="cta-title">
+  <section class="home-cta-band" aria-labelledby="cta-title">
     <div class="home-wrap">
       <h2 id="cta-title">Prêt à digitaliser votre établissement&nbsp;?</h2>
-      <p>Un devis pour inscrire l’école, ou l’annuaire pour découvrir les établissements déjà en ligne.</p>
+      <p>Demandez une démonstration personnalisée ou souscrivez directement pour démarrer la digitalisation de votre école.</p>
       <div class="home-hero-actions">
-        <a href="/devis" class="home-btn home-btn-accent home-btn-xl">Inscrire mon établissement</a>
-        <a href="/ecoles" class="home-btn home-btn-ghost home-btn-xl">Découvrir les écoles</a>
+        <a href="/devis" class="home-btn home-btn-accent home-btn-xl">Demander une démonstration</a>
+        <a href="/auth/register?role=SCHOOL_ADMIN" class="home-btn home-btn-ghost home-btn-xl">Souscrire maintenant</a>
       </div>
     </div>
   </section>
@@ -268,7 +408,7 @@
     <div class="home-wrap home-footer-grid">
       <div>
         <p class="home-footer-brand">Edu<strong>Connect</strong></p>
-        <p>Gestion scolaire et visibilité digitale des écoles, Côte d’Ivoire.</p>
+        <p>La plateforme scolaire numérique de référence — Côte d’Ivoire &amp; international.</p>
         <p class="home-footer-entity">Éditeur : Alliance Digitale Internationale</p>
       </div>
       <div>
