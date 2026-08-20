@@ -251,7 +251,7 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci"/);
     expect(res.text).toMatch(/href="\/ecoles\?cycle=COLLEGE"/);
     expect(res.text).toMatch(/href="\/ecoles\?cycle=LYCEE"/);
-    expect(res.text).toMatch(/href="\/ecoles\?ville=Yopougon"/);
+    expect(res.text).toMatch(/href="\/ecoles\?commune=Yopougon"/);
     expect(res.text).toMatch(/Yopougon-Sideci/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
