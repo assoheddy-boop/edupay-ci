@@ -47,6 +47,7 @@ describe('bulletinPdf generation', () => {
 
     expect(result.buffer.subarray(0, 4).toString()).toBe('%PDF');
     expect(result.buffer.length).toBeGreaterThan(800);
+    expect(result.filename).toBe('bulletin-t1-kouassi-awa.pdf');
     expect(fs.existsSync(result.filepath)).toBe(true);
     fs.rmSync(tmp, { recursive: true, force: true });
   });

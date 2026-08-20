@@ -1,4 +1,5 @@
 const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
+const { payslipPdfFilename } = require('../utils/pdfFilename');
 const { drawPaySlipDocument, formatDateFr } = require('../utils/paySlipLayout');
 const { computeBlockSubtotals } = require('../services/paySlipService');
 
@@ -22,7 +23,13 @@ async function generatePaySlipPdf({
     ? `${formatDateFr(payload.periodStart)} au ${formatDateFr(payload.periodEnd)}`
     : `${payslip.payrollRun?.month}/${payslip.payrollRun?.year}`;
 
-  const filename = `bulletin-paie-${payslip.id}.pdf`;
+  const filename = payslipPdfFilename({
+    employee,
+    profile,
+    teacher,
+    month: payslip.payrollRun?.month,
+    year: payslip.payrollRun?.year,
+  });
 
   const buffer = await renderPdfToBuffer((doc) => {
     drawPaySlipDocument(doc, {

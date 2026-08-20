@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const { putObject, uploadsRoot, getDriver } = require('../../services/StorageService');
+const { buildContentDisposition } = require('./pdfFilename');
 
 function renderPdfToBuffer(draw, options = {}) {
   return new Promise((resolve, reject) => {
@@ -67,7 +68,7 @@ function sendPdfDownload(res, result) {
   const filename = String(result?.filename || 'document.pdf').replace(/["\r\n]/g, '');
   if (result?.buffer && Buffer.isBuffer(result.buffer) && result.buffer.length) {
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', buildContentDisposition(filename));
     return res.status(200).send(result.buffer);
   }
   if (result?.filepath) {

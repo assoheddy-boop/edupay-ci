@@ -1,4 +1,5 @@
 const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
+const { bulletinPdfFilename } = require('../utils/pdfFilename');
 const {
   computeSubjectRows,
   computeAverage,
@@ -16,10 +17,6 @@ const {
 
 function ensureDir() {
   // Persistence goes through StorageService (/tmp on Vercel, Blob when configured).
-}
-
-function safePeriodSlug(period) {
-  return String(period || 'periode').replace(/\s+/g, '-');
 }
 
 function enrichRowsWithTeachers(rows, grades) {
@@ -77,7 +74,7 @@ async function generateBulletinPdf({
   homeroomTeacherName,
   outputDir,
 }) {
-  const filename = `bulletin-${student.id}-${safePeriodSlug(period)}-${Date.now()}.pdf`;
+  const filename = bulletinPdfFilename({ student, period });
   const term = normalizeTerm(period);
 
   let rows = computeSubjectRows(grades, coeffMap);

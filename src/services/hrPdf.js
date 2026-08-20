@@ -1,9 +1,14 @@
 const { drawDocumentHeader } = require('../utils/schoolLogo');
 const { renderPdfToBuffer, savePdfBuffer } = require('../utils/pdfOutput');
 const { monthLabel } = require('../utils/hr');
+const { payslipPdfFilename } = require('../utils/pdfFilename');
 
 async function generatePayslipPdf({ payslip, teacher, school, payrollRun, outputDir }) {
-  const filename = `bulletin-paie-${payslip.id}.pdf`;
+  const filename = payslipPdfFilename({
+    teacher,
+    month: payrollRun.month,
+    year: payrollRun.year,
+  });
   const period = monthLabel(payrollRun.month, payrollRun.year);
 
   const buffer = await renderPdfToBuffer((doc) => {

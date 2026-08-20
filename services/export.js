@@ -6,6 +6,7 @@ const { drawDocumentHeader } = require('../src/utils/schoolLogo');
 const { renderPdfToBuffer, savePdfBuffer } = require('../src/utils/pdfOutput');
 const { computeAverage, getCoefficient, loadSchoolCoefficients } = require('../src/services/gradesAverage');
 const { formatTermLabel } = require('../src/services/academicTerms');
+const { personNameSlug, payslipPdfFilename } = require('../src/utils/pdfFilename');
 const { calcNetPay, monthLabel } = require('../src/utils/hr');
 const { getCache, setCache } = require('./cache');
 
@@ -103,7 +104,7 @@ async function generateBulletinPDF(studentId) {
   const average = computeAverage(grades, coeffMap);
 
   ensureDir(BULLETINS_DIR);
-  const filename = `bulletin-${student.id}-${Date.now()}.pdf`;
+  const filename = `bulletin-${personNameSlug(student.lastName, student.firstName)}.pdf`;
   const filepath = path.join(BULLETINS_DIR, filename);
 
   const saved = await writePdf(filepath, (doc) => {
@@ -273,7 +274,7 @@ async function generatePayrollPDF(teacherId, month) {
   });
 
   ensureDir(PAYSLIPS_DIR);
-  const filename = `fiche-paie-${teacher.id}-${periodKey}.pdf`;
+  const filename = payslipPdfFilename({ teacher, month: m, year: y });
   const filepath = path.join(PAYSLIPS_DIR, filename);
   const school = teacher.school;
   const period = monthLabel(m, y);
