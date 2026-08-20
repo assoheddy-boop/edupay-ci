@@ -506,6 +506,8 @@ a.admin-hub-card {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin-bottom: 1.5rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .card-header {
@@ -665,8 +667,12 @@ a.admin-hub-card {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 1.5rem;
+}
+
+.grid-2 > * {
+  min-width: 0;
 }
 
 /* Table */
@@ -1538,6 +1544,8 @@ code {
   display: flex;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .app-sidebar {
@@ -1578,8 +1586,17 @@ code {
   margin-top: 0.35rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   background: #fff;
+}
+
+.nav-group:not(.is-open) > .nav-group-title {
+  border-radius: 7px;
+}
+
+.nav-group.is-open > .nav-group-items {
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
 }
 
 .nav-group-title {
@@ -1682,8 +1699,22 @@ code {
 .app-content {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   padding-top: 2rem;
   padding-bottom: 3rem;
+}
+
+.app-content .form-group select,
+.app-content .form select,
+.app-content .form-group input,
+.app-content .form-group textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-content .form-hint,
+.app-content .page-sub {
+  overflow-wrap: anywhere;
 }
 
 .app-sidebar-overlay {
@@ -1954,11 +1985,32 @@ h1 .hint, h2 .hint, h3 .hint, .stat-label .hint, th .hint {
   text-transform: none;
   letter-spacing: normal;
   font-weight: 400;
-  left: 0;
-  transform: none;
+  left: calc(100% + 0.5rem);
+  top: 50%;
   bottom: auto;
-  top: calc(100% + 4px);
+  transform: translateY(-50%);
   z-index: 300;
+  max-width: min(16rem, calc(100vw - 18rem));
+}
+
+.nav-group-title .hint-tip::after {
+  top: 50%;
+  left: -10px;
+  right: auto;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #1e293b;
+}
+
+.nav-group-title .hint:focus-within .hint-tip {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.nav-group-title .hint:hover .hint-tip,
+.nav-group-title .hint:focus .hint-tip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .nav-group-title .hint-icon {
@@ -2148,6 +2200,14 @@ body.sidebar-open {
   .app-sidebar-overlay[hidden] { display: none; }
 
   .app-content { padding-top: 1.25rem; }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar .nav-group-title .hint-tip {
+    display: none;
+  }
 
   .table-scroll {
     overflow-x: auto;
