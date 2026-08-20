@@ -34,7 +34,7 @@
 
   <form method="POST" action="/admin/schools/<%= school.id %>/featured" class="card" style="margin-bottom:1.5rem">
     <div class="card-header">
-      <h2>Marketplace (visibilité)</h2>
+      <h2>Portail public (visibilité)</h2>
       <p class="page-sub">Option payante, indépendante du plan Pro. Active le module + le palier. La direction ne peut pas s’activer elle-même.</p>
     </div>
     <input type="hidden" name="redirect" value="/admin/schools/<%= school.id %>/modules">
@@ -47,7 +47,7 @@
       </select>
     </div>
     <div class="card-footer">
-      <button type="submit" class="btn btn-primary">Enregistrer l’offre Marketplace</button>
+      <button type="submit" class="btn btn-primary">Enregistrer l’offre portail public</button>
     </div>
   </form>
 

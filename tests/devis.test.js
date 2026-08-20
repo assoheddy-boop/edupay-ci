@@ -70,7 +70,7 @@ describe('Public devis questionnaire', () => {
     expect(res.text).toMatch(/name="_csrf"/);
     expect(res.text).toMatch(/Établissement/);
     expect(res.text).toMatch(/Visibilité web/i);
-    expect(res.text).toMatch(/Marketplace/i);
+    expect(res.text).toMatch(/portail EduConnect/i);
     expect(res.text).not.toMatch(/Choisir Premium/);
     expect(res.text).not.toMatch(/Essentiel/);
     expect(res.headers['set-cookie']?.join(';')).toMatch(/devis_csrf=/);

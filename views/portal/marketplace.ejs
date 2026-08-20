@@ -143,9 +143,9 @@
     <% if (!schools.length) { %>
       <div class="card portal-card">
         <% if (typeof q !== 'undefined' && q) { %>
-          <p>Aucune école publiée pour « <%= q %> » avec ces critères. Essayez un autre nom ou élargissez la recherche. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+          <p>Aucune école publiée pour « <%= q %> » avec ces critères. Essayez un autre nom ou élargissez la recherche. La visibilité sur /ecoles fait partie de l’option portail EduConnect. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
         <% } else { %>
-          <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+          <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option portail EduConnect. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
         <% } %>
       </div>
     <% } else { %>
@@ -161,7 +161,7 @@
   <aside class="card portal-market-cta" aria-label="Inscrire un établissement">
     <h2>Votre école n’apparaît pas&nbsp;?</h2>
     <p>Publiez une page publique, soyez trouvé sur Google et laissez les familles vous contacter — sans exposer les notes.</p>
-    <a href="/devis" class="btn btn-primary">Demander un devis Marketplace</a>
+    <a href="/devis" class="btn btn-primary">Demander un devis visibilité web</a>
   </aside>
 
   <%- include('../partials/_portalPwaInstall') %>

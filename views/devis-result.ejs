@@ -35,14 +35,14 @@
   <% if (summary.marketplace && summary.marketplace.selected) { %>
   <article class="devis-offer devis-offer-marketplace">
     <p class="devis-offer-kicker">Visibilité web</p>
-    <h2>Marketplace <%= summary.marketplace.label %></h2>
+    <h2>Visibilité web — <%= summary.marketplace.label %></h2>
     <p class="devis-offer-price"><strong><%= marketplaceAmountLabel %></strong> <span>/ an</span></p>
     <p class="devis-offer-tag"><%= summary.marketplace.hint %> — page /e/:slug et annuaire /ecoles</p>
   </article>
   <article class="devis-offer devis-offer-total">
     <p class="devis-offer-kicker">Total annuel</p>
     <p class="devis-offer-price"><strong><%= totalAmountLabel %></strong> <span>/ an</span></p>
-    <p class="devis-offer-tag">Pro + Marketplace (deux lignes de facturation distinctes)</p>
+    <p class="devis-offer-tag">Pro + visibilité web (deux lignes de facturation distinctes)</p>
   </article>
   <% } %>
 

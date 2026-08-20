@@ -18,7 +18,7 @@
 <% if (error) { %><div class="alert alert-error">Impossible d’enregistrer. Vérifiez le titre et le texte (pas de données élèves).</div><% } %>
 
 <% if (typeof marketplaceEnabled !== 'undefined' && !marketplaceEnabled) { %>
-  <div class="alert alert-error">Le Marketplace n’est pas activé pour cet établissement. <a href="mailto:contact@educonnect.ci?subject=Marketplace%20EduConnect">Contactez EduConnect pour le Marketplace</a>.</div>
+  <div class="alert alert-error">Le portail public n’est pas activé pour cet établissement. <a href="mailto:contact@educonnect.ci?subject=Portail%20public%20EduConnect">Contactez EduConnect pour le portail public</a>.</div>
 <% } else { %>
 <% if (typeof analytics !== 'undefined' && analytics && analytics.totals) { %>
 <div class="card portal-analytics-card" style="margin-bottom:1.5rem">

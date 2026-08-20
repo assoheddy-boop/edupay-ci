@@ -18,7 +18,7 @@ function marketplaceRenewalEmailText(school, { daysLeft } = {}) {
   const lines = [
     `Bonjour,`,
     '',
-    `Votre abonnement Marketplace EduConnect pour « ${school?.name || 'votre établissement'} » arrive à échéance${days !== '' ? ` dans ${days} jour(s)` : ''}.`,
+    `Votre abonnement portail public EduConnect pour « ${school?.name || 'votre établissement'} » arrive à échéance${days !== '' ? ` dans ${days} jour(s)` : ''}.`,
     '',
     `Offre actuelle : ${offer.label} (${formatFcfa(payment.amount)} / an)`,
     `Date de fin : ${formatDateFr(expiresAt)}`,
@@ -40,7 +40,7 @@ function marketplaceRenewalEmailText(school, { daysLeft } = {}) {
 
 function marketplaceRenewalEmailSubject(school) {
   const name = school?.name || 'votre école';
-  return `Renouvellement Marketplace — ${name} — échéance proche`;
+  return `Renouvellement portail public — ${name} — échéance proche`;
 }
 
 module.exports = {

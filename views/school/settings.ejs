@@ -70,7 +70,7 @@
         <% if (typeof marketplaceEnabled !== 'undefined' && marketplaceEnabled) { %>
         <% if (typeof subscription !== 'undefined' && subscription && (subscription.state === 'expiring' || subscription.state === 'expired')) { %>
         <div class="alert <%= subscription.state === 'expired' ? 'alert-error' : 'alert-warning' %>" style="margin-bottom:0.75rem">
-          Abonnement Marketplace : <strong><%= subscription.label %></strong>.
+          Abonnement portail public : <strong><%= subscription.label %></strong>.
           <a href="/school/marketplace-renewal">Renouveler en ligne (Wave)</a>
         </div>
         <% } %>
@@ -89,8 +89,8 @@
           <% if (school.slug) { %> · <a href="/school/portail">Gérer les actualités</a><% } %>
         </p>
         <% } else { %>
-        <p class="form-hint">La vitrine <code>/e/:slug</code> et l’annuaire <a href="/ecoles">/ecoles</a> font partie de l’option <strong>Marketplace</strong>, indépendante de la gestion interne Pro. La direction ne peut pas l’activer elle-même.</p>
-        <p class="form-hint"><a href="mailto:contact@educonnect.ci?subject=Marketplace%20EduConnect">Contactez EduConnect pour le Marketplace</a> — Standard, Premium ou VIP.</p>
+        <p class="form-hint">La vitrine <code>/e/:slug</code> et l’annuaire <a href="/ecoles">/ecoles</a> font partie de l’option <strong>portail public EduConnect</strong>, indépendante de la gestion interne Pro. La direction ne peut pas l’activer elle-même.</p>
+        <p class="form-hint"><a href="mailto:contact@educonnect.ci?subject=Portail%20public%20EduConnect">Contactez EduConnect pour le portail public</a> — Standard, Premium ou VIP.</p>
         <% } %>
         <% if (typeof marketplaceEnabled === 'undefined' || marketplaceEnabled) { %>
         <label for="publicType">Type d’établissement</label>

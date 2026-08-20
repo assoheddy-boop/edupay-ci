@@ -18,10 +18,10 @@
   <p>Pro (gestion) : <strong><%= typeof formatMoney === 'function' ? formatMoney(quote.amount) : (quote.amount + ' FCFA') %></strong> / an</p>
   <% const mktAmount = quote.marketplaceAmount ?? (answers.marketplace && answers.marketplace.amount) ?? 0; %>
   <% if (mktAmount > 0) { %>
-    <p>Marketplace (<%= answers.marketplace && answers.marketplace.label ? answers.marketplace.label : 'visibilité' %>) : <strong><%= typeof formatMoney === 'function' ? formatMoney(mktAmount) : (mktAmount + ' FCFA') %></strong> / an</p>
+    <p>Visibilité web (<%= answers.marketplace && answers.marketplace.label ? answers.marketplace.label : 'portail public' %>) : <strong><%= typeof formatMoney === 'function' ? formatMoney(mktAmount) : (mktAmount + ' FCFA') %></strong> / an</p>
     <p>Total devis : <strong><%= typeof formatMoney === 'function' ? formatMoney((quote.amount || 0) + mktAmount) : ((quote.amount || 0) + mktAmount + ' FCFA') %></strong> / an</p>
   <% } else { %>
-    <p class="form-hint">Pas de ligne Marketplace sur ce devis.</p>
+    <p class="form-hint">Pas de ligne visibilité web sur ce devis.</p>
   <% } %>
   <p class="form-hint">Référence : <code><%= quote.id %></code></p>
   <% if (quote.activationRequestedAt) { %>

@@ -23,8 +23,8 @@ const MODULES = {
     default: false,
   },
   marketplace: {
-    label: 'Marketplace',
-    description: 'Vitrine publique /e/:slug et listing /ecoles. Option payante, indépendante du plan Pro. La direction ne peut pas l’activer.',
+    label: 'Portail public',
+    description: 'Vitrine publique /e/:slug et annuaire /ecoles. Option payante, indépendante du plan Pro. La direction ne peut pas l’activer.',
     default: false,
     addon: true,
   },

@@ -1,9 +1,9 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('marketplace-renewal', { _inLayout: true }); %>
-<%- include('../layouts/schoolLayout', { body: content, title: 'Renouvellement Marketplace' }) %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Renouvellement portail public' }) %>
 <% } else { %>
 <div class="page-header">
-  <h1>Renouvellement Marketplace</h1>
+  <h1>Renouvellement portail public</h1>
   <p class="page-sub">Conservez votre page publique <code>/e/<%= school.slug || '…' %></code> et votre visibilité sur <a href="/ecoles" target="_blank" rel="noopener">/ecoles</a>.</p>
 </div>
 
@@ -38,7 +38,7 @@
   <p class="form-hint">Le renouvellement prolonge votre abonnement d’un an à partir de la date de fin actuelle (ou d’aujourd’hui si déjà expiré).</p>
   <div class="form-actions" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem">
     <a class="btn btn-primary" href="/school/marketplace-renewal/pay">Payer avec Wave — <%= formatFcfa(payment.amount) %></a>
-    <a class="btn btn-outline" href="mailto:contact@educonnect.ci?subject=Renouvellement%20Marketplace%20<%= encodeURIComponent(school.name) %>">Contacter EduConnect</a>
+    <a class="btn btn-outline" href="mailto:contact@educonnect.ci?subject=Renouvellement%20portail%20public%20<%= encodeURIComponent(school.name) %>">Contacter EduConnect</a>
     <a class="btn btn-outline" href="/school/settings">Paramètres portail</a>
   </div>
 </div>

@@ -9,7 +9,7 @@ describe('Marketplace module', () => {
   test('is registered, default off, paid add-on', () => {
     expect(MARKETPLACE_MODULE).toBe('marketplace');
     expect(MODULE_KEYS).toContain('marketplace');
-    expect(MODULES.marketplace.label).toBe('Marketplace');
+    expect(MODULES.marketplace.label).toBe('Portail public');
     expect(MODULES.marketplace.default).toBe(false);
     expect(MODULES.marketplace.addon).toBe(true);
     expect(MODULES.marketplace.core).toBeFalsy();

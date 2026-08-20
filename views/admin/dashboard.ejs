@@ -5,11 +5,11 @@
 <div class="page-header">
     <div>
       <h1>Super Admin</h1>
-      <p class="page-sub">Console propriétaire — écoles, marketplace, devis, utilisateurs. La prise en main reste obligatoire pour l’UI école.</p>
+      <p class="page-sub">Console propriétaire — écoles, portail public, devis, utilisateurs. La prise en main reste obligatoire pour l’UI école.</p>
     </div>
     <div class="page-header-actions">
       <a href="/admin/schools" class="btn btn-primary">Écoles</a>
-      <a href="/admin/marketplace" class="btn btn-outline">Marketplace</a>
+      <a href="/admin/marketplace" class="btn btn-outline">Portail public</a>
       <a href="/admin/quotes" class="btn btn-outline">Devis</a>
       <a href="/admin/users" class="btn btn-outline">Utilisateurs</a>
       <a href="/admin/modules" class="btn btn-outline">Modules</a>
@@ -212,7 +212,7 @@
       <a href="/admin/schools" class="feature-card admin-hub-card">
         <span class="feature-icon">🏫</span>
         <h3>Écoles</h3>
-        <p>Cycle, modules, marketplace, vitrine — sans prise en main.</p>
+        <p>Cycle, modules, portail public, vitrine — sans prise en main.</p>
       </a>
       <a href="/admin/users" class="feature-card admin-hub-card">
         <span class="feature-icon">👤</span>
@@ -226,7 +226,7 @@
       </a>
       <a href="/admin/marketplace" class="feature-card admin-hub-card">
         <span class="feature-icon">⭐</span>
-        <h3>Marketplace</h3>
+        <h3>Portail public</h3>
         <p>Publier / retirer sur /ecoles, palier VIP · Premium · Standard.</p>
       </a>
       <a href="/admin/dashboard#sms-test" class="feature-card admin-hub-card">
@@ -360,7 +360,7 @@
               <%- include('../partials/_adminAssistForm', { type: 'school', id: s.id, label: 'Gérer' }) %>
               <a href="/admin/modules?school=<%= s.id %>" class="btn btn-sm btn-outline">Modules</a>
               <form method="POST" action="/admin/schools/<%= s.id %>/featured" class="form-inline" style="display:inline">
-                <select name="marketplaceTier" aria-label="Marketplace <%= s.name %>" onchange="this.form.submit()">
+                <select name="marketplaceTier" aria-label="Visibilité web <%= s.name %>" onchange="this.form.submit()">
                   <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
                     <option value="<%= opt.value %>" <%= (s.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
                   <% }) %>

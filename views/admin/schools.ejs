@@ -28,7 +28,7 @@
           <th>Ville</th>
           <th>Cycle</th>
           <th>Plan</th>
-          <th>Marketplace</th>
+          <th>Visibilité web</th>
           <th>Vitrine</th>
           <th></th>
         </tr>
@@ -56,7 +56,7 @@
             <td>
               <form method="POST" action="/admin/schools/<%= s.id %>/featured" class="form-inline">
                 <input type="hidden" name="redirect" value="/admin/schools">
-                <select name="marketplaceTier" aria-label="Marketplace <%= s.name %>" onchange="this.form.submit()">
+                <select name="marketplaceTier" aria-label="Visibilité web <%= s.name %>" onchange="this.form.submit()">
                   <% (typeof marketplaceTierOptions !== 'undefined' ? marketplaceTierOptions : []).forEach(function(opt) { %>
                     <option value="<%= opt.value %>" <%= (s.marketplaceTier || 'NONE') === opt.value ? 'selected' : '' %>><%= opt.label %></option>
                   <% }) %>

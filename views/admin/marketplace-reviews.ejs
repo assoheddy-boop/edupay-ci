@@ -1,6 +1,6 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('marketplace-reviews', { _inLayout: true }); %>
-<%- include('../layouts/adminLayout', { body: content, title: 'Avis parents — Marketplace' }) %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Avis parents — Portail public' }) %>
 <% } else { %>
 <div class="page-header">
   <div>
@@ -8,7 +8,7 @@
     <p class="page-sub">Modération des avis sur les vitrines /e/:slug — affichage public après validation.</p>
   </div>
   <div class="page-header-actions">
-    <a href="/admin/marketplace" class="btn btn-outline">Marketplace</a>
+    <a href="/admin/marketplace" class="btn btn-outline">Portail public</a>
     <a href="/ecoles" class="btn btn-outline" target="_blank" rel="noopener">Ouvrir /ecoles</a>
   </div>
 </div>

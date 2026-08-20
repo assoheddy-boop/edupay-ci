@@ -1,10 +1,10 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('marketplace', { _inLayout: true }); %>
-<%- include('../layouts/adminLayout', { body: content, title: 'Marketplace — Super Admin' }) %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Portail public — Super Admin' }) %>
 <% } else { %>
 <div class="page-header">
   <div>
-    <h1>Marketplace</h1>
+    <h1>Portail public</h1>
     <p class="page-sub">Écoles visibles sur /ecoles — abonnements, paliers, publication.</p>
   </div>
   <div class="page-header-actions">
@@ -16,7 +16,7 @@
 
 <% if (success === 'published') { %><div class="alert alert-success">École publiée sur /ecoles.</div><% } %>
 <% if (success === 'unpublished') { %><div class="alert alert-success">École retirée de /ecoles.</div><% } %>
-<% if (success === 'tier') { %><div class="alert alert-success">Offre marketplace mise à jour.</div><% } %>
+<% if (success === 'tier') { %><div class="alert alert-success">Offre portail public mise à jour.</div><% } %>
 <% if (success === 'renewed') { %><div class="alert alert-success">Abonnement renouvelé (+1 an).</div><% } %>
 <% if (success === 'bulk_renewed') { %><div class="alert alert-success">Renouvellement groupé effectué (+1 an par école sélectionnée).</div><% } %>
 <% if (success === 'featured') { %><div class="alert alert-success">Mise en avant mise à jour.</div><% } %>
@@ -113,7 +113,7 @@
   <div class="card-header" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem">
     <div>
       <h2>Listing /ecoles</h2>
-      <p class="page-sub">Module marketplace actif, palier payant, slug, publication et abonnement en cours.</p>
+      <p class="page-sub">Module portail public actif, palier payant, slug, publication et abonnement en cours.</p>
     </div>
     <button type="submit" class="btn btn-primary" id="bulk-renew-btn" disabled>Renouveler la sélection (+1 an)</button>
   </div>

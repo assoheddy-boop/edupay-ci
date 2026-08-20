@@ -55,7 +55,7 @@ function buildQuotePdf(quote) {
     const marketplaceAmount = quote.marketplaceAmount ?? answers.marketplace?.amount ?? 0;
     if (marketplaceAmount > 0 && answers.marketplace?.selected) {
       doc.roundedRect(50, y, 495, 78, 8).fill('#FFF7ED');
-      doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(12).text(`Visibilité web — Marketplace ${answers.marketplace.label || ''}`, 66, y + 14);
+      doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(12).text(`Visibilité web — EduConnect ${answers.marketplace.label || ''}`, 66, y + 14);
       doc.fillColor(NAVY).fontSize(22).text(formatMoney(marketplaceAmount), 66, y + 32);
       doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, page /e/:slug et annuaire /ecoles (option séparée)', 66, y + 56);
       y += 98;

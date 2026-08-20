@@ -140,8 +140,8 @@ async function activate(req, res, next) {
     if (smtpConfigured()) {
       const answers = updated.answers || {};
       const marketplaceLine = updated.marketplaceAmount
-        ? `Marketplace : ${formatMoney(updated.marketplaceAmount)} / an (${answers.marketplace?.label || 'visibilité'})`
-        : 'Marketplace : non';
+        ? `Visibilité web : ${formatMoney(updated.marketplaceAmount)} / an (${answers.marketplace?.label || 'portail public'})`
+        : 'Visibilité web : non';
       const result = await sendEmail('contact@educonnect.ci', {
         subject: `Activation Pro — ${updated.schoolName}`,
         text: [
