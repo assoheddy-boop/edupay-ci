@@ -13,6 +13,7 @@ const deliberationController = require('../controllers/deliberationController');
 const socialCaseController = require('../controllers/socialCaseController');
 const riskController = require('../controllers/riskController');
 const emargementController = require('../controllers/emargementController');
+const enrollmentController = require('../controllers/enrollmentController');
 const convocationController = require('../controllers/convocationController');
 const palmaresController = require('../controllers/palmaresController');
 const justificationController = require('../controllers/justificationController');
