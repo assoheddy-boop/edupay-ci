@@ -79,6 +79,19 @@ describe('Homepage', () => {
     expect(res.text).not.toMatch(/EduPay/i);
   });
 
+  test('GET / includes compact pricing summary with link to /tarifs', async () => {
+    const res = await request(app).get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/id="tarifs"/);
+    expect(res.text).toMatch(/Tarification transparente/);
+    expect(res.text).toMatch(/50(?:\s|&nbsp;)*000 FCFA/);
+    expect(res.text).toMatch(/80(?:\s|&nbsp;)*000 FCFA/);
+    expect(res.text).toMatch(/2(?:\s|&nbsp;)*500 FCFA/);
+    expect(res.text).toMatch(/convention signée/i);
+    expect(res.text).toMatch(/Voir tous les tarifs/);
+    expect(res.text).toMatch(/href="\/tarifs"/);
+  });
+
   test('GET / has unique SEO and Open Graph tags', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);

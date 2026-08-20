@@ -425,6 +425,66 @@ body {
   gap: 0.65rem;
 }
 
+.home-pricing {
+  display: grid;
+  gap: 1rem;
+  max-width: 36rem;
+}
+
+.home-pricing-table-wrap {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(11, 31, 74, 0.04);
+}
+
+.home-pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.98rem;
+}
+
+.home-pricing-table th,
+.home-pricing-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.home-pricing-table thead th {
+  background: #f4f7fb;
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.home-pricing-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.home-pricing-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.home-pricing-table-parent td {
+  background: rgba(232, 106, 18, 0.08);
+}
+
+.home-pricing-lycee {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(106, 27, 154, 0.25);
+  background: linear-gradient(135deg, #faf5fc, #f3e5f5);
+  color: #4a3058;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
 .home-cta-band {
   background: var(--navy-mid);
   color: #fff;
@@ -671,5 +731,55 @@ body {
 
   .home-btn-xl {
     width: 100%;
+  }
+
+  .home-pricing-table thead {
+    display: none;
+  }
+
+  .home-pricing-table,
+  .home-pricing-table tbody,
+  .home-pricing-table tr,
+  .home-pricing-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .home-pricing-table tr {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .home-pricing-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .home-pricing-table td {
+    padding: 0.15rem 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .home-pricing-table td:last-child {
+    white-space: normal;
+  }
+
+  .home-pricing-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .home-pricing-table td:first-child::before {
+    content: 'Niveau';
+  }
+
+  .home-pricing-table td:last-child::before {
+    content: 'Tarif';
   }
 }
