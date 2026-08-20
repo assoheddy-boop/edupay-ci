@@ -3,6 +3,7 @@ const express = require('express');
 const authController = require('../controllers/authController');
 
 const { authLimiter } = require('../middleware/rateLimit');
+const upload = require('../middleware/upload');
 
 const {
 
@@ -36,7 +37,6 @@ router.post('/register', authLimiter, upload.logoUpload.fields([
 ]), registerRules, schoolAdminRegisterRules, teacherRegisterRules, handleValidationErrors, authController.register);
 
 const { requireAuth } = require('../middleware/auth');
-const upload = require('../middleware/upload');
 
 router.get('/logout', authController.logout);
 
