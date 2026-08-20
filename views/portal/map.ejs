@@ -58,35 +58,47 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (function () {
-  var markers = <%- typeof markersJson !== 'undefined' ? markersJson : '[]' %>;
-  var center = <%= JSON.stringify(mapCenter || { lat: 5.3364, lng: -4.0267, zoom: 11 }) %>;
   var mapEl = document.getElementById('portal-school-map');
-  if (!mapEl || !markers.length || typeof L === 'undefined') return;
+  if (!mapEl) return;
 
-  var map = L.map(mapEl, { scrollWheelZoom: true }).setView([center.lat, center.lng], center.zoom || 11);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
+  var markers = <%- typeof markersJson !== 'undefined' ? markersJson : '[]' %>;
+  var center = <%- typeof mapCenterJson !== 'undefined' ? mapCenterJson : '{"lat":5.3364,"lng":-4.0267,"zoom":11}' %>;
 
-  var bounds = [];
-  markers.forEach(function (m) {
-    var latLng = [m.lat, m.lng];
-    bounds.push(latLng);
-    var popup = '<strong>' + (m.name || 'École') + '</strong>';
-    if (m.cycleLabel) popup += '<br>' + m.cycleLabel;
-    if (m.localityLabel) popup += '<br>' + m.localityLabel;
-    popup += '<br><a href="' + (m.portalPath || '#') + '">Voir la fiche</a>';
-    L.marker(latLng).addTo(map).bindPopup(popup);
-  });
-
-  if (bounds.length > 1) {
-    map.fitBounds(bounds, { padding: [32, 32], maxZoom: 13 });
-  } else if (bounds.length === 1) {
-    map.setView(bounds[0], 14);
+  if (!markers.length) return;
+  if (typeof L === 'undefined') {
+    mapEl.innerHTML = '<p class="form-hint">Carte indisponible (Leaflet non chargé).</p>';
+    return;
   }
 
-  setTimeout(function () { map.invalidateSize(); }, 100);
+  try {
+    var map = L.map(mapEl, { scrollWheelZoom: true }).setView([center.lat, center.lng], center.zoom || 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var bounds = [];
+    markers.forEach(function (m) {
+      var latLng = [m.lat, m.lng];
+      bounds.push(latLng);
+      var popup = '<strong>' + (m.name || 'École') + '</strong>';
+      if (m.cycleLabel) popup += '<br>' + m.cycleLabel;
+      if (m.localityLabel) popup += '<br>' + m.localityLabel;
+      popup += '<br><a href="' + (m.portalPath || '#') + '">Voir la fiche</a>';
+      L.marker(latLng).addTo(map).bindPopup(popup);
+    });
+
+    if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [32, 32], maxZoom: 13 });
+    } else if (bounds.length === 1) {
+      map.setView(bounds[0], 14);
+    }
+
+    setTimeout(function () { map.invalidateSize(); }, 100);
+  } catch (err) {
+    console.error('portal-school-map init failed', err);
+    mapEl.innerHTML = '<p class="form-hint">Impossible d\'afficher la carte pour le moment.</p>';
+  }
 })();
 </script>
 <% } %>

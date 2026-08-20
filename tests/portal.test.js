@@ -522,6 +522,8 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/portal-school-map/);
     expect(res.text).toMatch(/IGEST Carte/);
     expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
+    expect(res.text).toMatch(/var center = \{"lat":5\.3364,"lng":-4\.0267,"zoom":11\}/);
+    expect(res.text).not.toMatch(/&#34;lat&#34;/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
   });
 });

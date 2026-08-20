@@ -469,6 +469,7 @@ async function marketplaceMap(req, res, next) {
       markers,
       markerCount: markers.length,
       mapCenter: { lat: 5.3364, lng: -4.0267, zoom: 11 },
+      mapCenterJson: safeJson({ lat: 5.3364, lng: -4.0267, zoom: 11 }),
       markersJson: safeJson(markers),
     });
   } catch (err) {
