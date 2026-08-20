@@ -1,5 +1,6 @@
 const express = require('express');
 const schoolController = require('../controllers/schoolController');
+const enrollmentController = require('../controllers/enrollmentController');
 const messageController = require('../controllers/messageController');
 const statsController = require('../controllers/statsController');
 const accountingController = require('../controllers/accountingController');
@@ -78,6 +79,14 @@ router.post('/classes/:id/update', requirePermission(P.CLASSES_WRITE), classRule
 router.post('/classes/:id/delete', requirePermission(P.CLASSES_WRITE), schoolController.deleteClass);
 
 router.get('/students', requirePermission(P.STUDENTS_READ), schoolController.listStudents);
+
+router.get('/inscriptions', requirePermission(P.ENROLLMENTS_READ), enrollmentController.listPage);
+router.get('/inscriptions/nouvelle', requirePermission(P.ENROLLMENTS_WRITE), enrollmentController.newPage);
+router.post('/inscriptions', requirePermission(P.ENROLLMENTS_WRITE), upload.logoUpload.single('photo'), auditMiddleware('enrollment_create', 'StudentEnrollment'), enrollmentController.create);
+router.get('/inscriptions/effectif', requirePermission(P.ENROLLMENTS_READ), enrollmentController.classEffectif);
+router.get('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_READ), enrollmentController.editPage);
+router.post('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_WRITE), upload.logoUpload.single('photo'), auditMiddleware('enrollment_update', 'StudentEnrollment'), enrollmentController.update);
+
 router.get('/students/import/template', requirePermission(P.STUDENTS_WRITE), schoolController.downloadStudentImportTemplate);
 router.post('/students/import', requirePermission(P.STUDENTS_WRITE), csvUpload.single('csv'), schoolController.importStudents);
 router.post('/students', requirePermission(P.STUDENTS_WRITE), upload.logoUpload.single('photo'), studentRules, handleValidationErrors, auditMiddleware('student_create', 'Student'), schoolController.createStudent);

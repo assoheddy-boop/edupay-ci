@@ -1,0 +1,50 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('inscriptions', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: title || 'Fiches d’inscription' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Fiches d’inscription</h1>
+  <div class="page-header-actions">
+    <a href="/school/inscriptions/nouvelle" class="btn btn-primary btn-sm">Nouvelle inscription</a>
+    <a href="/reinscription/dashboard" class="btn btn-outline btn-sm">Réinscriptions</a>
+  </div>
+</div>
+
+<p class="form-hint">Année scolaire <strong><%= schoolYear %></strong> — <%= school.name %></p>
+
+<% if (success) { %><div class="alert alert-success">Fiche enregistrée.</div><% } %>
+
+<div class="card">
+  <h2>Élèves (<%= rows.length %>)</h2>
+  <% if (rows.length === 0) { %>
+    <p class="empty">Aucun élève. <a href="/school/inscriptions/nouvelle">Créer une fiche d’inscription</a>.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Classe</th>
+            <th>Matricule</th>
+            <th>Statut</th>
+            <th>Fiche <%= schoolYear %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+            <tr>
+              <td><strong><%= r.lastName %></strong> <%= r.firstName %></td>
+              <td><%= r.className || '—' %></td>
+              <td><code><%= r.matricule || '—' %></code></td>
+              <td><%= r.enrollmentStatus || '—' %></td>
+              <td><%= r.enrolled ? '✓ Complète' : '— À compléter' %></td>
+              <td><a href="/school/inscriptions/<%= r.id %>" class="btn btn-outline btn-sm">Ouvrir fiche</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<% } %>

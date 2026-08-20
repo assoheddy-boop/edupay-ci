@@ -320,6 +320,7 @@ model School {
   transfersTo          TransferRequest[] @relation("TransferToSchool")
   accountingEntries    AccountingEntry[]
   studentYearRecords   StudentYearRecord[]
+  studentEnrollments   StudentEnrollment[]
   absenceJustifications AbsenceJustification[]
   subjects             Subject[]
   timetables           Timetable[]
@@ -395,7 +396,18 @@ model Student {
   /// Matricule national MEN (collèges-lycées CI). Unique par école lorsqu’il est renseigné.
   nationalMatricule String?
   birthDate  DateTime?
+  /// Lieu de naissance (fiche inscription CI).
+  birthPlace String?
   gender     String?
+  /// Nationalité (fiche inscription CI).
+  nationality String?
+  /// Père / mère / tuteur (fiche inscription).
+  fatherName    String?
+  motherName    String?
+  guardianName  String?
+  guardianPhone String?
+  contactPhone  String?
+  contactEmail  String?
   /// Override série si la classe est mixte. Sinon héritage Class.series.
   series     SchoolSeries?
   photoUrl   String?
@@ -427,6 +439,7 @@ model Student {
   transferRequests     TransferRequest[]
   scholarships         Scholarship[]
   yearRecords          StudentYearRecord[]
+  enrollments          StudentEnrollment[]
   socialCases          SocialCase[]
   user                 User?
 
@@ -450,6 +463,37 @@ model StudentYearRecord {
 
   @@index([schoolYear, studentId])
   @@unique([studentId, schoolYear])
+}
+
+/// Fiche d’inscription / réinscription annuelle (contexte ivoirien).
+model StudentEnrollment {
+  id              String   @id @default(cuid())
+  schoolYear      String
+  enrolledAt      DateTime @default(now())
+  /// NOUVEAU | REINSCRIPTION | TRANSFERT | REAFFECTATION
+  enrollmentStatus String  @default("NOUVEAU")
+  lv2             String?
+  birthCertNumber String?
+  birthCertDate   DateTime?
+  birthCertPlace  String?
+  previousSchool  String?
+  previousClass   String?
+  transferRef     String?
+  decisionNumber  String?
+  isScholarship   Boolean  @default(false)
+  /// Cases cochées : photos, extraitNaissance, certificatScolarite, …
+  documentsChecklist Json?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, schoolYear])
+  @@index([schoolId, schoolYear])
 }
 
 model ParentProfile {

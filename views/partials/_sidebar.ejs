@@ -51,6 +51,7 @@
           <% if (on('hr') && can('hr:read')) { %><a href="/school/hr">RH</a><% } %>
           <% if (can('school_year:write')) { %><a href="/school/school-year">Année scolaire</a><% } %>
           <% if (can('enrollments:read')) { %><a href="/transfer/requests">Transferts</a><% } %>
+          <% if (can('enrollments:read')) { %><a href="/school/inscriptions">Fiches inscription</a><% } %>
           <% if (can('enrollments:read')) { %><a href="/reinscription/dashboard">Réinscriptions</a><% } %>
           <% if (can('settings:read')) { %><a href="/school/settings">Paramètres</a><% } %>
           <% if (can('settings:write')) { %><a href="/school/staff-roles">Rôles staff</a><% } %>
