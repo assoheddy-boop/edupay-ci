@@ -13,6 +13,11 @@
   const heroLead = (school.publicDescription || '').trim().slice(0, 220);
   const payUrl = school.payUrl || '/auth/login';
   const loginUrl = school.loginUrl || '/auth/login';
+  const parentReviews = (typeof reviews !== 'undefined' && Array.isArray(reviews)) ? reviews : [];
+  const reviewStats = (typeof reviewSummary !== 'undefined' && reviewSummary) ? reviewSummary : { count: 0, average: null, averageText: null };
+  const rSuccess = typeof reviewSuccess !== 'undefined' && reviewSuccess;
+  const rError = typeof reviewError !== 'undefined' ? reviewError : null;
+  const rValues = (typeof reviewValues !== 'undefined' && reviewValues) ? reviewValues : {};
 %>
 <%- include('../partials/head') %>
 <% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
@@ -42,9 +47,12 @@
         <a href="#resultats">Résultats</a>
         <a href="#paiements">Paiements</a>
         <a href="#contact">Contact</a>
+        <a href="#avis">Avis parents</a>
       </nav>
     </details>
   </header>
+
+  <%- include('../partials/_portalCompareBar') %>
 
   <section class="portal-hero<%= school.publicBanner ? ' portal-hero-photo' : '' %>"<% if (school.publicBanner) { %> style="--portal-banner:url('<%= school.publicBanner %>')"<% } %>>
     <div class="portal-hero-inner">
@@ -76,6 +84,7 @@
     <a href="#vie-scolaire">Vie scolaire</a>
     <a href="#resultats">Résultats</a>
     <a href="#paiements">Paiements</a>
+    <a href="#avis">Avis parents</a>
     <a href="#contact">Contact</a>
   </nav>
 
@@ -219,6 +228,65 @@
     </article>
   </section>
 
+  <section class="portal-section" id="avis">
+    <article class="card portal-card">
+      <h2>Avis des parents</h2>
+      <% if (reviewStats.count) { %>
+        <p class="portal-review-summary">Note moyenne : <strong><%= reviewStats.averageText %></strong> (<%= reviewStats.count %> avis<%= reviewStats.count > 1 ? '' : '' %>)</p>
+        <ul class="portal-reviews">
+          <% parentReviews.forEach(function(r) { %>
+            <li class="portal-review-item">
+              <div class="portal-review-head">
+                <strong><%= r.authorName %></strong>
+                <span class="portal-review-stars" aria-label="Note <%= r.rating %> sur 5"><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></span>
+              </div>
+              <% if (r.createdAt) { %>
+                <p class="portal-date"><%= new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+              <% } %>
+              <p><%= r.comment %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="portal-empty">Aucun avis publié pour le moment. Soyez le premier à partager votre expérience (modération EduConnect).</p>
+      <% } %>
+
+      <div class="portal-review-form-wrap">
+        <h3>Laisser un avis</h3>
+        <% if (rSuccess) { %>
+          <div class="alert alert-success">Merci ! Votre avis sera publié après modération par EduConnect.</div>
+        <% } else { %>
+          <% if (rError) { %><div class="alert alert-error"><%= rError %></div><% } %>
+          <form method="POST" action="<%= school.portalPath || ('/e/' + school.slug) %>/avis" class="form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <div class="portal-honeypot" aria-hidden="true">
+              <label>Site web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+            <div class="form-group">
+              <label for="authorName">Prénom ou pseudo</label>
+              <input type="text" id="authorName" name="authorName" required maxlength="120" value="<%= rValues.authorName || '' %>">
+            </div>
+            <div class="form-group">
+              <label for="rating">Note</label>
+              <select id="rating" name="rating" required>
+                <option value="">Choisir…</option>
+                <% for (var i = 5; i >= 1; i--) { %>
+                  <option value="<%= i %>" <%= String(rValues.rating || '') === String(i) ? 'selected' : '' %>><%= i %>/5</option>
+                <% } %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="comment">Commentaire</label>
+              <textarea id="comment" name="comment" rows="4" required minlength="10" maxlength="2000" placeholder="Votre expérience avec l’établissement…"><%= rValues.comment || '' %></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Envoyer mon avis</button>
+            <p class="form-hint">Les avis sont modérés avant publication. Pas de notes scolaires ni de noms d’élèves.</p>
+          </form>
+        <% } %>
+      </div>
+    </article>
+  </section>
+
   <section class="portal-section" id="contact">
     <article class="card portal-card portal-contact-card">
       <h2>Contact &amp; inscriptions</h2>
@@ -274,6 +342,8 @@
   </aside>
 
   <p class="portal-legal">Page publique EduConnect — Alliance Digitale Internationale. Canonical : <a href="<%= school.portalUrl %>"><%= school.portalUrl %></a></p>
+
+  <%- include('../partials/_portalPwaInstall') %>
 </div>
 <%- include('../partials/footer') %>
 <%- include('../partials/scripts') %>

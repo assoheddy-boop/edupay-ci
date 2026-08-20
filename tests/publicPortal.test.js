@@ -3,6 +3,10 @@ const {
   isPortalSlug,
   parsePublicPortalFields,
   sanitizeContact,
+  sanitizeReview,
+  parseCompareSlugs,
+  addCompareSlug,
+  removeCompareSlug,
   publicSchoolView,
   seoForSchool,
   seoForMarketplace,
@@ -137,6 +141,20 @@ describe('publicPortal helpers', () => {
       message: 'Je souhaite des informations sur les inscriptions.',
     });
     expect(good.ok).toBe(true);
+  });
+
+  test('review validation and compare slug helpers', () => {
+    const spam = sanitizeReview({ website: 'x', authorName: 'A', rating: 5, comment: 'abcdefghij' });
+    expect(spam.spam).toBe(true);
+    const good = sanitizeReview({
+      authorName: 'Marie',
+      rating: 4,
+      comment: 'École sérieuse, bonne ambiance.',
+    });
+    expect(good.ok).toBe(true);
+    expect(parseCompareSlugs('a,b,c,d')).toEqual(['a', 'b', 'c']);
+    expect(addCompareSlug('b,c', 'a')).toEqual(['a', 'b', 'c']);
+    expect(removeCompareSlug('a,b,c', 'b')).toEqual(['a', 'c']);
   });
 
   test('marketplace SEO targets écoles CI and robots keep private areas out of the index', () => {

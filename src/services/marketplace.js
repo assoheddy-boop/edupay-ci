@@ -9,6 +9,7 @@ const {
   parsePublicType,
   publicPostView,
   publicSchoolView,
+  publicReviewView,
 } = require('../utils/publicPortal');
 const {
   MARKETPLACE_MODULE,
@@ -575,6 +576,120 @@ async function listPublishedSchoolsForMap() {
   return schools;
 }
 
+async function listApprovedReviews(schoolId, take = 20) {
+  if (!schoolId || typeof prisma.schoolReview?.findMany !== 'function') return [];
+  try {
+    const rows = await prisma.schoolReview.findMany({
+      where: { schoolId, status: 'APPROVED' },
+      orderBy: { createdAt: 'desc' },
+      take,
+      select: {
+        id: true,
+        authorName: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+    });
+    return rows.map((row) => publicReviewView(row));
+  } catch {
+    return [];
+  }
+}
+
+async function getSchoolReviewSummary(schoolId) {
+  if (!schoolId || typeof prisma.schoolReview?.aggregate !== 'function') {
+    return { count: 0, average: null, averageText: null };
+  }
+  try {
+    const agg = await prisma.schoolReview.aggregate({
+      where: { schoolId, status: 'APPROVED' },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+    const count = agg._count._all || 0;
+    const average = agg._avg.rating != null ? Math.round(agg._avg.rating * 10) / 10 : null;
+    const averageText = average != null
+      ? `${String(average).replace('.', ',')}/5`
+      : null;
+    return { count, average, averageText };
+  } catch {
+    return { count: 0, average: null, averageText: null };
+  }
+}
+
+async function createSchoolReview(schoolId, data) {
+  if (!schoolId || typeof prisma.schoolReview?.create !== 'function') {
+    throw new Error('reviews_unavailable');
+  }
+  return prisma.schoolReview.create({
+    data: {
+      schoolId,
+      authorName: data.authorName,
+      rating: data.rating,
+      comment: data.comment,
+      status: 'PENDING',
+    },
+  });
+}
+
+async function findPublishedSchoolsBySlugs(slugs = []) {
+  const normalized = [...new Set(
+    (Array.isArray(slugs) ? slugs : [])
+      .map((s) => String(s || '').trim().toLowerCase())
+      .filter((s) => isPortalSlug(s)),
+  )].slice(0, 3);
+  if (!normalized.length) return [];
+  try {
+    const rows = await prisma.school.findMany({
+      where: {
+        ...publishedWhere(),
+        slug: { in: normalized },
+      },
+      select: publicSelect(true),
+    });
+    const bySlug = Object.fromEntries(rows.map((row) => [row.slug, row]));
+    return normalized.map((slug) => bySlug[slug]).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function listPendingSchoolReviews(limit = 50) {
+  if (typeof prisma.schoolReview?.findMany !== 'function') return [];
+  try {
+    return prisma.schoolReview.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      include: {
+        school: { select: { id: true, name: true, slug: true } },
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function updateSchoolReviewStatus(reviewId, status) {
+  if (!reviewId || typeof prisma.schoolReview?.update !== 'function') {
+    return { ok: false, error: 'unavailable' };
+  }
+  const next = String(status || '').toUpperCase();
+  if (!['APPROVED', 'REJECTED'].includes(next)) {
+    return { ok: false, error: 'status' };
+  }
+  try {
+    await prisma.schoolReview.update({
+      where: { id: reviewId },
+      data: { status: next },
+    });
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'not_found' };
+  }
+}
+
 module.exports = {
   MARKETPLACE_PAGE_SIZE,
   parseMarketplacePage,
@@ -587,6 +702,12 @@ module.exports = {
   listDistinctCommunes,
   listDistinctCities,
   listPublishedSchoolsForMap,
+  listApprovedReviews,
+  getSchoolReviewSummary,
+  createSchoolReview,
+  findPublishedSchoolsBySlugs,
+  listPendingSchoolReviews,
+  updateSchoolReviewStatus,
   sortFeaturedFirst,
   buildSitemapXml,
   fallbackSitemapXml,

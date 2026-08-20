@@ -60,4 +60,22 @@ const contactLimiter = rateLimit({
   ...vercelSafe,
 });
 
-module.exports = { authLimiter, uploadLimiter, apiLimiter, syncLimiter, childLinkLimiter, devisLimiter, contactLimiter };
+const reviewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: 'Trop d’avis envoyés. Réessayez dans 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...vercelSafe,
+});
+
+module.exports = {
+  authLimiter,
+  uploadLimiter,
+  apiLimiter,
+  syncLimiter,
+  childLinkLimiter,
+  devisLimiter,
+  contactLimiter,
+  reviewLimiter,
+};

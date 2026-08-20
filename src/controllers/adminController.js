@@ -1038,6 +1038,34 @@ async function sendMarketplaceReminder(req, res) {
   return res.redirect('/admin/marketplace?success=reminder');
 }
 
+async function marketplaceReviewsPage(req, res) {
+  const { listPendingSchoolReviews } = require('../services/marketplace');
+  const pending = await listPendingSchoolReviews(100);
+  res.render('admin/marketplace-reviews', {
+    user: req.user,
+    pending,
+    success: req.query.success || null,
+    error: req.query.error || null,
+  });
+}
+
+async function moderateSchoolReview(req, res) {
+  const { updateSchoolReviewStatus } = require('../services/marketplace');
+  const action = String(req.body.action || '').toLowerCase();
+  const status = action === 'approve' ? 'APPROVED' : action === 'reject' ? 'REJECTED' : null;
+  if (!status) return res.redirect('/admin/marketplace/avis?error=action');
+  const result = await updateSchoolReviewStatus(req.params.id, status);
+  if (!result.ok) return res.redirect('/admin/marketplace/avis?error=review');
+  await logAudit({
+    action: status === 'APPROVED' ? 'school_review_approve' : 'school_review_reject',
+    entity: 'SchoolReview',
+    entityId: req.params.id,
+    user: req.user,
+    ip: req.ip,
+  });
+  return res.redirect(`/admin/marketplace/avis?success=${status === 'APPROVED' ? 'approved' : 'rejected'}`);
+}
+
 async function startSchoolAssist(req, res) {
   const result = await beginSchoolAssist(req, res);
   if (result.status === 403) return res.status(403).send('Forbidden');
@@ -1095,4 +1123,6 @@ module.exports = {
   bulkRenewMarketplace,
   toggleMarketplaceFeatured,
   sendMarketplaceReminder,
+  marketplaceReviewsPage,
+  moderateSchoolReview,
 };

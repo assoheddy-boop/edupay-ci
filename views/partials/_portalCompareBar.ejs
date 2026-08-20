@@ -1,0 +1,17 @@
+<%
+  const slugs = (typeof compareSlugs !== 'undefined' && Array.isArray(compareSlugs)) ? compareSlugs : [];
+  const max = typeof compareMax !== 'undefined' ? compareMax : 3;
+%>
+<% if (slugs.length) { %>
+<aside class="portal-compare-bar" aria-label="Sélection comparateur">
+  <p><strong><%= slugs.length %></strong>/<%= max %> école<%= slugs.length > 1 ? 's' : '' %> sélectionnée<%= slugs.length > 1 ? 's' : '' %></p>
+  <div class="portal-compare-bar-actions">
+    <% if (slugs.length >= 2) { %>
+      <a class="btn btn-sm btn-primary" href="/ecoles/comparer?slugs=<%= slugs.join(',') %>">Comparer</a>
+    <% } else { %>
+      <span class="form-hint">Ajoutez une 2<sup>e</sup> école pour comparer.</span>
+    <% } %>
+    <a class="btn btn-sm btn-outline" href="/ecoles/comparer/clear">Vider</a>
+  </div>
+</aside>
+<% } %>

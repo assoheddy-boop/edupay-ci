@@ -1,0 +1,102 @@
+<%
+  const rows = (typeof schools !== 'undefined' && Array.isArray(schools)) ? schools : [];
+  const err = typeof compareError !== 'undefined' ? compareError : null;
+%>
+<%- include('../partials/head') %>
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles/comparer" aria-current="page">Comparer</a>
+      <a href="/auth/login">Connexion</a>
+    </nav>
+    <details class="portal-burger">
+      <summary aria-label="Ouvrir le menu">Menu</summary>
+      <nav class="portal-nav" aria-label="Menu mobile">
+        <a href="/ecoles">Écoles</a>
+        <a href="/ecoles/comparer">Comparer</a>
+        <a href="/auth/login">Connexion</a>
+      </nav>
+    </details>
+  </header>
+
+  <section class="portal-hero portal-hero-compact">
+    <div class="portal-hero-inner">
+      <p class="portal-kicker">Marketplace · Côte d’Ivoire</p>
+      <h1><%= typeof heading !== 'undefined' ? heading : 'Comparer des écoles' %></h1>
+      <p class="portal-lead"><%= typeof lead !== 'undefined' ? lead : 'Comparez jusqu’à 3 établissements publiés.' %></p>
+    </div>
+  </section>
+
+  <% if (err) { %>
+    <div class="portal-section">
+      <div class="alert alert-info card portal-card"><%= err %> <a href="/ecoles">Parcourir l’annuaire</a></div>
+    </div>
+  <% } else if (!rows.length) { %>
+    <div class="portal-section">
+      <div class="card portal-card">
+        <p>Aucune école publiée dans votre sélection. <a href="/ecoles">Retour à l’annuaire</a></p>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="portal-section portal-compare-wrap">
+      <div class="portal-compare-table-wrap card portal-card">
+        <table class="portal-compare-table">
+          <caption class="visually-hidden">Comparaison de <%= rows.length %> établissements</caption>
+          <thead>
+            <tr>
+              <th scope="col">Critère</th>
+              <% rows.forEach(function(s) { %>
+                <th scope="col"><%= s.name %></th>
+              <% }) %>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Palier / badge</th>
+              <% rows.forEach(function(s) { %>
+                <td>
+                  <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span> <% } %>
+                  <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
+                  <% if (!s.verifiedBadge && !s.marketplaceBadge) { %>Standard<% } %>
+                </td>
+              <% }) %>
+            </tr>
+            <tr>
+              <th scope="row">Commune / ville</th>
+              <% rows.forEach(function(s) { %>
+                <td><%= s.localityLabel || s.city %><% if (s.commune) { %> — <%= s.commune %><% } %></td>
+              <% }) %>
+            </tr>
+            <tr>
+              <th scope="row">Cycle</th>
+              <% rows.forEach(function(s) { %><td><%= s.cycleLabel %></td><% }) %>
+            </tr>
+            <tr>
+              <th scope="row">Type</th>
+              <% rows.forEach(function(s) { %><td><%= s.typeLabel %></td><% }) %>
+            </tr>
+            <tr>
+              <th scope="row">Présentation</th>
+              <% rows.forEach(function(s) { %>
+                <td><%= ((s.publicDescription || '').trim().slice(0, 160) || '—') %><%= (s.publicDescription || '').length > 160 ? '…' : '' %></td>
+              <% }) %>
+            </tr>
+            <tr>
+              <th scope="row">Vitrine</th>
+              <% rows.forEach(function(s) { %>
+                <td><a class="btn btn-sm btn-outline" href="<%= s.portalPath %>">Voir la page</a></td>
+              <% }) %>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="form-hint portal-compare-hint">Sélectionnez d’autres écoles depuis <a href="/ecoles">l’annuaire</a> avec le bouton « Comparer ».</p>
+    </div>
+  <% } %>
+
+  <%- include('../partials/_portalPwaInstall') %>
+</div>
+<%- include('../partials/footer') %>
+<%- include('../partials/scripts') %>

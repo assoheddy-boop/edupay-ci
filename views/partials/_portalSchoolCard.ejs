@@ -1,4 +1,4 @@
-<li>
+<li class="portal-school-card-wrap">
   <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
     <span class="portal-school-card-logo">
       <%- include('_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
@@ -12,4 +12,5 @@
       <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
     </span>
   </a>
+  <a class="portal-compare-add btn btn-sm btn-outline" href="/ecoles/comparer/add?slug=<%= s.slug %>" title="Ajouter au comparateur">Comparer</a>
 </li>

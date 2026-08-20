@@ -819,6 +819,74 @@ function sanitizeContact(body = {}) {
   return { ok: errors.length === 0, spam: false, errors, name, email, phone, message };
 }
 
+const COMPARE_MAX = 3;
+const COMPARE_COOKIE = 'ec_compare';
+
+function parseCompareSlugs(raw) {
+  const seen = new Set();
+  const slugs = [];
+  String(raw || '').split(',').forEach((part) => {
+    const slug = String(part || '').trim().toLowerCase();
+    if (!slug || seen.has(slug)) return;
+    seen.add(slug);
+    slugs.push(slug);
+  });
+  return slugs.slice(0, COMPARE_MAX);
+}
+
+function compareSlugsFromCookie(cookies = {}) {
+  return parseCompareSlugs(cookies[COMPARE_COOKIE]);
+}
+
+function addCompareSlug(existingRaw, slug) {
+  const slugNorm = String(slug || '').trim().toLowerCase();
+  const slugs = parseCompareSlugs(existingRaw).filter((s) => s !== slugNorm);
+  if (slugNorm) slugs.unshift(slugNorm);
+  return slugs.slice(0, COMPARE_MAX);
+}
+
+function removeCompareSlug(existingRaw, slug) {
+  const slugNorm = String(slug || '').trim().toLowerCase();
+  return parseCompareSlugs(existingRaw).filter((s) => s !== slugNorm);
+}
+
+function compareSlugsParam(raw) {
+  return parseCompareSlugs(raw).join(',');
+}
+
+function sanitizeReview(body = {}) {
+  const honeypot = String(body.website || body.company || '').trim();
+  const authorName = String(body.authorName || body.name || '').trim().slice(0, 120);
+  const ratingRaw = Number.parseInt(String(body.rating || ''), 10);
+  const comment = String(body.comment || '').trim().slice(0, 2000);
+  const errors = [];
+  if (honeypot) return { ok: false, spam: true, errors: [] };
+  if (!authorName) errors.push('Indiquez votre prénom ou pseudo.');
+  if (!Number.isFinite(ratingRaw) || ratingRaw < 1 || ratingRaw > 5) {
+    errors.push('Choisissez une note entre 1 et 5.');
+  }
+  if (comment.length < 10) errors.push('Le commentaire est trop court (10 caractères minimum).');
+  return {
+    ok: errors.length === 0,
+    spam: false,
+    errors,
+    authorName,
+    rating: ratingRaw,
+    comment,
+  };
+}
+
+function publicReviewView(review) {
+  if (!review) return null;
+  return {
+    id: review.id,
+    authorName: review.authorName,
+    rating: review.rating,
+    comment: review.comment,
+    createdAt: review.createdAt,
+  };
+}
+
 function parsePortalPostInput(body = {}) {
   const title = String(body.title || '').trim().slice(0, 160);
   const rawBody = String(body.body || '').trim().slice(0, 4000);
@@ -987,6 +1055,15 @@ module.exports = {
   jsonLdForMarketplace,
   jsonLdForHome,
   sanitizeContact,
+  sanitizeReview,
+  publicReviewView,
+  COMPARE_MAX,
+  COMPARE_COOKIE,
+  parseCompareSlugs,
+  compareSlugsFromCookie,
+  addCompareSlug,
+  removeCompareSlug,
+  compareSlugsParam,
   parsePortalPostInput,
   publicPostView,
   publicSchoolView,

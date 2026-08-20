@@ -16,6 +16,14 @@ const {
   jsonLdForSchool,
   jsonLdForMarketplace,
   sanitizeContact,
+  sanitizeReview,
+  compareSlugsFromCookie,
+  addCompareSlug,
+  removeCompareSlug,
+  parseCompareSlugs,
+  compareSlugsParam,
+  COMPARE_COOKIE,
+  COMPARE_MAX,
   publicSchoolView,
   cycleFilterOptions,
   typeFilterOptions,
@@ -34,6 +42,10 @@ const {
   listPortalPosts,
   buildSitemapXml,
   fallbackSitemapXml,
+  listApprovedReviews,
+  getSchoolReviewSummary,
+  createSchoolReview,
+  findPublishedSchoolsBySlugs,
 } = require('../services/marketplace');
 const { publicSchoolStats } = require('../services/publicPortalStats');
 const { recordPortalEvent } = require('../services/portalAnalytics');
@@ -48,9 +60,19 @@ function renderMissing(res, status = 404, message) {
   });
 }
 
+function portalPwaLocals() {
+  return {
+    portalPwa: true,
+    manifestHref: '/manifest-marketplace.json',
+    appleWebAppTitle: 'EduConnect Écoles',
+  };
+}
+
 async function schoolPageLocals(req, res, school, extra = {}) {
   const posts = extra.posts || await listPortalPosts(school.id);
   const stats = extra.stats || await publicSchoolStats(school.id);
+  const reviews = extra.reviews || await listApprovedReviews(school.id);
+  const reviewSummary = extra.reviewSummary || await getSchoolReviewSummary(school.id);
   const view = publicSchoolView(school, {
     classCount: school._count?.classes ?? null,
   });
@@ -61,6 +83,8 @@ async function schoolPageLocals(req, res, school, extra = {}) {
     school: view,
     posts,
     stats,
+    reviews,
+    reviewSummary,
     title: seo.title,
     metaDescription: seo.metaDescription,
     canonicalUrl: seo.canonicalUrl,
@@ -71,10 +95,15 @@ async function schoolPageLocals(req, res, school, extra = {}) {
     jsonLdJson: safeJson(jsonLd),
     robots: PUBLIC_ROBOTS,
     portalCss: true,
+    ...portalPwaLocals(),
     csrfToken: ensureCsrfToken(req, res),
     contactError: extra.contactError || null,
     contactSuccess: extra.contactSuccess || false,
     contactValues: extra.contactValues || {},
+    reviewError: extra.reviewError || null,
+    reviewSuccess: extra.reviewSuccess || false,
+    reviewValues: extra.reviewValues || {},
+    compareSlugs: compareSlugsFromCookie(req.cookies),
   };
 }
 
@@ -114,6 +143,7 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     listDistinctCities(),
   ]);
   const template = seoExtra.verifiedLanding ? 'portal/verified' : 'portal/marketplace';
+  const compareSlugs = compareSlugsFromCookie(req.cookies);
   return res.render(template, {
     user: null,
     title: seo.title,
@@ -128,6 +158,9 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     jsonLdJson: safeJson(jsonLd),
     robots: PUBLIC_ROBOTS,
     portalCss: true,
+    ...portalPwaLocals(),
+    compareSlugs,
+    compareMax: COMPARE_MAX,
     ville: filters.ville || '',
     commune: filters.commune || '',
     cycle: filters.cycle || '',
@@ -234,6 +267,113 @@ async function sendContact(req, res, next) {
   }
 }
 
+async function submitReview(req, res, next) {
+  try {
+    const school = await findPublishedSchool(req.params.slug);
+    if (!school) return renderMissing(res);
+
+    const parsed = sanitizeReview(req.body);
+    if (parsed.spam) {
+      return res.render('portal/school', await schoolPageLocals(req, res, school, { reviewSuccess: true }));
+    }
+    if (!parsed.ok) {
+      return res.status(400).render('portal/school', await schoolPageLocals(req, res, school, {
+        reviewError: parsed.errors.join(' '),
+        reviewValues: {
+          authorName: parsed.authorName,
+          rating: parsed.rating,
+          comment: parsed.comment,
+        },
+      }));
+    }
+
+    await createSchoolReview(school.id, {
+      authorName: parsed.authorName,
+      rating: parsed.rating,
+      comment: parsed.comment,
+    });
+
+    return res.render('portal/school', await schoolPageLocals(req, res, school, { reviewSuccess: true }));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+function compareCookieOptions() {
+  return {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: 'lax',
+  };
+}
+
+async function compareAdd(req, res) {
+  const slug = String(req.query.slug || '').trim().toLowerCase();
+  const referer = req.get('Referer') || '/ecoles';
+  if (!isPortalSlug(slug)) return res.redirect(referer);
+  const school = await findPublishedSchool(slug);
+  if (!school) return res.redirect(referer);
+  const next = compareSlugsParam(addCompareSlug(req.cookies?.[COMPARE_COOKIE], slug));
+  res.cookie(COMPARE_COOKIE, next, compareCookieOptions());
+  return res.redirect(referer);
+}
+
+async function compareRemove(req, res) {
+  const slug = String(req.query.slug || '').trim().toLowerCase();
+  const referer = req.get('Referer') || '/ecoles/comparer';
+  const next = compareSlugsParam(removeCompareSlug(req.cookies?.[COMPARE_COOKIE], slug));
+  if (next) {
+    res.cookie(COMPARE_COOKIE, next, compareCookieOptions());
+  } else {
+    res.clearCookie(COMPARE_COOKIE);
+  }
+  const slugs = parseCompareSlugs(next);
+  if (slugs.length >= 2) {
+    return res.redirect(`/ecoles/comparer?slugs=${next}`);
+  }
+  return res.redirect(referer);
+}
+
+async function compareClear(_req, res) {
+  res.clearCookie(COMPARE_COOKIE);
+  return res.redirect('/ecoles');
+}
+
+async function marketplaceCompare(req, res, next) {
+  try {
+    const fromQuery = parseCompareSlugs(req.query.slugs);
+    const fromCookie = compareSlugsFromCookie(req.cookies);
+    const slugs = fromQuery.length ? fromQuery : fromCookie;
+    if (fromQuery.length) {
+      res.cookie(COMPARE_COOKIE, compareSlugsParam(fromQuery), compareCookieOptions());
+    }
+    const rows = await findPublishedSchoolsBySlugs(slugs);
+    const schools = rows.map((row) => publicSchoolView(row, { includeBase64: false }));
+    const seo = seoForMarketplace({
+      heading: 'Comparer des écoles',
+      lead: 'Comparez jusqu’à 3 établissements publiés sur EduConnect.',
+      canonicalPath: '/ecoles/comparer',
+    });
+    return res.render('portal/compare', {
+      user: null,
+      title: seo.title,
+      heading: 'Comparer des écoles',
+      lead: seo.lead,
+      metaDescription: 'Comparez nom, palier, commune, cycle et type de 2 à 3 écoles publiées sur EduConnect.',
+      canonicalUrl: `${SITE_ORIGIN}/ecoles/comparer`,
+      robots: PUBLIC_ROBOTS,
+      portalCss: true,
+      ...portalPwaLocals(),
+      schools,
+      compareSlugs: slugs,
+      compareMax: COMPARE_MAX,
+      compareError: slugs.length < 2 ? 'Sélectionnez au moins 2 écoles depuis l’annuaire.' : null,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function marketplace(req, res, next) {
   try {
     const q = String(req.query.q || '').trim();
@@ -325,6 +465,7 @@ async function marketplaceMap(req, res, next) {
       ogImage: seo.ogImage,
       robots: PUBLIC_ROBOTS,
       portalCss: true,
+      ...portalPwaLocals(),
       markers,
       markerCount: markers.length,
       mapCenter: { lat: 5.3364, lng: -4.0267, zoom: 11 },
@@ -351,6 +492,7 @@ async function organizationPage(req, res, next) {
       canonicalUrl: `${SITE_ORIGIN}${organizationPortalPath(organization.slug)}`,
       robots: PUBLIC_ROBOTS,
       portalCss: true,
+      ...portalPwaLocals(),
       organization: {
         name: organization.name,
         slug: organization.slug,
@@ -390,6 +532,7 @@ function robots(_req, res) {
     'Allow: /',
     'Allow: /ecoles',
     'Allow: /ecoles/carte',
+    'Allow: /ecoles/comparer',
     'Allow: /ecoles/verifies',
     'Allow: /e/',
     'Disallow: /auth',
@@ -424,6 +567,11 @@ module.exports = {
   goPayer,
   goConnexion,
   sendContact,
+  submitReview,
+  compareAdd,
+  compareRemove,
+  compareClear,
+  marketplaceCompare,
   marketplace,
   marketplaceMap,
   verifiedMarketplace,

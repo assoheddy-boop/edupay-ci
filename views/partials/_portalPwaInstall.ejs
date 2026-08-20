@@ -1,0 +1,34 @@
+<% if (typeof portalPwa !== 'undefined' && portalPwa) { %>
+<div id="portal-pwa-install" class="portal-pwa-banner" hidden role="region" aria-label="Installation application">
+  <p>Installez l’annuaire <strong>EduConnect Écoles</strong> sur votre téléphone pour un accès rapide.</p>
+  <div class="portal-pwa-banner-actions">
+    <button type="button" id="portal-pwa-install-btn" class="btn btn-sm btn-primary">Ajouter à l’écran d’accueil</button>
+    <button type="button" id="portal-pwa-dismiss" class="btn btn-sm btn-outline">Plus tard</button>
+  </div>
+</div>
+<script>
+(function () {
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  var banner = document.getElementById('portal-pwa-install');
+  if (!banner || localStorage.getItem('portal-pwa-dismissed')) return;
+  var deferred;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    banner.hidden = false;
+  });
+  document.getElementById('portal-pwa-install-btn')?.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.finally(function () {
+      deferred = null;
+      banner.hidden = true;
+    });
+  });
+  document.getElementById('portal-pwa-dismiss')?.addEventListener('click', function () {
+    localStorage.setItem('portal-pwa-dismissed', '1');
+    banner.hidden = true;
+  });
+})();
+</script>
+<% } %>

@@ -1,0 +1,65 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('marketplace-reviews', { _inLayout: true }); %>
+<%- include('../layouts/adminLayout', { body: content, title: 'Avis parents — Marketplace' }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Avis parents</h1>
+    <p class="page-sub">Modération des avis sur les vitrines /e/:slug — affichage public après validation.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="/admin/marketplace" class="btn btn-outline">Marketplace</a>
+    <a href="/ecoles" class="btn btn-outline" target="_blank" rel="noopener">Ouvrir /ecoles</a>
+  </div>
+</div>
+<%- include('../partials/_adminHubNav', { currentPath: 'marketplace' }) %>
+
+<% if (success === 'approved') { %><div class="alert alert-success">Avis approuvé et visible sur la vitrine.</div><% } %>
+<% if (success === 'rejected') { %><div class="alert alert-success">Avis refusé.</div><% } %>
+<% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error">Action impossible.</div><% } %>
+
+<div class="card">
+  <% if (!pending.length) { %>
+    <p>Aucun avis en attente de modération.</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table class="table table-compact">
+        <thead>
+          <tr>
+            <th>École</th>
+            <th>Auteur</th>
+            <th>Note</th>
+            <th>Commentaire</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% pending.forEach(function(r) { %>
+            <tr>
+              <td>
+                <strong><%= r.school.name %></strong>
+                <% if (r.school.slug) { %><br><a href="/e/<%= r.school.slug %>" target="_blank" rel="noopener">/e/<%= r.school.slug %></a><% } %>
+              </td>
+              <td><%= r.authorName %></td>
+              <td><%= r.rating %>/5</td>
+              <td style="max-width:20rem"><%= r.comment %></td>
+              <td><%= new Date(r.createdAt).toLocaleDateString('fr-FR') %></td>
+              <td class="assist-actions">
+                <form method="POST" action="/admin/marketplace/avis/<%= r.id %>" style="display:inline">
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" class="btn btn-sm btn-primary">Approuver</button>
+                </form>
+                <form method="POST" action="/admin/marketplace/avis/<%= r.id %>" style="display:inline">
+                  <input type="hidden" name="action" value="reject">
+                  <button type="submit" class="btn btn-sm btn-outline">Refuser</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<% } %>

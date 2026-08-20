@@ -91,6 +91,13 @@ enum PortalPostKind {
   EVENT
 }
 
+/// Avis parent sur vitrine /e/:slug — modération admin avant affichage.
+enum SchoolReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum NotificationType {
   ABSENCE
   LATE
@@ -344,6 +351,7 @@ model School {
   examSessions         ExamSession[]
   portalPosts          PortalPost[]
   portalAnalyticsDays  PortalAnalyticsDay[]
+  schoolReviews        SchoolReview[]
   staffAssignments     SchoolStaffAssignment[]
   supplierInvoices     SupplierInvoice[]
   budgetLines          BudgetLine[]
@@ -387,6 +395,22 @@ model PortalPost {
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId, publishedAt])
+}
+
+/// Avis parent modéré (vitrine publique uniquement).
+model SchoolReview {
+  id         String             @id @default(cuid())
+  schoolId   String
+  school     School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  authorName String
+  rating     Int
+  comment    String             @db.Text
+  status     SchoolReviewStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([schoolId, status])
+  @@index([status, createdAt])
 }
 
 model SubscriptionPlan {

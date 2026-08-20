@@ -1,13 +1,16 @@
-const CACHE = 'educonnect-offline-v4';
+const CACHE = 'educonnect-offline-v5';
 const SHELL = [
   '/offline',
   '/css/main.css',
   '/css/main.css?v=10',
+  '/css/portal.css',
+  '/css/portal.css?v=9',
   '/js/app.js',
   '/js/app.js?v=8',
   '/js/offline.js',
   '/js/offline.js?v=6',
   '/manifest.json',
+  '/manifest-marketplace.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ];
@@ -30,7 +33,7 @@ self.addEventListener('activate', (event) => {
 function isStaticAsset(url) {
   if (url.origin !== self.location.origin) return false;
   const path = url.pathname;
-  if (path === '/offline' || path === '/manifest.json') return true;
+  if (path === '/offline' || path === '/manifest.json' || path === '/manifest-marketplace.json') return true;
   return /\.(css|js|png|jpg|jpeg|webp|svg|woff2?|ico)$/i.test(path);
 }
 

@@ -18,6 +18,12 @@ jest.mock('../src/config/database', () => ({
   subject: {
     findMany: jest.fn(),
   },
+  schoolReview: {
+    findMany: jest.fn(),
+    aggregate: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
 }));
 
 jest.mock('../src/services/email', () => ({
@@ -81,6 +87,8 @@ function mockEmptyPortalExtras() {
   prisma.portalPost.findMany.mockResolvedValue([]);
   prisma.student.findMany.mockResolvedValue([]);
   prisma.subject.findMany.mockResolvedValue([]);
+  prisma.schoolReview.findMany.mockResolvedValue([]);
+  prisma.schoolReview.aggregate.mockResolvedValue({ _avg: { rating: null }, _count: { _all: 0 } });
 }
 
 describe('Public school portal', () => {
@@ -634,5 +642,96 @@ describe('SEO sitemap and robots', () => {
     expect(login.status).toBe(200);
     expect(login.text).toMatch(/name="robots" content="noindex, nofollow"/);
     expect(login.headers['x-robots-tag']).toMatch(/noindex/i);
+  });
+});
+
+describe('Marketplace reviews and compare', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.school.findFirst.mockResolvedValue(null);
+    prisma.school.findMany.mockResolvedValue([]);
+    mockEmptyPortalExtras();
+  });
+
+  test('GET /e/:slug shows review form and approved reviews', async () => {
+    prisma.school.findFirst.mockResolvedValue(publishedSchool());
+    prisma.schoolReview.findMany.mockResolvedValue([{
+      id: 'rev1',
+      authorName: 'Awa',
+      rating: 5,
+      comment: 'Très bon accueil et suivi pédagogique.',
+      createdAt: new Date('2026-08-01'),
+    }]);
+    prisma.schoolReview.aggregate.mockResolvedValue({ _avg: { rating: 5 }, _count: { _all: 1 } });
+    const res = await request(app).get(`/e/${SLUG}`);
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Avis des parents/);
+    expect(res.text).toMatch(/5\/5/);
+    expect(res.text).toMatch(/Très bon accueil/);
+    expect(res.text).toMatch(/name="authorName"/);
+  });
+
+  test('POST /e/:slug/avis creates pending review with CSRF', async () => {
+    prisma.school.findFirst.mockResolvedValue(publishedSchool());
+    prisma.schoolReview.create.mockResolvedValue({ id: 'rev_new' });
+    const page = await request(app).get(`/e/${SLUG}`);
+    const token = csrfFrom(page);
+    const cookies = [].concat(page.headers['set-cookie'] || []).join('; ');
+    const res = await request(app)
+      .post(`/e/${SLUG}/avis`)
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        authorName: 'Kofi',
+        rating: '4',
+        comment: 'Bonne école, communication claire avec les parents.',
+      });
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/modération/);
+    expect(prisma.schoolReview.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        authorName: 'Kofi',
+        rating: 4,
+        status: 'PENDING',
+      }),
+    }));
+  });
+
+  test('GET /ecoles/comparer requires at least 2 schools', async () => {
+    const res = await request(app).get('/ecoles/comparer?slugs=igest-yopougon-sideci');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/au moins 2 écoles/i);
+  });
+
+  test('GET /ecoles/comparer renders side-by-side table', async () => {
+    const other = publishedSchool({
+      id: 'sch_other',
+      name: 'Lycée Moderne',
+      slug: 'lycee-moderne',
+    });
+    prisma.school.findMany.mockResolvedValue([publishedSchool(), other]);
+    const res = await request(app).get('/ecoles/comparer?slugs=igest-yopougon-sideci,lycee-moderne');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/portal-compare-table/);
+    expect(res.text).toMatch(/IGEST/);
+    expect(res.text).toMatch(/Lycée Moderne/);
+  });
+
+  test('GET /ecoles includes compare button and marketplace manifest', async () => {
+    prisma.school.findMany.mockResolvedValue([publishedSchool()]);
+    const res = await request(app).get('/ecoles');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/portal-compare-add/);
+    expect(res.text).toMatch(/manifest-marketplace\.json/);
+    expect(res.text).toMatch(/Comparer des écoles/);
+  });
+
+  test('GET /ecoles/comparer/add sets compare cookie', async () => {
+    prisma.school.findFirst.mockResolvedValue(publishedSchool());
+    const res = await request(app).get(`/ecoles/comparer/add?slug=${SLUG}`);
+    expect(res.status).toBe(302);
+    expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([
+      expect.stringMatching(/ec_compare=igest-yopougon-sideci/),
+    ]));
   });
 });

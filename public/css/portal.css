@@ -918,3 +918,165 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.portal-school-card-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.portal-compare-add {
+  align-self: flex-start;
+  margin-left: 0.25rem;
+}
+
+.portal-compare-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 1rem 1rem;
+  padding: 0.75rem 1rem;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(0, 82, 204, 0.08);
+  border: 1px solid rgba(0, 82, 204, 0.15);
+  border-radius: 12px;
+}
+
+.portal-compare-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-compare-wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.portal-compare-table-wrap {
+  overflow-x: auto;
+}
+
+.portal-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.portal-compare-table th,
+.portal-compare-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 82, 204, 0.12);
+  vertical-align: top;
+  text-align: left;
+}
+
+.portal-compare-table thead th {
+  background: rgba(0, 82, 204, 0.06);
+}
+
+.portal-compare-hint {
+  margin-top: 0.75rem;
+}
+
+.portal-reviews {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.portal-review-item {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 82, 204, 0.1);
+}
+
+.portal-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.portal-review-stars {
+  color: #e6a700;
+  letter-spacing: 0.05em;
+}
+
+.portal-review-summary {
+  margin-bottom: 1rem;
+}
+
+.portal-review-form-wrap {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 82, 204, 0.1);
+}
+
+.portal-pwa-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0));
+  background: #fff;
+  border-top: 1px solid rgba(0, 82, 204, 0.15);
+  box-shadow: 0 -4px 24px rgba(10, 37, 64, 0.12);
+}
+
+.portal-pwa-banner[hidden] {
+  display: none !important;
+}
+
+.portal-pwa-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .portal-compare-table thead {
+    display: none;
+  }
+
+  .portal-compare-table tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 82, 204, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .portal-compare-table td,
+  .portal-compare-table th[scope="row"] {
+    display: block;
+    width: 100%;
+  }
+
+  .portal-compare-table th[scope="row"] {
+    background: rgba(0, 82, 204, 0.06);
+    font-weight: 600;
+  }
+
+  .portal-compare-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    color: #5a6b7d;
+    margin-bottom: 0.15rem;
+  }
+}

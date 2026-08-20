@@ -41,6 +41,8 @@ router.post('/marketplace/:id/renew', auditMiddleware('school_marketplace_renew'
 router.post('/marketplace/bulk-renew', auditMiddleware('school_marketplace_renew', 'School'), adminController.bulkRenewMarketplace);
 router.post('/marketplace/:id/featured', auditMiddleware('school_featured_update', 'School'), adminController.toggleMarketplaceFeatured);
 router.post('/marketplace/:id/reminder', auditMiddleware('school_marketplace_reminder', 'School'), adminController.sendMarketplaceReminder);
+router.get('/marketplace/avis', adminController.marketplaceReviewsPage);
+router.post('/marketplace/avis/:id', auditMiddleware('school_review_moderate', 'SchoolReview'), adminController.moderateSchoolReview);
 router.post('/modules/matrix', auditMiddleware('school_modules_matrix', 'SchoolModule'), adminController.updateModulesMatrix);
 router.get('/organizations', adminController.organizations);
 router.post('/organizations', adminController.createOrganization);
