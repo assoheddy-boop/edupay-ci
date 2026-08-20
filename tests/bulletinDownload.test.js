@@ -38,7 +38,7 @@ describe('bulletin download routes', () => {
     streamBulletinPdf.mockResolvedValue({
       ok: true,
       buffer: Buffer.from('%PDF-1.4'),
-      filename: 'bulletin-t1-kouame-mohamed.pdf',
+      filename: 'Bulletin-Trimestre-1-KOUAME-Mohamed.pdf',
     });
 
     const req = {
@@ -56,7 +56,7 @@ describe('bulletin download routes', () => {
       school: req.user.school,
     });
     expect(res.headers['Content-Type']).toBe('application/pdf');
-    expect(res.headers['Content-Disposition']).toBe('attachment; filename="bulletin-t1-kouame-mohamed.pdf"');
+    expect(res.headers['Content-Disposition']).toBe('attachment; filename="Bulletin-Trimestre-1-KOUAME-Mohamed.pdf"');
     expect(res.body).toEqual(Buffer.from('%PDF-1.4'));
   });
 
@@ -89,7 +89,7 @@ describe('bulletin download routes', () => {
     streamBulletinPdf.mockResolvedValue({
       ok: true,
       buffer: Buffer.from('%PDF-parent'),
-      filename: 'bulletin-t1-kouame-mohamed.pdf',
+      filename: 'Bulletin-Trimestre-1-KOUAME-Mohamed.pdf',
     });
 
     const req = {
