@@ -2,9 +2,56 @@ const fs = require('fs');
 const path = require('path');
 const ejs = require('ejs');
 const { cycleFlags } = require('../src/utils/educationCycle');
+const { attachStaffContext, PERMISSIONS } = require('../src/utils/staffPermissions');
 
 const sidebarPath = path.join(__dirname, '../views/partials/_sidebar.ejs');
 const sidebar = fs.readFileSync(sidebarPath, 'utf8');
+
+const SCHOOL_ID = 'sch-sidebar';
+const SCHOOL = { id: SCHOOL_ID, name: 'Test', slug: 'test', educationCycle: 'COLLEGE', adminId: 'u-director' };
+
+function staffUser(staffRole) {
+  return {
+    id: 'u-staff',
+    role: 'SCHOOL_ADMIN',
+    school: { ...SCHOOL, adminId: 'u-director' },
+    staffAssignments: [{ schoolId: SCHOOL_ID, staffRole, school: SCHOOL }],
+  };
+}
+
+function renderStaffSidebar(staffRole, cycleValue = 'COLLEGE') {
+  const user = staffUser(staffRole);
+  const ctx = attachStaffContext(user, SCHOOL_ID);
+  return ejs.render(
+    sidebar,
+    {
+      user,
+      modules: {
+        hr: { enabled: true },
+        bulletins: { enabled: true },
+        payments: { enabled: true },
+        accounting: { enabled: true },
+        absences: { enabled: true },
+        canteen: { enabled: true },
+        lost_items: { enabled: true },
+        activities: { enabled: true },
+        pickup: { enabled: true },
+        chat: { enabled: true },
+        sms_official: { enabled: true },
+        stats: { enabled: true },
+        homeworks: { enabled: true },
+        marketplace: { enabled: true },
+      },
+      adminAssist: null,
+      cycle: cycleFlags(cycleValue),
+      unreadNotifications: 0,
+      staffCan: ctx.staffCan,
+      staffRole: ctx.staffRole,
+      staffRoleLabel: ctx.staffRoleLabel,
+    },
+    { filename: sidebarPath },
+  );
+}
 
 function renderSchoolSidebar(cycleValue) {
   return ejs.render(
@@ -166,5 +213,54 @@ describe('sidebar by education cycle', () => {
     expect(html).toContain('Délibérations');
     expect(html).toContain('Palmarès');
     expect(html).toContain('Convocations (blanc + national)');
+  });
+});
+
+describe('sidebar RBAC by staff role', () => {
+  test('SECRETARIAT hides settings, HR, accounting, coefficients', () => {
+    const html = renderStaffSidebar('SECRETARIAT');
+    expect(html).toContain('/school/students');
+    expect(html).toContain('/school/bulletins');
+    expect(html).toContain('/school/caisse');
+    expect(html).not.toContain('/school/settings');
+    expect(html).not.toContain('/school/hr');
+    expect(html).not.toContain('/school/accounting');
+    expect(html).not.toContain('/school/coefficients');
+    expect(html).not.toContain('/school/staff-roles');
+  });
+
+  test('ACCOUNTANT shows accounting only, hides bulletins admin and settings', () => {
+    const html = renderStaffSidebar('ACCOUNTANT');
+    expect(html).toContain('/school/accounting');
+    expect(html).toContain('/school/fees');
+    expect(html).not.toContain('/school/bulletins');
+    expect(html).not.toContain('/school/settings');
+    expect(html).not.toContain('/school/hr');
+    expect(html).not.toContain('/school/students');
+    expect(html).not.toContain('/school/coefficients');
+    expect(html).not.toContain('/school/caisse');
+  });
+
+  test('EDUCATOR shows absences and social cases, hides finances and exam admin', () => {
+    const html = renderStaffSidebar('EDUCATOR');
+    expect(html).toContain('/school/justificatifs');
+    expect(html).toContain('/school/cas-sociaux');
+    expect(html).toContain('/school/students');
+    expect(html).not.toContain('/school/bulletins');
+    expect(html).not.toContain('/school/accounting');
+    expect(html).not.toContain('/school/settings');
+    expect(html).not.toContain('/school/payments');
+  });
+
+  test('LIFE_SCHOOL shows vie scolaire modules, hides admin and finances', () => {
+    const html = renderStaffSidebar('LIFE_SCHOOL');
+    expect(html).toContain('/school/canteen');
+    expect(html).toContain('/school/activities');
+    expect(html).toContain('/school/pickup');
+    expect(html).toContain('/school/lost-items');
+    expect(html).not.toContain('/school/settings');
+    expect(html).not.toContain('/school/accounting');
+    expect(html).not.toContain('/school/bulletins');
+    expect(html).not.toContain('/school/fees');
   });
 });

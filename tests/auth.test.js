@@ -23,6 +23,17 @@ describe('Auth flows', () => {
     expect(res.text).toMatch(/incorrect/i);
   });
 
+  test('POST /auth/login normalizes email case', async () => {
+    const res = await request(app)
+      .post('/auth/login')
+      .type('form')
+      .send({ email: 'PARENT@demo.ci', password: 'demo1234', role: 'parent' });
+    expect([200, 302]).toContain(res.status);
+    if (res.status === 302) {
+      expect(res.headers.location).toMatch(/parent/);
+    }
+  });
+
   test('POST /auth/login with demo parent', async () => {
     const res = await request(app)
       .post('/auth/login')

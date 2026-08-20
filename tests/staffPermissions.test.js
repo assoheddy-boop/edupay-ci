@@ -95,6 +95,21 @@ describe('getEffectiveStaffRole', () => {
     expect(getEffectiveStaffRole(staffUser('SECRETARIAT'), SCHOOL_ID)).toBe('SECRETARIAT');
   });
 
+  test('staff with school hydrated from loadUser keeps assigned role', () => {
+    const user = staffUser('ACCOUNTANT');
+    user.school = { id: SCHOOL_ID, adminId: 'u-director', name: 'Test' };
+    expect(getEffectiveStaffRole(user, SCHOOL_ID)).toBe('ACCOUNTANT');
+    expect(isSchoolPrimaryAdmin(user, SCHOOL_ID)).toBe(false);
+  });
+
+  test('hydrated school does not grant DIRECTOR to secretariat', () => {
+    const user = staffUser('SECRETARIAT');
+    user.school = user.staffAssignments[0].school;
+    user.school.adminId = 'u-director';
+    expect(getEffectiveStaffRole(user, SCHOOL_ID)).toBe('SECRETARIAT');
+    expect(hasPermission(user, PERMISSIONS.SETTINGS_WRITE, SCHOOL_ID)).toBe(false);
+  });
+
   test('SUPER_ADMIN assisting school is DIRECTOR', () => {
     const user = {
       role: 'SUPER_ADMIN',
@@ -216,5 +231,11 @@ describe('requirePermission middleware', () => {
   test('isSchoolPrimaryAdmin detects titular director', () => {
     expect(isSchoolPrimaryAdmin(schoolAdmin({ id: 'u-director' }), SCHOOL_ID)).toBe(true);
     expect(isSchoolPrimaryAdmin(staffUser('SECRETARIAT'), SCHOOL_ID)).toBe(false);
+  });
+
+  test('isSchoolPrimaryAdmin rejects staff with hydrated school', () => {
+    const user = staffUser('SECRETARIAT');
+    user.school = { id: SCHOOL_ID, adminId: 'u-director' };
+    expect(isSchoolPrimaryAdmin(user, SCHOOL_ID)).toBe(false);
   });
 });

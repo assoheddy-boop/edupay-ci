@@ -106,6 +106,7 @@ async function loadUser(userId) {
   });
 
   if (user && !user.school && user.staffAssignments?.length === 1) {
+    // UI branding only — RBAC uses SchoolStaffAssignment + School.adminId, not this relation.
     user.school = user.staffAssignments[0].school;
   }
 

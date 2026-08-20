@@ -47,7 +47,8 @@ async function showRegister(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const { password } = req.body;
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });

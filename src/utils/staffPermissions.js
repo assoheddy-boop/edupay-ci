@@ -119,7 +119,9 @@ const ROLE_PERMISSIONS = Object.freeze({
 });
 
 function isSchoolPrimaryAdmin(user, schoolId) {
-  return Boolean(user?.school?.id && user.school.id === schoolId);
+  if (!user?.id || !schoolId) return false;
+  // Titular director only: School.adminId === user.id (not staff with hydrated school).
+  return Boolean(user.school?.id === schoolId && user.school.adminId === user.id);
 }
 
 function findStaffAssignment(user, schoolId) {
@@ -144,8 +146,6 @@ function getEffectiveStaffRole(user, schoolId) {
 
   const assignment = findStaffAssignment(user, schoolId);
   if (assignment) return assignment.staffRole;
-
-  if (user.school?.id === schoolId) return 'DIRECTOR';
 
   return null;
 }
