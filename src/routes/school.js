@@ -1,5 +1,6 @@
 const express = require('express');
 const schoolController = require('../controllers/schoolController');
+const studentSituationController = require('../controllers/studentSituationController');
 const enrollmentController = require('../controllers/enrollmentController');
 const messageController = require('../controllers/messageController');
 const statsController = require('../controllers/statsController');
@@ -79,6 +80,7 @@ router.post('/classes/:id/update', requirePermission(P.CLASSES_WRITE), classRule
 router.post('/classes/:id/delete', requirePermission(P.CLASSES_WRITE), schoolController.deleteClass);
 
 router.get('/students', requirePermission(P.STUDENTS_READ), schoolController.listStudents);
+router.get('/students/:id', requirePermission(P.STUDENTS_READ), studentSituationController.showPage);
 
 router.get('/inscriptions', requirePermission(P.ENROLLMENTS_READ), enrollmentController.listPage);
 router.get('/inscriptions/recherche', requirePermission(P.ENROLLMENTS_READ), enrollmentController.searchMen);

@@ -1,0 +1,304 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('studentSituation', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: title || 'Situation élève' }) %>
+<% } else { %>
+<% const can = typeof staffCan === 'function' ? staffCan : () => true; %>
+<% const s = student; %>
+<% const sec = sections || {}; %>
+
+<div class="page-header">
+  <div>
+    <h1><%= s.lastName %> <%= s.firstName %></h1>
+    <p class="page-sub">
+      Situation complète — <%= schoolYear %>
+      <% if (staffRoleLabel) { %> · vue <strong><%= staffRoleLabel %></strong><% } %>
+    </p>
+  </div>
+  <div class="page-header-actions">
+    <a href="<%= backUrl %>" class="btn btn-outline btn-sm">← Retour</a>
+    <% if (can('enrollments:read')) { %>
+      <a href="/school/inscriptions/<%= s.id %>" class="btn btn-outline btn-sm">Fiche inscription</a>
+    <% } %>
+    <% if (can('certificates:write')) { %>
+      <a href="/school/inscriptions/<%= s.id %>/certificat-scolarite.pdf" class="btn btn-outline btn-sm" target="_blank" rel="noopener">Certificat</a>
+    <% } %>
+    <% if (can('caisse:write')) { %>
+      <a href="/school/caisse?studentId=<%= s.id %>" class="btn btn-primary btn-sm">Caisse</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="card student-situation-header">
+  <div class="student-situation-identity">
+    <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'lg' }) %>
+    <div>
+      <p><strong>Classe :</strong> <%= s.class ? s.class.name : '—' %><% if (s.class && s.class.level) { %> (<%= s.class.level %>)<% } %></p>
+      <p><strong>Matricule école :</strong> <code><%= s.matricule || '—' %></code></p>
+      <p><strong>Matricule national :</strong> <code><%= s.nationalMatricule || '—' %></code></p>
+      <% if (s.birthDate) { %>
+        <p><strong>Né(e) le :</strong> <%= new Date(s.birthDate).toLocaleDateString('fr-FR') %><% if (s.birthPlace) { %> à <%= s.birthPlace %><% } %></p>
+      <% } %>
+      <% if (s.gender) { %><p><strong>Sexe :</strong> <%= s.gender === 'F' ? 'Féminin' : 'Masculin' %></p><% } %>
+      <% if (s.series || (s.class && s.class.series)) { %>
+        <p><strong>Série :</strong> <%= typeof seriesLabel === 'function' ? seriesLabel(s.series || s.class.series) : (s.series || s.class.series) %></p>
+      <% } %>
+      <% if (s.user) { %><p><strong>Compte élève :</strong> <%= s.user.email %></p><% } %>
+    </div>
+  </div>
+  <% if (s.parents && s.parents.length) { %>
+    <div class="student-situation-parents">
+      <h3>Parents / tuteurs</h3>
+      <ul>
+        <% s.parents.forEach(function(link) { const p = link.parent; %>
+          <li><%= p.user ? ((p.user.firstName || '') + ' ' + (p.user.lastName || '')).trim() || p.user.email : 'Parent' %><% if (p.user && p.user.email) { %> — <%= p.user.email %><% } %></li>
+        <% }) %>
+      </ul>
+    </div>
+  <% } %>
+  <% if (s.fatherName || s.motherName || s.guardianName) { %>
+    <div class="student-situation-parents">
+      <h3>Famille (fiche)</h3>
+      <% if (s.fatherName) { %><p>Père : <%= s.fatherName %></p><% } %>
+      <% if (s.motherName) { %><p>Mère : <%= s.motherName %></p><% } %>
+      <% if (s.guardianName) { %><p>Tuteur : <%= s.guardianName %><% if (s.guardianPhone) { %> — <%= s.guardianPhone %><% } %></p><% } %>
+      <% if (s.contactPhone) { %><p>Contact : <%= s.contactPhone %></p><% } %>
+    </div>
+  <% } %>
+</div>
+
+<div class="situation-sections">
+  <% if (can('stats:read') && sec.risk) { %>
+  <section class="card situation-block risk-<%= sec.risk.level ? sec.risk.level.toLowerCase() : 'faible' %>">
+    <h2>Suivi pédagogique (<%= sec.riskTerm ? formatTermLabel(sec.riskTerm) : 'trimestre' %>)</h2>
+    <p class="situation-highlight"><span class="badge"><%= sec.risk.label %></span> — <%= sec.risk.motif %></p>
+    <a href="/school/risques" class="btn btn-outline btn-sm">Voir tous les élèves à suivre</a>
+  </section>
+  <% } %>
+
+  <% if (can('enrollments:read') && sec.enrollment) { %>
+  <section class="card situation-block">
+    <h2>Inscription <%= schoolYear %></h2>
+    <p><strong>Statut :</strong> <%= sec.enrollment.statusLabel || '—' %></p>
+    <% if (sec.enrollment.enrollment) { %>
+      <% if (sec.enrollment.enrollment.lv2) { %><p><strong>LV2 :</strong> <%= sec.enrollment.enrollment.lv2 %></p><% } %>
+      <% if (sec.enrollment.enrollment.previousSchool) { %><p><strong>Provenance :</strong> <%= sec.enrollment.enrollment.previousSchool %></p><% } %>
+      <% if (sec.enrollment.enrollment.notes) { %><p><strong>Observations :</strong> <%= sec.enrollment.enrollment.notes %></p><% } %>
+    <% } %>
+    <% if (sec.reinscription) { %>
+      <p><strong>Réinscription <%= schoolYear %> :</strong>
+        <%= sec.reinscription.enrolled ? (sec.reinscription.repeatYear ? 'Redoublant' : 'Promu') : 'Non réinscrit' %>
+        <% if (sec.reinscription.newClass) { %> → <%= sec.reinscription.newClass.level ? sec.reinscription.newClass.level + ' — ' : '' %><%= sec.reinscription.newClass.name %><% } %>
+      </p>
+    <% } %>
+    <a href="/school/inscriptions/<%= s.id %>" class="btn btn-outline btn-sm">Ouvrir la fiche</a>
+    <% if (sec.yearHistory && sec.yearHistory.length) { %>
+      <h3 style="margin-top:1rem">Parcours</h3>
+      <table class="data-table compact">
+        <thead><tr><th>Année</th><th>Classe</th><th>Redoublant</th></tr></thead>
+        <tbody>
+          <% sec.yearHistory.forEach(function(yr) { %>
+            <tr>
+              <td><%= yr.schoolYear %></td>
+              <td><%= yr.class ? yr.class.name : '—' %></td>
+              <td><%= yr.repeatYear ? 'Oui' : 'Non' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </section>
+  <% } %>
+
+  <% if ((can('fees:read') || can('payments:read')) && sec.finance) { %>
+  <section class="card situation-block">
+    <h2>Scolarité & paiements</h2>
+    <p>
+      <strong>Total dû :</strong> <%= (sec.finance.totalDue || 0).toLocaleString('fr-FR') %> FCFA ·
+      <strong>Payé :</strong> <%= (sec.finance.totalPaid || 0).toLocaleString('fr-FR') %> FCFA ·
+      <strong>Reste :</strong> <span class="<%= sec.finance.totalRemaining > 0 ? 'text-warning' : '' %>"><%= (sec.finance.totalRemaining || 0).toLocaleString('fr-FR') %> FCFA</span>
+    </p>
+    <% if (sec.finance.hasRemise && sec.finance.socialCase) { %>
+      <p class="form-hint">Remise active : <%= typeof motifLabel === 'function' ? motifLabel(sec.finance.socialCase.motif) : sec.finance.socialCase.motif %>
+        (<%= typeof discountLabel === 'function' ? discountLabel(sec.finance.socialCase) : '' %>)</p>
+    <% } %>
+    <% if (sec.finance.lines && sec.finance.lines.length) { %>
+      <table class="data-table compact">
+        <thead><tr><th>Frais</th><th>Dû</th><th>Payé</th><th>Reste</th></tr></thead>
+        <tbody>
+          <% sec.finance.lines.forEach(function(line) { %>
+            <tr>
+              <td><%= line.name %></td>
+              <td><%= line.due.toLocaleString('fr-FR') %></td>
+              <td><%= line.paid.toLocaleString('fr-FR') %></td>
+              <td><%= line.remaining.toLocaleString('fr-FR') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+    <% if (can('payments:read') && sec.payments && sec.payments.length) { %>
+      <h3 style="margin-top:1rem">Derniers paiements</h3>
+      <ul class="timeline">
+        <% sec.payments.forEach(function(p) { %>
+          <li><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %> — <%= (p.amount || 0).toLocaleString('fr-FR') %> FCFA
+            <% if (p.feeType) { %>(<%= p.feeType.name %>)<% } %>
+            · <%= p.status || '—' %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (can('caisse:write')) { %><a href="/school/caisse?studentId=<%= s.id %>" class="btn btn-outline btn-sm">Encaisser</a><% } %>
+  </section>
+  <% } %>
+
+  <% if (can('social_cases:write') && sec.socialCase) { %>
+  <section class="card situation-block">
+    <h2>Cas social</h2>
+    <p><strong>Motif :</strong> <%= typeof motifLabel === 'function' ? motifLabel(sec.socialCase.motif) : sec.socialCase.motif %></p>
+    <p><strong>Remise :</strong> <%= typeof discountLabel === 'function' ? discountLabel(sec.socialCase) : '—' %></p>
+    <a href="/school/cas-sociaux?studentId=<%= s.id %>" class="btn btn-outline btn-sm">Gérer</a>
+  </section>
+  <% } %>
+
+  <% if (can('bulletins:read') && sec.grades) { %>
+  <section class="card situation-block">
+    <h2>Notes & bulletins</h2>
+    <% if (!sec.grades.length) { %><p class="empty-sm">Aucune note.</p><% } else { %>
+      <table class="data-table compact">
+        <thead><tr><th>Matière</th><th>Note</th><th>Période</th><th>Type</th></tr></thead>
+        <tbody>
+          <% sec.grades.slice(0, 20).forEach(function(g) { %>
+            <tr>
+              <td><%= g.subject %></td>
+              <td><%= g.value %>/<%= g.maxValue || 20 %></td>
+              <td><%= g.period || g.term || '—' %></td>
+              <td><%= g.kind || '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+    <% if (sec.deliberations && sec.deliberations.length) { %>
+      <h3 style="margin-top:1rem">Délibérations</h3>
+      <ul class="timeline">
+        <% sec.deliberations.forEach(function(d) { %>
+          <li><%= d.schoolYear %> <%= d.term %> — <%= d.mention || d.decision || '—' %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (sec.bulletins && sec.bulletins.length) { %>
+      <h3 style="margin-top:1rem">Bulletins</h3>
+      <ul>
+        <% sec.bulletins.forEach(function(b) { %>
+          <li>
+            <%= b.period || 'Annuel' %> — <%= new Date(b.generatedAt).toLocaleDateString('fr-FR') %>
+            <a href="/school/bulletins/download/<%= s.id %>?period=<%= encodeURIComponent(b.period || '') %>" class="btn btn-outline btn-sm">PDF</a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (can('bulletins:write')) { %><a href="/school/bulletins" class="btn btn-outline btn-sm">Générer bulletins</a><% } %>
+  </section>
+  <% } %>
+
+  <% if (can('absences:write') && sec.absences) { %>
+  <section class="card situation-block">
+    <h2>Absences & retards (<%= sec.absenceCount || 0 %> au total)</h2>
+    <% if (!sec.absences.length) { %><p class="empty-sm">Aucune absence enregistrée.</p><% } else { %>
+      <ul class="timeline">
+        <% sec.absences.forEach(function(a) { %>
+          <li>
+            <%= a.type === 'LATE' ? 'Retard' : 'Absence' %> — <%= new Date(a.date).toLocaleDateString('fr-FR') %>
+            <% if (a.justified) { %><small> · justifiée</small><% } %>
+            <% else if (a.justifications && a.justifications[0] && a.justifications[0].status === 'PENDING') { %><small> · en attente</small><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <a href="/school/justificatifs" class="btn btn-outline btn-sm">Justificatifs</a>
+  </section>
+  <% } %>
+
+  <% if (can('discipline:write')) { %>
+  <section class="card situation-block">
+    <h2>Discipline & comportement</h2>
+    <% if (sec.badges && sec.badges.length) { %>
+      <h3>Badges</h3>
+      <div class="badge-grid">
+        <% sec.badges.forEach(function(b) { %>
+          <div class="badge-card"><span>🏅</span><strong><%= b.label %></strong></div>
+        <% }) %>
+      </div>
+    <% } %>
+    <% if (sec.behaviorNotes && sec.behaviorNotes.length) { %>
+      <h3>Notes de comportement</h3>
+      <% sec.behaviorNotes.forEach(function(n) { %>
+        <p class="behavior-line behavior-<%= n.type ? n.type.toLowerCase() : 'neutral' %>"><%= n.message %> <small>(<%= new Date(n.createdAt).toLocaleDateString('fr-FR') %>)</small></p>
+      <% }) %>
+    <% } %>
+    <% if ((!sec.badges || !sec.badges.length) && (!sec.behaviorNotes || !sec.behaviorNotes.length)) { %>
+      <p class="empty-sm">Rien à signaler.</p>
+    <% } %>
+  </section>
+  <% } %>
+
+  <% if (can('canteen:write') && sec.canteenRecords && sec.canteenRecords.length) { %>
+  <section class="card situation-block">
+    <h2>Cantine</h2>
+    <% sec.canteenRecords.forEach(function(r) { %>
+      <p><%= r.menu ? new Date(r.menu.date).toLocaleDateString('fr-FR') : '—' %> : <%= r.ate ? 'A mangé ✓' : 'N\'a pas mangé' %></p>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <% if (can('activities:write') && sec.activities && sec.activities.length) { %>
+  <section class="card situation-block">
+    <h2>Activités extrascolaires</h2>
+    <ul>
+      <% sec.activities.forEach(function(e) { %>
+        <li><%= e.activity ? e.activity.name : 'Activité' %></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (can('pickup:write') && sec.pickupAuthorizations && sec.pickupAuthorizations.length) { %>
+  <section class="card situation-block">
+    <h2>Autorisations de sortie</h2>
+    <ul class="timeline">
+      <% sec.pickupAuthorizations.forEach(function(p) { %>
+        <li><%= p.authorizedPerson %> — <%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (can('lost_items:write') && sec.lostItems && sec.lostItems.length) { %>
+  <section class="card situation-block">
+    <h2>Objets perdus</h2>
+    <ul>
+      <% sec.lostItems.forEach(function(item) { %>
+        <li><%= item.description %></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+</div>
+
+<style>
+.student-situation-header { display:flex; flex-wrap:wrap; gap:1.5rem 2rem; }
+.student-situation-identity { display:flex; gap:1rem; flex:1; min-width:260px; align-items:flex-start; }
+.student-situation-parents { flex:1; min-width:200px; }
+.student-situation-parents h3 { font-size:0.95rem; margin:0 0 0.5rem; color:#0052CC; }
+.situation-sections { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; margin-top:1rem; }
+.situation-block h2 { font-size:1.05rem; margin:0 0 0.75rem; color:#0052CC; }
+.situation-block h3 { font-size:0.9rem; margin:0.5rem 0; }
+.situation-highlight { font-size:1rem; margin:0.5rem 0 1rem; }
+.data-table.compact { font-size:0.85rem; }
+.data-table.compact th, .data-table.compact td { padding:0.35rem 0.5rem; }
+.risk-eleve { border-left:4px solid #e74c3c; }
+.risk-moyen { border-left:4px solid #e67e22; }
+.risk-faible { border-left:4px solid #27ae60; }
+a.student-link { color:#0052CC; text-decoration:none; font-weight:600; }
+a.student-link:hover { text-decoration:underline; }
+</style>
+<% } %>

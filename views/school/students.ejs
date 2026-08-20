@@ -167,7 +167,7 @@
 
             <summary>
               <%- include('../partials/_avatar', { src: s.photoUrl, firstName: s.firstName, lastName: s.lastName, size: 'sm' }) %>
-              <strong><%= s.firstName %> <%= s.lastName %></strong> — <%= s.class.name %><% const stuSeries = s.series || (s.class && s.class.series); if (stuSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(stuSeries) : stuSeries %><% } %> — <code>École <%= s.matricule || '—' %></code><% if (s.nationalMatricule) { %> · <code>Nat. <%= s.nationalMatricule %></code><% } %>
+              <a href="/school/students/<%= s.id %>" class="student-link" onclick="event.stopPropagation()"><strong><%= s.firstName %> <%= s.lastName %></strong></a> — <%= s.class.name %><% const stuSeries = s.series || (s.class && s.class.series); if (stuSeries) { %> · <%= typeof seriesLabel === 'function' ? seriesLabel(stuSeries) : stuSeries %><% } %> — <code>École <%= s.matricule || '—' %></code><% if (s.nationalMatricule) { %> · <code>Nat. <%= s.nationalMatricule %></code><% } %>
             </summary>
 
             <form method="POST" action="/school/students/<%= s.id %>/update" class="form" enctype="multipart/form-data" style="margin-top:0.75rem">

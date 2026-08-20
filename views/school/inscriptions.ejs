@@ -51,7 +51,7 @@
         <tbody>
           <% rows.forEach(function(r) { %>
             <tr>
-              <td><strong><%= r.lastName %></strong> <%= r.firstName %></td>
+              <td><a href="/school/students/<%= r.id %>?from=inscriptions" class="student-link"><strong><%= r.lastName %></strong> <%= r.firstName %></a></td>
               <td><%= r.className || '—' %></td>
               <td><code><%= r.matricule || '—' %></code></td>
               <td><code><%= r.nationalMatricule || '—' %></code></td>

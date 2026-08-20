@@ -102,7 +102,7 @@
     <tbody>
       <% causes.forEach(function(c) { %>
         <tr>
-          <td><strong><%= c.firstName %> <%= c.lastName %></strong></td>
+          <td><a href="/school/students/<%= c.studentId %>?from=reinscription&schoolYear=<%= encodeURIComponent(schoolYear) %>" class="student-link"><strong><%= c.firstName %> <%= c.lastName %></strong></a></td>
           <td><%= c.classLevel ? c.classLevel + ' — ' + c.className : c.className %></td>
           <td>Oui</td>
           <td><%= c.absences %></td>
@@ -166,7 +166,7 @@
       <tbody>
         <% rows.forEach(function(row) { %>
           <tr>
-            <td><strong><%= row.student.firstName %> <%= row.student.lastName %></strong></td>
+            <td><a href="/school/students/<%= row.student.id %>?from=reinscription&schoolYear=<%= encodeURIComponent(schoolYear) %>" class="student-link"><strong><%= row.student.firstName %> <%= row.student.lastName %></strong></a></td>
             <td><%= row.currentClass ? row.currentClass.level + ' — ' + row.currentClass.name : '—' %></td>
             <td>
               <% if (row.enrolled && row.newClass) { %>
@@ -209,6 +209,10 @@
 
 <script src="/js/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+a.student-link { color:#0052CC; text-decoration:none; font-weight:600; }
+a.student-link:hover { text-decoration:underline; }
+</style>
 <script>
   const promotedColor = '#27ae60';
   const repeatedColor = '#e74c3c';
