@@ -117,6 +117,7 @@ const RESERVED_SLUGS = new Set([
   'js',
   'css',
   'icons',
+  'images',
   'img',
   'fonts',
   'assets',

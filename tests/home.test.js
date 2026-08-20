@@ -165,6 +165,13 @@ describe('Homepage', () => {
     expect(res.text).toMatch(/rel="canonical" href="[^"]+\/"/);
   });
 
+  test('GET /images/og-educonnect-share.jpg serves the OG asset', async () => {
+    const res = await request(app).get('/images/og-educonnect-share.jpg');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/image\/jpeg/);
+    expect(Number(res.headers['content-length'])).toBeGreaterThan(10_000);
+  });
+
   test('GET / shows featured published schools without pupil data', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
