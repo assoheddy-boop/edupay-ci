@@ -33,8 +33,11 @@ const csvUpload = multer({
     const mime = String(file.mimetype || '').toLowerCase();
     const ok = ext === '.csv'
       || ext === '.xlsx'
+      || ext === '.xml'
       || mime === 'text/csv'
       || mime === 'text/plain'
+      || mime === 'application/xml'
+      || mime === 'text/xml'
       || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       || (mime === 'application/vnd.ms-excel' && ext !== '.xls');
     cb(null, ok);

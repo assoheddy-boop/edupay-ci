@@ -246,6 +246,7 @@ model User {
   consents           Consent[]
   refreshTokens      RefreshToken[]
   staffAssignments   SchoolStaffAssignment[]
+  agfneImports       AgfneImportLog[]
 }
 
 /// Affectation staff école : permissions granulaires pour un compte SCHOOL_ADMIN.
@@ -385,6 +386,7 @@ model School {
   staffAssignments     SchoolStaffAssignment[]
   supplierInvoices     SupplierInvoice[]
   budgetLines          BudgetLine[]
+  agfneImportLogs      AgfneImportLog[]
 
   planId Int?
   plan   SubscriptionPlan? @relation(fields: [planId], references: [id])
@@ -581,6 +583,28 @@ model StudentEnrollment {
 
   @@unique([studentId, schoolYear])
   @@index([schoolId, schoolYear])
+}
+
+/// Journal des imports AGFNE / SIGFNE (fichiers officiels MEN).
+model AgfneImportLog {
+  id         String   @id @default(cuid())
+  filename   String
+  rowCount   Int      @default(0)
+  /// PREVIEW | COMPLETED | FAILED | CANCELLED
+  status     String   @default("PREVIEW")
+  format     String?
+  previewData Json?
+  stats      Json?
+  createdAt  DateTime @default(now())
+  completedAt DateTime?
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, createdAt])
+  @@index([userId])
 }
 
 model ParentProfile {

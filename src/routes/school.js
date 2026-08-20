@@ -1,7 +1,7 @@
 const express = require('express');
 const schoolController = require('../controllers/schoolController');
 const studentSituationController = require('../controllers/studentSituationController');
-const enrollmentController = require('../controllers/enrollmentController');
+const agfneImportController = require('../controllers/agfneImportController');
 const messageController = require('../controllers/messageController');
 const statsController = require('../controllers/statsController');
 const accountingController = require('../controllers/accountingController');
@@ -98,6 +98,11 @@ router.get('/inscriptions/:studentId/certificat-scolarite.pdf', requirePermissio
 router.get('/inscriptions/:studentId/attestation-inscription.pdf', requirePermission(P.CERTIFICATES), enrollmentController.attestationInscriptionPdf);
 router.get('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_READ), enrollmentController.editPage);
 router.post('/inscriptions/:studentId', requirePermission(P.ENROLLMENTS_WRITE), upload.logoUpload.single('photo'), auditMiddleware('enrollment_update', 'StudentEnrollment'), enrollmentController.update);
+
+router.get('/enrollment/agfne-import', requirePermission(P.ENROLLMENTS_READ), agfneImportController.page);
+router.post('/enrollment/agfne-import/preview', requirePermission(P.ENROLLMENTS_WRITE), csvUpload.single('file'), auditMiddleware('agfne_import_preview', 'AgfneImportLog'), agfneImportController.preview);
+router.post('/enrollment/agfne-import/confirm', requirePermission(P.ENROLLMENTS_WRITE), auditMiddleware('agfne_import_confirm', 'AgfneImportLog'), agfneImportController.confirm);
+router.post('/enrollment/agfne-import/cancel', requirePermission(P.ENROLLMENTS_WRITE), agfneImportController.cancel);
 
 router.get('/students/import/template', requirePermission(P.STUDENTS_WRITE), schoolController.downloadStudentImportTemplate);
 router.post('/students/import', requirePermission(P.STUDENTS_WRITE), csvUpload.single('csv'), schoolController.importStudents);

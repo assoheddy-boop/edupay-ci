@@ -343,6 +343,7 @@ module.exports = {
   detectImportKind,
   buildExcelTemplate,
   normalizeImportGender,
+  parseBirthDate,
   CSV_TEMPLATE,
   IMPORT_TEMPLATE_COLUMNS,
   XLSX_MIME,

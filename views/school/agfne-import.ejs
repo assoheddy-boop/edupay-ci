@@ -1,0 +1,166 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('agfne-import', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: title || 'Import AGFNE / SIGFNE' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Import AGFNE / SIGFNE<%- include('../partials/_helpKey', { key: 'page.agfne-import' }) %></h1>
+  <div class="page-header-actions">
+    <a href="/school/inscriptions" class="btn btn-outline btn-sm">Fiches inscription</a>
+    <a href="/school/students" class="btn btn-outline btn-sm">Élèves</a>
+  </div>
+</div>
+
+<p class="form-hint">
+  Importez les fichiers officiels du Ministère (AGFNE / SIGFNE) au format <strong>CSV</strong>, <strong>Excel (.xlsx)</strong> ou <strong>XML</strong>.
+  Les élèves existants (matricule national ou matricule école) seront <strong>mis à jour</strong>, les autres seront créés.
+  Les classes manquantes peuvent être créées automatiquement.
+</p>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<% if (result) { %>
+  <div class="alert alert-success">
+    Import « <%= result.filename %> » terminé :
+    <%= result.created %> créé(s), <%= result.updated %> mis à jour
+    <% if (result.errors) { %>, <%= result.errors %> ligne(s) ignorée(s)<% } %>.
+  </div>
+<% } %>
+
+<% if (!preview) { %>
+<div class="card" style="margin-bottom:1.5rem">
+  <h2>Téléverser un fichier</h2>
+  <p class="form-hint">
+    Colonnes attendues (en-têtes français MEN) :
+    <code>Matricule national</code>, <code>Nom</code>, <code>Prénoms</code>,
+    <code>Date naissance</code>, <code>Sexe</code>, <code>Nationalité</code>, <code>Classe</code>.
+    L’établissement est déterminé automatiquement (<strong><%= school.name %></strong>).
+  </p>
+  <form method="POST" action="/school/enrollment/agfne-import/preview" enctype="multipart/form-data" class="form form-inline" data-offline-skip="1">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="form-group">
+      <label for="agfne-file">Fichier AGFNE / SIGFNE</label>
+      <input id="agfne-file" type="file" name="file" accept=".csv,.xlsx,.xml,text/csv,application/xml,text/xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Analyser le fichier</button>
+  </form>
+</div>
+<% } %>
+
+<% if (preview) { %>
+<div class="card" style="margin-bottom:1.5rem">
+  <h2>Prévisualisation — <%= preview.filename %></h2>
+  <p class="form-hint">
+    <%= preview.rowCount %> ligne(s) détectée(s) (format <%= preview.format %>).
+    Vérifiez les données avant validation.
+  </p>
+
+  <div class="table-wrap" style="max-height:420px;overflow:auto;margin-bottom:1rem">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ligne</th>
+          <th>Action</th>
+          <th>Nom</th>
+          <th>Prénom(s)</th>
+          <th>Matricule national</th>
+          <th>Classe</th>
+          <th>Naissance</th>
+          <th>Sexe</th>
+          <th>Nationalité</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% preview.rows.forEach(function(r) { %>
+          <tr class="<%= r.valid ? '' : 'row-error' %>">
+            <td><%= r.lineNumber %></td>
+            <td><%= r.action === 'update' ? 'Mise à jour' : 'Création' %></td>
+            <td><%= r.lastName || '—' %></td>
+            <td><%= r.firstName || '—' %></td>
+            <td><code><%= r.nationalMatricule || r.matricule || '—' %></code></td>
+            <td>
+              <%= r.className || '—' %>
+              <% if (r.className && !r.classExists) { %><span class="badge badge-info" title="Sera créée">+ classe</span><% } %>
+            </td>
+            <td><%= r.birthDate ? new Date(r.birthDate).toLocaleDateString('fr-FR') : '—' %></td>
+            <td><%= r.gender || '—' %></td>
+            <td><%= r.nationality || '—' %></td>
+            <td>
+              <% if (r.valid) { %>
+                <span class="badge badge-success">OK</span>
+              <% } else { %>
+                <span class="badge badge-error" title="<%= (r.errors || []).join('; ') %>">Erreur</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <% const validCount = preview.rows.filter(function(r) { return r.valid; }).length; %>
+  <% const createCount = preview.rows.filter(function(r) { return r.valid && r.action === 'create'; }).length; %>
+  <% const updateCount = preview.rows.filter(function(r) { return r.valid && r.action === 'update'; }).length; %>
+
+  <p class="form-hint">
+    <%= validCount %> ligne(s) valide(s) — <%= createCount %> création(s), <%= updateCount %> mise(s) à jour.
+  </p>
+
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+    <form method="POST" action="/school/enrollment/agfne-import/confirm">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="importId" value="<%= preview.id %>">
+      <button type="submit" class="btn btn-primary" <%= validCount ? '' : 'disabled' %>>Valider import</button>
+    </form>
+    <form method="POST" action="/school/enrollment/agfne-import/cancel">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="importId" value="<%= preview.id %>">
+      <button type="submit" class="btn btn-outline">Annuler</button>
+    </form>
+  </div>
+</div>
+<% } %>
+
+<div class="card">
+  <h2>Historique des imports</h2>
+  <% if (!logs.length) { %>
+    <p class="empty">Aucun import enregistré.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Utilisateur</th>
+            <th>Fichier</th>
+            <th>Lignes</th>
+            <th>Format</th>
+            <th>Statut</th>
+            <th>Résultat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(function(log) { %>
+            <tr>
+              <td><%= new Date(log.createdAt).toLocaleString('fr-FR') %></td>
+              <td><%= log.user ? (log.user.firstName + ' ' + log.user.lastName) : '—' %></td>
+              <td><%= log.filename %></td>
+              <td><%= log.rowCount %></td>
+              <td><%= log.format || '—' %></td>
+              <td><%= log.status %></td>
+              <td>
+                <% if (log.stats) { %>
+                  <%= log.stats.created || 0 %> créé(s), <%= log.stats.updated || 0 %> MAJ
+                  <% if (log.stats.errors && log.stats.errors.length) { %>, <%= log.stats.errors.length %> err.<% } %>
+                <% } else { %>—<% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<% } %>
