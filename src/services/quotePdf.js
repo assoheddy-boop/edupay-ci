@@ -1,7 +1,7 @@
 const PDFDocument = require('pdfkit');
 const { formatMoney } = require('../middleware/currency');
-const { COMMERCIAL_PLAN } = require('../config/plans');
 const { quoteSummary } = require('../utils/quoteAnswers');
+const { PARENT_CONTRIBUTION } = require('../config/tarification');
 
 const NAVY = '#0b1f4a';
 const BLUE = '#0052CC';
@@ -40,17 +40,32 @@ function buildQuotePdf(quote) {
     doc.fontSize(9).fillColor('#C5D4F0').text('https://educonnect-ci.com  ·  contact@educonnect.ci', 50, 46);
 
     let y = 96;
-    doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(20).text('Devis — Offre Pro', 50, y);
+    const title = summary.conventionOnly ? 'Demande de convention — Lycée public' : `Devis — ${summary.cycleLabel || 'EduConnect'}`;
+    doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(20).text(title, 50, y);
     y = doc.y + 6;
     doc.font('Helvetica').fontSize(11).fillColor(MUTED)
-      .text(COMMERCIAL_PLAN.tagline, 50, y, { width: 495 });
+      .text(summary.tagline || 'Tarification transparente selon le cycle scolaire', 50, y, { width: 495 });
     y = doc.y + 16;
 
-    doc.roundedRect(50, y, 495, 78, 8).fill('#EEF3FC');
-    doc.fillColor(BLUE).font('Helvetica-Bold').fontSize(12).text('Gestion — Offre Pro', 66, y + 14);
-    doc.fillColor(NAVY).fontSize(22).text(formatMoney(quote.amount || COMMERCIAL_PLAN.amount), 66, y + 32);
-    doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, modules de gestion', 66, y + 56);
-    y += 98;
+    if (summary.conventionOnly) {
+      doc.roundedRect(50, y, 495, 96, 8).fill('#FFF7ED');
+      doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(12).text('Lycée public — Convention signée', 66, y + 14);
+      doc.font('Helvetica').fontSize(10).fillColor(TEXT)
+        .text(summary.conventionMessage || 'Accès sur convention signée avec Alliance Digitale Internationale.', 66, y + 34, { width: 460 });
+      y += 116;
+    } else {
+      doc.roundedRect(50, y, 495, 78, 8).fill('#EEF3FC');
+      doc.fillColor(BLUE).font('Helvetica-Bold').fontSize(12).text(`Tarif établissement — ${summary.cycleLabel || ''}`, 66, y + 14);
+      doc.fillColor(NAVY).fontSize(22).text(formatMoney(quote.amount || summary.amount || 0), 66, y + 32);
+      doc.font('Helvetica').fontSize(10).fillColor(MUTED).text('par an, gestion scolaire complète', 66, y + 56);
+      y += 98;
+
+      doc.roundedRect(50, y, 495, 52, 8).fill('#F8FAFC');
+      doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(11).text('Contribution parentale', 66, y + 10);
+      doc.font('Helvetica').fontSize(10).fillColor(MUTED)
+        .text(`${formatMoney(PARENT_CONTRIBUTION.amount)} / parent / an — bulletins, notes, absences, notifications`, 66, y + 28, { width: 460 });
+      y += 68;
+    }
 
     const marketplaceAmount = quote.marketplaceAmount ?? answers.marketplace?.amount ?? 0;
     if (marketplaceAmount > 0 && answers.marketplace?.selected) {
@@ -62,7 +77,7 @@ function buildQuotePdf(quote) {
 
       doc.roundedRect(50, y, 495, 52, 8).fill('#F8FAFC');
       doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(13).text('Total annuel', 66, y + 16);
-      doc.fontSize(18).text(formatMoney((quote.amount || COMMERCIAL_PLAN.amount) + marketplaceAmount), 200, y + 14);
+      doc.fontSize(18).text(formatMoney((quote.amount || summary.amount || 0) + marketplaceAmount), 200, y + 14);
       y += 68;
     }
 
@@ -73,6 +88,7 @@ function buildQuotePdf(quote) {
     y = doc.y + 6;
     doc.font('Helvetica').fontSize(10.5).fillColor(TEXT);
     doc.text(`Nom : ${answers.schoolName || quote.schoolName || '—'}`, 50, y);
+    doc.text(`Cycle : ${summary.cycleLabel || answers.cycleLabel || '—'}`);
     doc.text(`Ville : ${answers.city || quote.city || '—'}`);
     doc.text(`Groupe scolaire : ${answers.isGroup ? (answers.groupName || 'Oui') : 'Non'}`);
     doc.text(`Effectifs : ${answers.students ?? '—'} élèves · ${answers.teachers ?? '—'} enseignants · ${answers.classes ?? '—'} classes`);
@@ -100,7 +116,7 @@ function buildQuotePdf(quote) {
     summary.selected.forEach((item) => doc.text(`•  ${item}`, 50));
     y = doc.y + 12;
 
-    doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(13).text('Inclus dans l\'offre Pro', 50, y);
+    doc.fillColor(ORANGE).font('Helvetica-Bold').fontSize(13).text('Inclus dans l\'offre', 50, y);
     y = doc.y + 6;
     doc.font('Helvetica').fontSize(10.5).fillColor(TEXT);
     summary.included.forEach((item) => doc.text(`•  ${item}`, 50));

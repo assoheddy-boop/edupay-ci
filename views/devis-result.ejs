@@ -2,6 +2,8 @@
 <% const a = typeof answers !== 'undefined' && answers ? answers : {}; %>
 <% const life = a.life || {}; const admin = a.admin || {}; const comm = a.comm || {}; const hist = a.history || {}; %>
 <% const selected = summary && summary.selected ? summary.selected : []; %>
+<% const isConvention = typeof conventionOnly !== 'undefined' ? conventionOnly : (summary && summary.conventionOnly); %>
+<% const parentContrib = typeof parentContribution !== 'undefined' ? parentContribution : (summary && summary.parentContribution); %>
 <div class="home devis-page">
   <header class="home-top">
     <a href="/" class="home-logo">
@@ -10,6 +12,7 @@
     </a>
     <nav class="home-links" aria-label="Navigation">
       <a href="/">Accueil</a>
+      <a href="/tarifs">Tarifs</a>
       <a href="/devis">Nouveau devis</a>
       <a href="/auth/login">Connexion</a>
     </nav>
@@ -17,20 +20,38 @@
 
   <section class="devis-hero">
     <p class="home-kicker">Devis n° <%= quote.id.slice(-8).toUpperCase() %></p>
-    <h1>Votre offre EduConnect Pro</h1>
-    <p>Un seul plan, complet et premium, adapté à votre école</p>
+    <% if (isConvention) { %>
+      <h1>Demande de convention — lycée public</h1>
+      <p><%= summary.conventionMessage || 'Accès sur convention signée avec Alliance Digitale Internationale.' %></p>
+    <% } else { %>
+      <h1>Votre devis EduConnect</h1>
+      <p><%= summary.tagline || 'Tarification transparente selon le cycle scolaire' %></p>
+    <% } %>
   </section>
 
   <% if (typeof activationMessage !== 'undefined' && activationMessage) { %>
     <div class="alert alert-success devis-alert" role="status"><%= activationMessage %></div>
   <% } %>
 
-  <article class="devis-offer">
-    <p class="devis-offer-kicker">Gestion interne</p>
-    <h2>Pro</h2>
-    <p class="devis-offer-price"><strong><%= amountLabel %></strong> <span>/ an</span></p>
-    <p class="devis-offer-tag">Complet · support prioritaire · formation · SMS officiel · comptabilité · RH · multi-école</p>
+  <% if (isConvention) { %>
+  <article class="devis-offer devis-offer-convention">
+    <p class="devis-offer-kicker">Lycée public</p>
+    <h2>Convention signée</h2>
+    <p class="devis-offer-tag"><%= summary.conventionMessage || 'Pour les lycées publics, l\'accès à EduConnect se fait uniquement par convention signée avec l\'établissement. Les directions sont priées de faire une demande officielle de convention.' %></p>
   </article>
+  <% } else { %>
+  <article class="devis-offer">
+    <p class="devis-offer-kicker">Tarif établissement</p>
+    <h2><%= summary.cycleLabel || 'EduConnect' %></h2>
+    <p class="devis-offer-price"><strong><%= amountLabel %></strong> <span>/ an</span></p>
+    <p class="devis-offer-tag">Gestion scolaire complète — inscriptions, notes, finances, communication</p>
+  </article>
+  <aside class="devis-offer devis-offer-parent">
+    <p class="devis-offer-kicker">Contribution parentale</p>
+    <p class="devis-offer-price"><strong><%= typeof formatMoney === 'function' ? formatMoney(parentContrib.amount) : '2 500 FCFA' %></strong> <span>/ parent / an</span></p>
+    <p class="devis-offer-tag">Bulletins, notes, absences, notifications et espace parent sécurisé</p>
+  </aside>
+  <% } %>
 
   <% if (summary.marketplace && summary.marketplace.selected) { %>
   <article class="devis-offer devis-offer-marketplace">
@@ -39,16 +60,19 @@
     <p class="devis-offer-price"><strong><%= marketplaceAmountLabel %></strong> <span>/ an</span></p>
     <p class="devis-offer-tag"><%= summary.marketplace.hint %> — page /e/:slug et annuaire /ecoles</p>
   </article>
+  <% if (!isConvention) { %>
   <article class="devis-offer devis-offer-total">
     <p class="devis-offer-kicker">Total annuel</p>
     <p class="devis-offer-price"><strong><%= totalAmountLabel %></strong> <span>/ an</span></p>
-    <p class="devis-offer-tag">Pro + visibilité web (deux lignes de facturation distinctes)</p>
+    <p class="devis-offer-tag">Établissement + visibilité web (lignes de facturation distinctes)</p>
   </article>
+  <% } %>
   <% } %>
 
   <section class="devis-card">
     <h2>Votre établissement</h2>
     <dl class="devis-dl">
+      <div><dt>Cycle</dt><dd><%= summary.cycleLabel || a.cycleLabel || '—' %></dd></div>
       <div><dt>Nom</dt><dd><%= a.schoolName || quote.schoolName %></dd></div>
       <div><dt>Ville</dt><dd><%= a.city || quote.city %></dd></div>
       <div><dt>Groupe scolaire</dt><dd><%= a.isGroup ? (a.groupName || 'Oui') : 'Non' %></dd></div>
@@ -65,7 +89,7 @@
         <% selected.forEach(function (m) { %><li><%= m %></li><% }) %>
       </ul>
     <% } else { %>
-      <p class="devis-hint">Aucun module optionnel coché — le plan Pro couvre déjà le cœur pédagogique et le pilotage.</p>
+      <p class="devis-hint">Aucun module optionnel coché — la plateforme couvre déjà le cœur pédagogique et le pilotage.</p>
     <% } %>
     <h3>Toujours inclus</h3>
     <ul class="devis-mods devis-mods-core">
@@ -96,7 +120,7 @@
     <% if (quote.status !== 'activation_requested' && !activationOk) { %>
       <form method="POST" action="/devis/<%= quote.id %>/activer">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button type="submit" class="home-btn home-btn-outline home-btn-xl">Demander activation</button>
+        <button type="submit" class="home-btn home-btn-outline home-btn-xl"><%= isConvention ? 'Confirmer la demande de convention' : 'Demander activation' %></button>
       </form>
     <% } %>
   </div>

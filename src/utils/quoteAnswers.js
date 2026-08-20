@@ -1,9 +1,13 @@
-const { COMMERCIAL_PLAN } = require('../config/plans');
 const {
   MARKETPLACE_OFFER_OPTIONS,
   marketplaceOfferForTier,
   parseQuoteMarketplaceTier,
 } = require('../config/marketplaceOffers');
+const {
+  PARENT_CONTRIBUTION,
+  tarificationForCycle,
+  quoteAmountForCycle,
+} = require('../config/tarification');
 
 const CORE_MODULES = [
   'Paiements Wave / Orange Money',
@@ -51,7 +55,11 @@ function parseQuoteBody(body = {}) {
   const contactEmail = trimStr(body.contactEmail, 160);
   const contactPhone = trimStr(body.contactPhone, 40);
 
+  const cycleType = String(body.cycleType || '').trim().toUpperCase();
+  const cycle = tarificationForCycle(cycleType);
+
   const errors = [];
+  if (!cycle) errors.push('Choisissez le cycle scolaire (primaire, collège ou lycée).');
   if (schoolName.length < 2) errors.push('Indiquez le nom de l\'établissement.');
   if (city.length < 2) errors.push('Indiquez la ville.');
   if (students == null) errors.push('Indiquez le nombre d\'élèves.');
@@ -96,6 +104,9 @@ function parseQuoteBody(body = {}) {
   };
 
   const answers = {
+    cycleType: cycle ? cycle.value : cycleType || null,
+    cycleLabel: cycle ? cycle.label : null,
+    conventionOnly: !!(cycle && cycle.conventionOnly),
     schoolName,
     city,
     isGroup,
@@ -111,13 +122,14 @@ function parseQuoteBody(body = {}) {
     contact: { name: contactName, email: contactEmail, phone: contactPhone },
   };
 
-  const proAmount = COMMERCIAL_PLAN.amount;
+  const proAmount = quoteAmountForCycle(cycleType);
   const marketplaceAmount = marketplace.amount;
 
   return {
     ok: errors.length === 0,
     errors,
     answers,
+    cycleType: cycle ? cycle.value : null,
     schoolName,
     city,
     contactName: contactName || null,
@@ -146,18 +158,27 @@ function selectedModules(answers) {
 function quoteSummary(answers) {
   const selected = selectedModules(answers);
   const marketplace = answers.marketplace || { selected: false, tier: 'NONE', amount: 0 };
-  const proAmount = COMMERCIAL_PLAN.amount;
+  const cycle = tarificationForCycle(answers.cycleType);
+  const conventionOnly = !!(cycle && cycle.conventionOnly);
+  const proAmount = quoteAmountForCycle(answers.cycleType);
   const marketplaceAmount = marketplace.amount || 0;
   return {
     core: CORE_MODULES,
     selected,
     included: PRO_INCLUDED,
-    planName: COMMERCIAL_PLAN.name,
+    cycleType: answers.cycleType || null,
+    cycleLabel: cycle ? cycle.label : (answers.cycleLabel || null),
+    conventionOnly,
+    conventionMessage: cycle?.conventionMessage || null,
+    parentContribution: PARENT_CONTRIBUTION,
+    planName: cycle ? cycle.label : 'EduConnect',
     amount: proAmount,
     marketplace,
     marketplaceAmount,
     totalAmount: proAmount + marketplaceAmount,
-    tagline: COMMERCIAL_PLAN.tagline,
+    tagline: conventionOnly
+      ? 'Demande de convention — lycée public'
+      : 'Tarification transparente selon le cycle scolaire',
   };
 }
 

@@ -3,6 +3,12 @@ const { formatMoney } = require('../middleware/currency');
 const { sendEmail, smtpConfigured } = require('../services/email');
 const { buildQuotePdf } = require('../services/quotePdf');
 const { COMMERCIAL_PLAN } = require('../config/plans');
+const {
+  PARENT_CONTRIBUTION,
+  TARIFICATION_CYCLES,
+  preselectedCycleFromQuery,
+  tarificationForCycle,
+} = require('../config/tarification');
 const { ensureCsrfToken, requireCsrf } = require('../utils/csrf');
 const { parseQuoteBody, quoteSummary } = require('../utils/quoteAnswers');
 const { MARKETPLACE_OFFER_OPTIONS } = require('../config/marketplaceOffers');
@@ -15,14 +21,25 @@ function isQuoteId(id) {
 
 function renderForm(req, res, extra = {}) {
   const csrfToken = ensureCsrfToken(req, res);
+  const preselectedCycle = extra.preselectedCycle
+    ?? preselectedCycleFromQuery(req.query)
+    ?? null;
+  const defaultValues = preselectedCycle
+    ? { ...(extra.values || {}), cycleType: preselectedCycle }
+    : (extra.values || {});
+  const isConventionRequest = preselectedCycle === 'LYCEE' || req.query.convention === 'lycee';
   return res.render('devis', {
     user: null,
-    title: 'Devis Pro',
+    title: isConventionRequest ? 'Demande de convention' : 'Devis EduConnect',
     homeCss: true,
     devisCss: true,
     csrfToken,
     error: extra.error || null,
-    values: extra.values || {},
+    values: defaultValues,
+    preselectedCycle,
+    isConventionRequest,
+    tarificationCycles: TARIFICATION_CYCLES,
+    parentContribution: PARENT_CONTRIBUTION,
     commercialPlan: COMMERCIAL_PLAN,
     marketplaceOffers: MARKETPLACE_OFFER_OPTIONS.filter((opt) => opt.value !== 'NONE'),
     formatMoney,
@@ -32,21 +49,27 @@ function renderForm(req, res, extra = {}) {
 function viewModel(quote, extra = {}) {
   const answers = quote.answers || {};
   const summary = quoteSummary(answers);
-  const proAmount = quote.amount || COMMERCIAL_PLAN.amount;
+  const cycle = tarificationForCycle(answers.cycleType);
+  const conventionOnly = summary.conventionOnly;
+  const proAmount = conventionOnly ? 0 : (quote.amount ?? summary.amount ?? 0);
   const marketplaceAmount = quote.marketplaceAmount ?? summary.marketplaceAmount ?? 0;
   const totalAmount = proAmount + marketplaceAmount;
   return {
     user: null,
-    title: 'Votre devis Pro',
+    title: conventionOnly ? 'Demande de convention' : 'Votre devis EduConnect',
     homeCss: true,
     devisCss: true,
     quote,
     answers,
     summary,
+    cycle,
+    parentContribution: PARENT_CONTRIBUTION,
     commercialPlan: COMMERCIAL_PLAN,
-    amountLabel: formatMoney(proAmount),
+    conventionOnly,
+    amountLabel: conventionOnly ? null : formatMoney(proAmount),
     marketplaceAmountLabel: formatMoney(marketplaceAmount),
     totalAmountLabel: formatMoney(totalAmount),
+    formatMoney,
     csrfToken: extra.csrfToken,
     activationMessage: extra.activationMessage || null,
     activationOk: extra.activationOk || false,
@@ -139,17 +162,30 @@ async function activate(req, res, next) {
     let mailed = false;
     if (smtpConfigured()) {
       const answers = updated.answers || {};
+      const cycleLine = answers.cycleLabel
+        ? `Cycle : ${answers.cycleLabel}${answers.conventionOnly ? ' (convention)' : ''}`
+        : 'Cycle : —';
+      const amountLine = answers.conventionOnly
+        ? 'Tarif établissement : sur convention (lycée public)'
+        : `Tarif établissement : ${formatMoney(updated.amount)} / an`;
       const marketplaceLine = updated.marketplaceAmount
         ? `Visibilité web : ${formatMoney(updated.marketplaceAmount)} / an (${answers.marketplace?.label || 'portail public'})`
         : 'Visibilité web : non';
+      const totalLine = answers.conventionOnly
+        ? `Total devis : ${updated.marketplaceAmount ? formatMoney(updated.marketplaceAmount) + ' / an (visibilité web uniquement)' : 'convention — pas de tarif public'}`
+        : `Total devis : ${formatMoney((updated.amount || 0) + (updated.marketplaceAmount || 0))} / an`;
       const result = await sendEmail('contact@educonnect.ci', {
-        subject: `Activation Pro — ${updated.schoolName}`,
+        subject: `${answers.conventionOnly ? 'Convention lycée' : 'Activation'} — ${updated.schoolName}`,
         text: [
-          'Demande d\'activation EduConnect Pro',
+          answers.conventionOnly
+            ? 'Demande de convention EduConnect (lycée public)'
+            : 'Demande d\'activation EduConnect',
           `Établissement : ${updated.schoolName} (${updated.city})`,
-          `Pro (gestion) : ${formatMoney(updated.amount)} / an`,
+          cycleLine,
+          amountLine,
           marketplaceLine,
-          `Total devis : ${formatMoney((updated.amount || 0) + (updated.marketplaceAmount || 0))} / an`,
+          totalLine,
+          `Contribution parentale : ${formatMoney(PARENT_CONTRIBUTION.amount)} / parent / an`,
           `Référence : ${updated.id}`,
           `Contact : ${updated.contactName || answers.contact?.name || '—'}`,
           `Email : ${updated.contactEmail || answers.contact?.email || '—'}`,

@@ -264,7 +264,103 @@
   min-height: 48px;
 }
 
+.devis-offer-parent {
+  border-color: #dfe6ef;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.devis-offer-convention {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  text-align: left;
+}
+
+.devis-cycle-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.devis-cycle-card .devis-cycle-label {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.devis-cycle-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0052CC;
+}
+
+.devis-cycle-convention {
+  color: #e86a12;
+}
+
+.devis-pricing-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.devis-pricing-box {
+  border: 2px solid #0052CC;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  background: #eef3fc;
+}
+
+.devis-pricing-convention {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.devis-pricing-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0052CC;
+}
+
+.devis-pricing-convention .devis-pricing-kicker {
+  color: #e86a12;
+}
+
+.devis-pricing-title {
+  margin: 0 0 0.35rem;
+  color: var(--navy);
+  font-size: 1.35rem;
+}
+
+.devis-pricing-amount {
+  margin: 0;
+}
+
+.devis-pricing-amount strong {
+  font-size: 1.75rem;
+  color: #0052CC;
+}
+
+.devis-pricing-message {
+  margin: 0;
+  color: #1a2332;
+  line-height: 1.5;
+}
+
+.devis-pricing-parent {
+  border: 1px solid #dfe6ef;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+}
+
+.devis-pricing-parent p {
+  margin: 0 0 0.35rem;
+}
+
 @media (min-width: 640px) {
+  .devis-cycle-grid { grid-template-columns: repeat(3, 1fr); }
   .devis-counts { grid-template-columns: repeat(3, 1fr); }
   .devis-actions { flex-direction: row; }
   .devis-hero h1 { font-size: 2rem; }

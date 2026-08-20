@@ -1,6 +1,10 @@
 <%- include('partials/head') %>
 <% const v = typeof values !== 'undefined' && values ? values : {}; %>
+<% const cycles = typeof tarificationCycles !== 'undefined' ? tarificationCycles : []; %>
+<% const parentContrib = typeof parentContribution !== 'undefined' ? parentContribution : { amount: 2500 }; %>
+<% const conventionMode = typeof isConventionRequest !== 'undefined' && isConventionRequest; %>
 <% function checked(name) { return v[name] ? 'checked' : ''; } %>
+<% function cycleChecked(val) { return (v.cycleType || preselectedCycle) === val ? 'checked' : ''; } %>
 <div class="home devis-page">
   <header class="home-top">
     <a href="/" class="home-logo">
@@ -9,28 +13,36 @@
     </a>
     <nav class="home-links" aria-label="Navigation">
       <a href="/">Accueil</a>
+      <a href="/tarifs">Tarifs</a>
       <a href="/devis" aria-current="page">Devis</a>
       <a href="/auth/login">Connexion</a>
     </nav>
   </header>
 
   <section class="devis-hero">
-    <p class="home-kicker">Offre unique · Côte d'Ivoire</p>
-    <h1>Obtenez votre devis Pro</h1>
-    <p>Les réponses servent à préparer les modules de votre école. Le tarif apparaît à la fin, sur votre devis.</p>
+    <p class="home-kicker">Tarification · Côte d'Ivoire</p>
+    <% if (conventionMode) { %>
+      <h1>Demande de convention — lycée public</h1>
+      <p>Renseignez votre établissement. L'accès EduConnect pour les lycées publics se fait par convention signée.</p>
+    <% } else { %>
+      <h1>Obtenez votre devis EduConnect</h1>
+      <p>Choisissez votre cycle (primaire, collège ou lycée). Le tarif correspondant s'affiche à la fin du formulaire.</p>
+    <% } %>
   </section>
 
   <form id="devisForm" class="devis-form" method="POST" action="/devis" novalidate>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
     <ol class="devis-progress" aria-hidden="true">
-      <li data-step="1" class="is-on">Établissement</li>
-      <li data-step="2">Effectifs</li>
-      <li data-step="3">Vie scolaire</li>
-      <li data-step="4">Administration</li>
-      <li data-step="5">Communication</li>
-      <li data-step="6">Historique</li>
-      <li data-step="7">Visibilité web</li>
+      <li data-step="1" class="is-on">Cycle</li>
+      <li data-step="2">Établissement</li>
+      <li data-step="3">Effectifs</li>
+      <li data-step="4">Vie scolaire</li>
+      <li data-step="5">Administration</li>
+      <li data-step="6">Communication</li>
+      <li data-step="7">Historique</li>
+      <li data-step="8">Visibilité web</li>
+      <li data-step="9">Tarification</li>
     </ol>
 
     <% if (typeof error !== 'undefined' && error) { %>
@@ -38,6 +50,25 @@
     <% } %>
 
     <fieldset class="devis-panel is-active" data-step="1">
+      <legend>Cycle scolaire</legend>
+      <p class="devis-hint">Sélection obligatoire — le tarif dépend du niveau de votre établissement.</p>
+      <div class="devis-cycle-grid" role="radiogroup" aria-label="Cycle scolaire">
+        <% cycles.forEach(function(cycle) { %>
+          <label class="devis-chip devis-chip-block devis-cycle-card">
+            <input type="radio" name="cycleType" value="<%= cycle.value %>" required <%= cycleChecked(cycle.value) %>>
+            <span class="devis-cycle-label"><%= cycle.label %></span>
+            <% if (cycle.conventionOnly) { %>
+              <span class="devis-cycle-price devis-cycle-convention">Convention signée</span>
+            <% } else { %>
+              <span class="devis-cycle-price"><%= typeof formatMoney === 'function' ? formatMoney(cycle.amount) : cycle.amount %> / an</span>
+            <% } %>
+            <span class="devis-hint"><%= cycle.hint %></span>
+          </label>
+        <% }) %>
+      </div>
+    </fieldset>
+
+    <fieldset class="devis-panel" data-step="2">
       <legend>Établissement</legend>
       <div class="form-group">
         <label for="schoolName">Nom de l'établissement <span class="req">*</span></label>
@@ -72,7 +103,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="2">
+    <fieldset class="devis-panel" data-step="3">
       <legend>Effectifs</legend>
       <p class="devis-hint">Champs obligatoires — une estimation suffit.</p>
       <div class="devis-counts">
@@ -91,7 +122,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="3">
+    <fieldset class="devis-panel" data-step="4">
       <legend>Vie scolaire</legend>
       <p class="devis-hint">Cochez ce que vous souhaitez suivre dans EduConnect.</p>
       <label class="devis-check"><input type="checkbox" name="lifeCanteen" <%= checked('lifeCanteen') %>> Cantine</label>
@@ -100,20 +131,20 @@
       <label class="devis-check"><input type="checkbox" name="lifeHealth" <%= checked('lifeHealth') %>> Santé scolaire</label>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="4">
+    <fieldset class="devis-panel" data-step="5">
       <legend>Administration</legend>
       <label class="devis-check"><input type="checkbox" name="adminAccounting" <%= checked('adminAccounting') %>> Comptabilité</label>
       <label class="devis-check"><input type="checkbox" name="adminHr" <%= checked('adminHr') %>> Ressources humaines</label>
       <label class="devis-check"><input type="checkbox" name="adminMulti" <%= checked('adminMulti') %>> Multi-école / groupe</label>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="5">
+    <fieldset class="devis-panel" data-step="6">
       <legend>Communication</legend>
       <label class="devis-check"><input type="checkbox" name="commSms" <%= checked('commSms') %>> SMS officiel</label>
       <label class="devis-check"><input type="checkbox" name="commNotify" <%= checked('commNotify') %>> Notifications push et e-mail</label>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="6">
+    <fieldset class="devis-panel" data-step="7">
       <legend>Historique</legend>
       <p class="devis-hint">Optionnel — effectifs des 3 dernières années et budget digitalisation.</p>
       <div class="devis-counts">
@@ -136,9 +167,9 @@
       </div>
     </fieldset>
 
-    <fieldset class="devis-panel" data-step="7">
+    <fieldset class="devis-panel" data-step="8">
       <legend>Visibilité web (portail EduConnect)</legend>
-      <p class="devis-hint">Option <strong>séparée</strong> du plan Pro. Page publique <code>/e/votre-ecole</code> et annuaire <code>/ecoles</code>. Les notes et bulletins restent privés.</p>
+      <p class="devis-hint">Option <strong>séparée</strong> du tarif établissement. Page publique <code>/e/votre-ecole</code> et annuaire <code>/ecoles</code>. Les notes et bulletins restent privés.</p>
       <label class="devis-chip devis-chip-block">
         <input type="radio" name="marketplaceTier" value="NONE" <%= !v.marketplaceTier || v.marketplaceTier === 'NONE' ? 'checked' : '' %>>
         Sans vitrine — 0 FCFA / an
@@ -152,10 +183,18 @@
       <% }) %>
     </fieldset>
 
+    <fieldset class="devis-panel" data-step="9">
+      <legend>Récapitulatif tarifaire</legend>
+      <p class="devis-hint">Vérifiez le tarif correspondant à votre cycle avant d'envoyer la demande.</p>
+      <div id="devisPricingSummary" class="devis-pricing-summary" aria-live="polite">
+        <p class="devis-hint">Sélectionnez un cycle à l'étape 1 pour afficher le tarif.</p>
+      </div>
+    </fieldset>
+
     <div class="devis-nav">
       <button type="button" class="home-btn home-btn-ghost devis-prev">Retour</button>
       <button type="button" class="home-btn home-btn-primary devis-next">Continuer</button>
-      <button type="submit" class="home-btn home-btn-primary devis-submit">Voir mon devis Pro</button>
+      <button type="submit" class="home-btn home-btn-primary devis-submit" id="devisSubmitBtn">Envoyer ma demande</button>
     </div>
   </form>
 </div>
@@ -169,8 +208,58 @@
   var nav = form.querySelector('.devis-nav');
   var prev = form.querySelector('.devis-prev');
   var next = form.querySelector('.devis-next');
+  var submitBtn = document.getElementById('devisSubmitBtn');
   var groupWrap = document.getElementById('groupNameWrap');
+  var pricingSummary = document.getElementById('devisPricingSummary');
   var index = 0;
+
+  var TARIFS = {
+    PRIMAIRE: { label: 'Primaire', amount: '50\u00a0000 FCFA', convention: false },
+    COLLEGE: { label: 'Collège', amount: '80\u00a0000 FCFA', convention: false },
+    LYCEE: {
+      label: 'Lycée',
+      convention: true,
+      message: 'Pour les lycées publics, l\u2019accès à EduConnect se fait uniquement par convention signée avec l\u2019établissement. Les directions sont priées de faire une demande officielle de convention.'
+    }
+  };
+  var PARENT_CONTRIB = '<%= typeof formatMoney === "function" ? formatMoney(parentContrib.amount) : "2 500 FCFA" %>';
+
+  function selectedCycle() {
+    var checked = form.querySelector('input[name="cycleType"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function renderPricing() {
+    if (!pricingSummary) return;
+    var cycle = selectedCycle();
+    if (!cycle || !TARIFS[cycle]) {
+      pricingSummary.innerHTML = '<p class="devis-hint">Sélectionnez un cycle à l\u2019étape 1 pour afficher le tarif.</p>';
+      if (submitBtn) submitBtn.textContent = 'Envoyer ma demande';
+      return;
+    }
+    var t = TARIFS[cycle];
+    if (t.convention) {
+      pricingSummary.innerHTML =
+        '<article class="devis-pricing-box devis-pricing-convention">' +
+          '<p class="devis-pricing-kicker">Lycée public</p>' +
+          '<h3 class="devis-pricing-title">Convention signée</h3>' +
+          '<p class="devis-pricing-message">' + t.message + '</p>' +
+        '</article>';
+      if (submitBtn) submitBtn.textContent = 'Demander une convention';
+    } else {
+      pricingSummary.innerHTML =
+        '<article class="devis-pricing-box">' +
+          '<p class="devis-pricing-kicker">Tarif établissement</p>' +
+          '<h3 class="devis-pricing-title">' + t.label + '</h3>' +
+          '<p class="devis-pricing-amount"><strong>' + t.amount + '</strong> <span>/ an</span></p>' +
+        '</article>' +
+        '<aside class="devis-pricing-parent">' +
+          '<p><strong>Contribution parentale :</strong> ' + PARENT_CONTRIB + ' / parent / an</p>' +
+          '<p class="devis-hint">Bulletins, notes, absences, notifications et espace parent sécurisé.</p>' +
+        '</aside>';
+      if (submitBtn) submitBtn.textContent = 'Voir mon devis';
+    }
+  }
 
   function show(i) {
     index = Math.max(0, Math.min(i, panels.length - 1));
@@ -178,6 +267,7 @@
     steps.forEach(function (s, n) { s.classList.toggle('is-on', n <= index); });
     nav.classList.toggle('is-first', index === 0);
     nav.classList.toggle('is-last', index === panels.length - 1);
+    if (index === panels.length - 1) renderPricing();
     var first = panels[index].querySelector('input:not([type="hidden"])');
     if (first) first.focus({ preventScroll: true });
     panels[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -191,14 +281,28 @@
         return false;
       }
     }
-    var groupOn = form.querySelector('input[name="isGroup"]:checked');
-    if (index === 0 && groupOn && groupOn.value === 'oui') {
-      var gn = document.getElementById('groupName');
-      if (gn && gn.value.trim().length < 2) {
-        gn.setCustomValidity('Indiquez le nom du groupe scolaire.');
-        gn.reportValidity();
-        gn.setCustomValidity('');
+    if (index === 0) {
+      var cycle = selectedCycle();
+      if (!cycle) {
+        var firstCycle = form.querySelector('input[name="cycleType"]');
+        if (firstCycle) {
+          firstCycle.setCustomValidity('Choisissez primaire, collège ou lycée.');
+          firstCycle.reportValidity();
+          firstCycle.setCustomValidity('');
+        }
         return false;
+      }
+    }
+    if (index === 1) {
+      var groupOn = form.querySelector('input[name="isGroup"]:checked');
+      if (groupOn && groupOn.value === 'oui') {
+        var gn = document.getElementById('groupName');
+        if (gn && gn.value.trim().length < 2) {
+          gn.setCustomValidity('Indiquez le nom du groupe scolaire.');
+          gn.reportValidity();
+          gn.setCustomValidity('');
+          return false;
+        }
       }
     }
     return true;
@@ -209,10 +313,15 @@
     var oui = form.querySelector('input[name="isGroup"][value="oui"]');
     groupWrap.hidden = !(oui && oui.checked);
   }
+
   form.querySelectorAll('input[name="isGroup"]').forEach(function (r) {
     r.addEventListener('change', syncGroup);
   });
+  form.querySelectorAll('input[name="cycleType"]').forEach(function (r) {
+    r.addEventListener('change', renderPricing);
+  });
   syncGroup();
+  renderPricing();
 
   next.addEventListener('click', function () { if (validPanel()) show(index + 1); });
   prev.addEventListener('click', function () { show(index - 1); });
