@@ -142,7 +142,7 @@
         <% sec.payments.forEach(function(p) { %>
           <li><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %> — <%= (p.amount || 0).toLocaleString('fr-FR') %> FCFA
             <% if (p.feeType) { %>(<%= p.feeType.name %>)<% } %>
-            · <%= p.status || '—' %></li>
+            · <%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : (p.status || '—') %></li>
         <% }) %>
       </ul>
     <% } %>

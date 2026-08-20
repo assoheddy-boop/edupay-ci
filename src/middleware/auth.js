@@ -11,6 +11,7 @@ const {
 const { attachAdminAssist, hasEffectiveRole } = require('../utils/adminAssist');
 const { attachStaffContext, resolveStaffSchoolId } = require('../utils/staffPermissions');
 const { UI_HELP } = require('../utils/uiHelp');
+const { paymentStatusLabel } = require('../utils/paymentStatus');
 const {
   createRefreshToken,
   rotateRefreshToken,
@@ -167,6 +168,7 @@ async function requireAuth(req, res, next) {
     res.locals.staffPermissions = staffCtx.staffPermissions;
     res.locals.staffCan = staffCtx.staffCan;
     res.locals.uiHelp = UI_HELP;
+    res.locals.paymentStatusLabel = paymentStatusLabel;
 
     applyI18n(req, res);
     applyCurrency(req, res);

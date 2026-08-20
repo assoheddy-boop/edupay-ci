@@ -48,7 +48,7 @@
                   <a href="<%= p.proofUrl %>" target="_blank" class="btn btn-sm btn-outline">Voir capture</a>
                 <% } else { %>—<% } %>
               </td>
-              <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+              <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : p.status %></span></td>
               <td>
                 <% if (p.status === 'PENDING') { %>
                   <form method="POST" action="/school/payments/<%= p.id %>/validate" class="inline-forms">

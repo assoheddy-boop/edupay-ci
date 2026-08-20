@@ -159,7 +159,7 @@
               <p>
                 <%= p.feeType ? p.feeType.name : 'Paiement' %> :
                 <strong><%= formatMoney(p.amount) %></strong>
-                — <%= p.status %>
+                — <%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : p.status %>
               </p>
             <% }) %>
           </div>

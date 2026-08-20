@@ -129,7 +129,7 @@
               <tr>
                 <td><%= p.student.firstName %> <%= p.student.lastName %></td>
                 <td><%= formatMoney(p.amount) %></td>
-                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : p.status %></span></td>
                 <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
               </tr>
             <% }) %>
@@ -329,7 +329,7 @@
                   <%= p.student.firstName %> <%= p.student.lastName %>
                 </td>
                 <td><%= formatMoney(p.amount) %></td>
-                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : p.status %></span></td>
                 <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
               </tr>
             <% }) %>

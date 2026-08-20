@@ -79,7 +79,7 @@
             <% s.payments.forEach(p => { %>
               <tr>
                 <td><%= formatMoney(p.amount) %></td>
-                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+                <td><span class="badge-status badge-<%= p.status.toLowerCase() %>"><%= typeof paymentStatusLabel === 'function' ? paymentStatusLabel(p.status) : p.status %></span></td>
                 <td><%= new Date(p.createdAt).toLocaleDateString('fr-FR') %></td>
               </tr>
             <% }) %>
