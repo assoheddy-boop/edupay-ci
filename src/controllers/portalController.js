@@ -25,6 +25,7 @@ const {
   findPublishedSchool,
   findPublishedOrganization,
   listPublishedSchools,
+  parseMarketplacePage,
   listFeaturedSchools,
   listPortalPosts,
   buildSitemapXml,
@@ -84,16 +85,28 @@ function marketplaceHasActiveFilters(filters = {}) {
 }
 
 async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
-  const schools = await listPublishedSchools(filters);
-  const seo = seoForMarketplace(seoExtra);
-  if (seoExtra.canonicalPath) {
+  const page = parseMarketplacePage(req.query.page);
+  const listing = await listPublishedSchools({
+    ...filters,
+    page,
+    verifiedOnly: Boolean(seoExtra.verifiedOnly),
+  });
+  const seo = seoForMarketplace({
+    ...filters,
+    page,
+    heading: seoExtra.heading,
+    lead: seoExtra.lead,
+    canonicalPath: seoExtra.canonicalPath,
+  });
+  if (seoExtra.canonicalPath && page <= 1) {
     seo.canonicalUrl = `${SITE_ORIGIN}${seoExtra.canonicalPath}`;
   }
-  const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
+  const views = listing.schools.map((row) => publicSchoolView(row, { includeBase64: false }));
   const jsonLd = jsonLdForMarketplace(views, seo);
   const hasActiveFilters = marketplaceHasActiveFilters(filters);
-  const featuredSchools = hasActiveFilters ? [] : await listFeaturedSchools(3);
-  return res.render('portal/marketplace', {
+  const featuredSchools = hasActiveFilters || page > 1 ? [] : await listFeaturedSchools(3);
+  const template = seoExtra.verifiedLanding ? 'portal/verified' : 'portal/marketplace';
+  return res.render(template, {
     user: null,
     title: seo.title,
     heading: seo.heading,
@@ -116,10 +129,17 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     typeOptions: typeFilterOptions(),
     cycleLabels: CYCLE_LABELS,
     schools: views,
-    schoolCount: views.length,
+    schoolCount: listing.total,
     featuredSchools,
     hasActiveFilters,
     verifiedLanding: Boolean(seoExtra.verifiedLanding),
+    pagination: {
+      page: listing.page,
+      pageSize: listing.pageSize,
+      totalPages: listing.totalPages,
+      total: listing.total,
+    },
+    paginationBasePath: seoExtra.canonicalPath || '/ecoles',
   });
 }
 
@@ -227,31 +247,18 @@ async function marketplace(req, res, next) {
 
 async function verifiedMarketplace(req, res, next) {
   try {
-    const seo = seoForMarketplace({
-      heading: 'Établissements vérifiés EduConnect',
-      lead: 'Écoles, collèges et lycées avec vitrine Marketplace active. Badge « Vérifié » pour Premium et VIP. Aucune note nominative en public.',
-    });
-    seo.canonicalUrl = `${SITE_ORIGIN}/ecoles/verifies`;
-    const schools = await listPublishedSchools({});
-    const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
-    const jsonLd = jsonLdForMarketplace(views, seo);
-    return res.render('portal/verified', {
-      user: null,
-      title: `${seo.heading} — Côte d’Ivoire`,
-      heading: seo.heading,
-      lead: seo.lead,
-      metaDescription: seo.lead.slice(0, 160),
-      canonicalUrl: seo.canonicalUrl,
-      ogTitle: seo.heading,
-      ogDescription: seo.lead.slice(0, 160),
-      ogImage: `${SITE_ORIGIN}/icons/icon-192.png`,
-      jsonLd,
-      jsonLdJson: safeJson(jsonLd),
-      robots: PUBLIC_ROBOTS,
-      portalCss: true,
-      schools: views,
-      schoolCount: views.length,
-    });
+    return renderMarketplaceListing(
+      req,
+      res,
+      {},
+      {
+        verifiedOnly: true,
+        verifiedLanding: true,
+        heading: 'Établissements vérifiés EduConnect',
+        lead: 'Écoles, collèges et lycées Premium et VIP avec badge « Vérifié EduConnect ». Aucune note nominative en public.',
+        canonicalPath: '/ecoles/verifies',
+      },
+    );
   } catch (err) {
     return next(err);
   }

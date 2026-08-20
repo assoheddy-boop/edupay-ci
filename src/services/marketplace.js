@@ -96,20 +96,37 @@ function sortFeaturedFirst(rows) {
   });
 }
 
+const MARKETPLACE_PAGE_SIZE = 24;
+
+function parseMarketplacePage(raw) {
+  const n = parseInt(String(raw || '1'), 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
 async function queryPublishedSchools(where, select) {
   try {
     return await prisma.school.findMany({
       where,
       select,
       orderBy: [{ city: 'asc' }, { name: 'asc' }],
-      take: 200,
     });
   } catch {
     return null;
   }
 }
 
-async function listPublishedSchools({ ville, commune, cycle, type, q, organizationId } = {}) {
+async function listPublishedSchools({
+  ville,
+  commune,
+  cycle,
+  type,
+  q,
+  organizationId,
+  page = 1,
+  pageSize = MARKETPLACE_PAGE_SIZE,
+  paginate = true,
+  verifiedOnly = false,
+} = {}) {
   const city = String(ville || '').trim();
   const communeLabel = String(commune || '').trim();
   const nameQuery = String(q || '').trim();
@@ -142,6 +159,11 @@ async function listPublishedSchools({ ville, commune, cycle, type, q, organizati
   if (publicType) {
     extra.publicType = publicType;
   }
+  if (verifiedOnly) {
+    extra.marketplaceTier = {
+      in: [MARKETPLACE_TIER.PREMIUM, MARKETPLACE_TIER.VIP],
+    };
+  }
 
   const select = { ...publicSelect(true), logoBase64: false };
   let rows = await queryPublishedSchools(publishedWhere(extra), select);
@@ -149,7 +171,32 @@ async function listPublishedSchools({ ville, commune, cycle, type, q, organizati
     const legacySelect = { ...publicSelect(false), logoBase64: false };
     rows = await queryPublishedSchools({ ...publishedWhereLegacy(), ...extra }, legacySelect);
   }
-  return sortFeaturedFirst(rows || []);
+  const sorted = sortFeaturedFirst(rows || []);
+  const total = sorted.length;
+
+  if (!paginate) {
+    return {
+      schools: sorted,
+      total,
+      page: 1,
+      pageSize: total,
+      totalPages: 1,
+    };
+  }
+
+  const size = Math.max(1, Math.min(Number(pageSize) || MARKETPLACE_PAGE_SIZE, 100));
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const pageNum = parseMarketplacePage(page);
+  const safePage = Math.min(pageNum, totalPages);
+  const start = (safePage - 1) * size;
+
+  return {
+    schools: sorted.slice(start, start + size),
+    total,
+    page: safePage,
+    pageSize: size,
+    totalPages,
+  };
 }
 
 function xmlEscape(value) {
@@ -354,7 +401,7 @@ async function findPublishedOrganization(slug) {
       where: { slug: key, publicPortalEnabled: true },
     });
     if (!org) return null;
-    const schools = await listPublishedSchools({ organizationId: org.id });
+    const { schools } = await listPublishedSchools({ organizationId: org.id, paginate: false });
     if (!schools.length) return null;
     return { organization: org, schools };
   } catch {
@@ -470,6 +517,8 @@ async function listFeaturedSchools(limit = 3) {
 }
 
 module.exports = {
+  MARKETPLACE_PAGE_SIZE,
+  parseMarketplacePage,
   publishedWhere,
   findPublishedSchool,
   listPublishedSchools,

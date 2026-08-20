@@ -523,18 +523,35 @@ function seoForSchool(school, extras = {}) {
   };
 }
 
-function marketplacePath({ ville, commune, cycle, type, q } = {}) {
+function marketplacePath({ ville, commune, cycle, type, q, page } = {}) {
   const params = new URLSearchParams();
   if (q) params.set('q', String(q).trim());
   if (ville) params.set('ville', String(ville).trim());
   if (commune) params.set('commune', String(commune).trim());
   if (cycle) params.set('cycle', String(cycle).trim().toUpperCase());
   if (type) params.set('type', String(type).trim().toUpperCase());
+  const pageNum = Math.max(1, parseInt(String(page || '1'), 10) || 1);
+  if (pageNum > 1) params.set('page', String(pageNum));
   const query = params.toString();
   return query ? `/ecoles?${query}` : '/ecoles';
 }
 
-function seoForMarketplace({ ville, commune, cycle, type, q, heading: headingOverride, lead: leadOverride } = {}) {
+function verifiedMarketplacePath({ page } = {}) {
+  const pageNum = Math.max(1, parseInt(String(page || '1'), 10) || 1);
+  return pageNum > 1 ? `/ecoles/verifies?page=${pageNum}` : '/ecoles/verifies';
+}
+
+function seoForMarketplace({
+  ville,
+  commune,
+  cycle,
+  type,
+  q,
+  page,
+  heading: headingOverride,
+  lead: leadOverride,
+  canonicalPath,
+} = {}) {
   const nameQuery = String(q || '').trim();
   const villeLabel = String(ville || '').trim();
   const communeLabel = String(commune || '').trim();
@@ -578,19 +595,27 @@ function seoForMarketplace({ ville, commune, cycle, type, q, heading: headingOve
     lead = 'Annuaire des écoles, collèges et lycées en Côte d’Ivoire. Chaque établissement publie sa page. Les résultats scolaires restent derrière connexion parent.';
   }
   if (typeLabel) heading = `${heading} · ${typeLabel}`;
+  const pageNum = Math.max(1, parseInt(String(page || '1'), 10) || 1);
+  if (pageNum > 1 && !headingOverride) {
+    title = `${title} — page ${pageNum}`;
+  }
   const description = lead.replace(/\s+/g, ' ').trim().slice(0, 160);
-  return {
-    title,
-    heading,
-    lead,
-    metaDescription: description,
-    canonicalUrl: `${SITE_ORIGIN}${marketplacePath({
+  const canonicalUrl = canonicalPath
+    ? `${SITE_ORIGIN}${canonicalPath}${pageNum > 1 ? `?page=${pageNum}` : ''}`
+    : `${SITE_ORIGIN}${marketplacePath({
       q: nameQuery,
       ville: villeLabel,
       commune: communeLabel,
       cycle: cycleKey,
       type: parsedType || '',
-    })}`,
+      page: pageNum,
+    })}`;
+  return {
+    title,
+    heading,
+    lead,
+    metaDescription: description,
+    canonicalUrl,
     ogTitle: title,
     ogDescription: description,
     ogImage: `${SITE_ORIGIN}/icons/icon-192.png`,
@@ -852,6 +877,7 @@ module.exports = {
   portalUrl,
   organizationPortalPath,
   marketplacePath,
+  verifiedMarketplacePath,
   parseLat,
   parseLng,
   parsePublicType,

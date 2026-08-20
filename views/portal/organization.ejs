@@ -24,25 +24,16 @@
     </div>
   </section>
 
-  <section class="portal-section">
-    <article class="card portal-card">
-      <h2>Campus et établissements</h2>
+  <section class="portal-results" aria-labelledby="org-schools-title">
+    <header class="portal-results-head">
+      <h2 id="org-schools-title">Campus et établissements</h2>
       <p class="form-hint">Aucune moyenne ni bulletin nominatif sur ces pages publiques.</p>
-      <ul class="portal-list">
-        <% schools.forEach(function(s) { %>
-          <li>
-            <a class="card portal-school-link" href="<%= s.portalPath %>">
-              <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: null, slug: s.slug, name: s.name, size: 'md' }) %>
-              <span>
-                <strong><%= s.name %></strong>
-                <% if (s.campusLabel) { %><small><%= s.campusLabel %></small><% } %>
-                <small><%= s.cycleLabel %> · <%= s.localityLabel || s.city %></small>
-              </span>
-            </a>
-          </li>
-        <% }) %>
-      </ul>
-    </article>
+    </header>
+    <ul class="portal-school-grid">
+      <% schools.forEach(function(s) { %>
+        <%- include('../partials/_portalSchoolCard', { s: s }) %>
+      <% }) %>
+    </ul>
   </section>
 
   <% if (organization.publicPhone) { %>

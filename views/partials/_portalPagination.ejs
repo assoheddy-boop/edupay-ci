@@ -1,0 +1,40 @@
+<%
+  const pg = typeof pagination !== 'undefined' ? pagination : null;
+  if (!pg || pg.totalPages <= 1) return;
+  const base = typeof paginationBasePath !== 'undefined' ? paginationBasePath : '/ecoles';
+  const isQueryListing = base === '/ecoles';
+  const buildUrl = (p) => {
+    if (!isQueryListing) {
+      return p > 1 ? `${base}?page=${p}` : base;
+    }
+    const params = new URLSearchParams();
+    if (typeof q !== 'undefined' && q) params.set('q', q);
+    if (typeof ville !== 'undefined' && ville) params.set('ville', ville);
+    if (typeof commune !== 'undefined' && commune) params.set('commune', commune);
+    if (typeof cycle !== 'undefined' && cycle) params.set('cycle', cycle);
+    if (typeof type !== 'undefined' && type) params.set('type', type);
+    if (p > 1) params.set('page', String(p));
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  };
+  const { page, totalPages } = pg;
+%>
+<nav class="portal-pagination" aria-label="Pagination des résultats">
+  <% if (page > 1) { %>
+    <a href="<%= buildUrl(page - 1) %>" class="portal-pagination-prev" rel="prev">← Précédent</a>
+  <% } %>
+  <ol class="portal-pagination-pages">
+    <% for (let p = 1; p <= totalPages; p++) { %>
+      <li>
+        <% if (p === page) { %>
+          <span class="portal-pagination-current" aria-current="page"><%= p %></span>
+        <% } else { %>
+          <a href="<%= buildUrl(p) %>"><%= p %></a>
+        <% } %>
+      </li>
+    <% } %>
+  </ol>
+  <% if (page < totalPages) { %>
+    <a href="<%= buildUrl(page + 1) %>" class="portal-pagination-next" rel="next">Suivant →</a>
+  <% } %>
+</nav>

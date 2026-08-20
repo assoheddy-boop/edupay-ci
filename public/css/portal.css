@@ -665,9 +665,63 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .portal-school-grid-featured {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.portal-school-grid-featured {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1.5rem;
+}
+
+.portal-pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-pagination-pages a,
+.portal-pagination-prev,
+.portal-pagination-next {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--portal-border, #d8dee9);
+  background: #fff;
+  color: var(--portal-text, #1a2332);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.portal-pagination-pages a:hover,
+.portal-pagination-prev:hover,
+.portal-pagination-next:hover {
+  border-color: var(--portal-accent, #2563eb);
+  color: var(--portal-accent, #2563eb);
+}
+
+.portal-pagination-current {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--portal-accent, #2563eb);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
 
   .portal-subnav {
     justify-content: flex-start;

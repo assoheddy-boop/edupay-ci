@@ -4,6 +4,9 @@ jest.mock('../src/config/database', () => ({
     findMany: jest.fn(),
     updateMany: jest.fn(),
   },
+  organization: {
+    findFirst: jest.fn(),
+  },
   portalPost: {
     findMany: jest.fn(),
     create: jest.fn(),
@@ -400,7 +403,7 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
   });
 
-  test('GET /ecoles/verifies uses card grid and badges', async () => {
+  test('GET /ecoles/verifies uses card grid and badges for Premium/VIP only', async () => {
     prisma.school.findMany.mockResolvedValue([
       publishedSchool({
         name: 'École Premium',
@@ -418,6 +421,66 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/Premium/);
     expect(res.text).not.toMatch(/portal-school-link/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        marketplaceTier: { in: ['PREMIUM', 'VIP'] },
+      }),
+    }));
+  });
+
+  test('GET /ecoles/verifies excludes Standard tier schools', async () => {
+    prisma.school.findMany.mockResolvedValue([]);
+    const res = await request(app).get('/ecoles/verifies');
+    expect(res.status).toBe(200);
+    expect(res.text).not.toMatch(/Partenaire EduConnect/);
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        marketplaceTier: { in: ['PREMIUM', 'VIP'] },
+      }),
+    }));
+  });
+
+  test('GET /ecoles paginates results and preserves filters in links', async () => {
+    const many = Array.from({ length: 25 }, (_, i) => publishedSchool({
+      name: `École ${String(i + 1).padStart(2, '0')}`,
+      slug: `ecole-${i + 1}`,
+      marketplaceTier: 'STANDARD',
+    }));
+    prisma.school.findMany.mockResolvedValue(many);
+    const page1 = await request(app).get('/ecoles').query({ ville: 'Abidjan', page: 1 });
+    expect(page1.status).toBe(200);
+    expect(page1.text).toMatch(/25 établissements/);
+    expect(page1.text).toMatch(/portal-pagination/);
+    expect(page1.text).toMatch(/href="\/ecoles\?ville=Abidjan&amp;page=2"/);
+
+    const page2 = await request(app).get('/ecoles').query({ ville: 'Abidjan', page: 2 });
+    expect(page2.status).toBe(200);
+    expect(page2.text).toMatch(/rel="prev"/);
+    expect(page2.text).toMatch(/href="\/ecoles\?ville=Abidjan"/);
+    expect(page2.text).toMatch(/canonical" href="[^"]+\/ecoles\?ville=Abidjan&amp;page=2"/);
+  });
+
+  test('GET /e/groupe/:slug renders card grid', async () => {
+    prisma.organization.findFirst.mockResolvedValue({
+      id: 'org_epv',
+      name: 'EPV',
+      slug: 'epv',
+      city: 'Abidjan',
+      publicPortalEnabled: true,
+      publicDescription: 'Réseau EPV',
+      publicPhone: null,
+      logoUrl: null,
+      logoBase64: null,
+    });
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({ name: 'EPV ECEME', slug: 'epv-eceme', marketplaceTier: 'PREMIUM' }),
+    ]);
+    const res = await request(app).get('/e/groupe/epv');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/portal-school-grid/);
+    expect(res.text).toMatch(/portal-school-card/);
+    expect(res.text).toMatch(/EPV ECEME/);
+    expect(res.text).not.toMatch(/portal-school-link/);
   });
 
   test('empty marketplace does not invent pupil results', async () => {
@@ -427,6 +490,43 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/Aucune école publiée/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(res.text).not.toMatch(/18\/20/);
+  });
+});
+
+describe('listPublishedSchools pagination', () => {
+  const { listPublishedSchools, MARKETPLACE_PAGE_SIZE } = require('../src/services/marketplace');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('paginates sorted schools with default page size', async () => {
+    const rows = Array.from({ length: MARKETPLACE_PAGE_SIZE + 3 }, (_, i) => ({
+      id: `sch_${i}`,
+      name: `École ${i}`,
+      slug: `ecole-${i}`,
+      city: 'Abidjan',
+      educationCycle: 'COLLEGE',
+      marketplaceTier: 'STANDARD',
+      publicFeatured: false,
+    }));
+    prisma.school.findMany.mockResolvedValue(rows);
+    const page1 = await listPublishedSchools({ page: 1 });
+    expect(page1.total).toBe(MARKETPLACE_PAGE_SIZE + 3);
+    expect(page1.schools).toHaveLength(MARKETPLACE_PAGE_SIZE);
+    expect(page1.totalPages).toBe(2);
+    const page2 = await listPublishedSchools({ page: 2 });
+    expect(page2.schools).toHaveLength(3);
+  });
+
+  test('verifiedOnly restricts to Premium and VIP', async () => {
+    prisma.school.findMany.mockResolvedValue([]);
+    await listPublishedSchools({ verifiedOnly: true });
+    expect(prisma.school.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        marketplaceTier: { in: ['PREMIUM', 'VIP'] },
+      }),
+    }));
   });
 });
 
