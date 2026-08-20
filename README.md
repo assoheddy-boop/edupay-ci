@@ -50,6 +50,7 @@ $env:SEED_DEMO='true'; npm run db:seed
 | `npm test` | Tests Jest |
 | `npm run verify` | Vérification routes + DB (serveur requis) |
 | `npm run db:push` | Sync schéma Prisma |
+| `npm run db:push:prod` | Sync schéma Prisma vers Neon (`.neon-url.tmp`, pas `.env`) |
 | `npm run db:seed` | Seed (comptes `@demo.ci` seulement si `SEED_DEMO=true`) |
 | `npm run db:migrate` | Migrations Prisma |
 
