@@ -59,6 +59,8 @@ router.post('/settings', requirePermission(P.SETTINGS_WRITE), upload.logoUpload.
   { name: 'banner', maxCount: 1 },
   { name: 'gallery', maxCount: 8 },
 ]), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);
+router.get('/marketplace-renewal', requirePermission(P.SETTINGS_READ), schoolController.marketplaceRenewalPage);
+router.get('/marketplace-renewal/pay', requirePermission(P.SETTINGS_WRITE), schoolController.marketplaceRenewalPay);
 router.get('/portail', requirePermission(P.PORTAL), schoolPortalController.page);
 router.post('/portail/news', requirePermission(P.PORTAL), auditMiddleware('portal_post_create', 'PortalPost'), schoolPortalController.createNews);
 router.post('/portail/news/:id/delete', requirePermission(P.PORTAL), auditMiddleware('portal_post_delete', 'PortalPost'), schoolPortalController.deleteNews);

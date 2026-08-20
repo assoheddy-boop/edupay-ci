@@ -9,7 +9,7 @@
 .portal {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 0 1rem 3rem;
+  padding: 0 1rem calc(4.5rem + env(safe-area-inset-bottom, 0));
 }
 
 .portal-top {
@@ -371,8 +371,123 @@
 .portal-hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.65rem;
   align-items: flex-start;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .portal-hero-actions {
+    width: auto;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 14rem;
+  }
+}
+
+.portal-hero-actions .btn-lg {
+  font-size: 1.05rem;
+  padding: 0.75rem 1.35rem;
+  font-weight: 700;
+}
+
+.portal-cta-pay {
+  box-shadow: 0 4px 18px rgba(0, 82, 204, 0.35);
+}
+
+.portal-lead {
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0.5rem 0 0;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  max-width: 38rem;
+}
+
+.portal-nav-cta {
+  background: var(--portal-blue);
+  color: #fff !important;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.portal-nav-cta:hover {
+  background: #003d99;
+  color: #fff !important;
+}
+
+.portal-nav-cta-outline {
+  background: transparent;
+  border: 1px solid var(--portal-blue);
+  color: var(--portal-blue) !important;
+}
+
+.portal-nav-cta-outline:hover {
+  background: #eef3fb;
+}
+
+.portal-contact-meta li strong {
+  color: var(--portal-navy);
+}
+
+.portal-contact-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.portal-contact-info p {
+  margin: 0 0 0.85rem;
+}
+
+.portal-pay-card .portal-hero-actions {
+  margin-top: 0.75rem;
+}
+
+.portal-gallery-link {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.portal-gallery-link:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(11, 31, 74, 0.15);
+}
+
+.portal-sticky-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid #e6ebf2;
+  box-shadow: 0 -4px 20px rgba(11, 31, 74, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.portal-sticky-cta .btn {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+}
+
+.portal-sticky-cta-light {
+  background: #fff;
+  color: var(--portal-navy);
+  border-color: #c5ced9;
+}
+
+@media (min-width: 768px) {
+  .portal-sticky-cta { display: none; }
+  .portal-contact-grid {
+    grid-template-columns: 1fr 1.4fr;
+    align-items: start;
+  }
 }
 
 .portal-btn-light {

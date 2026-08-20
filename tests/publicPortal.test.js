@@ -53,8 +53,8 @@ describe('publicPortal helpers', () => {
       students: [{ firstName: 'AyaKouassiSecret', grades: [{ value: 18 }] }],
       admin: { email: 'secret-director@hidden.ci' },
     });
-    expect(view.payUrl).toBe('/auth/login');
-    expect(view.loginUrl).toBe('/auth/login');
+    expect(view.payUrl).toBe('/e/igest-yopougon-sideci/go/payer');
+    expect(view.loginUrl).toBe('/e/igest-yopougon-sideci/go/connexion');
     expect(view).not.toHaveProperty('students');
     expect(view).not.toHaveProperty('waveNumber');
     expect(view).not.toHaveProperty('admin');

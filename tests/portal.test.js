@@ -142,7 +142,8 @@ describe('Public school portal', () => {
     expect(res.text).toMatch(/id="paiements"/);
     expect(res.text).toMatch(/id="contact"/);
     expect(res.text).toMatch(/Payer la scolarité/);
-    expect(res.text).toMatch(/href="\/auth\/login"/);
+    expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci\/go\/payer"/);
+    expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci\/go\/connexion"/);
     expect(res.text).toMatch(/Espace parent \/ Connexion/);
     expect(res.text).toMatch(/Paiements sécurisés via EduConnect/);
     expect(res.text).toMatch(/Wave/);

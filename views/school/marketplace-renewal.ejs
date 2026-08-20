@@ -1,0 +1,45 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('marketplace-renewal', { _inLayout: true }); %>
+<%- include('../layouts/schoolLayout', { body: content, title: 'Renouvellement Marketplace' }) %>
+<% } else { %>
+<div class="page-header">
+  <h1>Renouvellement Marketplace</h1>
+  <p class="page-sub">Conservez votre page publique <code>/e/<%= school.slug || '…' %></code> et votre visibilité sur <a href="/ecoles" target="_blank" rel="noopener">/ecoles</a>.</p>
+</div>
+
+<% if (paid === '1') { %>
+  <div class="alert alert-success">Paiement Wave initié. Après validation par EduConnect, votre abonnement sera prolongé d’un an. Référence : <strong><%= payment.reference %></strong>.</div>
+<% } else if (paid === '0') { %>
+  <div class="alert alert-error">Le paiement Wave n’a pas abouti. Réessayez ou contactez <a href="mailto:contact@educonnect.ci">contact@educonnect.ci</a>.</div>
+<% } %>
+
+<div class="stats-grid" style="margin-bottom:1rem">
+  <div class="stat-card">
+    <span class="stat-label">Offre</span>
+    <span class="stat-value"><%= offer.label %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Montant annuel</span>
+    <span class="stat-value"><%= formatFcfa(payment.amount) %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Statut</span>
+    <span class="stat-value"><%= subscription.label %></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Détails de l’abonnement</h2>
+  <ul class="portal-meta">
+    <li>École : <strong><%= school.name %></strong></li>
+    <li>Fin d’abonnement : <%= subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' %></li>
+    <li>Référence paiement : <code><%= payment.reference %></code></li>
+  </ul>
+  <p class="form-hint">Le renouvellement prolonge votre abonnement d’un an à partir de la date de fin actuelle (ou d’aujourd’hui si déjà expiré).</p>
+  <div class="form-actions" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem">
+    <a class="btn btn-primary" href="/school/marketplace-renewal/pay">Payer avec Wave — <%= formatFcfa(payment.amount) %></a>
+    <a class="btn btn-outline" href="mailto:contact@educonnect.ci?subject=Renouvellement%20Marketplace%20<%= encodeURIComponent(school.name) %>">Contacter EduConnect</a>
+    <a class="btn btn-outline" href="/school/settings">Paramètres portail</a>
+  </div>
+</div>
+<% } %>

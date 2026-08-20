@@ -10,6 +10,9 @@
     || (portalStats.overallAverage != null && isFinite(Number(portalStats.overallAverage))
       ? (Number(portalStats.overallAverage).toFixed(1).replace('.', ',') + '/20')
       : null);
+  const heroLead = (school.publicDescription || '').trim().slice(0, 220);
+  const payUrl = school.payUrl || '/auth/login';
+  const loginUrl = school.loginUrl || '/auth/login';
 %>
 <%- include('../partials/head') %>
 <% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
@@ -20,14 +23,16 @@
     <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
     <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
       <a href="/ecoles">Écoles</a>
-      <a href="/auth/login">Espace parent / Connexion</a>
+      <a class="portal-nav-cta" href="<%= payUrl %>">Payer</a>
+      <a class="portal-nav-cta portal-nav-cta-outline" href="<%= loginUrl %>">Connexion</a>
       <a href="/devis">Devis</a>
     </nav>
     <details class="portal-burger">
       <summary aria-label="Ouvrir le menu">Menu</summary>
       <nav class="portal-nav" aria-label="Menu mobile">
         <a href="/ecoles">Écoles</a>
-        <a href="/auth/login">Espace parent / Connexion</a>
+        <a href="<%= payUrl %>">Payer la scolarité</a>
+        <a href="<%= loginUrl %>">Espace parent / Connexion</a>
         <a href="/devis">Devis</a>
         <a href="#presentation">Présentation</a>
         <a href="#cycles">Cycles</a>
@@ -51,11 +56,14 @@
           <% if (school.campusLabel) { %>
             <p class="portal-campus"><%= school.campusLabel %></p>
           <% } %>
+          <% if (heroLead) { %>
+            <p class="portal-lead"><%= heroLead %><%= heroLead.length >= 220 ? '…' : '' %></p>
+          <% } %>
         </div>
       </div>
       <div class="portal-hero-actions">
-        <a class="btn btn-primary" href="<%= school.payUrl || '/auth/login' %>">Payer la scolarité</a>
-        <a class="btn btn-outline portal-btn-light" href="<%= school.loginUrl || '/auth/login' %>">Espace parent / Connexion</a>
+        <a class="btn btn-primary btn-lg portal-cta-pay" href="<%= payUrl %>">Payer la scolarité</a>
+        <a class="btn btn-outline portal-btn-light btn-lg" href="<%= loginUrl %>">Espace parent / Connexion</a>
       </div>
     </div>
   </section>
@@ -74,16 +82,15 @@
   <section class="portal-section" id="presentation">
     <article class="card portal-card">
       <h2>Présentation</h2>
-      <p class="portal-desc"><%= (school.copy && school.copy.presentation) ? school.copy.presentation : (school.publicDescription || (school.heading || school.name) + ' est un établissement EduConnect.') %></p>
-      <ul class="portal-meta">
-        <% if (school.address) { %><li>Adresse : <%= school.address %></li><% } %>
-        <% if (school.commune) { %><li>Commune / quartier : <%= school.commune %></li><% } %>
-        <li>Ville : <%= school.city %></li>
-        <li>Pays : Côte d’Ivoire</li>
-        <li>Cycle : <%= school.cycleLabel %></li>
-        <li>Type : <%= school.typeLabel %></li>
-        <% if (school.publicPhone) { %><li>Téléphone : <%= school.publicPhone %></li><% } %>
-        <% if (school.classCount != null) { %><li>Classes : <%= school.classCount %> (effectif anonymisé, sans noms d’élèves)</li><% } %>
+      <p class="portal-desc"><%= (school.copy && school.copy.presentation) ? school.copy.presentation : (school.publicDescription || (school.heading || school.name) + ' est un établissement partenaire EduConnect en Côte d’Ivoire.') %></p>
+      <ul class="portal-meta portal-contact-meta">
+        <% if (school.address) { %><li><strong>Adresse</strong> — <%= school.address %></li><% } %>
+        <% if (school.commune) { %><li><strong>Commune / quartier</strong> — <%= school.commune %></li><% } %>
+        <li><strong>Ville</strong> — <%= school.city %></li>
+        <li><strong>Cycle</strong> — <%= school.cycleLabel %></li>
+        <li><strong>Type</strong> — <%= school.typeLabel %></li>
+        <% if (school.publicPhone) { %><li><strong>Téléphone</strong> — <a href="tel:<%= school.publicPhone.replace(/\s+/g, '') %>"><%= school.publicPhone %></a></li><% } %>
+        <% if (school.classCount != null) { %><li><strong>Classes</strong> — <%= school.classCount %> (effectif anonymisé)</li><% } %>
       </ul>
       <% if (school.osmEmbedSrc) { %>
         <div class="portal-map-wrap">
@@ -123,7 +130,7 @@
     <article class="card portal-card">
       <h2>Actualités</h2>
       <% if (!portalPosts.length) { %>
-        <p class="portal-empty">Aucune actualité publiée pour le moment.</p>
+        <p class="portal-empty">Aucune actualité publiée pour le moment. Revenez bientôt ou contactez l’établissement.</p>
       <% } else { %>
         <ul class="portal-news">
           <% portalPosts.forEach(function(post) { %>
@@ -143,14 +150,16 @@
 
   <section class="portal-section" id="galerie">
     <article class="card portal-card">
-      <h2>Galerie</h2>
+      <h2>Galerie photos</h2>
       <% if (!gallery.length) { %>
-        <p class="portal-empty">Pas encore de photos publiques.</p>
+        <p class="portal-empty">Pas encore de photos publiques. La direction peut en ajouter depuis les paramètres EduConnect.</p>
       <% } else { %>
         <ul class="portal-gallery">
           <% gallery.forEach(function(url, i) { %>
             <li>
-              <img src="<%= url %>" alt="Photo <%= i + 1 %> — <%= school.name %>" loading="lazy">
+              <a href="<%= url %>" target="_blank" rel="noopener noreferrer" class="portal-gallery-link">
+                <img src="<%= url %>" alt="Photo <%= i + 1 %> — <%= school.name %>" loading="lazy">
+              </a>
             </li>
           <% }) %>
         </ul>
@@ -166,7 +175,7 @@
       <% } else if (school.publicLife) { %>
         <p class="portal-desc portal-pre"><%= school.publicLife %></p>
       <% } else { %>
-        <p class="portal-empty">La direction n’a pas encore publié de texte sur les clubs, la cantine ou les activités. Aucune liste d’élèves n’est affichée ici. Pour les inscriptions, utilisez le formulaire de contact.</p>
+        <p class="portal-empty">La direction n’a pas encore publié de texte sur les clubs, la cantine ou les activités. Pour les inscriptions, utilisez le formulaire de contact.</p>
       <% } %>
     </article>
   </section>
@@ -192,60 +201,77 @@
         </ul>
         <p class="form-hint">Agrégats anonymes (<%= portalStats.evaluatedCount %> moyennes, sans noms). Palmarès nominatif : espace parent.</p>
       <% } else { %>
-        <p class="portal-empty">Aucun agrégat public pour l’instant (notes encore insuffisantes, ou non saisies). Les moyennes individuelles restent privées.</p>
+        <p class="portal-empty">Aucun agrégat public pour l’instant. Les moyennes individuelles restent privées.</p>
       <% } %>
-      <a class="btn btn-primary" href="<%= school.loginUrl || '/auth/login' %>">Bulletins : espace parent</a>
+      <a class="btn btn-primary" href="<%= loginUrl %>">Bulletins : espace parent</a>
     </article>
   </section>
 
   <section class="portal-section" id="paiements">
-    <article class="card portal-card">
-      <h2>Paiements</h2>
+    <article class="card portal-card portal-pay-card">
+      <h2>Paiements scolarité</h2>
       <p class="portal-pay-badge">Paiements sécurisés via EduConnect (Wave &amp; Orange Money)</p>
-      <p>Wave et Orange Money se font dans l’espace parent (preuve + validation par l’école). Pas de paiement public sur cette page.</p>
-      <a class="btn btn-primary" href="<%= school.payUrl || '/auth/login' %>">Payer la scolarité</a>
+      <p>Connectez-vous à l’espace parent pour payer la scolarité par Wave ou Orange Money. L’école valide chaque preuve de paiement.</p>
+      <div class="portal-hero-actions">
+        <a class="btn btn-primary btn-lg" href="<%= payUrl %>">Payer la scolarité</a>
+        <a class="btn btn-outline" href="<%= loginUrl %>">Se connecter</a>
+      </div>
     </article>
   </section>
 
   <section class="portal-section" id="contact">
-    <article class="card portal-card">
-      <h2>Contact</h2>
-      <% if (school.publicPhone) { %>
-        <p>Numéro officiel : <a href="tel:<%= school.publicPhone.replace(/\s+/g, '') %>"><%= school.publicPhone %></a></p>
-      <% } %>
-      <% if (school.whatsappUrl) { %>
-        <p><a class="btn btn-whatsapp" href="<%= school.whatsappUrl %>" rel="noopener noreferrer" target="_blank">WhatsApp</a></p>
-      <% } %>
-      <% if (cSuccess) { %>
-        <div class="alert alert-success">Message envoyé. L’école ou EduConnect vous répondra.</div>
-      <% } else { %>
-        <% if (cError) { %><div class="alert alert-error"><%= cError %></div><% } %>
-        <form method="POST" action="<%= school.portalPath || ('/e/' + school.slug) %>/contact" class="form">
-          <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <div class="portal-honeypot" aria-hidden="true">
-            <label>Site web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-          </div>
-          <div class="form-group">
-            <label for="name">Nom</label>
-            <input type="text" id="name" name="name" required maxlength="120" value="<%= cValues.name || '' %>">
-          </div>
-          <div class="form-group">
-            <label for="email">E-mail</label>
-            <input type="email" id="email" name="email" required maxlength="120" value="<%= cValues.email || '' %>">
-          </div>
-          <div class="form-group">
-            <label for="phone">Téléphone</label>
-            <input type="tel" id="phone" name="phone" maxlength="40" value="<%= cValues.phone || '' %>">
-          </div>
-          <div class="form-group">
-            <label for="message">Message</label>
-            <textarea id="message" name="message" rows="5" required minlength="10" maxlength="2000"><%= cValues.message || '' %></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Envoyer</button>
-        </form>
-      <% } %>
+    <article class="card portal-card portal-contact-card">
+      <h2>Contact &amp; inscriptions</h2>
+      <div class="portal-contact-grid">
+        <div class="portal-contact-info">
+          <% if (school.publicPhone) { %>
+            <p><strong>Téléphone</strong><br><a href="tel:<%= school.publicPhone.replace(/\s+/g, '') %>"><%= school.publicPhone %></a></p>
+          <% } %>
+          <% if (school.commune || school.city) { %>
+            <p><strong>Localisation</strong><br><%= [school.commune, school.city].filter(Boolean).join(', ') %></p>
+          <% } %>
+          <% if (school.whatsappUrl) { %>
+            <p><a class="btn btn-whatsapp" href="<%= school.whatsappUrl %>" rel="noopener noreferrer" target="_blank">Écrire sur WhatsApp</a></p>
+          <% } %>
+        </div>
+        <div class="portal-contact-form">
+          <% if (cSuccess) { %>
+            <div class="alert alert-success">Message envoyé. L’école ou EduConnect vous répondra sous peu.</div>
+          <% } else { %>
+            <% if (cError) { %><div class="alert alert-error"><%= cError %></div><% } %>
+            <form method="POST" action="<%= school.portalPath || ('/e/' + school.slug) %>/contact" class="form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <div class="portal-honeypot" aria-hidden="true">
+                <label>Site web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+              </div>
+              <div class="form-group">
+                <label for="name">Nom</label>
+                <input type="text" id="name" name="name" required maxlength="120" value="<%= cValues.name || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required maxlength="120" value="<%= cValues.email || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="phone">Téléphone</label>
+                <input type="tel" id="phone" name="phone" maxlength="40" value="<%= cValues.phone || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" rows="5" required minlength="10" maxlength="2000" placeholder="Demande d’inscription, visite, renseignements…"><%= cValues.message || '' %></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Envoyer le message</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
     </article>
   </section>
+
+  <aside class="portal-sticky-cta" aria-label="Actions rapides">
+    <a class="btn btn-primary" href="<%= payUrl %>">Payer</a>
+    <a class="btn btn-outline portal-sticky-cta-light" href="<%= loginUrl %>">Connexion</a>
+  </aside>
 
   <p class="portal-legal">Page publique EduConnect — Alliance Digitale Internationale. Canonical : <a href="<%= school.portalUrl %>"><%= school.portalUrl %></a></p>
 </div>

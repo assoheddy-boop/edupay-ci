@@ -9,6 +9,9 @@ const {
   canAccessSchoolJobs,
 } = require('../utils/officialSms');
 const { MARKETPLACE_MODULE } = require('../utils/marketplaceAddon');
+const { marketplaceSubscriptionStatus } = require('../utils/marketplaceSubscription');
+const { createMarketplaceRenewalCheckout, buildRenewalPaymentLink, formatFcfa } = require('../utils/marketplaceWavePayment');
+const { marketplaceOfferForTier } = require('../config/marketplaceOffers');
 const { getModuleMap, isEnabled } = require('../utils/modules');
 const { bypassPlanAndModules } = require('../utils/adminAssist');
 const { parseEducationCycle } = require('../utils/educationCycle');
@@ -119,7 +122,7 @@ function uploadedList(req, field) {
   return Array.isArray(list) ? list : list ? [list] : [];
 }
 
-function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, smsPreview, marketplaceEnabled } = {}) {
+function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, smsPreview, marketplaceEnabled, subscription } = {}) {
   return {
     user: req.user,
     school: school || req.user.school,
@@ -128,6 +131,7 @@ function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, s
     smsOfficialEnabled,
     smsPreview,
     marketplaceEnabled: Boolean(marketplaceEnabled),
+    subscription: subscription || null,
     canSetFeatured: req.user?.role === 'SUPER_ADMIN',
     publicTypeOptions: PUBLIC_TYPE_OPTIONS,
   };
@@ -136,11 +140,16 @@ function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, s
 async function settings(req, res) {
   const success = req.query.success === 'photo' ? 'Photo de profil mise à jour' : null;
   const mods = await getModuleMap(req.user.school.id);
+  const school = req.user.school;
+  const subscription = isEnabled(mods, MARKETPLACE_MODULE)
+    ? marketplaceSubscriptionStatus(school)
+    : null;
   res.render('school/settings', settingsPageLocals(req, {
     success,
     smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
     marketplaceEnabled: isEnabled(mods, MARKETPLACE_MODULE),
-    smsPreview: smsPreviewExample(req.user.school.name),
+    smsPreview: smsPreviewExample(school.name),
+    subscription,
   }));
 }
 
@@ -290,7 +299,13 @@ async function updateSettings(req, res) {
         }
       }
 
-      const gallery = [...(portal.publicGallery || [])];
+      const removeGalleryRaw = req.body.removeGallery;
+      const removeGallery = Array.isArray(removeGalleryRaw)
+        ? removeGalleryRaw
+        : (removeGalleryRaw ? [removeGalleryRaw] : []);
+      const removeSet = new Set(removeGallery.filter(Boolean));
+
+      let gallery = [...(portal.publicGallery || [])].filter((url) => !removeSet.has(url));
       for (const file of uploadedList(req, 'gallery')) {
         const url = await savePortalImage(file);
         if (url) gallery.push(url);
@@ -310,6 +325,7 @@ async function updateSettings(req, res) {
       smsOfficialEnabled: isEnabled(mods, SMS_OFFICIAL_MODULE),
       marketplaceEnabled,
       smsPreview: smsPreviewExample(school.name),
+      subscription: marketplaceEnabled ? marketplaceSubscriptionStatus(school) : null,
     }));
   } catch (err) {
     console.error(err);
@@ -317,11 +333,13 @@ async function updateSettings(req, res) {
       ? err.message
       : 'Erreur de mise à jour';
     const errorMods = await getModuleMap(req.user.school.id);
+    const mktOn = isEnabled(errorMods, MARKETPLACE_MODULE);
     res.render('school/settings', settingsPageLocals(req, {
       error: message,
       smsOfficialEnabled: isEnabled(errorMods, SMS_OFFICIAL_MODULE),
-      marketplaceEnabled: isEnabled(errorMods, MARKETPLACE_MODULE),
+      marketplaceEnabled: mktOn,
       smsPreview: smsPreviewExample(req.user.school.name),
+      subscription: mktOn ? marketplaceSubscriptionStatus(req.user.school) : null,
     }));
   }
 }
@@ -1220,6 +1238,57 @@ async function removeStaffRole(req, res) {
   return res.redirect('/school/staff-roles?success=' + encodeURIComponent('Affectation supprimée.'));
 }
 
+async function marketplaceRenewalPage(req, res) {
+  const mods = await getModuleMap(req.user.school.id);
+  if (!isEnabled(mods, MARKETPLACE_MODULE)) {
+    return res.redirect('/school/settings?error=marketplace');
+  }
+  const school = await prisma.school.findUnique({
+    where: { id: req.user.school.id },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      marketplaceTier: true,
+      marketplaceExpiresAt: true,
+      marketplaceStartedAt: true,
+    },
+  });
+  const subscription = marketplaceSubscriptionStatus(school);
+  const payment = buildRenewalPaymentLink(school);
+  const offer = marketplaceOfferForTier(school.marketplaceTier);
+  res.render('school/marketplace-renewal', {
+    user: req.user,
+    school,
+    subscription,
+    payment,
+    offer,
+    formatFcfa,
+    paid: req.query.paid || null,
+  });
+}
+
+async function marketplaceRenewalPay(req, res) {
+  const mods = await getModuleMap(req.user.school.id);
+  if (!isEnabled(mods, MARKETPLACE_MODULE)) {
+    return res.redirect('/school/settings');
+  }
+  const school = await prisma.school.findUnique({
+    where: { id: req.user.school.id },
+    select: {
+      id: true,
+      name: true,
+      marketplaceTier: true,
+      marketplaceExpiresAt: true,
+    },
+  });
+  const checkout = await createMarketplaceRenewalCheckout(school);
+  if (checkout.waveLaunchUrl) {
+    return res.redirect(checkout.waveLaunchUrl);
+  }
+  return res.redirect('/school/marketplace-renewal?paid=0');
+}
+
 async function createStudentAccount(req, res) {
   const schoolId = req.user.school?.id;
   const { id } = req.params;
@@ -1295,4 +1364,6 @@ module.exports = {
   assignStaffRole,
   removeStaffRole,
   createStudentAccount,
+  marketplaceRenewalPage,
+  marketplaceRenewalPay,
 };
