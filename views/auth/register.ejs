@@ -14,7 +14,7 @@
       <a href="/auth/register?role=TEACHER" class="<%= role === 'TEACHER' ? 'active' : '' %>">Enseignant</a>
     </div>
 
-    <form method="POST" action="/auth/register" class="form">
+    <form method="POST" action="/auth/register" class="form" enctype="multipart/form-data">
       <input type="hidden" name="role" value="<%= role === 'parent' ? 'PARENT' : role %>">
       <input type="hidden" name="plan" value="<%= typeof plan !== 'undefined' && plan ? plan : 'pro' %>">
 
@@ -52,8 +52,60 @@
           <input type="text" id="schoolName" name="schoolName" required>
         </div>
         <div class="form-group">
+          <label for="officialName">Nom officiel en-tête bulletin (optionnel)</label>
+          <input type="text" id="officialName" name="officialName" placeholder="COMPLEXE SCOLAIRE IGES">
+        </div>
+        <div class="form-group">
           <label for="schoolAddress">Adresse</label>
           <input type="text" id="schoolAddress" name="schoolAddress">
+        </div>
+        <div class="form-group">
+          <label for="postalAddress">Boîte postale BP (optionnel)</label>
+          <input type="text" id="postalAddress" name="postalAddress" placeholder="10 BP 776 Abj. 10">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="menetAgrement">N° agrément MENAPLN (optionnel)</label>
+            <input type="text" id="menetAgrement" name="menetAgrement" placeholder="89 0459/MENSS/DESEC/SDE/CAB-1">
+          </div>
+          <div class="form-group">
+            <label for="menetCode">Code MENET (optionnel)</label>
+            <input type="text" id="menetCode" name="menetCode" placeholder="000344">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="educationLevels">Niveaux enseignés (optionnel)</label>
+          <input type="text" id="educationLevels" name="educationLevels" placeholder="Maternelle – Primaire – Secondaire…">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nccNumber">N°CC / RCCM (optionnel)</label>
+            <input type="text" id="nccNumber" name="nccNumber" placeholder="9329192D">
+          </div>
+          <div class="form-group">
+            <label for="publicPhones">Téléphones publics bulletin (optionnel)</label>
+            <input type="text" id="publicPhones" name="publicPhones" placeholder="23 535 036 / 07 577 620">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dren">DREN (optionnel)</label>
+            <input type="text" id="dren" name="dren" placeholder="DREN Abidjan 3">
+          </div>
+          <div class="form-group">
+            <label for="directorName">Directeur / fondateur (optionnel)</label>
+            <input type="text" id="directorName" name="directorName" placeholder="M. GNAGNE A. Patrice">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group logo-upload-group">
+            <label for="logo">Logo principal (optionnel)</label>
+            <input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp">
+          </div>
+          <div class="form-group logo-upload-group">
+            <label for="secondaryLogo">Logo secondaire (optionnel)</label>
+            <input type="file" id="secondaryLogo" name="secondaryLogo" accept="image/jpeg,image/png,image/webp">
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">

@@ -30,7 +30,10 @@ router.get('/register', authController.showRegister);
 
 router.post('/login', authLimiter, loginRules, handleValidationErrors, authController.login);
 
-router.post('/register', authLimiter, registerRules, schoolAdminRegisterRules, teacherRegisterRules, handleValidationErrors, authController.register);
+router.post('/register', authLimiter, upload.logoUpload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'secondaryLogo', maxCount: 1 },
+]), registerRules, schoolAdminRegisterRules, teacherRegisterRules, handleValidationErrors, authController.register);
 
 const { requireAuth } = require('../middleware/auth');
 const upload = require('../middleware/upload');

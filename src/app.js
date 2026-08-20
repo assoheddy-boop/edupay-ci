@@ -86,6 +86,7 @@ app.use(metricsMiddleware);
 app.use((req, res, next) => {
   res.locals.appName = 'EduConnect';
   res.locals.logoSrcFor = require('./utils/schoolLogo').logoSrcFor;
+  res.locals.secondaryLogoSrcFor = require('./utils/schoolLogo').secondaryLogoSrcFor;
   res.locals.showDemoAccounts = process.env.NODE_ENV !== 'production';
   res.locals.safeJson = safeJson;
   res.locals.unreadNotifications = 0;

@@ -78,6 +78,7 @@ async function login(req, res) {
 
 async function register(req, res) {
   const { email, password, firstName, lastName, phone, role, schoolName, schoolAddress, city, waveNumber, omNumber, schoolCode, plan } = req.body;
+  const { parseSchoolOfficialFields } = require('../utils/schoolOfficialIdentity');
 
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -116,11 +117,30 @@ async function register(req, res) {
               omNumber,
               subscription: plan || 'pro',
               planId: selectedPlan?.id || null,
+              ...parseSchoolOfficialFields(req.body),
             },
           },
         },
         include: { school: true },
       });
+
+      const { saveSchoolLogo, saveSecondarySchoolLogo } = require('../utils/schoolLogo');
+      const logoFile = req.files?.logo?.[0];
+      const secondaryLogoFile = req.files?.secondaryLogo?.[0];
+      const logoData = {};
+      if (logoFile) {
+        const logo = await saveSchoolLogo(user.school.id, logoFile);
+        logoData.logoUrl = logo.logoUrl;
+        logoData.logoBase64 = logo.logoBase64;
+      }
+      if (secondaryLogoFile) {
+        const secondary = await saveSecondarySchoolLogo(user.school.id, secondaryLogoFile);
+        logoData.secondaryLogoUrl = secondary.secondaryLogoUrl;
+        logoData.secondaryLogoBase64 = secondary.secondaryLogoBase64;
+      }
+      if (Object.keys(logoData).length) {
+        await prisma.school.update({ where: { id: user.school.id }, data: logoData });
+      }
 
       const { initSchoolModules } = require('../utils/modules');
       await initSchoolModules(user.school.id);

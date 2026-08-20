@@ -5,7 +5,7 @@ const { hashPassword } = require('./password');
 const { initSchoolModules, initFinanceDefaults } = require('./modules');
 const { ensureSubscriptionPlans, findPlanBySlug, assignPlanToSchool } = require('./plans');
 const { generateTempPassword, pickSchoolFields } = require('../config/epvSchools');
-const { saveSchoolLogo, publicPathFromLogoFile } = require('./schoolLogo');
+const { saveSchoolLogo, publicPathFromLogoFile, saveSecondarySchoolLogo } = require('./schoolLogo');
 
 function applyCatalogLogo(schoolId, logoFile) {
   if (!logoFile) return Promise.resolve(null);
@@ -19,6 +19,18 @@ function applyCatalogLogo(schoolId, logoFile) {
   });
 }
 
+function applySecondaryCatalogLogo(schoolId, logoFile) {
+  if (!logoFile) return Promise.resolve(null);
+  const abs = path.isAbsolute(logoFile) ? logoFile : path.join(__dirname, '../..', logoFile);
+  if (!fs.existsSync(abs)) return Promise.resolve(null);
+  const buffer = fs.readFileSync(abs);
+  return saveSecondarySchoolLogo(schoolId, {
+    buffer,
+    originalname: path.basename(abs),
+    mimetype: 'image/png',
+  });
+}
+
 async function attachLogoAndPhone(school, def) {
   const data = {};
   const logo = await applyCatalogLogo(school.id, def.logoFile);
@@ -26,6 +38,16 @@ async function attachLogoAndPhone(school, def) {
   if (publicUrl) data.logoUrl = publicUrl;
   else if (logo) data.logoUrl = logo.logoUrl;
   if (logo) data.logoBase64 = logo.logoBase64;
+
+  const secondaryLogo = def.secondaryLogoFile
+    ? await applySecondaryCatalogLogo(school.id, def.secondaryLogoFile)
+    : null;
+  const secondaryPublicUrl = publicPathFromLogoFile(def.secondaryLogoFile);
+  if (secondaryPublicUrl) data.secondaryLogoUrl = secondaryPublicUrl;
+  else if (secondaryLogo) {
+    data.secondaryLogoUrl = secondaryLogo.logoUrl;
+    data.secondaryLogoBase64 = secondaryLogo.logoBase64;
+  }
 
   if (Object.keys(data).length) {
     await prisma.school.update({ where: { id: school.id }, data });

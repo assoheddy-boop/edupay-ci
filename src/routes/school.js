@@ -56,6 +56,9 @@ router.post('/justificatifs/:id/review', requireModule('absences'), requirePermi
 router.get('/settings', requirePermission(P.SETTINGS_READ), schoolController.settings);
 router.post('/settings', requirePermission(P.SETTINGS_WRITE), upload.logoUpload.fields([
   { name: 'logo', maxCount: 1 },
+  { name: 'secondaryLogo', maxCount: 1 },
+  { name: 'directorSignature', maxCount: 1 },
+  { name: 'directorStamp', maxCount: 1 },
   { name: 'banner', maxCount: 1 },
   { name: 'gallery', maxCount: 8 },
 ]), auditMiddleware('school_settings_update', 'School'), schoolController.updateSettings);

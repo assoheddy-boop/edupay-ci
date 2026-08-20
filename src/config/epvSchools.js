@@ -152,6 +152,17 @@ function pickSchoolFields(def, existing = {}) {
     marketplaceTier: marketplace.marketplaceTier,
     lat: def.lat ?? existing.lat ?? null,
     lng: def.lng ?? existing.lng ?? null,
+    officialName: def.officialName ?? existing.officialName ?? null,
+    menetCode: def.menetCode ?? existing.menetCode ?? null,
+    menetAgrement: def.menetAgrement ?? existing.menetAgrement ?? null,
+    nccNumber: def.nccNumber ?? existing.nccNumber ?? null,
+    postalAddress: def.postalAddress ?? existing.postalAddress ?? null,
+    publicPhones: def.publicPhones ?? existing.publicPhones ?? def.publicPhone ?? existing.publicPhone ?? null,
+    educationLevels: def.educationLevels ?? existing.educationLevels ?? null,
+    dren: def.dren ?? existing.dren ?? null,
+    directorName: def.directorName
+      ?? existing.directorName
+      ?? (def.admin ? `${def.admin.firstName || ''} ${def.admin.lastName || ''}`.trim() || null : null),
   };
 }
 

@@ -4,6 +4,9 @@ const {
   publicTypeLabel,
   formatAbsenceSummary,
   buildMenetViewModel,
+  buildBulletinHeaderModel,
+  formatAgrementLine,
+  formatContactRow,
 } = require('../src/utils/bulletinMenet');
 
 describe('bulletinMenet helpers', () => {
@@ -58,5 +61,48 @@ describe('bulletinMenet helpers', () => {
     expect(vm.distinction).toBe('Bien — Admis');
     expect(vm.absencesSummary).toBe('1 jour(s)');
     expect(vm.termAverageLabel).toBe('Moyenne du 1er trimestre');
+  });
+
+  test('buildBulletinHeaderModel includes official IGES-style fields', () => {
+    const school = {
+      name: 'IGEST',
+      officialName: 'COMPLEXE SCOLAIRE IGES',
+      menetAgrement: '89 0459/MENSS/DESEC/SDE/CAB-1',
+      nccNumber: '9329192D',
+      postalAddress: '10 BP 776 Abj. 10',
+      publicPhones: '23 535 036 / 07 577 620',
+      educationLevels: 'Maternelle – Primaire – Secondaire Général',
+      dren: 'DREN Abidjan 3',
+    };
+    const header = buildBulletinHeaderModel(school);
+    expect(header.displayName).toBe('COMPLEXE SCOLAIRE IGES');
+    expect(formatAgrementLine(school)).toContain('89 0459');
+    expect(formatContactRow(school)).toContain('9329192D');
+    expect(formatContactRow(school)).toContain('10 BP 776');
+    expect(formatContactRow(school)).toContain('23 535 036');
+    expect(header.dren).toBe('DREN Abidjan 3');
+  });
+
+  test('buildMenetViewModel header pulls from school record', () => {
+    const vm = buildMenetViewModel({
+      school: {
+        name: 'IGEST',
+        officialName: 'COMPLEXE SCOLAIRE IGES',
+        menetAgrement: '89 0459/MENSS/DESEC/SDE/CAB-1',
+        nccNumber: '9329192D',
+        dren: 'DREN Abidjan 3',
+        publicPhones: '23 535 036',
+      },
+      student: { class: { name: '6e 1' } },
+      rows: [],
+      average: 10,
+      rank: 1,
+      classSize: 30,
+      term: 'T1',
+      periodLabel: 'T1',
+    });
+    expect(vm.header.agrementLine).toContain('89 0459');
+    expect(vm.header.contactRow).toContain('9329192D');
+    expect(vm.header.dren).toBe('DREN Abidjan 3');
   });
 });

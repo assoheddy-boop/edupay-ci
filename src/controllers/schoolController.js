@@ -243,14 +243,14 @@ async function updateSettings(req, res) {
     address,
     city,
     removeLogo,
+    removeSecondaryLogo,
     smsSenderId,
     educationCycle,
-    menetCode,
-    dren,
     homeroomTeacherName,
     removeDirectorSignature,
     removeDirectorStamp,
   } = req.body;
+  const { parseSchoolOfficialFields } = require('../utils/schoolOfficialIdentity');
   try {
     const mods = await getModuleMap(req.user.school.id);
     const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
@@ -284,12 +284,7 @@ async function updateSettings(req, res) {
     if (smsSenderId !== undefined) {
       data.smsSenderId = sanitizeSmsSenderId(smsSenderId);
     }
-    if (menetCode !== undefined) {
-      data.menetCode = String(menetCode || '').trim() || null;
-    }
-    if (dren !== undefined) {
-      data.dren = String(dren || '').trim() || null;
-    }
+    Object.assign(data, parseSchoolOfficialFields(req.body));
     if (homeroomTeacherName !== undefined) {
       data.homeroomTeacherName = String(homeroomTeacherName || '').trim() || null;
     }
@@ -324,6 +319,12 @@ async function updateSettings(req, res) {
       data.logoUrl = null;
       data.logoBase64 = null;
     }
+    if (removeSecondaryLogo === 'on') {
+      const { removeSecondarySchoolLogoFiles } = require('../utils/schoolLogo');
+      removeSecondarySchoolLogoFiles(req.user.school.id);
+      data.secondaryLogoUrl = null;
+      data.secondaryLogoBase64 = null;
+    }
 
     const logoFile = firstUploaded(req, 'logo');
     if (logoFile) {
@@ -331,6 +332,13 @@ async function updateSettings(req, res) {
       const logo = await saveSchoolLogo(req.user.school.id, logoFile);
       data.logoUrl = logo.logoUrl;
       data.logoBase64 = logo.logoBase64;
+    }
+    const secondaryLogoFile = firstUploaded(req, 'secondaryLogo');
+    if (secondaryLogoFile) {
+      const { saveSecondarySchoolLogo } = require('../utils/schoolLogo');
+      const secondary = await saveSecondarySchoolLogo(req.user.school.id, secondaryLogoFile);
+      data.secondaryLogoUrl = secondary.secondaryLogoUrl;
+      data.secondaryLogoBase64 = secondary.secondaryLogoBase64;
     }
 
     if (marketplaceEnabled) {
@@ -1027,7 +1035,7 @@ async function previewBulletin(req, res) {
 
   const { termTitleCi, formatRankCi, formatBirthDate, formatGenderShort } = require('../utils/bulletinCiLayout');
   const { formatRepeatLabel } = require('../utils/bulletinMenet');
-  const { logoSrcFor } = require('../utils/schoolLogo');
+  const { logoSrcFor, secondaryLogoSrcFor } = require('../utils/schoolLogo');
 
   res.render('bulletin/menet-fp', {
     user: req.user,
@@ -1038,6 +1046,7 @@ async function previewBulletin(req, res) {
     formatGenderShort,
     formatRepeatLabel,
     logoSrc: logoSrcFor(req.user.school),
+    secondaryLogoSrc: secondaryLogoSrcFor(req.user.school),
     directorSignatureSrc: req.user.school.directorSignatureUrl || req.user.school.directorSignatureBase64 || null,
     directorStampSrc: req.user.school.directorStampUrl || req.user.school.directorStampBase64 || null,
     printMode: req.query.print === '1',

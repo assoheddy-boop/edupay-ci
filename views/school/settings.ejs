@@ -169,17 +169,63 @@
       <% } %>
 
       <fieldset class="form-group" style="margin-top:1.25rem">
-        <legend>Bulletin MENET-FP (Côte d'Ivoire)</legend>
-        <p class="form-hint">Ces informations apparaissent sur le bulletin officiel PDF : en-tête, visa directeur et professeur principal.</p>
+        <legend>Identité officielle — Bulletin MENET-FP</legend>
+        <p class="form-hint">Ces informations alimentent automatiquement l'en-tête du bulletin PDF (modèle IGES / MENET-FP).</p>
+        <div class="form-group">
+          <label for="officialName">Nom officiel en-tête bulletin</label>
+          <input type="text" id="officialName" name="officialName" value="<%= school.officialName || '' %>" placeholder="COMPLEXE SCOLAIRE IGES" maxlength="120">
+          <p class="form-hint">Si vide, le nom de l'école ci-dessus est utilisé.</p>
+        </div>
         <div class="form-row">
+          <div class="form-group">
+            <label for="menetAgrement">N° agrément MENAPLN</label>
+            <input type="text" id="menetAgrement" name="menetAgrement" value="<%= school.menetAgrement || '' %>" placeholder="89 0459/MENSS/DESEC/SDE/CAB-1" maxlength="80">
+          </div>
           <div class="form-group">
             <label for="menetCode">Code MENET</label>
             <input type="text" id="menetCode" name="menetCode" value="<%= school.menetCode || '' %>" placeholder="000344" maxlength="20">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="educationLevels">Niveaux enseignés</label>
+          <input type="text" id="educationLevels" name="educationLevels" value="<%= school.educationLevels || '' %>" placeholder="Maternelle – Primaire – Secondaire Général…" maxlength="200">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nccNumber">N°CC / RCCM</label>
+            <input type="text" id="nccNumber" name="nccNumber" value="<%= school.nccNumber || '' %>" placeholder="9329192D" maxlength="30">
+          </div>
+          <div class="form-group">
+            <label for="postalAddress">Boîte postale (BP)</label>
+            <input type="text" id="postalAddress" name="postalAddress" value="<%= school.postalAddress || '' %>" placeholder="10 BP 776 Abj. 10" maxlength="80">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="publicPhones">Téléphones publics (bulletin)</label>
+            <input type="text" id="publicPhones" name="publicPhones" value="<%= school.publicPhones || '' %>" placeholder="23 535 036 / 07 577 620" maxlength="120">
           </div>
           <div class="form-group">
             <label for="dren">DREN</label>
             <input type="text" id="dren" name="dren" value="<%= school.dren || '' %>" placeholder="DREN Abidjan 3" maxlength="80">
           </div>
+        </div>
+        <div class="form-group">
+          <label for="directorName">Nom du directeur / fondateur</label>
+          <input type="text" id="directorName" name="directorName" value="<%= school.directorName || '' %>" placeholder="M. GNAGNE A. Patrice" maxlength="120">
+        </div>
+        <div class="form-group logo-upload-group">
+          <label for="secondaryLogo">Logo secondaire (optionnel — ex. filiale IGEST)</label>
+          <% if (school.secondaryLogoUrl || school.secondaryLogoBase64) { %>
+            <div class="logo-preview">
+              <img src="<%= typeof secondaryLogoSrcFor === 'function' ? (secondaryLogoSrcFor(school) || school.secondaryLogoUrl || school.secondaryLogoBase64) : (school.secondaryLogoUrl || school.secondaryLogoBase64) %>" alt="Logo secondaire" class="school-logo-preview">
+            </div>
+            <label class="checkbox-label">
+              <input type="checkbox" name="removeSecondaryLogo">
+              Supprimer le logo secondaire
+            </label>
+          <% } %>
+          <input type="file" id="secondaryLogo" name="secondaryLogo" accept="image/jpeg,image/png,image/webp">
         </div>
         <div class="form-group">
           <label for="homeroomTeacherName">Professeur principal (libellé bulletin)</label>

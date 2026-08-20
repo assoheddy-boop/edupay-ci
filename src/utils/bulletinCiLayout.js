@@ -1,6 +1,12 @@
 const { ordinalFr } = require('../services/classement');
 const { round2 } = require('../services/gradesAverage');
-const { drawSchoolLogo } = require('./schoolLogo');
+const { drawSchoolLogo, drawSecondarySchoolLogo } = require('./schoolLogo');
+const {
+  bulletinSchoolName,
+  buildBulletinHeaderModel,
+  formatAgrementLine,
+  formatContactRow,
+} = require('./schoolOfficialIdentity');
 const {
   resolveDirectorSignatureBuffer,
   resolveDirectorStampBuffer,
@@ -345,29 +351,95 @@ function drawDoubleBox(doc, x, y, w, h) {
   restoreStroke(doc);
 }
 
-function drawHeaderBlock(doc, { school, student, classSize, repeatYear, term }) {
+function drawDashedRect(doc, x, y, w, h) {
+  doc.save();
+  doc.lineWidth(0.75).strokeColor('#000000');
+  doc.dash(4, { space: 3 });
+  doc.rect(x, y, w, h).stroke();
+  doc.undash();
+  doc.restore();
+}
+
+function drawDashedVLine(doc, x, y1, y2) {
+  doc.save();
+  doc.lineWidth(0.75).strokeColor('#000000');
+  doc.dash(4, { space: 3 });
+  doc.moveTo(x, y1).lineTo(x, y2).stroke();
+  doc.undash();
+  doc.restore();
+}
+
+function drawOfficialSchoolHeader(doc, school) {
   const x = PAGE_MARGIN;
   let y = PAGE_MARGIN;
+  const header = buildBulletinHeaderModel(school);
+  const logoColW = 50;
+  const boxH = 68;
+  const hasLeftLogo = resolveLogoBuffer(school) != null;
+  const hasRightLogo = resolveSecondaryLogoBuffer(school) != null;
+  const rightColW = hasRightLogo ? logoColW : 0;
+  const leftColW = hasLeftLogo ? logoColW : 0;
+  const centerX = x + leftColW;
+  const centerW = CONTENT_WIDTH - leftColW - rightColW;
 
-  // Logo + school identity (MENET-FP)
-  const logoW = 48;
-  const hasLogo = drawSchoolLogo(doc, school, { x, y, width: logoW });
-  const identityX = hasLogo ? x + logoW + 8 : x;
-  const identityW = CONTENT_WIDTH - (identityX - x);
+  drawDashedRect(doc, x, y, CONTENT_WIDTH, boxH);
+  if (leftColW) drawDashedVLine(doc, x + logoColW, y, y + boxH);
+  if (rightColW) drawDashedVLine(doc, x + CONTENT_WIDTH - logoColW, y, y + boxH);
 
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#000');
-  doc.text(String(school.name || '').toUpperCase(), identityX, y, { width: identityW });
-  doc.font('Helvetica').fontSize(7);
-  const addr = [school.address, school.city].filter(Boolean).join(' — ');
-  if (addr) doc.text(addr, identityX, doc.y + 2, { width: identityW });
-  if (school.dren) doc.text(String(school.dren), identityX, doc.y + 1, { width: identityW });
-  const codeLine = [
-    school.menetCode ? `Code : ${school.menetCode}` : null,
-    `Statut : ${publicTypeLabel(school.publicType)}`,
-  ].filter(Boolean).join('   ');
-  if (codeLine) doc.text(codeLine, identityX, doc.y + 1, { width: identityW });
+  if (hasLeftLogo) {
+    drawSchoolLogo(doc, school, { x: x + 4, y: y + 8, width: logoColW - 8 });
+  }
+  if (hasRightLogo) {
+    drawSecondarySchoolLogo(doc, school, {
+      x: x + CONTENT_WIDTH - logoColW + 4,
+      y: y + 8,
+      width: logoColW - 8,
+    });
+  }
 
-  y += hasLogo ? logoW + 4 : 36;
+  let textY = y + 8;
+  doc.font('Helvetica-Bold').fontSize(11).fillColor('#0052CC');
+  doc.text(String(header.displayName || '').toUpperCase(), centerX, textY, {
+    width: centerW,
+    align: 'center',
+  });
+
+  if (header.agrementLine) {
+    doc.font('Helvetica-Oblique').fontSize(6.5).fillColor('#000000');
+    doc.text(header.agrementLine, centerX, doc.y + 3, { width: centerW, align: 'center' });
+  }
+  if (header.educationLevels) {
+    doc.font('Helvetica-Oblique').fontSize(6.5);
+    doc.text(header.educationLevels, centerX, doc.y + 2, { width: centerW, align: 'center' });
+  }
+  if (header.contactRow) {
+    doc.font('Helvetica').fontSize(6.5);
+    doc.text(header.contactRow, centerX, doc.y + 2, { width: centerW, align: 'center' });
+  }
+
+  y += boxH + 4;
+  if (header.dren) {
+    doc.font('Helvetica').fontSize(7).fillColor('#000000');
+    doc.text(header.dren, x, y, { width: CONTENT_WIDTH, align: 'center' });
+    y += 10;
+  }
+
+  return y;
+}
+
+function resolveLogoBuffer(school) {
+  const { resolveLogoBuffer: resolve } = require('./schoolLogo');
+  return resolve(school);
+}
+
+function resolveSecondaryLogoBuffer(school) {
+  const { resolveSecondaryLogoBuffer: resolve } = require('./schoolLogo');
+  return resolve(school);
+}
+
+function drawHeaderBlock(doc, { school, student, classSize, repeatYear, term }) {
+  const x = PAGE_MARGIN;
+  let y = drawOfficialSchoolHeader(doc, school);
 
   // Title
   const title = termTitleCi(term);
@@ -393,9 +465,10 @@ function drawHeaderBlock(doc, { school, student, classSize, repeatYear, term }) 
   drawRect(doc, x + CONTENT_WIDTH * 0.58, y, CONTENT_WIDTH * 0.42, blockH);
   restoreStroke(doc);
 
-  const phone = school.publicPhone || school.waveNumber || school.omNumber || '';
+  const addr = [school.address, school.city].filter(Boolean).join(' — ');
+  const phone = school.publicPhones || school.publicPhone || school.waveNumber || school.omNumber || '';
   doc.font('Helvetica-Bold').fontSize(8).fillColor('#000');
-  doc.text(String(school.name || '').toUpperCase(), x + 6, y + 6, { width: CONTENT_WIDTH * 0.54 });
+  doc.text(bulletinSchoolName(school).toUpperCase(), x + 6, y + 6, { width: CONTENT_WIDTH * 0.54 });
   doc.font('Helvetica').fontSize(7);
   if (addr) doc.text(addr, x + 6, y + 18, { width: CONTENT_WIDTH * 0.54 });
   if (phone) doc.text(`Infoline : ${phone}`, x + 6, y + 28, { width: CONTENT_WIDTH * 0.54 });
@@ -608,6 +681,9 @@ function drawFooterBlock(doc, {
 
   doc.font('Helvetica-Bold').fontSize(7);
   doc.text('VISA DU DIRECTEUR DES ETUDES', x + colW, y + 4, { width: colW, align: 'center' });
+  if (school?.directorName) {
+    doc.font('Helvetica').fontSize(7).text(school.directorName, x + colW, y + 12, { width: colW, align: 'center' });
+  }
   const stampBuf = resolveDirectorStampBuffer(school);
   const sigBuf = resolveDirectorSignatureBuffer(school);
   if (stampBuf) {
@@ -675,10 +751,15 @@ module.exports = {
   buildTableRowValues,
   computeTotalsRow,
   drawGradesTable,
+  drawOfficialSchoolHeader,
   drawHeaderBlock,
   drawBilanAnnuel,
   drawTrimestreSummary,
   drawFooterBlock,
   computeClassStats,
   splitTeacherName,
+  bulletinSchoolName,
+  buildBulletinHeaderModel,
+  formatAgrementLine,
+  formatContactRow,
 };

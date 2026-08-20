@@ -280,8 +280,25 @@ model School {
   logoBase64        String?  @db.Text
   /// Code établissement MENET-FP (bulletin officiel CI).
   menetCode         String?
+  /// Nom officiel en-tête bulletin (ex. « COMPLEXE SCOLAIRE IGES »). Sinon `name`.
+  officialName      String?
+  /// Agrément MENAPLN complet (ex. « 89 0459/MENSS/DESEC/SDE/CAB-1 »).
+  menetAgrement     String?
+  /// N°CC / RCCM (ex. « 9329192D »).
+  nccNumber         String?
+  /// Adresse postale BP (ex. « 10 BP 776 Abj. 10 »), distincte de `address`.
+  postalAddress     String?
+  /// Téléphones publics bulletin (plusieurs numéros, séparés par « / »).
+  publicPhones      String?
+  /// Niveaux enseignés (ex. « Maternelle – Primaire – Secondaire… »).
+  educationLevels   String?
   /// DREN de rattachement (ex. « DREN Abidjan 3 »).
   dren              String?
+  /// Nom du directeur / fondateur (visa bulletin).
+  directorName      String?
+  /// Logo secondaire en-tête bulletin (ex. filiale IGEST).
+  secondaryLogoUrl       String?
+  secondaryLogoBase64    String?  @db.Text
   /// Signature numérique du directeur (PNG/JPG) pour le visa bulletin.
   directorSignatureUrl     String?
   directorSignatureBase64  String?  @db.Text

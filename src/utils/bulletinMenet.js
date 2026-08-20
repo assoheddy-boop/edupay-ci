@@ -1,5 +1,11 @@
 const { round2 } = require('../services/gradesAverage');
 const { formatGradeCiOrDash } = require('./bulletinCiLayout');
+const {
+  buildBulletinHeaderModel,
+  formatAgrementLine,
+  formatContactRow,
+  bulletinSchoolName,
+} = require('./schoolOfficialIdentity');
 
 function foldSubject(name) {
   return String(name || '')
@@ -124,6 +130,8 @@ function buildMenetViewModel({
     schoolYear: formatSchoolYearLabel(student?.class?.schoolYear || school?.currentSchoolYear),
     termAverageLabel: termAverageLabel(term),
     formatGrade: formatGradeCiOrDash,
+    header: buildBulletinHeaderModel(school),
+    bulletinSchoolName: bulletinSchoolName(school),
   };
 }
 
@@ -136,4 +144,8 @@ module.exports = {
   formatAbsenceSummary,
   termAverageLabel,
   buildMenetViewModel,
+  buildBulletinHeaderModel,
+  formatAgrementLine,
+  formatContactRow,
+  bulletinSchoolName,
 };

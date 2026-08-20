@@ -4,13 +4,13 @@ Documentation du bulletin officiel ivoirien (format MENET-FP) intégré à EduCo
 
 ## Vue d'ensemble
 
-EduConnect génère des **bulletins PDF** conformes au modèle collège/lycée Côte d'Ivoire :
+EduConnect génère des **bulletins PDF** conformes au modèle collège/lycée Côte d'Ivoire (en-tête type IGES) :
 
-- En-tête : logo, nom, adresse, code MENET, DREN, statut (Privé/Public/Confessionnel)
+- En-tête encadré : logo(s), nom officiel (bleu), agrément MENAPLN, niveaux, N°CC / BP / téléphones, DREN
 - Identité élève : matricule DREN, matricule établissement, classe, effectif, redoublement
 - Tableau des notes : discipline, moyenne/20, coefficient, moy. coef., rang, professeurs, appréciation
 - Synthèse : moyenne trimestre, rang, moyennes classe/élève, absences, bilans Lettres / Sciences / Autres
-- Pied de page : professeur principal, visa directeur (signature + cachet), distinction/sanction
+- Pied de page : professeur principal, visa directeur (nom, signature + cachet), distinction/sanction
 
 ## Prérequis
 
@@ -20,18 +20,42 @@ EduConnect génère des **bulletins PDF** conformes au modèle collège/lycée C
 
 ## Configuration école
 
-**Menu : Paramètres école → Bulletin MENET-FP**
+### Inscription (`/auth/register?role=SCHOOL_ADMIN`)
+
+Lors de la création du compte école, la direction peut renseigner dès l'inscription :
+
+- Nom officiel en-tête bulletin
+- N° agrément MENAPLN, code MENET, niveaux enseignés
+- N°CC / RCCM, boîte postale BP, téléphones publics
+- DREN, directeur / fondateur
+- Logo principal et logo secondaire (optionnel, ex. IGES + IGEST)
+
+Ces champs sont enregistrés sur la fiche `School` et réutilisés automatiquement sur chaque bulletin.
+
+### Paramètres après inscription
+
+**Menu : Paramètres école → Identité officielle — Bulletin MENET-FP**
 
 | Champ | Usage |
 |-------|--------|
-| Logo | Déjà géré (apparaît en en-tête PDF) |
-| Code MENET | Code établissement officiel |
-| DREN | Ex. « DREN Abidjan 3 » |
+| Logo principal | Colonne gauche de l'en-tête |
+| Logo secondaire | Colonne droite (optionnel — dual logo IGES/IGEST) |
+| Nom officiel en-tête | Ex. « COMPLEXE SCOLAIRE IGES » (sinon nom école) |
+| N° agrément MENAPLN | Ligne agrément italique |
+| Code MENET | Code établissement (repli si agrément absent) |
+| Niveaux enseignés | Ex. Maternelle – Primaire – Secondaire… |
+| N°CC / RCCM | Ligne contact |
+| Boîte postale BP | Adresse postale bulletin (distincte de l'adresse physique) |
+| Téléphones publics | Un ou plusieurs numéros, séparés par « / » |
+| DREN | Sous l'encadré en-tête |
+| Directeur / fondateur | Visa bulletin |
 | Professeur principal | Libellé sous « PROFESSEUR PRINCIPAL » |
 | Signature directeur | Image PNG/JPG pour le visa |
 | Cachet établissement | Image PNG/JPG pour le cachet |
 
-Ces champs sont **par établissement** : chaque école du réseau conserve son propre branding.
+### Onboarding partenaires (IGEST / EPV)
+
+Le catalogue `src/config/igestSchool.js` et `pickSchoolFields()` dans `epvSchools.js` préremplissent les valeurs IGES de démonstration pour IGEST (agrément, N°CC, BP, téléphones, DREN, niveaux).
 
 ## Génération
 
@@ -72,10 +96,11 @@ GET /school/bulletins/preview/:studentId?period=T1
 
 | Fichier | Rôle |
 |---------|------|
-| `prisma/schema.prisma` | Champs `menetCode`, `dren`, signatures bulletin sur `School` |
+| `prisma/schema.prisma` | Champs identité officielle sur `School` |
+| `src/utils/schoolOfficialIdentity.js` | Agrégation en-tête bulletin depuis `School` |
 | `src/services/bulletinService.js` | Agrégation notes, absences, rangs |
 | `src/services/bulletinPdf.js` | Génération PDF (pdfkit) |
-| `src/utils/bulletinCiLayout.js` | Mise en page grille officielle |
+| `src/utils/bulletinCiLayout.js` | Mise en page grille officielle + en-tête IGES |
 | `src/utils/bulletinMenet.js` | Bilans domaines, libellés MENET |
 | `src/utils/bulletinBranding.js` | Upload signature / cachet |
 | `views/bulletin/menet-fp.ejs` | Aperçu HTML imprimable |
@@ -83,8 +108,17 @@ GET /school/bulletins/preview/:studentId?period=T1
 ## Schéma (ajouts School)
 
 ```prisma
+officialName           String?
 menetCode              String?
+menetAgrement          String?
+nccNumber              String?
+postalAddress          String?
+publicPhones           String?
+educationLevels        String?
 dren                   String?
+directorName           String?
+secondaryLogoUrl       String?
+secondaryLogoBase64    String? @db.Text
 directorSignatureUrl   String?
 directorSignatureBase64 String? @db.Text
 directorStampUrl       String?

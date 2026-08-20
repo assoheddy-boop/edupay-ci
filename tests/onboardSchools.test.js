@@ -108,12 +108,17 @@ describe('Catalogue IGEST', () => {
     expect(EXTRA_SCHOOLS).toEqual([IGEST_SCHOOL]);
   });
 
-  test('définit le nom, le slug, le téléphone et le fichier logo', () => {
+  test('définit le nom, le slug, le téléphone, le logo et l’identité bulletin IGES', () => {
     expect(IGEST_SCHOOL.name).toBe('IGEST');
+    expect(IGEST_SCHOOL.officialName).toBe('COMPLEXE SCOLAIRE IGES');
     expect(IGEST_SCHOOL.legalName).toContain('Institut Général d\'Enseignement Secondaire');
     expect(IGEST_SCHOOL.slug).toBe('igest-yopougon-sideci');
     expect(IGEST_SCHOOL.city).toBe('Abidjan');
     expect(IGEST_SCHOOL.campusLabel).toBe('Yopougon-Sideci');
+    expect(IGEST_SCHOOL.menetAgrement).toBe('89 0459/MENSS/DESEC/SDE/CAB-1');
+    expect(IGEST_SCHOOL.nccNumber).toBe('9329192D');
+    expect(IGEST_SCHOOL.postalAddress).toBe('10 BP 776 Abj. 10');
+    expect(IGEST_SCHOOL.dren).toBe('DREN Abidjan 3');
     expect(IGEST_SCHOOL.admin.email).toBe('igest@educonnect.ci');
     expect(IGEST_SCHOOL.admin.firstName).toBe('Affoua Valentine');
     expect(IGEST_SCHOOL.admin.lastName).toBe('Dongo');
