@@ -24,20 +24,25 @@
   <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
   <meta property="og:url" content="<%= canonicalUrl %>">
   <% } %>
+  <meta property="og:site_name" content="EduConnect">
+  <% } %>
   <% if (typeof ogImage !== 'undefined' && ogImage) { %>
   <meta property="og:image" content="<%= ogImage %>">
+  <meta property="og:image:secure_url" content="<%= ogImage %>">
+  <meta property="og:image:type" content="image/jpeg">
   <% if (typeof ogImageWidth !== 'undefined' && ogImageWidth) { %>
   <meta property="og:image:width" content="<%= ogImageWidth %>">
   <% } %>
   <% if (typeof ogImageHeight !== 'undefined' && ogImageHeight) { %>
   <meta property="og:image:height" content="<%= ogImageHeight %>">
   <% } %>
+  <meta property="og:image:alt" content="<%= typeof ogImageAlt !== 'undefined' && ogImageAlt ? ogImageAlt : 'EduConnect — plateforme scolaire numérique en Côte d\'Ivoire' %>">
   <meta name="twitter:card" content="summary_large_image">
+  <% if (typeof ogTitle !== 'undefined' && ogTitle) { %>
   <meta name="twitter:title" content="<%= ogTitle %>">
   <meta name="twitter:description" content="<%= typeof ogDescription !== 'undefined' && ogDescription ? ogDescription : (typeof metaDescription !== 'undefined' ? metaDescription : '') %>">
-  <meta name="twitter:image" content="<%= ogImage %>">
   <% } %>
-  <meta property="og:site_name" content="EduConnect">
+  <meta name="twitter:image" content="<%= ogImage %>">
   <% } %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>EduConnect</title>
   <link rel="stylesheet" href="/css/main.css?v=12">

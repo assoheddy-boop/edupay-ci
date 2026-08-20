@@ -152,13 +152,15 @@ describe('Homepage', () => {
     expect(res.text).toMatch(/property="og:locale" content="fr_FR"/);
     expect(res.text).toMatch(/property="og:url" content="[^"]+\/"/);
     expect(res.text).toMatch(
-      /property="og:image" content="[^"]+\/images\/hero-correspondance-ci-fr\.jpg"/
+      /property="og:image" content="[^"]+\/images\/og-educonnect-share\.jpg"/
     );
-    expect(res.text).toMatch(/property="og:image:width" content="640"/);
-    expect(res.text).toMatch(/property="og:image:height" content="360"/);
+    expect(res.text).toMatch(/property="og:image:secure_url" content="[^"]+\/images\/og-educonnect-share\.jpg"/);
+    expect(res.text).toMatch(/property="og:image:type" content="image\/jpeg"/);
+    expect(res.text).toMatch(/property="og:image:width" content="1200"/);
+    expect(res.text).toMatch(/property="og:image:height" content="630"/);
     expect(res.text).toMatch(/name="twitter:card" content="summary_large_image"/);
     expect(res.text).toMatch(
-      /name="twitter:image" content="[^"]+\/images\/hero-correspondance-ci-fr\.jpg"/
+      /name="twitter:image" content="[^"]+\/images\/og-educonnect-share\.jpg"/
     );
     expect(res.text).toMatch(/rel="canonical" href="[^"]+\/"/);
   });

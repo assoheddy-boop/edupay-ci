@@ -4,9 +4,9 @@ const { parseMarketplaceTier, marketplaceBadge, educonnectVerifiedBadge } = requ
 
 const SITE_ORIGIN = (process.env.APP_URL || 'https://educonnect-ci.com').replace(/\/$/, '');
 const CONTACT_INBOX = 'contact@educonnect.ci';
-const DEFAULT_OG_IMAGE_PATH = '/images/hero-correspondance-ci-fr.jpg';
-const DEFAULT_OG_IMAGE_WIDTH = 640;
-const DEFAULT_OG_IMAGE_HEIGHT = 360;
+const DEFAULT_OG_IMAGE_PATH = '/images/og-educonnect-share.jpg';
+const DEFAULT_OG_IMAGE_WIDTH = 1200;
+const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 function defaultOgImage() {
   return `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`;
