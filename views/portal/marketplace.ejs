@@ -1,3 +1,9 @@
+<%
+  const featured = typeof featuredSchools !== 'undefined' && Array.isArray(featuredSchools) ? featuredSchools : [];
+  const filtered = typeof hasActiveFilters !== 'undefined' && hasActiveFilters;
+  const showFeatured = !filtered && featured.length;
+  const count = typeof schoolCount === 'number' ? schoolCount : schools.length;
+%>
 <%- include('../partials/head') %>
 <% if (typeof jsonLdJson !== 'undefined' && jsonLdJson) { %>
 <script type="application/ld+json"><%- jsonLdJson %></script>
@@ -6,7 +12,8 @@
   <header class="portal-top">
     <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
     <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
-      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles" aria-current="page">Écoles</a>
+      <a href="/ecoles/verifies">Vérifiés</a>
       <a href="/auth/login">Connexion</a>
       <a href="/devis">Devis</a>
     </nav>
@@ -14,17 +21,59 @@
       <summary aria-label="Ouvrir le menu">Menu</summary>
       <nav class="portal-nav" aria-label="Menu mobile">
         <a href="/ecoles">Écoles</a>
+        <a href="/ecoles/verifies">Vérifiés</a>
         <a href="/auth/login">Connexion</a>
         <a href="/devis">Devis</a>
       </nav>
     </details>
   </header>
 
-  <section class="portal-hero portal-hero-market">
-    <div>
-      <p class="portal-kicker">Enseignement · Côte d’Ivoire · EduConnect</p>
-      <h1><%= typeof heading !== 'undefined' && heading ? heading : 'Écoles en Côte d’Ivoire' %></h1>
-      <p class="portal-lead"><%= typeof lead !== 'undefined' && lead ? lead : 'Annuaire des écoles, collèges et lycées en Côte d’Ivoire. Les notes, bulletins et classements restent dans l’espace parent.' %></p>
+  <section class="portal-hero portal-hero-market portal-hero-marketplace" aria-labelledby="marketplace-title">
+    <div class="portal-hero-marketplace-inner">
+      <div class="portal-hero-marketplace-copy">
+        <p class="portal-kicker">Enseignement · Côte d’Ivoire · EduConnect</p>
+        <h1 id="marketplace-title"><%= typeof heading !== 'undefined' && heading ? heading : 'Écoles en Côte d’Ivoire' %></h1>
+        <p class="portal-lead"><%= typeof lead !== 'undefined' && lead ? lead : 'Annuaire des écoles, collèges et lycées en Côte d’Ivoire. Les notes, bulletins et classements restent dans l’espace parent.' %></p>
+        <div class="portal-trust-row">
+          <% if (count) { %>
+            <span class="portal-trust-stat"><strong><%= count %></strong> établissement<%= count > 1 ? 's' : '' %> publié<%= count > 1 ? 's' : '' %></span>
+          <% } %>
+          <a href="/ecoles/verifies" class="portal-trust-link">Établissements vérifiés</a>
+          <a href="/devis" class="portal-trust-link">Inscrire mon école</a>
+        </div>
+      </div>
+      <form class="portal-hero-search card" method="GET" action="/ecoles" role="search" aria-label="Rechercher une école">
+        <p class="portal-hero-search-title">Trouver une école</p>
+        <div class="portal-hero-search-fields">
+          <div class="form-group">
+            <label for="commune">Commune / quartier</label>
+            <input type="text" id="commune" name="commune" value="<%= typeof commune !== 'undefined' ? commune : '' %>" placeholder="Yopougon, Bingerville…" autocomplete="address-level3">
+          </div>
+          <div class="form-group">
+            <label for="ville">Ville</label>
+            <input type="text" id="ville" name="ville" value="<%= ville %>" placeholder="Abidjan, Bouaké…" autocomplete="address-level2">
+          </div>
+          <div class="form-group">
+            <label for="cycle">Cycle</label>
+            <select id="cycle" name="cycle">
+              <option value="">Tous les cycles</option>
+              <% cycleOptions.forEach(function(opt) { %>
+                <option value="<%= opt.value %>" <%= cycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type" name="type">
+              <option value="">Tous</option>
+              <% (typeof typeOptions !== 'undefined' ? typeOptions : []).forEach(function(opt) { %>
+                <option value="<%= opt.value %>" <%= type === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary portal-hero-search-btn">Rechercher</button>
+      </form>
     </div>
   </section>
 
@@ -37,61 +86,79 @@
     <a href="/ecoles/colleges-yopougon">Collèges à Yopougon</a>
     <a href="/ecoles?ville=Abidjan">Abidjan</a>
     <a href="/ecoles?commune=Yopougon">Yopougon</a>
+    <a href="/ecoles?cycle=COLLEGE">Collèges</a>
+    <a href="/ecoles?cycle=LYCEE">Lycées</a>
+    <a href="/ecoles?ville=Yopougon">Yopougon</a>
   </nav>
 
-  <form class="card portal-filters" method="GET" action="/ecoles">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="commune">Commune / quartier</label>
-        <input type="text" id="commune" name="commune" value="<%= typeof commune !== 'undefined' ? commune : '' %>" placeholder="Yopougon, Bingerville…">
-      </div>
-      <div class="form-group">
-        <label for="ville">Ville</label>
-        <input type="text" id="ville" name="ville" value="<%= ville %>" placeholder="Abidjan, Bouaké…">
-      </div>
-      <div class="form-group">
-        <label for="cycle">Cycle</label>
-        <select id="cycle" name="cycle">
-          <option value="">Tous</option>
-          <% cycleOptions.forEach(function(opt) { %>
-            <option value="<%= opt.value %>" <%= cycle === opt.value ? 'selected' : '' %>><%= opt.label %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type" name="type">
-          <option value="">Tous</option>
-          <% (typeof typeOptions !== 'undefined' ? typeOptions : []).forEach(function(opt) { %>
-            <option value="<%= opt.value %>" <%= type === opt.value ? 'selected' : '' %>><%= opt.label %></option>
-          <% }) %>
-        </select>
-      </div>
-    </div>
-    <button type="submit" class="btn btn-primary">Rechercher</button>
-  </form>
-
-  <% if (!schools.length) { %>
-    <div class="card portal-card">
-      <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. Contactez EduConnect pour activer une page publique.</p>
-    </div>
-  <% } else { %>
-    <ul class="portal-list">
-      <% schools.forEach(function(s) { %>
-        <li>
-          <a class="card portal-school-link<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
-            <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
-            <span>
-              <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
-              <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
-              <strong><%= s.name %></strong>
-              <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %> · <%= s.typeLabel %></span>
-            </span>
-          </a>
-        </li>
-      <% }) %>
-    </ul>
+  <% if (showFeatured) { %>
+    <section class="portal-featured-section" aria-labelledby="featured-title">
+      <header class="portal-results-head">
+        <h2 id="featured-title">Établissements à la une</h2>
+        <p class="form-hint">Premium et VIP — badge Vérifié EduConnect. Aucune note nominative en public.</p>
+      </header>
+      <ul class="portal-school-grid portal-school-grid-featured">
+        <% featured.forEach(function(s) { %>
+          <li>
+            <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
+              <span class="portal-school-card-logo">
+                <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+              </span>
+              <span class="portal-school-card-body">
+                <span class="portal-school-card-badges">
+                  <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
+                  <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
+                </span>
+                <strong class="portal-school-card-name"><%= s.name %></strong>
+                <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
+              </span>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
   <% } %>
+
+  <section class="portal-results" aria-labelledby="results-title">
+    <header class="portal-results-head">
+      <h2 id="results-title"><%= filtered ? 'Résultats' : 'Toutes les écoles publiées' %></h2>
+      <% if (count) { %>
+        <p class="portal-results-count"><%= count %> établissement<%= count > 1 ? 's' : '' %></p>
+      <% } %>
+    </header>
+
+    <% if (!schools.length) { %>
+      <div class="card portal-card">
+        <p>Aucune école publiée pour ces critères. La visibilité sur /ecoles fait partie de l’option Marketplace. <a href="/devis">Contactez EduConnect</a> pour activer une page publique.</p>
+      </div>
+    <% } else { %>
+      <ul class="portal-school-grid">
+        <% schools.forEach(function(s) { %>
+          <li>
+            <a class="card portal-school-card<%= s.marketplaceBadge ? ' is-featured' : '' %><%= s.marketplaceBadge ? ' ' + s.marketplaceBadge.className : '' %>" href="<%= s.portalPath %>">
+              <span class="portal-school-card-logo">
+                <%- include('../partials/_logo', { logoUrl: s.logoUrl, logoBase64: s.logoBase64, slug: s.slug, name: s.name, size: 'md' }) %>
+              </span>
+              <span class="portal-school-card-body">
+                <span class="portal-school-card-badges">
+                  <% if (s.verifiedBadge) { %><span class="portal-featured-badge <%= s.verifiedBadge.className %>"><%= s.verifiedBadge.label %></span><% } %>
+                  <% if (s.marketplaceBadge) { %><span class="portal-featured-badge <%= s.marketplaceBadge.className %>"><%= s.marketplaceBadge.label %></span><% } %>
+                </span>
+                <strong class="portal-school-card-name"><%= s.name %></strong>
+                <span class="portal-school-meta"><%= s.localityLabel || s.city %> · <%= s.cycleLabel %><% if (s.typeLabel) { %> · <%= s.typeLabel %><% } %></span>
+              </span>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <aside class="card portal-market-cta" aria-label="Inscrire un établissement">
+    <h2>Votre école n’apparaît pas&nbsp;?</h2>
+    <p>Publiez une page publique, soyez trouvé sur Google et laissez les familles vous contacter — sans exposer les notes.</p>
+    <a href="/devis" class="btn btn-primary">Demander un devis Marketplace</a>
+  </aside>
 </div>
 <%- include('../partials/footer') %>
 <%- include('../partials/scripts') %>

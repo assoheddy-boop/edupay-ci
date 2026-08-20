@@ -25,6 +25,7 @@ const {
   findPublishedSchool,
   findPublishedOrganization,
   listPublishedSchools,
+  listFeaturedSchools,
   listPortalPosts,
   buildSitemapXml,
   fallbackSitemapXml,
@@ -72,6 +73,15 @@ async function schoolPageLocals(req, res, school, extra = {}) {
   };
 }
 
+function marketplaceHasActiveFilters(filters = {}) {
+  return Boolean(
+    String(filters.ville || '').trim()
+    || String(filters.commune || '').trim()
+    || String(filters.cycle || '').trim()
+    || String(filters.type || '').trim(),
+  );
+}
+
 async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
   const schools = await listPublishedSchools(filters);
   const seo = seoForMarketplace(seoExtra);
@@ -80,6 +90,8 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
   }
   const views = schools.map((row) => publicSchoolView(row, { includeBase64: false }));
   const jsonLd = jsonLdForMarketplace(views, seo);
+  const hasActiveFilters = marketplaceHasActiveFilters(filters);
+  const featuredSchools = hasActiveFilters ? [] : await listFeaturedSchools(3);
   return res.render('portal/marketplace', {
     user: null,
     title: seo.title,
@@ -102,6 +114,9 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     typeOptions: typeFilterOptions(),
     cycleLabels: CYCLE_LABELS,
     schools: views,
+    schoolCount: views.length,
+    featuredSchools,
+    hasActiveFilters,
     verifiedLanding: Boolean(seoExtra.verifiedLanding),
   });
 }

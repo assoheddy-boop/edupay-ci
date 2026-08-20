@@ -135,6 +135,220 @@
   background: var(--portal-navy);
 }
 
+.portal-hero-marketplace {
+  padding: 1.35rem 1.25rem 1.5rem;
+}
+
+.portal-hero-marketplace-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.portal-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.85rem;
+}
+
+.portal-trust-stat {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.portal-trust-stat strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.portal-trust-link {
+  color: #c7dcff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.portal-trust-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.portal-hero-search {
+  background: #fff;
+  color: var(--portal-navy);
+  padding: 1rem 1.1rem;
+  margin: 0;
+  border: 0;
+  box-shadow: 0 12px 32px rgba(11, 31, 74, 0.22);
+}
+
+.portal-hero-search-title {
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--portal-navy);
+}
+
+.portal-hero-search-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+.portal-hero-search .form-group {
+  margin: 0;
+}
+
+.portal-hero-search label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.portal-hero-search-btn {
+  width: 100%;
+  margin-top: 0.85rem;
+}
+
+.portal-featured-section {
+  margin-bottom: 1.5rem;
+}
+
+.portal-results {
+  margin-bottom: 1.5rem;
+}
+
+.portal-results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.portal-results-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--portal-navy);
+}
+
+.portal-results-count {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--gray-light);
+  font-weight: 600;
+}
+
+.portal-school-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+.portal-school-grid-featured {
+  margin-bottom: 0.25rem;
+}
+
+.portal-school-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  padding: 1rem;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.portal-school-card:hover {
+  box-shadow: 0 8px 24px rgba(11, 31, 74, 0.12);
+  transform: translateY(-1px);
+}
+
+.portal-school-card.is-featured {
+  border: 1px solid #ffd7b0;
+  box-shadow: 0 6px 18px rgba(232, 106, 18, 0.12);
+}
+
+.portal-school-card.is-vip {
+  border-color: #d8b4fe;
+}
+
+.portal-school-card-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5rem;
+}
+
+.portal-school-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.portal-school-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-height: 1.35rem;
+}
+
+.portal-school-card-name {
+  font-size: 1.02rem;
+  line-height: 1.3;
+  color: var(--portal-navy);
+}
+
+.portal-featured-badge,
+.portal-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: #eef3fb;
+  color: var(--portal-navy);
+}
+
+.portal-featured-badge.is-partner,
+.portal-badge.is-partner {
+  background: #fff4ea;
+  color: var(--portal-orange);
+}
+
+.portal-market-cta {
+  text-align: center;
+  padding: 1.35rem 1.25rem;
+  background: linear-gradient(180deg, #f8fbff, #eef3fb);
+  border: 1px solid #dce7f8;
+}
+
+.portal-market-cta h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  color: var(--portal-navy);
+}
+
+.portal-market-cta p {
+  margin: 0 0 1rem;
+  color: var(--gray);
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .portal-hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -409,6 +623,34 @@
 
   .portal-hero-photo { min-height: 280px; }
 
+  .portal-hero-marketplace-inner {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .portal-hero-marketplace-copy {
+    flex: 1 1 52%;
+    max-width: 34rem;
+  }
+
+  .portal-hero-search {
+    flex: 0 1 22rem;
+    min-width: 18rem;
+  }
+
+  .portal-hero-search-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .portal-school-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-school-grid-featured {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .portal-subnav {
     justify-content: flex-start;
     overflow: visible;
@@ -422,5 +664,11 @@
 
   .portal-stats {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-school-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
