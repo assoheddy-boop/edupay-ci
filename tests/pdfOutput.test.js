@@ -62,6 +62,7 @@ describe('pdfOutput', () => {
     const buffer = Buffer.from('%PDF-1.4 test');
     sendPdfDownload(res, { buffer, filename: 'bulletin.pdf' });
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="bulletin.pdf"');
     expect(res.send).toHaveBeenCalledWith(buffer);
     expect(res.download).not.toHaveBeenCalled();
   });
