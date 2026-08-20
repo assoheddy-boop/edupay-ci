@@ -1,4 +1,4 @@
-const CACHE = 'educonnect-offline-v2';
+const CACHE = 'educonnect-offline-v3';
 const SHELL = [
   '/offline',
   '/css/main.css',
