@@ -3,7 +3,7 @@ const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { computeAverage, loadSchoolCoefficients, gradeKindLabel } = require('../services/gradesAverage');
 const { logAudit } = require('../utils/audit');
 const { generateStatsExcel } = require('../../services/export');
-const { getCache, setCache } = require('../../services/cache');
+const { resolveActiveSchoolId, resolveActiveSchool } = require('../utils/schoolContext');
 
 const STATS_TTL = 5 * 60;
 
@@ -68,7 +68,7 @@ async function loadSchoolStats(schoolId) {
 }
 
 async function statsPage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { stats, byClass } = await loadSchoolStats(schoolId);
 
   const auditLogs = await prisma.auditLog.findMany({
@@ -88,7 +88,7 @@ async function statsPage(req, res) {
 
 async function exportStudents(req, res) {
   const students = await prisma.student.findMany({
-    where: { schoolId: req.user.school.id },
+    where: { schoolId: (await resolveActiveSchoolId(req)) },
     include: { class: true },
     orderBy: { lastName: 'asc' },
   });
@@ -114,7 +114,7 @@ async function exportStudents(req, res) {
 
 async function exportPayments(req, res) {
   const payments = await prisma.payment.findMany({
-    where: { student: { schoolId: req.user.school.id } },
+    where: { student: { schoolId: (await resolveActiveSchoolId(req)) } },
     include: { student: true, feeType: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -142,7 +142,7 @@ async function exportPayments(req, res) {
 
 async function exportGrades(req, res) {
   const grades = await prisma.grade.findMany({
-    where: { student: { schoolId: req.user.school.id } },
+    where: { student: { schoolId: (await resolveActiveSchoolId(req)) } },
     include: { student: { include: { class: true } } },
     orderBy: [{ period: 'asc' }, { subject: 'asc' }],
   });
@@ -171,14 +171,14 @@ async function exportGrades(req, res) {
 }
 
 async function exportStats(req, res) {
-  const result = await generateStatsExcel(req.user.school.id);
+  const result = await generateStatsExcel((await resolveActiveSchoolId(req)));
   if (!result.ok) return res.redirect('/school/stats');
   await sendExcel(res, result.filename, result.workbook);
 }
 
 async function feesPage(req, res) {
   const fees = await prisma.feeType.findMany({
-    where: { schoolId: req.user.school.id },
+    where: { schoolId: (await resolveActiveSchoolId(req)) },
     orderBy: { name: 'asc' },
   });
   res.render('school/fees', {
@@ -194,7 +194,7 @@ async function createFee(req, res) {
   const { name, amount, description, dueDay } = req.body;
   await prisma.feeType.create({
     data: {
-      schoolId: req.user.school.id,
+      schoolId: (await resolveActiveSchoolId(req)),
       name,
       amount: parseInt(amount, 10),
       description,
@@ -209,7 +209,7 @@ async function updateFee(req, res) {
   const { id } = req.params;
   const { name, amount, description, dueDay, isActive } = req.body;
   await prisma.feeType.updateMany({
-    where: { id, schoolId: req.user.school.id },
+    where: { id, schoolId: (await resolveActiveSchoolId(req)) },
     data: {
       name,
       amount: parseInt(amount, 10),
@@ -224,7 +224,7 @@ async function updateFee(req, res) {
 
 async function deleteFee(req, res) {
   const { id } = req.params;
-  await prisma.feeType.deleteMany({ where: { id, schoolId: req.user.school.id } });
+  await prisma.feeType.deleteMany({ where: { id, schoolId: (await resolveActiveSchoolId(req)) } });
   await logAudit({ action: 'fee_delete', entity: 'FeeType', entityId: id, user: req.user, ip: req.ip });
   res.redirect('/school/fees?success=deleted');
 }

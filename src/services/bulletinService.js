@@ -19,23 +19,18 @@ const gradeTeacherInclude = {
   teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
 };
 
-async function computeSubjectRanks({ classmates, period, coeffMap, studentId }) {
+async function computeSubjectRanks({ classmates, period, coeffMap, studentId, gradesByStudent }) {
   const bySubject = new Map();
 
-  await Promise.all(
-    classmates.map(async (c) => {
-      const gs = await prisma.grade.findMany({
-        where: { studentId: c.id },
-        select: { subject: true, value: true, maxValue: true, period: true, term: true, kind: true },
-      });
-      const filtered = filterGradesForBulletin(gs, period);
-      const rows = computeSubjectRows(filtered, coeffMap);
-      rows.forEach((row) => {
-        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
-        bySubject.get(row.subject).push({ studentId: c.id, average: row.average });
-      });
-    }),
-  );
+  for (const c of classmates) {
+    const gs = gradesByStudent?.get(c.id) || [];
+    const filtered = filterGradesForBulletin(gs, period);
+    const rows = computeSubjectRows(filtered, coeffMap);
+    rows.forEach((row) => {
+      if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+      bySubject.get(row.subject).push({ studentId: c.id, average: row.average });
+    });
+  }
 
   const ranks = {};
   for (const [subject, entries] of bySubject) {
@@ -44,6 +39,31 @@ async function computeSubjectRanks({ classmates, period, coeffMap, studentId }) 
     ranks[subject] = idx >= 0 ? idx + 1 : null;
   }
   return ranks;
+}
+
+function groupGradesByStudent(grades) {
+  const byStudent = new Map();
+  for (const g of grades) {
+    if (!byStudent.has(g.studentId)) byStudent.set(g.studentId, []);
+    byStudent.get(g.studentId).push(g);
+  }
+  return byStudent;
+}
+
+function computeClassAverages({ classmates, period, coeffMap, term, gradesByStudent }) {
+  return classmates.map((c) => {
+    const gs = gradesByStudent.get(c.id) || [];
+    const filtered = filterGradesForBulletin(gs, period);
+    let avg = 0;
+    if (term === 'ANNUELLE') {
+      avg = filterGradesForBulletin(gs, 'ANNUELLE').length
+        ? computeAnnuelleAverage(gs, coeffMap)
+        : 0;
+    } else if (filtered.length) {
+      avg = computeAverage(filtered, coeffMap);
+    }
+    return { id: c.id, avg, gender: c.gender };
+  });
 }
 
 const BULLETIN_TTL = 60 * 60;
@@ -101,21 +121,22 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     select: { id: true, gender: true, series: true },
   });
 
-  const classAverages = await Promise.all(
-    classmates.map(async (c) => {
-      const gs = await prisma.grade.findMany({ where: { studentId: c.id } });
-      const filtered = filterGradesForBulletin(gs, period);
-      let avg = 0;
-      if (term === 'ANNUELLE') {
-        avg = filterGradesForBulletin(gs, 'ANNUELLE').length
-          ? computeAnnuelleAverage(gs, coeffMap)
-          : 0;
-      } else if (filtered.length) {
-        avg = computeAverage(filtered, coeffMap);
-      }
-      return { id: c.id, avg, gender: c.gender };
-    }),
-  );
+  const studentIds = classmates.map((c) => c.id);
+  const classGradeRows = await prisma.grade.findMany({
+    where: { studentId: { in: studentIds } },
+    select: {
+      studentId: true, subject: true, value: true, maxValue: true, period: true, term: true, kind: true,
+    },
+  });
+  const gradesByStudent = groupGradesByStudent(classGradeRows);
+
+  const classAverages = computeClassAverages({
+    classmates,
+    period,
+    coeffMap,
+    term,
+    gradesByStudent,
+  });
   const classement = computeClassement(classAverages, studentId);
   const classStats = computeClassStats(classAverages);
   const subjectRanks = await computeSubjectRanks({
@@ -123,6 +144,7 @@ async function buildBulletinPdfPayload({ studentId, period, school }) {
     period,
     coeffMap,
     studentId,
+    gradesByStudent,
   });
 
   const gradeRows = computeSubjectRows(grades, coeffMap);

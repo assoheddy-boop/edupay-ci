@@ -2,10 +2,11 @@ const express = require('express');
 const adminController = require('../controllers/adminController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { auditMiddleware } = require('../utils/audit');
+const { csrfProtection } = require('../middleware/csrfProtection');
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('admin'));
+router.use(requireAuth, checkRole('admin'), csrfProtection);
 
 router.get('/', (_req, res) => res.redirect('/admin/dashboard'));
 router.get('/dashboard', adminController.dashboard);

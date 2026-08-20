@@ -41,6 +41,9 @@
   <% if (typeof portalCss !== 'undefined' && portalCss) { %>
   <link rel="stylesheet" href="/css/portal.css?v=9">
   <% } %>
+  <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <% } %>
 </head>
 <body<% if (typeof user !== 'undefined' && user) { %> data-user-id="<%= user.id %>" data-user-role="<%= user.role %>"<% } %>>
 <%- include('_adminAssistBanner') %>

@@ -1,0 +1,24 @@
+<% layout('layouts/teacherLayout') -%>
+<div class="page-header">
+  <h1 class="page-title">Mon compte</h1>
+  <p class="page-sub">Export et suppression de vos données personnelles (RGPD)</p>
+</div>
+
+<% if (error === 'confirmation') { %><div class="alert alert-error">Confirmez en tapant <strong>SUPPRIMER</strong>.</div><% } %>
+
+<section class="card card-padded">
+  <h2>Exporter mes données</h2>
+  <p>Téléchargez une copie JSON de votre profil enseignant, établissement et notifications.</p>
+  <p><a href="/teacher/account/export" class="btn btn-outline">Télécharger l'export JSON</a></p>
+</section>
+
+<section class="card card-padded" style="margin-top:1.5rem;border-color:#fecaca;">
+  <h2>Demander la suppression du compte</h2>
+  <p>Cette action désactive immédiatement votre compte. Contactez la direction pour toute réactivation.</p>
+  <form method="POST" action="/teacher/account/delete-request" class="form" onsubmit="return confirm('Confirmer la suppression de votre compte ?');">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <label class="form-label">Tapez SUPPRIMER pour confirmer</label>
+    <input type="text" name="confirmation" class="form-input" required autocomplete="off" placeholder="SUPPRIMER">
+    <button type="submit" class="btn btn-danger" style="margin-top:0.75rem;">Supprimer mon compte</button>
+  </form>
+</section>

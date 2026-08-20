@@ -7,6 +7,7 @@ const { uniqueFilename } = require('../services/StorageService');
 const {
   isPublicSchoolRegisterOpen,
   isPublicTeacherRegisterOpen,
+  warnPublicRegistrationInProduction,
 } = require('../src/utils/registerFlags');
 
 describe('production hardening helpers', () => {
@@ -57,6 +58,24 @@ describe('production hardening helpers', () => {
     else process.env.ALLOW_PUBLIC_SCHOOL_REGISTER = prevSchool;
     if (prevTeacher === undefined) delete process.env.ALLOW_PUBLIC_TEACHER_REGISTER;
     else process.env.ALLOW_PUBLIC_TEACHER_REGISTER = prevTeacher;
+  });
+
+  test('warnPublicRegistrationInProduction logs when school register open in prod', () => {
+    const prev = process.env.NODE_ENV;
+    const prevFlag = process.env.ALLOW_PUBLIC_SCHOOL_REGISTER;
+    const prevJest = process.env.JEST_WORKER_ID;
+    process.env.NODE_ENV = 'production';
+    process.env.ALLOW_PUBLIC_SCHOOL_REGISTER = 'true';
+    delete process.env.JEST_WORKER_ID;
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    warnPublicRegistrationInProduction();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('ALLOW_PUBLIC_SCHOOL_REGISTER'));
+    warn.mockRestore();
+    process.env.NODE_ENV = prev;
+    if (prevFlag === undefined) delete process.env.ALLOW_PUBLIC_SCHOOL_REGISTER;
+    else process.env.ALLOW_PUBLIC_SCHOOL_REGISTER = prevFlag;
+    if (prevJest === undefined) delete process.env.JEST_WORKER_ID;
+    else process.env.JEST_WORKER_ID = prevJest;
   });
 
   test('auth cookies stay httpOnly + SameSite=strict + secure in production', () => {

@@ -24,6 +24,7 @@ const { requirePermission } = require('../middleware/requirePermission');
 const { PERMISSIONS: P } = require('../utils/staffPermissions');
 const { uploadLimiter } = require('../middleware/rateLimit');
 const { auditMiddleware } = require('../utils/audit');
+const { csrfProtection } = require('../middleware/csrfProtection');
 const {
   handleValidationErrors,
   studentRules,
@@ -37,7 +38,7 @@ const { persistUpload } = upload;
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('school'), attachModules);
+router.use(requireAuth, checkRole('school'), attachModules, csrfProtection);
 
 router.get('/dashboard', requirePermission(P.DASHBOARD), schoolController.dashboard);
 router.get('/analyse', requirePermission(P.STATS), schoolAnalyseController.analysePage);

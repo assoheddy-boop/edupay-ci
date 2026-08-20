@@ -417,6 +417,51 @@ async function handleFirstLoginConsent(req, res) {
   }
 }
 
+async function accountSettingsPage(req, res) {
+  res.render('parent/account', {
+    user: req.user,
+    error: req.query.error || null,
+    success: req.query.success || null,
+  });
+}
+
+async function accountExport(req, res) {
+  const { exportParentAccountData } = require('../services/accountGdpr');
+  const data = await exportParentAccountData(req.user.id);
+  if (!data.ok) {
+    return res.status(403).json({ error: 'Export non disponible pour ce compte.' });
+  }
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="educonnect-export-${req.user.id}.json"`);
+  return res.send(JSON.stringify(data, null, 2));
+}
+
+async function accountDeleteRequest(req, res) {
+  const { requestAccountDeletion } = require('../services/accountGdpr');
+  const { destroyAuthSession } = require('../middleware/auth');
+  const { logAudit } = require('../utils/audit');
+
+  const result = await requestAccountDeletion(req.user.id, {
+    confirmation: req.body?.confirmation,
+  });
+
+  if (!result.ok) {
+    return res.redirect('/parent/account?error=confirmation');
+  }
+
+  await logAudit({
+    action: 'account_delete_request',
+    entity: 'User',
+    entityId: req.user.id,
+    user: req.user,
+    ip: req.ip,
+    sensitive: true,
+  });
+
+  await destroyAuthSession(req, res);
+  return res.redirect('/auth/login?deleted=1');
+}
+
 module.exports = {
   dashboard,
   payments,
@@ -434,4 +479,7 @@ module.exports = {
   updateConsent,
   handleFirstLoginConsent,
   downloadBulletinPdf,
+  accountSettingsPage,
+  accountExport,
+  accountDeleteRequest,
 };

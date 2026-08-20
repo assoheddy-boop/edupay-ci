@@ -21,6 +21,7 @@ const {
   PUBLIC_TYPE_OPTIONS,
   MAX_GALLERY,
 } = require('../utils/publicPortal');
+const { resolveActiveSchoolId, resolveActiveSchool } = require('../utils/schoolContext');
 const { generateBulletinForStudent, generateBulkBulletins, streamBulletinPdf, buildBulletinViewModel } = require('../services/bulletinService');
 const { BULLETIN_TERMS, formatTermLabel } = require('../services/academicTerms');
 const {
@@ -139,7 +140,7 @@ function settingsPageLocals(req, { school, success, error, smsOfficialEnabled, s
 
 async function settings(req, res) {
   const success = req.query.success === 'photo' ? 'Photo de profil mise à jour' : null;
-  const mods = await getModuleMap(req.user.school.id);
+  const mods = await getModuleMap((await resolveActiveSchoolId(req)));
   const school = req.user.school;
   const subscription = isEnabled(mods, MARKETPLACE_MODULE)
     ? marketplaceSubscriptionStatus(school)
@@ -154,7 +155,7 @@ async function settings(req, res) {
 }
 
 async function coefficientsPage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   await syncSubjectsFromGrades(schoolId);
   const subjects = await prisma.subject.findMany({
     where: { schoolId },
@@ -191,7 +192,7 @@ async function syncSubjectsFromGrades(schoolId) {
 }
 
 async function updateCoefficients(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   try {
     if (req.body.applyDefaults === '1') {
       for (const row of COLLEGE_CI_SUBJECTS) {
@@ -252,7 +253,7 @@ async function updateSettings(req, res) {
   } = req.body;
   const { parseSchoolOfficialFields } = require('../utils/schoolOfficialIdentity');
   try {
-    const mods = await getModuleMap(req.user.school.id);
+    const mods = await getModuleMap((await resolveActiveSchoolId(req)));
     const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
     const portal = parsePublicPortalFields(req.body, { user: req.user });
     const data = {
@@ -301,27 +302,27 @@ async function updateSettings(req, res) {
     const signatureFile = firstUploaded(req, 'directorSignature');
     if (signatureFile) {
       const { saveDirectorSignature } = require('../utils/bulletinBranding');
-      const saved = await saveDirectorSignature(req.user.school.id, signatureFile);
+      const saved = await saveDirectorSignature((await resolveActiveSchoolId(req)), signatureFile);
       data.directorSignatureUrl = saved.url;
       data.directorSignatureBase64 = saved.base64;
     }
     const stampFile = firstUploaded(req, 'directorStamp');
     if (stampFile) {
       const { saveDirectorStamp } = require('../utils/bulletinBranding');
-      const saved = await saveDirectorStamp(req.user.school.id, stampFile);
+      const saved = await saveDirectorStamp((await resolveActiveSchoolId(req)), stampFile);
       data.directorStampUrl = saved.url;
       data.directorStampBase64 = saved.base64;
     }
 
     if (removeLogo === 'on') {
       const { removeSchoolLogoFiles } = require('../utils/schoolLogo');
-      removeSchoolLogoFiles(req.user.school.id);
+      removeSchoolLogoFiles((await resolveActiveSchoolId(req)));
       data.logoUrl = null;
       data.logoBase64 = null;
     }
     if (removeSecondaryLogo === 'on') {
       const { removeSecondarySchoolLogoFiles } = require('../utils/schoolLogo');
-      removeSecondarySchoolLogoFiles(req.user.school.id);
+      removeSecondarySchoolLogoFiles((await resolveActiveSchoolId(req)));
       data.secondaryLogoUrl = null;
       data.secondaryLogoBase64 = null;
     }
@@ -329,14 +330,14 @@ async function updateSettings(req, res) {
     const logoFile = firstUploaded(req, 'logo');
     if (logoFile) {
       const { saveSchoolLogo } = require('../utils/schoolLogo');
-      const logo = await saveSchoolLogo(req.user.school.id, logoFile);
+      const logo = await saveSchoolLogo((await resolveActiveSchoolId(req)), logoFile);
       data.logoUrl = logo.logoUrl;
       data.logoBase64 = logo.logoBase64;
     }
     const secondaryLogoFile = firstUploaded(req, 'secondaryLogo');
     if (secondaryLogoFile) {
       const { saveSecondarySchoolLogo } = require('../utils/schoolLogo');
-      const secondary = await saveSecondarySchoolLogo(req.user.school.id, secondaryLogoFile);
+      const secondary = await saveSecondarySchoolLogo((await resolveActiveSchoolId(req)), secondaryLogoFile);
       data.secondaryLogoUrl = secondary.secondaryLogoUrl;
       data.secondaryLogoBase64 = secondary.secondaryLogoBase64;
     }
@@ -369,7 +370,7 @@ async function updateSettings(req, res) {
     }
 
     const school = await prisma.school.update({
-      where: { id: req.user.school.id },
+      where: { id: (await resolveActiveSchoolId(req)) },
       data,
     });
     req.user.school = school;
@@ -387,7 +388,7 @@ async function updateSettings(req, res) {
     const message = (err.message?.includes('Format') || err.message?.includes('slug'))
       ? err.message
       : 'Erreur de mise à jour';
-    const errorMods = await getModuleMap(req.user.school.id);
+    const errorMods = await getModuleMap((await resolveActiveSchoolId(req)));
     const mktOn = isEnabled(errorMods, MARKETPLACE_MODULE);
     res.render('school/settings', settingsPageLocals(req, {
       error: message,
@@ -483,7 +484,7 @@ async function smsDashboard(req, res) {
 
 async function listClasses(req, res) {
   const classes = await prisma.class.findMany({
-    where: { schoolId: req.user.school.id },
+    where: { schoolId: (await resolveActiveSchoolId(req)) },
     include: { _count: { select: { students: true } } },
     orderBy: { name: 'asc' },
   });
@@ -512,7 +513,7 @@ async function updateClass(req, res) {
   const { name, level, schoolYear, series } = req.body;
   try {
     await prisma.class.updateMany({
-      where: { id, schoolId: req.user.school.id },
+      where: { id, schoolId: (await resolveActiveSchoolId(req)) },
       data: { name, level, schoolYear, series: parseSeries(series) },
     });
     await logAudit({ action: 'class_update', entity: 'Class', entityId: id, user: req.user, ip: req.ip });
@@ -528,7 +529,7 @@ async function deleteClass(req, res) {
   try {
     const count = await prisma.student.count({ where: { classId: id } });
     if (count > 0) return res.redirect('/school/classes?error=has_students');
-    await prisma.class.deleteMany({ where: { id, schoolId: req.user.school.id } });
+    await prisma.class.deleteMany({ where: { id, schoolId: (await resolveActiveSchoolId(req)) } });
     await logAudit({ action: 'class_delete', entity: 'Class', entityId: id, user: req.user, ip: req.ip });
     res.redirect('/school/classes?success=deleted');
   } catch (err) {
@@ -538,7 +539,7 @@ async function deleteClass(req, res) {
 }
 
 async function listStudents(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const students = await prisma.student.findMany({
     where: { schoolId },
     include: { class: true, parents: { include: { parent: { include: { user: true } } } } },
@@ -659,7 +660,7 @@ async function createStudent(req, res) {
 async function updateStudent(req, res) {
   const { id } = req.params;
   const { firstName, lastName, matricule, classId, birthDate, gender, series } = req.body;
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   try {
     const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
     if (!cls) return res.redirect('/school/students?error=class');
@@ -710,7 +711,7 @@ async function updateStudent(req, res) {
 async function deleteStudent(req, res) {
   const { id } = req.params;
   try {
-    await prisma.student.deleteMany({ where: { id, schoolId: req.user.school.id } });
+    await prisma.student.deleteMany({ where: { id, schoolId: (await resolveActiveSchoolId(req)) } });
     await logAudit({ action: 'student_delete', entity: 'Student', entityId: id, user: req.user, ip: req.ip });
     res.redirect('/school/students?success=deleted');
   } catch (err) {
@@ -720,7 +721,7 @@ async function deleteStudent(req, res) {
 }
 
 async function listPayments(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const pending = await getPendingPayments(schoolId);
   const others = await prisma.payment.findMany({
     where: { student: { schoolId }, status: { not: 'PENDING' } },
@@ -747,7 +748,7 @@ async function validatePayment(req, res) {
   const { action } = req.body;
 
   const payment = await prisma.payment.findFirst({
-    where: { id, student: { schoolId: req.user.school.id } },
+    where: { id, student: { schoolId: (await resolveActiveSchoolId(req)) } },
     include: { student: { include: { class: true } }, feeType: true },
   });
 
@@ -782,15 +783,15 @@ async function validatePayment(req, res) {
 
   if (status === 'VALIDATED') {
     const { delCache } = require('../../services/cache');
-    await delCache(`stats:school:${req.user.school.id}`);
+    await delCache(`stats:school:${(await resolveActiveSchoolId(req))}`);
 
     const { isEnabled, getModuleMap, initFinanceDefaults } = require('../utils/modules');
-    const mods = await getModuleMap(req.user.school.id);
+    const mods = await getModuleMap((await resolveActiveSchoolId(req)));
     if (isEnabled(mods, 'accounting')) {
-      await initFinanceDefaults(req.user.school.id);
+      await initFinanceDefaults((await resolveActiveSchoolId(req)));
       const { recordValidatedPayment } = require('../../services/AccountingService');
       await recordValidatedPayment({
-        schoolId: req.user.school.id,
+        schoolId: (await resolveActiveSchoolId(req)),
         payment,
       });
     }
@@ -806,7 +807,7 @@ async function validatePayment(req, res) {
     ? `${amountLabel} confirmés pour ${payment.student.firstName}. Reçu disponible.`
     : `Paiement de ${amountLabel} refusé pour ${payment.student.firstName}. Vérifiez la preuve ou contactez l'école.`;
   for (const ps of parents) {
-    await sendNotification(ps.parent.userId, kind, message, { schoolId: req.user.school.id });
+    await sendNotification(ps.parent.userId, kind, message, { schoolId: (await resolveActiveSchoolId(req)) });
   }
 
   res.redirect('/school/payments');
@@ -914,7 +915,7 @@ async function caisseTicket(req, res) {
 }
 
 async function listBulletins(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const [students, classes] = await Promise.all([
     prisma.student.findMany({
       where: { schoolId },
@@ -960,7 +961,7 @@ async function generateBulkBulletin(req, res) {
     const results = await generateBulkBulletins({
       classId,
       period,
-      schoolId: req.user.school.id,
+      schoolId: (await resolveActiveSchoolId(req)),
       school: req.user.school,
     });
     await logAudit({
@@ -979,7 +980,7 @@ async function generateBulkBulletin(req, res) {
 
 async function downloadBulletinPdf(req, res) {
   const student = await prisma.student.findFirst({
-    where: { id: req.params.studentId, schoolId: req.user.school.id },
+    where: { id: req.params.studentId, schoolId: (await resolveActiveSchoolId(req)) },
   });
   if (!student) return res.redirect('/school/bulletins?error=eleve');
 
@@ -1002,7 +1003,7 @@ async function downloadBulletinPdf(req, res) {
 
 async function exportBulletinPdf(req, res) {
   const student = await prisma.student.findFirst({
-    where: { id: req.params.studentId, schoolId: req.user.school.id },
+    where: { id: req.params.studentId, schoolId: (await resolveActiveSchoolId(req)) },
   });
   if (!student) return res.redirect('/school/bulletins?error=eleve');
 
@@ -1018,7 +1019,7 @@ async function exportBulletinPdf(req, res) {
 
 async function previewBulletin(req, res) {
   const student = await prisma.student.findFirst({
-    where: { id: req.params.studentId, schoolId: req.user.school.id },
+    where: { id: req.params.studentId, schoolId: (await resolveActiveSchoolId(req)) },
     include: { class: true },
   });
   if (!student) return res.redirect('/school/bulletins?error=eleve');
@@ -1054,7 +1055,7 @@ async function previewBulletin(req, res) {
 }
 
 async function listTeachers(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const [teachers, classes] = await Promise.all([
     prisma.teacher.findMany({
       where: { schoolId },
@@ -1093,12 +1094,12 @@ async function assignTeacherClass(req, res) {
 
   try {
     const teacher = await prisma.teacher.findFirst({
-      where: { id: teacherId, schoolId: req.user.school.id },
+      where: { id: teacherId, schoolId: (await resolveActiveSchoolId(req)) },
     });
     if (!teacher) return res.redirect('/school/teachers?error=1');
 
     const cls = await prisma.class.findFirst({
-      where: { id: classId, schoolId: req.user.school.id },
+      where: { id: classId, schoolId: (await resolveActiveSchoolId(req)) },
     });
     if (!cls) return res.redirect('/school/teachers?error=1');
 
@@ -1118,7 +1119,7 @@ async function assignTeacherClass(req, res) {
 async function updateTeacherPhoto(req, res) {
   const { teacherId } = req.params;
   const teacher = await prisma.teacher.findFirst({
-    where: { id: teacherId, schoolId: req.user.school.id },
+    where: { id: teacherId, schoolId: (await resolveActiveSchoolId(req)) },
   });
   if (!teacher) return res.redirect('/school/teachers?error=1');
 
@@ -1160,11 +1161,11 @@ async function updateSchoolYear(req, res) {
   const { currentSchoolYear } = req.body;
   try {
     await prisma.school.update({
-      where: { id: req.user.school.id },
+      where: { id: (await resolveActiveSchoolId(req)) },
       data: { currentSchoolYear },
     });
     await prisma.class.updateMany({
-      where: { schoolId: req.user.school.id },
+      where: { schoolId: (await resolveActiveSchoolId(req)) },
       data: { schoolYear: currentSchoolYear },
     });
     req.user.school.currentSchoolYear = currentSchoolYear;
@@ -1179,7 +1180,7 @@ const LEVEL_ORDER = ['PS', 'MS', 'GS', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6e', '
 
 async function promoteClass(req, res) {
   const { classId, targetClassId } = req.body;
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
 
   try {
     const source = await prisma.class.findFirst({ where: { id: classId, schoolId } });
@@ -1331,12 +1332,12 @@ async function removeStaffRole(req, res) {
 }
 
 async function marketplaceRenewalPage(req, res) {
-  const mods = await getModuleMap(req.user.school.id);
+  const mods = await getModuleMap((await resolveActiveSchoolId(req)));
   if (!isEnabled(mods, MARKETPLACE_MODULE)) {
     return res.redirect('/school/settings?error=marketplace');
   }
   const school = await prisma.school.findUnique({
-    where: { id: req.user.school.id },
+    where: { id: (await resolveActiveSchoolId(req)) },
     select: {
       id: true,
       name: true,
@@ -1361,12 +1362,12 @@ async function marketplaceRenewalPage(req, res) {
 }
 
 async function marketplaceRenewalPay(req, res) {
-  const mods = await getModuleMap(req.user.school.id);
+  const mods = await getModuleMap((await resolveActiveSchoolId(req)));
   if (!isEnabled(mods, MARKETPLACE_MODULE)) {
     return res.redirect('/school/settings');
   }
   const school = await prisma.school.findUnique({
-    where: { id: req.user.school.id },
+    where: { id: (await resolveActiveSchoolId(req)) },
     select: {
       id: true,
       name: true,

@@ -2,8 +2,34 @@
   <script src="/js/app.js?v=8"></script>
   <script src="/js/offline.js?v=6"></script>
   <script>
+    (function () {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      var token = meta && meta.getAttribute('content');
+      if (!token) return;
+      document.querySelectorAll('form[method="post"], form[method="POST"]').forEach(function (form) {
+        if (form.querySelector('input[name="_csrf"]')) return;
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_csrf';
+        input.value = token;
+        form.appendChild(input);
+      });
+      var origFetch = window.fetch;
+      if (!origFetch) return;
+      window.fetch = function (url, opts) {
+        opts = opts || {};
+        var method = (opts.method || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD') {
+          opts.headers = opts.headers || {};
+          if (!opts.headers['X-CSRF-Token'] && !opts.headers['x-csrf-token']) {
+            opts.headers['X-CSRF-Token'] = token;
+          }
+        }
+        return origFetch.call(this, url, opts);
+      };
+    })();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
     }
   </script>
 </body>

@@ -8,6 +8,9 @@ const cookieParser = require('cookie-parser');
 const app = require('./app');
 const { initSocket } = require('./config/socket');
 const { startCronJobs } = require('./jobs/cron');
+const { warnPublicRegistrationInProduction } = require('./utils/registerFlags');
+
+warnPublicRegistrationInProduction();
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);

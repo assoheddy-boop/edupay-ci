@@ -73,7 +73,7 @@ describe('Public devis questionnaire', () => {
     expect(res.text).toMatch(/portail EduConnect/i);
     expect(res.text).not.toMatch(/Choisir Premium/);
     expect(res.text).not.toMatch(/Essentiel/);
-    expect(res.headers['set-cookie']?.join(';')).toMatch(/devis_csrf=/);
+    expect(res.headers['set-cookie']?.join(';')).toMatch(/edu_csrf=|devis_csrf=/);
   });
 
   test('POST /devis creates a quote at 500000 FCFA without marketplace', async () => {

@@ -83,6 +83,9 @@ describe('bulletinService weighted bulletin', () => {
       { subject: 'Mathématiques', value: 20, maxValue: 20, period: 'T2', term: 'T2', studentId: 'stu-1' },
     ];
     prisma.grade.findMany.mockImplementation(async ({ where }) => {
+      if (where?.studentId?.in) {
+        return allGrades.filter((g) => where.studentId.in.includes(g.studentId));
+      }
       if (where?.studentId) return allGrades.filter((g) => g.studentId === where.studentId);
       return allGrades;
     });
@@ -176,6 +179,9 @@ describe('bulletinService weighted bulletin', () => {
         'stu-f2': [{ subject: 'Mathématiques', value: 12, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-f2' }],
         'stu-m1': [{ subject: 'Mathématiques', value: 14, maxValue: 20, period: 'T1', term: 'T1', studentId: 'stu-m1' }],
       };
+      if (where?.studentId?.in) {
+        return where.studentId.in.flatMap((id) => byId[id] || []);
+      }
       return byId[where?.studentId] || [];
     });
 

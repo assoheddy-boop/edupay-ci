@@ -44,6 +44,10 @@ function isApiRequest(req) {
   return req.originalUrl.startsWith('/api/');
 }
 
+function usesBearerAuth(req) {
+  return Boolean(req.headers.authorization?.match(/^Bearer\s+/i));
+}
+
 function setAuthCookie(res, token) {
   res.cookie(ACCESS_COOKIE, token, getCookieOptions());
 }
@@ -173,7 +177,9 @@ async function requireAuth(req, res, next) {
     res.locals.user = user;
     res.locals.adminAssist = user.adminAssist || null;
 
-    const staffCtx = attachStaffContext(user, resolveStaffSchoolId(user));
+    const { resolveActiveSchoolId } = require('../utils/schoolContext');
+    const activeSchoolId = await resolveActiveSchoolId(req);
+    const staffCtx = attachStaffContext(user, activeSchoolId || resolveStaffSchoolId(user));
     res.locals.staffRole = staffCtx.staffRole;
     res.locals.staffRoleLabel = staffCtx.staffRoleLabel;
     res.locals.staffPermissions = staffCtx.staffPermissions;
@@ -192,6 +198,12 @@ async function requireAuth(req, res, next) {
 
     applyI18n(req, res);
     applyCurrency(req, res);
+
+    if (!usesBearerAuth(req)) {
+      const { ensureCsrfToken } = require('../utils/csrf');
+      res.locals.csrfToken = ensureCsrfToken(req, res);
+    }
+
     next();
   } catch (err) {
     if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {

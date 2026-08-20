@@ -13,6 +13,7 @@ const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
 const { attachConsentPrompt } = require('../middleware/consentPrompt');
 const { attachUnreadNotifications } = require('../middleware/unreadNotifications');
+const { csrfProtection } = require('../middleware/csrfProtection');
 const { childLinkLimiter } = require('../middleware/rateLimit');
 const { addChildRules, handleValidationErrors } = require('../middleware/validators');
 
@@ -21,7 +22,7 @@ const { chatUpload, persistUpload, hrDocUpload } = upload;
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('parent'), attachModules, attachConsentPrompt, attachUnreadNotifications);
+router.use(requireAuth, checkRole('parent'), attachModules, attachConsentPrompt, attachUnreadNotifications, csrfProtection);
 
 router.get('/dashboard', parentController.dashboard);
 
@@ -87,6 +88,10 @@ router.get('/privacy', parentController.privacyPage);
 router.post('/privacy', parentController.updateConsent);
 
 router.post('/privacy/first-login', parentController.handleFirstLoginConsent);
+
+router.get('/account', parentController.accountSettingsPage);
+router.get('/account/export', parentController.accountExport);
+router.post('/account/delete-request', parentController.accountDeleteRequest);
 
 module.exports = router;
 

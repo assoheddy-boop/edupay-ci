@@ -9,12 +9,13 @@ const riskController = require('../controllers/riskController');
 const { requireAuth, checkRole } = require('../middleware/auth');
 const { attachModules, requireModule } = require('../middleware/modules');
 const { attachUnreadNotifications } = require('../middleware/unreadNotifications');
+const { csrfProtection } = require('../middleware/csrfProtection');
 const upload = require('../middleware/upload');
 const { persistUpload } = upload;
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('teacher'), attachModules, attachUnreadNotifications);
+router.use(requireAuth, checkRole('teacher'), attachModules, attachUnreadNotifications, csrfProtection);
 
 router.get('/dashboard', teacherController.dashboard);
 router.get('/notifications', teacherController.notificationsPage);
@@ -66,5 +67,9 @@ router.get('/hr/attendance', requireModule('hr'), teacherHrController.attendance
 router.post('/hr/attendance/check-in', requireModule('hr'), teacherHrController.clockIn);
 router.post('/hr/attendance/check-out', requireModule('hr'), teacherHrController.clockOut);
 router.get('/hr/evaluations', requireModule('hr'), teacherHrController.evaluationsPage);
+
+router.get('/account', teacherController.accountSettingsPage);
+router.get('/account/export', teacherController.accountExport);
+router.post('/account/delete-request', teacherController.accountDeleteRequest);
 
 module.exports = router;

@@ -28,6 +28,7 @@ const { DEFAULT_PAY_RUBRIQUES } = require('../config/paySlipRubriques');
 const { sendPdfDownload } = require('../utils/pdfOutput');
 const { buildWorkbook, sendExcel } = require('../services/exportExcel');
 const { putObject } = require('../../services/StorageService');
+const { resolveActiveSchoolId, resolveActiveSchool } = require('../utils/schoolContext');
 
 async function assertOwnedTeacher(teacherId, schoolId) {
   if (!teacherId || !schoolId) return null;
@@ -35,7 +36,7 @@ async function assertOwnedTeacher(teacherId, schoolId) {
 }
 
 async function dashboard(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   await processExpiredLeaves();
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -67,7 +68,7 @@ async function dashboard(req, res) {
 }
 
 async function staffList(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const teachers = await prisma.teacher.findMany({
     where: { schoolId },
     include: { staffProfile: true },
@@ -101,7 +102,7 @@ async function newStaffForm(req, res) {
 }
 
 async function createStaffMember(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const {
     firstName, lastName, jobTitle, email, phone, contractType, baseSalary,
     hireDate, nationalId, bankName, bankAccount,
@@ -140,7 +141,7 @@ async function createStaffMember(req, res) {
 }
 
 async function staffProfileDetail(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const profile = await getStaffProfileDetail(req.params.profileId, schoolId);
   if (!profile) return res.redirect('/school/hr/staff');
   const leaveBalance = await getLeaveBalance(profile.id);
@@ -157,7 +158,7 @@ async function staffProfileDetail(req, res) {
 }
 
 async function updateStaffProfileById(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const profileId = req.params.profileId;
   const profile = await prisma.staffProfile.findFirst({ where: { id: profileId, schoolId } });
   if (!profile) return res.redirect('/school/hr/staff');
@@ -205,7 +206,7 @@ async function updateStaffProfileById(req, res) {
 }
 
 async function staffDetail(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const teacher = await getTeacherWithProfile(req.params.id, schoolId);
   if (!teacher) return res.redirect('/school/hr/staff');
 
@@ -224,7 +225,7 @@ async function staffDetail(req, res) {
 }
 
 async function updateStaffProfile(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const teacherId = req.params.id;
   const {
     contractType, status, baseSalary, hourlyRate, hireDate, endDate,
@@ -273,7 +274,7 @@ async function updateStaffProfile(req, res) {
 }
 
 async function uploadStaffDocument(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const teacherId = req.params.id;
   const { label } = req.body;
 
@@ -311,7 +312,7 @@ async function uploadStaffDocument(req, res) {
 }
 
 async function leavesPage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const leaves = await prisma.leaveRequest.findMany({
     where: { schoolId },
     include: {
@@ -330,7 +331,7 @@ async function leavesPage(req, res) {
 }
 
 async function reviewLeave(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { id } = req.params;
   const { action, adminNote } = req.body;
   const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
@@ -372,7 +373,7 @@ async function reviewLeave(req, res) {
 }
 
 async function attendancePage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const dateStr = req.query.date || todayDateOnly().toISOString().slice(0, 10);
   const date = new Date(dateStr);
 
@@ -399,7 +400,7 @@ async function attendancePage(req, res) {
 }
 
 async function updateAttendance(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { teacherId, date, status, note, checkIn, checkOut } = req.body;
   const teacher = await assertOwnedTeacher(teacherId, schoolId);
   if (!teacher) return res.redirect('/school/hr/attendance?error=1');
@@ -428,7 +429,7 @@ async function updateAttendance(req, res) {
 }
 
 async function payrollPage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const now = new Date();
   const month = parseInt(req.query.month, 10) || now.getMonth() + 1;
   const year = parseInt(req.query.year, 10) || now.getFullYear();
@@ -476,7 +477,7 @@ async function payrollPage(req, res) {
 }
 
 async function generatePayrollAction(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { month, year, teacherId } = req.body;
   const period = `${year}-${String(month).padStart(2, '0')}`;
 
@@ -516,7 +517,7 @@ async function generatePayrollAction(req, res) {
 }
 
 async function payPayrollAction(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { payrollRunId, accountId, month, year } = req.body;
   const result = await markPayrollPaid({ schoolId, payrollRunId, accountId });
   if (result.error) return res.redirect(`/school/hr/payroll?month=${month}&year=${year}&error=${result.error}`);
@@ -532,7 +533,7 @@ async function payPayrollAction(req, res) {
 }
 
 async function reviewAdvance(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { id } = req.params;
   const { action, adminNote, month, year } = req.body;
   const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
@@ -559,7 +560,7 @@ async function reviewAdvance(req, res) {
 }
 
 async function updatePayslip(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { id } = req.params;
   const { bonuses, deductions, hoursWorked, month, year } = req.body;
 
@@ -602,7 +603,7 @@ async function updatePayslip(req, res) {
 }
 
 async function evaluationsPage(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const period = req.query.period || '2025-2026';
   const teachers = await prisma.teacher.findMany({
     where: { schoolId },
@@ -622,7 +623,7 @@ async function evaluationsPage(req, res) {
 }
 
 async function saveEvaluation(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const { teacherId, period, punctuality, pedagogy, discipline, teamwork, comment } = req.body;
 
   const teacherRow = await assertOwnedTeacher(teacherId, schoolId);
@@ -661,7 +662,7 @@ async function saveEvaluation(req, res) {
 }
 
 async function exportPayroll(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const month = parseInt(req.query.month, 10);
   const year = parseInt(req.query.year, 10);
   const payrollRun = await prisma.payrollRun.findUnique({
@@ -693,7 +694,7 @@ async function exportPayroll(req, res) {
 }
 
 async function exportLeaves(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const leaves = await prisma.leaveRequest.findMany({
     where: { schoolId },
     include: { teacher: { include: { user: true } } },
@@ -722,7 +723,7 @@ async function exportLeaves(req, res) {
 }
 
 async function exportAttendance(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const records = await prisma.staffAttendance.findMany({
     where: { schoolId },
     include: { teacher: { include: { user: true } } },
@@ -752,7 +753,7 @@ async function exportAttendance(req, res) {
 }
 
 async function exportPayslipPdf(req, res) {
-  const schoolId = req.user.school.id;
+  const schoolId = (await resolveActiveSchoolId(req));
   const payslipId = req.params.payslipId || req.params.id;
 
   if (payslipId) {
@@ -825,7 +826,7 @@ async function exportPayslipPdf(req, res) {
 }
 
 async function payslipPreview(req, res) {
-  const vm = await getPayslipViewModel(req.params.id, req.user.school.id);
+  const vm = await getPayslipViewModel(req.params.id, (await resolveActiveSchoolId(req)));
   if (!vm) return res.redirect('/school/hr/payroll?error=pdf');
   res.render('compta/bulletin-paie', {
     ...vm,
@@ -835,7 +836,7 @@ async function payslipPreview(req, res) {
 }
 
 async function payRubriquesPage(req, res) {
-  const rubriques = await loadSchoolRubriques(req.user.school.id);
+  const rubriques = await loadSchoolRubriques((await resolveActiveSchoolId(req)));
   res.render('school/hr/rubriques-paie', {
     user: req.user,
     rubriques,
@@ -852,7 +853,7 @@ async function savePayRubriques(req, res) {
     fixedAmount: req.body[`fixed_${def.code}`],
     enabled: req.body[`enabled_${def.code}`] === 'on',
   }));
-  await saveSchoolRubriqueOverrides(req.user.school.id, rows);
+  await saveSchoolRubriqueOverrides((await resolveActiveSchoolId(req)), rows);
   res.redirect('/school/hr/rubriques-paie?success=1');
 }
 
