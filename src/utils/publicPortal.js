@@ -359,6 +359,83 @@ function geoUrl(lat, lng) {
   return `geo:${lat},${lng}`;
 }
 
+/** Approximate centres for Abidjan communes (OpenStreetMap, no API key). */
+const ABIDJAN_COMMUNE_CENTERS = {
+  abobo: [5.4164, -4.0239],
+  adjame: [5.3503, -4.0269],
+  attécoubé: [5.3294, -4.0451],
+  attecoube: [5.3294, -4.0451],
+  cocody: [5.3599, -4.0083],
+  koumassi: [5.2892, -4.0031],
+  marcory: [5.3091, -4.0124],
+  plateau: [5.3220, -4.0160],
+  'port-bouet': [5.2546, -3.9242],
+  'port-bouët': [5.2546, -3.9242],
+  treichville: [5.2984, -4.0150],
+  yopougon: [5.3364, -4.0644],
+  bingerville: [5.3556, -3.8944],
+  songon: [5.2960, -4.2530],
+};
+
+const CITY_CENTERS = {
+  abidjan: [5.3364, -4.0267],
+  bouake: [7.6939, -5.0303],
+  bouaké: [7.6939, -5.0303],
+  bingerville: [5.3556, -3.8944],
+  korhogo: [9.4580, -5.6296],
+  yamoussoukro: [6.8276, -5.2893],
+};
+
+function communeCenterLookup(label) {
+  const folded = foldAscii(label);
+  if (!folded) return null;
+  if (ABIDJAN_COMMUNE_CENTERS[folded]) return ABIDJAN_COMMUNE_CENTERS[folded];
+  for (const [key, coords] of Object.entries(ABIDJAN_COMMUNE_CENTERS)) {
+    if (folded.includes(key) || key.includes(folded)) return coords;
+  }
+  return null;
+}
+
+function cityCenterLookup(label) {
+  const folded = foldAscii(label);
+  if (!folded) return null;
+  return CITY_CENTERS[folded] || null;
+}
+
+function resolveSchoolMapPosition(school) {
+  if (school?.lat != null && school?.lng != null) {
+    return { lat: Number(school.lat), lng: Number(school.lng), source: 'gps' };
+  }
+  const { commune, city } = schoolLocality(school);
+  const fromCommune = communeCenterLookup(commune);
+  if (fromCommune) {
+    return { lat: fromCommune[0], lng: fromCommune[1], source: 'commune' };
+  }
+  const fromCity = cityCenterLookup(city);
+  if (fromCity) {
+    return { lat: fromCity[0], lng: fromCity[1], source: 'city' };
+  }
+  return null;
+}
+
+function publicSchoolMapMarker(school) {
+  if (!school?.slug) return null;
+  const view = publicSchoolView(school, { includeBase64: false });
+  if (!view) return null;
+  const position = resolveSchoolMapPosition(school);
+  if (!position) return null;
+  return {
+    slug: view.slug,
+    name: view.name,
+    cycleLabel: view.cycleLabel,
+    localityLabel: view.localityLabel,
+    portalPath: view.portalPath,
+    lat: position.lat,
+    lng: position.lng,
+    source: position.source,
+  };
+}
+
 function cycleFilterOptions() {
   return EDUCATION_CYCLE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }));
 }
@@ -661,7 +738,7 @@ function jsonLdForSchool(school, extras = {}) {
   const image = seo.ogImage || logo;
   const data = {
     '@context': 'https://schema.org',
-    '@type': ['School', 'EducationalOrganization'],
+    '@type': ['EducationalOrganization', 'LocalBusiness', 'School'],
     name: legal,
     url: portalUrl(school?.slug),
     description: seo.metaDescription,
@@ -892,6 +969,9 @@ module.exports = {
   osmSearchUrl,
   osmDirectionsUrl,
   geoUrl,
+  ABIDJAN_COMMUNE_CENTERS,
+  resolveSchoolMapPosition,
+  publicSchoolMapMarker,
   cycleFilterOptions,
   typeFilterOptions,
   robotsForPath,

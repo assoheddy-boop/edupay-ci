@@ -85,7 +85,7 @@ describe('publicPortal helpers', () => {
       lng: -4.086,
       educationCycle: 'COLLEGE',
     });
-    expect(jsonLd['@type']).toEqual(['School', 'EducationalOrganization']);
+    expect(jsonLd['@type']).toEqual(['EducationalOrganization', 'LocalBusiness', 'School']);
     expect(jsonLd.name).toMatch(/Institut Général/);
     expect(jsonLd.alternateName).toBe('IGEST');
     expect(jsonLd.address.addressLocality).toBe('Yopougon-Sideci');

@@ -1,0 +1,93 @@
+<%- include('../partials/head') %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<div class="portal">
+  <header class="portal-top">
+    <a href="/" class="portal-brand">Edu<strong>Connect</strong></a>
+    <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
+      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles/verifies">Vérifiés</a>
+      <a href="/ecoles/carte" aria-current="page">Carte</a>
+      <a href="/auth/login">Connexion</a>
+      <a href="/devis">Devis</a>
+    </nav>
+    <details class="portal-burger">
+      <summary aria-label="Ouvrir le menu">Menu</summary>
+      <nav class="portal-nav" aria-label="Menu mobile">
+        <a href="/ecoles">Écoles</a>
+        <a href="/ecoles/verifies">Vérifiés</a>
+        <a href="/ecoles/carte">Carte</a>
+        <a href="/auth/login">Connexion</a>
+        <a href="/devis">Devis</a>
+      </nav>
+    </details>
+  </header>
+
+  <section class="portal-hero portal-hero-market portal-hero-marketplace portal-hero-compact" aria-labelledby="map-title">
+    <div class="portal-hero-marketplace-inner">
+      <div class="portal-hero-marketplace-copy">
+        <p class="portal-kicker">Carte · OpenStreetMap · EduConnect</p>
+        <h1 id="map-title"><%= typeof heading !== 'undefined' && heading ? heading : 'Carte des écoles' %></h1>
+        <p class="portal-lead"><%= typeof lead !== 'undefined' && lead ? lead : 'Localisation des établissements publiés. Coordonnées GPS si renseignées, sinon centre approximatif de la commune.' %></p>
+        <% if (typeof markerCount === 'number' && markerCount) { %>
+          <p class="portal-results-count"><strong><%= markerCount %></strong> établissement<%= markerCount > 1 ? 's' : '' %> sur la carte</p>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <nav class="portal-shortcuts" aria-label="Parcourir">
+    <a href="/ecoles">Liste des écoles</a>
+    <a href="/ecoles/verifies">Établissements vérifiés</a>
+    <a href="/ecoles/carte" aria-current="page">Carte</a>
+  </nav>
+
+  <section class="portal-map-section" aria-labelledby="map-view-title">
+    <h2 id="map-view-title" class="visually-hidden">Carte interactive des établissements</h2>
+    <% if (!markers || !markers.length) { %>
+      <div class="card portal-card">
+        <p>Aucun établissement géolocalisable pour le moment. <a href="/devis">Contactez EduConnect</a> pour publier votre école sur la carte.</p>
+      </div>
+    <% } else { %>
+      <div id="portal-school-map" class="portal-leaflet-map" role="region" aria-label="Carte des écoles publiées"></div>
+      <p class="form-hint portal-map-hint">Cliquez sur un marqueur pour ouvrir la fiche publique. Positions approximatives pour les communes sans GPS.</p>
+    <% } %>
+  </section>
+</div>
+<%- include('../partials/footer') %>
+<% if (markers && markers.length) { %>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+  var markers = <%- typeof markersJson !== 'undefined' ? markersJson : '[]' %>;
+  var center = <%= JSON.stringify(mapCenter || { lat: 5.3364, lng: -4.0267, zoom: 11 }) %>;
+  var mapEl = document.getElementById('portal-school-map');
+  if (!mapEl || !markers.length || typeof L === 'undefined') return;
+
+  var map = L.map(mapEl, { scrollWheelZoom: true }).setView([center.lat, center.lng], center.zoom || 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  var bounds = [];
+  markers.forEach(function (m) {
+    var latLng = [m.lat, m.lng];
+    bounds.push(latLng);
+    var popup = '<strong>' + (m.name || 'École') + '</strong>';
+    if (m.cycleLabel) popup += '<br>' + m.cycleLabel;
+    if (m.localityLabel) popup += '<br>' + m.localityLabel;
+    popup += '<br><a href="' + (m.portalPath || '#') + '">Voir la fiche</a>';
+    L.marker(latLng).addTo(map).bindPopup(popup);
+  });
+
+  if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [32, 32], maxZoom: 13 });
+  } else if (bounds.length === 1) {
+    map.setView(bounds[0], 14);
+  }
+
+  setTimeout(function () { map.invalidateSize(); }, 100);
+})();
+</script>
+<% } %>
+<%- include('../partials/scripts') %>

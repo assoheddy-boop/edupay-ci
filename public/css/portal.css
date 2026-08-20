@@ -751,3 +751,55 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.portal-hero-compact {
+  padding-bottom: 1.25rem;
+}
+
+.portal-map-section {
+  padding: 0 1rem 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.portal-leaflet-map {
+  width: 100%;
+  min-height: min(70vh, 520px);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 82, 204, 0.12);
+  z-index: 1;
+}
+
+.portal-map-hint {
+  margin-top: 0.75rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.portal-analytics-charts {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.portal-analytics-chart-wrap h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--portal-navy, #0a2540);
+}
+
+@media (min-width: 768px) {
+  .portal-analytics-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

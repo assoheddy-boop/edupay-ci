@@ -98,6 +98,59 @@ function sortFeaturedFirst(rows) {
 
 const MARKETPLACE_PAGE_SIZE = 24;
 
+function foldLabel(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function uniqueSortedLabels(values) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of values) {
+    const label = String(raw || '').trim();
+    if (!label) continue;
+    const key = foldLabel(label);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+  }
+  return out.sort((a, b) => a.localeCompare(b, 'fr'));
+}
+
+async function listDistinctCommunes() {
+  const select = { commune: true, campusLabel: true, city: true };
+  let rows = await queryPublishedSchools(publishedWhere(), select);
+  if (!rows) {
+    rows = await queryPublishedSchools(publishedWhereLegacy(), select);
+  }
+  const labels = [];
+  for (const row of rows || []) {
+    const commune = String(row.commune || '').trim();
+    if (commune) {
+      labels.push(commune);
+      continue;
+    }
+    const campus = String(row.campusLabel || '').trim();
+    const city = String(row.city || '').trim();
+    if (campus && foldLabel(campus) !== foldLabel(city)) {
+      labels.push(campus);
+    }
+  }
+  return uniqueSortedLabels(labels);
+}
+
+async function listDistinctCities() {
+  const select = { city: true };
+  let rows = await queryPublishedSchools(publishedWhere(), select);
+  if (!rows) {
+    rows = await queryPublishedSchools(publishedWhereLegacy(), select);
+  }
+  return uniqueSortedLabels((rows || []).map((row) => row.city));
+}
+
 function parseMarketplacePage(raw) {
   const n = parseInt(String(raw || '1'), 10);
   return Number.isFinite(n) && n > 0 ? n : 1;
@@ -270,6 +323,7 @@ function staticSitemapEntries(today) {
   return [
     { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: today },
     { path: '/ecoles', changefreq: 'daily', priority: '0.8', lastmod: today },
+    { path: '/ecoles/carte', changefreq: 'weekly', priority: '0.75', lastmod: today },
     { path: '/ecoles/verifies', changefreq: 'weekly', priority: '0.75', lastmod: today },
     ...listSeoLandingPaths().map((path) => ({
       path,
@@ -516,6 +570,11 @@ async function listFeaturedSchools(limit = 3) {
   }
 }
 
+async function listPublishedSchoolsForMap() {
+  const { schools } = await listPublishedSchools({ paginate: false });
+  return schools;
+}
+
 module.exports = {
   MARKETPLACE_PAGE_SIZE,
   parseMarketplacePage,
@@ -525,6 +584,9 @@ module.exports = {
   listPublishedSlugs,
   listFeaturedSchools,
   listPortalPosts,
+  listDistinctCommunes,
+  listDistinctCities,
+  listPublishedSchoolsForMap,
   sortFeaturedFirst,
   buildSitemapXml,
   fallbackSitemapXml,

@@ -14,14 +14,16 @@
     <nav class="portal-nav portal-nav-desktop" aria-label="Navigation">
       <a href="/ecoles" aria-current="page">Écoles</a>
       <a href="/ecoles/verifies">Vérifiés</a>
+      <a href="/ecoles/carte">Carte</a>
       <a href="/auth/login">Connexion</a>
       <a href="/devis">Devis</a>
     </nav>
     <details class="portal-burger">
       <summary aria-label="Ouvrir le menu">Menu</summary>
       <nav class="portal-nav" aria-label="Menu mobile">
-        <a href="/ecoles">Écoles</a>
-        <a href="/ecoles/verifies">Vérifiés</a>
+      <a href="/ecoles">Écoles</a>
+      <a href="/ecoles/verifies">Vérifiés</a>
+      <a href="/ecoles/carte">Carte</a>
         <a href="/auth/login">Connexion</a>
         <a href="/devis">Devis</a>
       </nav>
@@ -51,11 +53,29 @@
           </div>
           <div class="form-group">
             <label for="commune">Commune / quartier</label>
-            <input type="text" id="commune" name="commune" value="<%= typeof commune !== 'undefined' ? commune : '' %>" placeholder="Yopougon, Bingerville…" autocomplete="address-level3">
+            <select id="commune" name="commune" autocomplete="address-level3">
+              <option value="">Toutes les communes</option>
+              <% const communes = typeof communeOptions !== 'undefined' && Array.isArray(communeOptions) ? communeOptions : []; %>
+              <% if (typeof commune !== 'undefined' && commune && !communes.includes(commune)) { %>
+                <option value="<%= commune %>" selected><%= commune %></option>
+              <% } %>
+              <% communes.forEach(function(opt) { %>
+                <option value="<%= opt %>" <%= commune === opt ? 'selected' : '' %>><%= opt %></option>
+              <% }) %>
+            </select>
           </div>
           <div class="form-group">
             <label for="ville">Ville</label>
-            <input type="text" id="ville" name="ville" value="<%= ville %>" placeholder="Abidjan, Bouaké…" autocomplete="address-level2">
+            <select id="ville" name="ville" autocomplete="address-level2">
+              <option value="">Toutes les villes</option>
+              <% const cities = typeof cityOptions !== 'undefined' && Array.isArray(cityOptions) ? cityOptions : []; %>
+              <% if (typeof ville !== 'undefined' && ville && !cities.includes(ville)) { %>
+                <option value="<%= ville %>" selected><%= ville %></option>
+              <% } %>
+              <% cities.forEach(function(opt) { %>
+                <option value="<%= opt %>" <%= ville === opt ? 'selected' : '' %>><%= opt %></option>
+              <% }) %>
+            </select>
           </div>
           <div class="form-group">
             <label for="cycle">Cycle</label>
@@ -84,6 +104,7 @@
   <nav class="portal-shortcuts" aria-label="Parcourir par cycle ou ville">
     <a href="/ecoles">Toutes les écoles</a>
     <a href="/ecoles/verifies">Établissements vérifiés</a>
+    <a href="/ecoles/carte">Carte interactive</a>
     <a href="/ecoles/colleges-abidjan">Collèges à Abidjan</a>
     <a href="/ecoles/lycees-abidjan">Lycées à Abidjan</a>
     <a href="/ecoles/primaires-abidjan">Primaires à Abidjan</a>

@@ -21,7 +21,7 @@
   <div class="alert alert-error">Le Marketplace n’est pas activé pour cet établissement. <a href="mailto:contact@educonnect.ci?subject=Marketplace%20EduConnect">Contactez EduConnect pour le Marketplace</a>.</div>
 <% } else { %>
 <% if (typeof analytics !== 'undefined' && analytics && analytics.totals) { %>
-<div class="card" style="margin-bottom:1.5rem">
+<div class="card portal-analytics-card" style="margin-bottom:1.5rem">
   <h2>Statistiques vitrine (30 derniers jours)</h2>
   <p class="form-hint">Comptage interne EduConnect — sans Google Analytics ni cookie tiers.</p>
   <div class="stats-grid">
@@ -42,6 +42,59 @@
       <span class="stat-value"><%= analytics.totals.contactSubmits %></span>
     </div>
   </div>
+  <% if (typeof analytics.series !== 'undefined' && analytics.series && analytics.series.length) { %>
+  <div class="portal-analytics-charts" aria-label="Graphiques sur 30 jours">
+    <div class="portal-analytics-chart-wrap">
+      <h3>Vues page</h3>
+      <canvas id="portalChartViews" height="120" aria-label="Graphique des vues page sur 30 jours"></canvas>
+    </div>
+    <div class="portal-analytics-chart-wrap">
+      <h3>Clics « Payer »</h3>
+      <canvas id="portalChartPay" height="120" aria-label="Graphique des clics payer sur 30 jours"></canvas>
+    </div>
+    <div class="portal-analytics-chart-wrap">
+      <h3>Clics « Connexion »</h3>
+      <canvas id="portalChartLogin" height="120" aria-label="Graphique des clics connexion sur 30 jours"></canvas>
+    </div>
+    <div class="portal-analytics-chart-wrap">
+      <h3>Messages contact</h3>
+      <canvas id="portalChartContact" height="120" aria-label="Graphique des messages contact sur 30 jours"></canvas>
+    </div>
+  </div>
+  <script src="/js/chart.umd.min.js"></script>
+  <script>
+  (function () {
+    var series = <%- JSON.stringify(analytics.series) %>;
+    if (!series.length || typeof Chart === 'undefined') return;
+    var labels = series.map(function (row) { return row.label; });
+    var baseOpts = {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    };
+    function barChart(id, key, color) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      new Chart(el, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{ data: series.map(function (row) { return row[key] || 0; }), backgroundColor: color, borderRadius: 4 }]
+        },
+        options: baseOpts
+      });
+    }
+    barChart('portalChartViews', 'views', 'rgba(0, 82, 204, 0.75)');
+    barChart('portalChartPay', 'payClicks', 'rgba(0, 135, 90, 0.75)');
+    barChart('portalChartLogin', 'loginClicks', 'rgba(255, 153, 0, 0.75)');
+    barChart('portalChartContact', 'contactSubmits', 'rgba(107, 70, 193, 0.75)');
+  })();
+  </script>
+  <% } %>
 </div>
 <% } %>
 <div class="card">

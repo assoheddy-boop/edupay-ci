@@ -5,6 +5,7 @@ const { contactLimiter } = require('../middleware/rateLimit');
 const router = express.Router();
 
 router.get('/ecoles/verifies', portalController.verifiedMarketplace);
+router.get('/ecoles/carte', portalController.marketplaceMap);
 router.get('/ecoles/:seoSlug', portalController.marketplaceSeoLanding);
 router.get('/ecoles', portalController.marketplace);
 router.get('/sitemap.xml', portalController.sitemap);

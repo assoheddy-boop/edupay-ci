@@ -128,7 +128,7 @@ describe('Public school portal', () => {
     expect(res.text).toMatch(/rel="canonical"/);
     expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
     expect(res.text).toMatch(/og:title/);
-    expect(res.text).toMatch(/"@type":\["School","EducationalOrganization"\]/);
+    expect(res.text).toMatch(/"@type":\["EducationalOrganization","LocalBusiness","School"\]/);
     expect(res.text).toMatch(/"addressLocality":"Yopougon-Sideci"/);
     expect(res.text).toMatch(/"telephone":"05 45 47 48 29"/);
     expect(res.text).toMatch(/"latitude":5\.33/);
@@ -254,6 +254,9 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).toMatch(/href="\/e\/igest-yopougon-sideci"/);
     expect(res.text).toMatch(/href="\/ecoles\?cycle=COLLEGE"/);
     expect(res.text).toMatch(/href="\/ecoles\?cycle=LYCEE"/);
+    expect(res.text).toMatch(/href="\/ecoles\/carte"/);
+    expect(res.text).toMatch(/<select id="commune"/);
+    expect(res.text).toMatch(/<select id="ville"/);
     expect(res.text).toMatch(/href="\/ecoles\?commune=Yopougon"/);
     expect(res.text).toMatch(/Yopougon-Sideci/);
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
@@ -491,6 +494,27 @@ describe('Marketplace /ecoles', () => {
     expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
     expect(res.text).not.toMatch(/18\/20/);
   });
+
+  test('GET /ecoles/carte renders Leaflet map with school markers', async () => {
+    prisma.school.findMany.mockResolvedValue([
+      publishedSchool({
+        name: 'IGEST Carte',
+        slug: 'igest-yopougon-sideci',
+        commune: 'Yopougon',
+        lat: 5.33,
+        lng: -4.08,
+      }),
+    ]);
+    const res = await request(app).get('/ecoles/carte');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/Carte des écoles/);
+    expect(res.text).toMatch(/leaflet/);
+    expect(res.text).toMatch(/openstreetmap\.org/);
+    expect(res.text).toMatch(/portal-school-map/);
+    expect(res.text).toMatch(/IGEST Carte/);
+    expect(res.text).toMatch(/\/e\/igest-yopougon-sideci/);
+    expect(res.text).not.toMatch(new RegExp(SECRET_PUPIL));
+  });
 });
 
 describe('listPublishedSchools pagination', () => {
@@ -545,6 +569,7 @@ describe('SEO sitemap and robots', () => {
     expect(res.headers['content-type']).toMatch(/xml/);
     expect(res.text).toMatch(/<urlset /);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/ecoles<\/loc>/);
+    expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/ecoles\/carte<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/e\/igest-yopougon-sideci<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/mentions-legales<\/loc>/);
     expect(res.text).toMatch(/<loc>https?:\/\/[^<]+\/confidentialite<\/loc>/);

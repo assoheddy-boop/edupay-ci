@@ -18,7 +18,7 @@ async function page(req, res) {
   const marketplaceEnabled = isEnabled(mods, MARKETPLACE_MODULE);
   const analytics = marketplaceEnabled
     ? await getPortalAnalyticsSummary(school.id, 30)
-    : { totals: { views: 0, payClicks: 0, loginClicks: 0, contactSubmits: 0 }, days: [] };
+    : { totals: { views: 0, payClicks: 0, loginClicks: 0, contactSubmits: 0 }, days: [], series: [] };
   const posts = typeof prisma.portalPost?.findMany === 'function'
     ? await prisma.portalPost.findMany({
       where: { schoolId: school.id },

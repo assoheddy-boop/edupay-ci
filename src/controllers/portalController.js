@@ -20,11 +20,15 @@ const {
   cycleFilterOptions,
   typeFilterOptions,
   parsePublicType,
+  publicSchoolMapMarker,
 } = require('../utils/publicPortal');
 const {
   findPublishedSchool,
   findPublishedOrganization,
   listPublishedSchools,
+  listPublishedSchoolsForMap,
+  listDistinctCommunes,
+  listDistinctCities,
   parseMarketplacePage,
   listFeaturedSchools,
   listPortalPosts,
@@ -105,6 +109,10 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
   const jsonLd = jsonLdForMarketplace(views, seo);
   const hasActiveFilters = marketplaceHasActiveFilters(filters);
   const featuredSchools = hasActiveFilters || page > 1 ? [] : await listFeaturedSchools(3);
+  const [communeOptions, cityOptions] = await Promise.all([
+    listDistinctCommunes(),
+    listDistinctCities(),
+  ]);
   const template = seoExtra.verifiedLanding ? 'portal/verified' : 'portal/marketplace';
   return res.render(template, {
     user: null,
@@ -127,6 +135,8 @@ async function renderMarketplaceListing(req, res, filters, seoExtra = {}) {
     q: filters.q || '',
     cycleOptions: cycleFilterOptions(),
     typeOptions: typeFilterOptions(),
+    communeOptions,
+    cityOptions,
     cycleLabels: CYCLE_LABELS,
     schools: views,
     schoolCount: listing.total,
@@ -292,6 +302,39 @@ async function marketplaceSeoLanding(req, res, next) {
   }
 }
 
+async function marketplaceMap(req, res, next) {
+  try {
+    const rows = await listPublishedSchoolsForMap();
+    const markers = rows
+      .map((row) => publicSchoolMapMarker(row))
+      .filter(Boolean);
+    const seo = seoForMarketplace({
+      heading: 'Carte des écoles',
+      lead: 'Écoles, collèges et lycées publiés sur EduConnect — localisation approximative si GPS non renseigné.',
+      canonicalPath: '/ecoles/carte',
+    });
+    return res.render('portal/map', {
+      user: null,
+      title: seo.title,
+      heading: seo.heading,
+      lead: seo.lead,
+      metaDescription: seo.metaDescription,
+      canonicalUrl: seo.canonicalUrl,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
+      robots: PUBLIC_ROBOTS,
+      portalCss: true,
+      markers,
+      markerCount: markers.length,
+      mapCenter: { lat: 5.3364, lng: -4.0267, zoom: 11 },
+      markersJson: safeJson(markers),
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function organizationPage(req, res, next) {
   try {
     const data = await findPublishedOrganization(req.params.slug);
@@ -346,6 +389,7 @@ function robots(_req, res) {
     'User-agent: *',
     'Allow: /',
     'Allow: /ecoles',
+    'Allow: /ecoles/carte',
     'Allow: /ecoles/verifies',
     'Allow: /e/',
     'Disallow: /auth',
@@ -381,6 +425,7 @@ module.exports = {
   goConnexion,
   sendContact,
   marketplace,
+  marketplaceMap,
   verifiedMarketplace,
   marketplaceSeoLanding,
   organizationPage,
