@@ -14,7 +14,7 @@ const {
 } = require('./bulletinBranding');
 const { publicTypeLabel, formatRepeatLabel, termAverageLabel } = require('./bulletinMenet');
 
-const PAGE_MARGIN = 36;
+const PAGE_MARGIN = 40;
 const PAGE_WIDTH = 595.28;
 const CONTENT_WIDTH = PAGE_WIDTH - PAGE_MARGIN * 2;
 
@@ -87,14 +87,14 @@ function formatRankCi(rank) {
 /** Trimestre column widths for the grades grid (sum = CONTENT_WIDTH). */
 function gradesTableColumns() {
   return [
-    { key: 'discipline', label: 'DISCIPLINE', width: 128, align: 'left' },
-    { key: 'moy', label: 'MOY/20', width: 44, align: 'center' },
-    { key: 'coef', label: 'Coef', width: 36, align: 'center' },
-    { key: 'moyCoef', label: 'Moy Coef', width: 54, align: 'center' },
-    { key: 'rang', label: 'Rang', width: 40, align: 'center' },
-    { key: 'teacherNom', label: 'NOM', width: 48, align: 'left', parent: 'PROFESSEURS' },
-    { key: 'teacherPrenom', label: 'PRENOMS', width: 48, align: 'left', parent: 'PROFESSEURS' },
-    { key: 'appreciation', label: 'Appréciations et signature', width: 125.28, align: 'left' },
+    { key: 'discipline', label: 'DISCIPLINE', width: 115, align: 'left' },
+    { key: 'moy', label: 'MOY/20', width: 38, align: 'center' },
+    { key: 'coef', label: 'Coef', width: 30, align: 'center' },
+    { key: 'moyCoef', label: 'Moy Coef', width: 46, align: 'center' },
+    { key: 'rang', label: 'Rang', width: 34, align: 'center' },
+    { key: 'teacherNom', label: 'NOM', width: 64, align: 'left', parent: 'PROFESSEURS' },
+    { key: 'teacherPrenom', label: 'PRENOMS', width: 40, align: 'left', parent: 'PROFESSEURS' },
+    { key: 'appreciation', label: 'Appréciations et signature', width: 148.28, align: 'left' },
   ];
 }
 
@@ -129,18 +129,31 @@ function drawRect(doc, x, y, w, h) {
   doc.rect(x, y, w, h).stroke();
 }
 
+function truncateCellText(text, maxLen) {
+  const content = text == null || text === '' ? '' : String(text);
+  if (content.length <= maxLen) return content;
+  return `${content.slice(0, Math.max(0, maxLen - 1))}…`;
+}
+
 /**
  * Draw text centered vertically in a cell (approximate).
  */
-function drawCellText(doc, text, x, y, w, h, { align = 'left', fontSize = 8, bold = false } = {}) {
+function drawCellText(doc, text, x, y, w, h, {
+  align = 'left',
+  fontSize = 8,
+  bold = false,
+  truncate = 0,
+} = {}) {
   const pad = 3;
-  const content = text == null || text === '' ? '' : String(text);
+  let content = text == null || text === '' ? '' : String(text);
+  if (truncate > 0) content = truncateCellText(content, truncate);
   doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize).fillColor('#000000');
   const textY = y + Math.max(pad, (h - fontSize) / 2 - 1);
   doc.text(content, x + pad, textY, {
     width: w - pad * 2,
     align,
     lineBreak: false,
+    ellipsis: true,
   });
 }
 
@@ -173,38 +186,28 @@ function drawGradesTableHeader(doc, x, y, cols, headerHeight) {
   const subHeaderHeight = 14;
   const totalHeight = headerHeight + subHeaderHeight;
   const colWidths = cols.map((c) => c.width);
-  const rowHeights = [headerHeight, subHeaderHeight];
-
-  drawGrid(doc, x, y, CONTENT_WIDTH, totalHeight, colWidths, rowHeights);
-
-  setStroke(doc);
-  // Vertical spans for columns that merge over 2 header rows
-  const spanKeys = ['discipline', 'moy', 'coef', 'moyCoef', 'rang', 'appreciation'];
-  spanKeys.forEach((key) => {
-    const col = cols.find((c) => c.key === key);
-    if (!col) return;
-    drawVLine(doc, col.x, y, y + totalHeight);
-    drawVLine(doc, col.right, y, y + totalHeight);
-  });
-
-  // Horizontal line between header rows — skip merged span columns interior
   const profStart = cols.find((c) => c.key === 'teacherNom');
   const profEnd = cols.find((c) => c.key === 'teacherPrenom');
   const midY = y + headerHeight;
-  drawHLine(doc, x, profStart.x, midY);
-  drawHLine(doc, profEnd.right, x + CONTENT_WIDTH, midY);
 
-  // PROFESSEURS merged top cell border cleanup
-  drawRect(doc, profStart.x, y, profEnd.right - profStart.x, headerHeight);
+  setStroke(doc);
+  drawRect(doc, x, y, CONTENT_WIDTH, totalHeight);
+  drawHLine(doc, x, x + CONTENT_WIDTH, midY);
+
+  let cx = x;
+  for (let i = 0; i < colWidths.length - 1; i += 1) {
+    cx += colWidths[i];
+    const col = cols[i];
+    if (col.key === 'teacherNom') {
+      drawVLine(doc, cx, midY, y + totalHeight);
+    } else {
+      drawVLine(doc, cx, y, y + totalHeight);
+    }
+  }
   restoreStroke(doc);
 
-  // Header labels
   cols.forEach((col) => {
     if (col.key === 'teacherNom' || col.key === 'teacherPrenom') return;
-    if (col.key === 'appreciation') {
-      drawCellText(doc, col.label, col.x, y, col.width, totalHeight, { align: 'center', fontSize: 7, bold: true });
-      return;
-    }
     drawCellText(doc, col.label, col.x, y, col.width, totalHeight, { align: 'center', fontSize: 7, bold: true });
   });
 
@@ -277,10 +280,12 @@ function drawGradesDataRow(doc, x, y, cols, values, rowHeight, { bold = false } 
   drawGrid(doc, x, y, CONTENT_WIDTH, rowHeight, colWidths, [rowHeight]);
 
   cols.forEach((col) => {
+    const isTeacherCol = col.key === 'teacherNom' || col.key === 'teacherPrenom';
     drawCellText(doc, values[col.key] ?? '', col.x, y, col.width, rowHeight, {
       align: col.align,
-      fontSize: 8,
+      fontSize: isTeacherCol ? 7 : 8,
       bold: bold || col.key === 'discipline',
+      truncate: isTeacherCol ? (col.key === 'teacherNom' ? 22 : 12) : 0,
     });
   });
 
@@ -310,7 +315,7 @@ function drawGradesTable(doc, {
     coefficient: null,
     average: conductGrade,
     comment: conductComment || '',
-    teacherName: 'LE DIRECTEUR',
+    teacherName: '',
   });
 
   dataRows.forEach((row) => {
@@ -320,7 +325,7 @@ function drawGradesTable(doc, {
     }
     const values = buildTableRowValues(row, subjectRanks);
     if (row.subject === 'CONDUITE') {
-      values.teacherNom = 'LE DIRECTEUR';
+      values.teacherNom = '';
       values.teacherPrenom = '';
       if (conductGrade != null) {
         values.moyCoef = formatGradeCi(conductGrade);
@@ -375,22 +380,31 @@ function drawOfficialSchoolHeader(doc, school) {
   const header = buildBulletinHeaderModel(school);
   const logoColW = 50;
   const boxH = 68;
-  const hasLeftLogo = resolveLogoBuffer(school) != null;
-  const hasRightLogo = resolveSecondaryLogoBuffer(school) != null;
-  const rightColW = hasRightLogo ? logoColW : 0;
-  const leftColW = hasLeftLogo ? logoColW : 0;
+  const hasPrimary = resolveLogoBuffer(school) != null;
+  const hasSecondary = resolveSecondaryLogoBuffer(school) != null;
+  const showLogoColumns = hasPrimary || hasSecondary;
+  const leftColW = showLogoColumns ? logoColW : 0;
+  const rightColW = showLogoColumns ? logoColW : 0;
   const centerX = x + leftColW;
   const centerW = CONTENT_WIDTH - leftColW - rightColW;
 
   drawDashedRect(doc, x, y, CONTENT_WIDTH, boxH);
-  if (leftColW) drawDashedVLine(doc, x + logoColW, y, y + boxH);
-  if (rightColW) drawDashedVLine(doc, x + CONTENT_WIDTH - logoColW, y, y + boxH);
+  if (showLogoColumns) {
+    drawDashedVLine(doc, x + logoColW, y, y + boxH);
+    drawDashedVLine(doc, x + CONTENT_WIDTH - logoColW, y, y + boxH);
+  }
 
-  if (hasLeftLogo) {
+  if (hasPrimary) {
     drawSchoolLogo(doc, school, { x: x + 4, y: y + 8, width: logoColW - 8 });
   }
-  if (hasRightLogo) {
+  if (hasSecondary) {
     drawSecondarySchoolLogo(doc, school, {
+      x: x + CONTENT_WIDTH - logoColW + 4,
+      y: y + 8,
+      width: logoColW - 8,
+    });
+  } else if (hasPrimary) {
+    drawSchoolLogo(doc, school, {
       x: x + CONTENT_WIDTH - logoColW + 4,
       y: y + 8,
       width: logoColW - 8,

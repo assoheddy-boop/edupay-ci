@@ -12,6 +12,8 @@ const IGEST_SCHOOL = {
   commune: 'Yopougon',
   address: 'Yopougon-Sideci, Abidjan',
   logoFile: 'public/img/schools/igest-yopougon-sideci.png',
+  /** Same asset on both bulletin header sides until a distinct IGES logo is added. */
+  secondaryLogoFile: 'public/img/schools/igest-yopougon-sideci.png',
   waveNumber: null,
   omNumber: null,
   menetAgrement: '89 0459/MENSS/DESEC/SDE/CAB-1',

@@ -1046,7 +1046,7 @@ async function previewBulletin(req, res) {
     formatGenderShort,
     formatRepeatLabel,
     logoSrc: logoSrcFor(req.user.school),
-    secondaryLogoSrc: secondaryLogoSrcFor(req.user.school),
+    secondaryLogoSrc: secondaryLogoSrcFor(req.user.school) || logoSrcFor(req.user.school),
     directorSignatureSrc: req.user.school.directorSignatureUrl || req.user.school.directorSignatureBase64 || null,
     directorStampSrc: req.user.school.directorStampUrl || req.user.school.directorStampBase64 || null,
     printMode: req.query.print === '1',

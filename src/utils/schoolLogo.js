@@ -50,6 +50,51 @@ function logoSrcFor(school) {
   return null;
 }
 
+function readLogoFileFromUrl(url) {
+  if (!url || url.startsWith('http://') || url.startsWith('https://')) return null;
+
+  let filePath;
+  if (url.startsWith('/img/')) {
+    filePath = path.join(__dirname, '../..', 'public', url.slice(1));
+  } else if (url.startsWith('/uploads/')) {
+    filePath = path.join(__dirname, '../..', url);
+  } else {
+    return null;
+  }
+
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return fs.readFileSync(filePath);
+  } catch {
+    return null;
+  }
+}
+
+function readCatalogLogoBuffer(slug, { secondary = false } = {}) {
+  if (!slug) return null;
+  const key = secondary ? 'secondaryLogoFile' : 'logoFile';
+
+  try {
+    const { EPV_SCHOOLS } = require('../config/epvSchools');
+    const epv = EPV_SCHOOLS.find((s) => s.slug === slug);
+    const fromEpv = publicPathFromLogoFile(epv?.[key]);
+    if (fromEpv) return readLogoFileFromUrl(fromEpv);
+  } catch {
+    // ignore
+  }
+
+  try {
+    const { findExtraSchool } = require('../config/extraSchools');
+    const extra = findExtraSchool(slug);
+    const fromExtra = publicPathFromLogoFile(extra?.[key]);
+    if (fromExtra) return readLogoFileFromUrl(fromExtra);
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
 function resolveLogoBuffer(school) {
   if (!school) return null;
 
@@ -63,6 +108,9 @@ function resolveLogoBuffer(school) {
     }
   }
 
+  const fromUrl = readLogoFileFromUrl(school.logoUrl);
+  if (fromUrl) return fromUrl;
+
   if (school.logoUrl?.startsWith('/uploads/')) {
     const logoPath = path.join(__dirname, '../..', school.logoUrl);
     if (fs.existsSync(logoPath)) {
@@ -74,7 +122,7 @@ function resolveLogoBuffer(school) {
     }
   }
 
-  return null;
+  return readCatalogLogoBuffer(school.slug);
 }
 
 function resolveSecondaryLogoBuffer(school) {
@@ -90,6 +138,9 @@ function resolveSecondaryLogoBuffer(school) {
     }
   }
 
+  const fromUrl = readLogoFileFromUrl(school.secondaryLogoUrl);
+  if (fromUrl) return fromUrl;
+
   if (school.secondaryLogoUrl?.startsWith('/uploads/')) {
     const logoPath = path.join(__dirname, '../..', school.secondaryLogoUrl);
     if (fs.existsSync(logoPath)) {
@@ -101,7 +152,7 @@ function resolveSecondaryLogoBuffer(school) {
     }
   }
 
-  return null;
+  return readCatalogLogoBuffer(school.slug, { secondary: true });
 }
 
 function secondaryLogoSrcFor(school) {
@@ -109,6 +160,23 @@ function secondaryLogoSrcFor(school) {
   const url = school.secondaryLogoUrl || '';
   if (url.startsWith('/img/') || url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url && !url.startsWith('/uploads/')) return url;
+
+  try {
+    const { EPV_SCHOOLS } = require('../config/epvSchools');
+    const catalog = EPV_SCHOOLS.find((s) => s.slug && s.slug === school.slug);
+    const fromCatalog = publicPathFromLogoFile(catalog?.secondaryLogoFile);
+    if (fromCatalog) return fromCatalog;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const { findExtraSchool } = require('../config/extraSchools');
+    const fromExtra = publicPathFromLogoFile(findExtraSchool(school.slug)?.secondaryLogoFile);
+    if (fromExtra) return fromExtra;
+  } catch {
+    // ignore
+  }
 
   const b64 = school.secondaryLogoBase64 || '';
   if (b64.startsWith('data:') && b64.length < 120000) return b64;
