@@ -43,7 +43,7 @@ const PLANS = {
       'payments', 'grades', 'absences', 'homeworks', 'chat', 'bulletins',
       'transport', 'canteen', 'behavior', 'health', 'pickup', 'activities',
       'lost_items', 'stats', 'accounting', 'hr', 'multi_campus',
-      'redoublementAnalysis', 'sms_official',
+      'redoublementAnalysis', 'correspondance', 'sms_official',
     ],
   },
   pro: {
