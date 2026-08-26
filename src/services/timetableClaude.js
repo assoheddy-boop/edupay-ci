@@ -1,7 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { validateInput, detectConflicts, VALID_DAYS } = require('./timetableAgent');
 
-const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_PARSE_ATTEMPTS = 2;
 
