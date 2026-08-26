@@ -11,7 +11,7 @@ const {
   VALID_DAYS,
   DEFAULT_CONSTRAINTS,
 } = require('../services/timetableAgent');
-const { generateTimetableWithClaude, isClaudeAvailable } = require('../services/timetableClaude');
+const { generateTimetableWithClaude, chatWithClaude, isClaudeAvailable } = require('../services/timetableClaude');
 
 function schoolFromUser(user) {
   return user?.school || user?.staffAssignments?.[0]?.school || null;
@@ -42,6 +42,7 @@ async function index(req, res) {
       school,
       sessions,
       statusLabels: STATUS_LABELS,
+      claudeAvailable: isClaudeAvailable(),
       success: req.query.success || null,
       error: req.query.error || null,
     });
@@ -80,7 +81,9 @@ async function show(req, res) {
     return res.status(404).render('error', { message: 'Session introuvable.', user: req.user });
   }
 
-  const input = normalizeInput(session.inputJson || emptyInput());
+  const rawInput = session.inputJson || emptyInput();
+  const input = normalizeInput(rawInput);
+  const chatHistory = Array.isArray(rawInput.chatHistory) ? rawInput.chatHistory : [];
   const output = session.outputJson || null;
   const validation = validateInput(input);
   const step = req.query.step || 'contraintes';
@@ -94,6 +97,7 @@ async function show(req, res) {
     school,
     session,
     input,
+    chatHistory,
     output,
     timetableGrids,
     validation,
@@ -103,6 +107,7 @@ async function show(req, res) {
     defaultConstraints: DEFAULT_CONSTRAINTS,
     claudeAvailable: isClaudeAvailable(),
     generationMode: output?.meta?.generationMode || null,
+    sessionId: session.id,
     success: req.query.success || null,
     error: req.query.error || null,
     skipped,
@@ -124,12 +129,17 @@ async function saveDraft(req, res) {
   }
 
   const name = (req.body.name || session.name || '').trim() || session.name;
+  const input = parsed.input;
+  const prevHistory = session.inputJson?.chatHistory;
+  if (Array.isArray(prevHistory) && !input.chatHistory) {
+    input.chatHistory = prevHistory;
+  }
 
   await prisma.timetableGenerationSession.update({
     where: { id: session.id },
     data: {
       name,
-      inputJson: parsed.input,
+      inputJson: input,
       status: 'DRAFT',
       updatedAt: new Date(),
     },
@@ -271,6 +281,7 @@ async function preview(req, res) {
       gridViewMode,
       input: normalizeInput(session.inputJson || emptyInput()),
       statusLabels: STATUS_LABELS,
+      claudeAvailable: isClaudeAvailable(),
       safeJson: require('../utils/safeJson').safeJson,
     });
   }
@@ -285,6 +296,43 @@ async function preview(req, res) {
     input: session.inputJson,
     output: session.outputJson,
   });
+}
+
+async function chatSession(req, res) {
+  const school = schoolFromUser(req.user);
+  if (!school) return res.status(403).json({ ok: false, error: 'forbidden', message: 'Accès refusé' });
+
+  const session = await loadSession(req.params.id, school.id);
+  if (!session) {
+    return res.status(404).json({ ok: false, error: 'not_found', message: 'Session introuvable.' });
+  }
+
+  if (!isClaudeAvailable()) {
+    return res.status(503).json({ ok: false, error: 'no_api_key', message: 'Clé API non configurée.' });
+  }
+
+  const message = (req.body.message || '').trim();
+  if (!message) {
+    return res.status(400).json({ ok: false, error: 'empty_message', message: 'Message requis.' });
+  }
+
+  const input = normalizeInput(session.inputJson || emptyInput());
+  const output = session.outputJson || null;
+  const history = Array.isArray(req.body.history) ? req.body.history : (input.chatHistory || []);
+
+  const result = await chatWithClaude({ input, output, message, history });
+  if (!result.ok) {
+    const status = result.error === 'no_api_key' ? 503 : 502;
+    return res.status(status).json({ ok: false, error: result.error, message: result.message });
+  }
+
+  const storedInput = { ...(session.inputJson || emptyInput()), chatHistory: result.history };
+  await prisma.timetableGenerationSession.update({
+    where: { id: session.id },
+    data: { inputJson: storedInput, updatedAt: new Date() },
+  });
+
+  return res.json({ ok: true, reply: result.reply, history: result.history });
 }
 
 async function deleteSession(req, res) {
@@ -308,5 +356,6 @@ module.exports = {
   runGenerate,
   applySession,
   preview,
+  chatSession,
   deleteSession,
 };

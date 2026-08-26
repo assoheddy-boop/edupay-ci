@@ -18,12 +18,16 @@ const STATUS_LABELS = {
 
 function normalizeInput(raw = {}) {
   const contraintes = { ...DEFAULT_CONSTRAINTS, ...(raw.contraintes_ecole || raw.contraintes || {}) };
-  return {
+  const result = {
     contraintes_ecole: contraintes,
     salles: Array.isArray(raw.salles) ? raw.salles : [],
     professeurs: Array.isArray(raw.professeurs) ? raw.professeurs : [],
     classes: Array.isArray(raw.classes) ? raw.classes : [],
   };
+  if (Array.isArray(raw.chatHistory)) {
+    result.chatHistory = raw.chatHistory;
+  }
+  return result;
 }
 
 function emptyInput() {

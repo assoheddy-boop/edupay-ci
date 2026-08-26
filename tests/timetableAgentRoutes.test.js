@@ -7,6 +7,7 @@ jest.mock('../src/controllers/timetableAgentController', () => ({
   applySession: (_req, res) => res.redirect('/school/timetable-agent/x'),
   preview: (_req, res) => res.status(200).send('Preview'),
   deleteSession: (_req, res) => res.redirect('/school/timetable-agent'),
+  chatSession: (_req, res) => res.status(200).json({ ok: true, reply: 'Test', history: [] }),
 }));
 
 jest.mock('../src/config/database', () => ({
@@ -115,5 +116,20 @@ describe('timetable-agent routes', () => {
     expect(res.status).toBe(403);
     expect(res.text).toContain('Accès refusé');
     expect(res.text).not.toBe('Forbidden');
+  });
+
+  test('POST /school/timetable-agent/:id/chat returns JSON for school admin', async () => {
+    prisma.user.findUnique.mockResolvedValue(SCHOOL_ADMIN);
+    const csrfToken = 'a'.repeat(64);
+
+    const res = await request(app)
+      .post('/school/timetable-agent/sess-1/chat')
+      .set('Cookie', `${authCookie(SCHOOL_ADMIN)}; edu_csrf=${csrfToken}`)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ message: 'Bonjour Claude' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.reply).toBe('Test');
   });
 });

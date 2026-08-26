@@ -24,7 +24,7 @@ const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
 const { requirePermission } = require('../middleware/requirePermission');
 const { PERMISSIONS: P } = require('../utils/staffPermissions');
-const { uploadLimiter, timetableAiLimiter } = require('../middleware/rateLimit');
+const { uploadLimiter, timetableAiLimiter, timetableChatLimiter } = require('../middleware/rateLimit');
 const { auditMiddleware } = require('../utils/audit');
 const { csrfProtection } = require('../middleware/csrfProtection');
 const {
@@ -129,6 +129,7 @@ router.get('/timetable-agent/new', requirePermission(P.CLASSES_WRITE), timetable
 router.get('/timetable-agent/:id', requirePermission(P.CLASSES_WRITE), timetableAgentController.show);
 router.post('/timetable-agent/:id', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_save', 'TimetableGenerationSession'), timetableAgentController.saveDraft);
 router.post('/timetable-agent/:id/generate', requirePermission(P.CLASSES_WRITE), timetableAiLimiter, auditMiddleware('timetable_agent_generate', 'TimetableGenerationSession'), timetableAgentController.runGenerate);
+router.post('/timetable-agent/:id/chat', requirePermission(P.CLASSES_WRITE), timetableChatLimiter, auditMiddleware('timetable_agent_chat', 'TimetableGenerationSession'), timetableAgentController.chatSession);
 router.post('/timetable-agent/:id/apply', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_apply', 'TimetableGenerationSession'), timetableAgentController.applySession);
 router.get('/timetable-agent/:id/preview', requirePermission(P.CLASSES_READ), timetableAgentController.preview);
 router.post('/timetable-agent/:id/delete', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_delete', 'TimetableGenerationSession'), timetableAgentController.deleteSession);

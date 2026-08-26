@@ -10,6 +10,7 @@
     { id: 'professeurs', label: 'Professeurs' },
     { id: 'classes', label: 'Classes & matières' },
     { id: 'generer', label: 'Générer' },
+    { id: 'assistant', label: 'Assistant Claude' },
     { id: 'resultats', label: 'Résultats' },
   ];
 %>
@@ -109,8 +110,14 @@
   </div>
 
   <div class="ta-panel <%= activeStep === 'generer' ? 'active' : '' %>" data-panel="generer">
-    <div class="card">
-      <div class="card-header"><h2>Génération intelligente</h2></div>
+    <div class="card ta-claude-generate-card">
+      <div class="card-header ta-claude-generate-header">
+        <div>
+          <h2>Génération intelligente avec Claude</h2>
+          <p class="hint" style="margin:0.35rem 0 0">Claude vous aide à construire et optimiser l'emploi du temps. Décrivez vos besoins ou cliquez « Générer l'emploi du temps ».</p>
+        </div>
+        <span class="ta-badge ta-badge-claude">Powered by Claude</span>
+      </div>
       <div style="padding:1rem">
         <% if (validation.errors.length) { %>
           <div class="alert alert-danger">
@@ -137,14 +144,61 @@
               <input type="radio" name="generationMode" value="classic">
               <span>Génération classique — algorithme déterministe rapide</span>
             </label>
-            <p class="hint" style="margin-top:0.75rem">Claude analyse vos contraintes et propose un emploi du temps équilibré avec des suggestions.</p>
+            <p class="hint" style="margin-top:0.75rem">Claude analyse vos contraintes et propose un emploi du temps équilibré avec des suggestions. Vous pouvez aussi dialoguer avec Claude dans l'onglet « Assistant Claude ».</p>
           <% } else { %>
             <div class="alert alert-info" style="margin:0">
-              <strong>Claude IA non configuré</strong> — ajoutez <code>ANTHROPIC_API_KEY</code> sur le serveur (Vercel → Environment Variables) pour activer la génération intelligente.
+              <strong>Claude IA non configuré</strong> — ajoutez <code>ANTHROPIC_API_KEY</code> sur le serveur (Vercel → Environment Variables) pour activer la génération intelligente et le chat assistant.
             </div>
             <input type="hidden" name="generationMode" value="classic">
           <% } %>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'assistant' ? 'active' : '' %>" data-panel="assistant">
+    <div class="card ta-claude-chat-card">
+      <div class="card-header ta-claude-chat-header">
+        <div>
+          <h2>Posez vos questions à Claude</h2>
+          <p class="hint" style="margin:0.35rem 0 0">Responsable Pédagogique Virtuel — contraintes, classes, conflits, équilibre des matières.</p>
+        </div>
+        <span class="ta-badge ta-badge-claude">Powered by Claude</span>
+      </div>
+      <div class="ta-claude-chat" id="taClaudeChat">
+        <% if (typeof claudeAvailable !== 'undefined' && claudeAvailable) { %>
+          <div class="ta-claude-messages" id="taChatMessages" aria-live="polite">
+            <% const initialChat = (typeof chatHistory !== 'undefined' && chatHistory.length) ? chatHistory : []; %>
+            <% if (!initialChat.length) { %>
+              <div class="ta-claude-msg ta-claude-msg-assistant">
+                <div class="ta-claude-avatar" aria-hidden="true">C</div>
+                <div class="ta-claude-bubble">
+                  <p>Bonjour ! Je suis votre assistant emploi du temps. Décrivez vos contraintes (horaires, niveaux, professeurs) ou posez une question, par exemple : « Comment équilibrer les matières en CM2 ? »</p>
+                  <p class="hint" style="margin:0.5rem 0 0">Vous pouvez aussi générer l'emploi du temps à l'étape « Générer » avec Claude IA.</p>
+                </div>
+              </div>
+            <% } else { %>
+              <% initialChat.forEach(msg => { %>
+                <div class="ta-claude-msg ta-claude-msg-<%= msg.role === 'user' ? 'user' : 'assistant' %>">
+                  <% if (msg.role !== 'user') { %><div class="ta-claude-avatar" aria-hidden="true">C</div><% } %>
+                  <div class="ta-claude-bubble"><%= msg.content %></div>
+                </div>
+              <% }) %>
+            <% } %>
+          </div>
+          <div class="ta-claude-loading" id="taChatLoading" hidden>
+            <span class="ta-claude-spinner"></span> Claude réfléchit…
+          </div>
+          <form class="ta-claude-input-row" id="taChatForm">
+            <label class="sr-only" for="taChatInput">Votre message</label>
+            <textarea id="taChatInput" rows="2" placeholder="Ex: Comment équilibrer les matières en CM2 ?" maxlength="2000"></textarea>
+            <button type="submit" class="btn btn-primary" id="taChatSend">Envoyer</button>
+          </form>
+        <% } else { %>
+          <div class="alert alert-info" style="margin:1rem">
+            <strong>Clé API non configurée</strong> — le chat avec Claude nécessite <code>ANTHROPIC_API_KEY</code> sur le serveur. Contactez l'administrateur ou configurez la variable dans Vercel → Environment Variables.
+          </div>
+        <% } %>
       </div>
     </div>
   </div>
@@ -204,7 +258,7 @@
     <% } %>
   </div>
 
-  <% if (activeStep !== 'resultats') { %>
+  <% if (activeStep !== 'resultats' && activeStep !== 'assistant') { %>
     <div class="ta-sticky-footer">
       <button type="submit" class="btn btn-outline" id="btnSaveDraft">Enregistrer pour plus tard</button>
       <% if (activeStep === 'generer') { %>
@@ -216,10 +270,18 @@
 </form>
 
 <script type="application/json" id="taInitialData"><%- safeJson(input) %></script>
+<script type="application/json" id="taChatHistoryData"><%- safeJson(typeof chatHistory !== 'undefined' ? chatHistory : []) %></script>
 <script>
 (function () {
+  const SESSION_ID = <%- safeJson(session.id) %>;
+  const CSRF_TOKEN = <%- safeJson(csrfToken) %>;
+  const CLAUDE_AVAILABLE = <%= (typeof claudeAvailable !== 'undefined' && claudeAvailable) ? 'true' : 'false' %>;
   const DAYS = <%- safeJson(validDays) %>;
   let data = JSON.parse(document.getElementById('taInitialData').textContent || '{}');
+  let chatHistory = [];
+  try {
+    chatHistory = JSON.parse(document.getElementById('taChatHistoryData')?.textContent || '[]');
+  } catch (_) { chatHistory = []; }
 
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -439,6 +501,71 @@
   renderSalles();
   renderProfs();
   renderClasses();
+
+  function appendChatMessage(role, content) {
+    const container = document.getElementById('taChatMessages');
+    if (!container) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'ta-claude-msg ta-claude-msg-' + (role === 'user' ? 'user' : 'assistant');
+    if (role !== 'user') {
+      const avatar = document.createElement('div');
+      avatar.className = 'ta-claude-avatar';
+      avatar.setAttribute('aria-hidden', 'true');
+      avatar.textContent = 'C';
+      wrap.appendChild(avatar);
+    }
+    const bubble = document.createElement('div');
+    bubble.className = 'ta-claude-bubble';
+    bubble.textContent = content;
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function setChatLoading(on) {
+    const loading = document.getElementById('taChatLoading');
+    const sendBtn = document.getElementById('taChatSend');
+    const input = document.getElementById('taChatInput');
+    if (loading) loading.hidden = !on;
+    if (sendBtn) sendBtn.disabled = on;
+    if (input) input.disabled = on;
+  }
+
+  document.getElementById('taChatForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!CLAUDE_AVAILABLE) return;
+    const input = document.getElementById('taChatInput');
+    const message = (input?.value || '').trim();
+    if (!message) return;
+
+    syncJson();
+    appendChatMessage('user', message);
+    input.value = '';
+    setChatLoading(true);
+
+    try {
+      const res = await fetch('/school/timetable-agent/' + SESSION_ID + '/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': CSRF_TOKEN,
+        },
+        body: JSON.stringify({ message, history: chatHistory, _csrf: CSRF_TOKEN }),
+      });
+      const payload = await res.json();
+      if (!payload.ok) {
+        appendChatMessage('assistant', payload.message || 'Erreur lors de la communication avec Claude.');
+      } else {
+        chatHistory = payload.history || chatHistory;
+        appendChatMessage('assistant', payload.reply);
+      }
+    } catch (err) {
+      appendChatMessage('assistant', 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+    } finally {
+      setChatLoading(false);
+    }
+  });
 })();
 </script>
 <% } %>

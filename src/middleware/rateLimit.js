@@ -78,6 +78,15 @@ const timetableAiLimiter = rateLimit({
   ...vercelSafe,
 });
 
+const timetableChatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { ok: false, error: 'rate_limit', message: 'Trop de messages. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...vercelSafe,
+});
+
 module.exports = {
   authLimiter,
   uploadLimiter,
@@ -88,4 +97,5 @@ module.exports = {
   contactLimiter,
   reviewLimiter,
   timetableAiLimiter,
+  timetableChatLimiter,
 };

@@ -108,7 +108,7 @@ describe('timetable-agent views', () => {
     expect(html).toContain('edt-cell-salle">Salle 1</div>');
     expect(html).not.toContain('Salle Salle');
     expect(html).toContain('Par classe');
-    expect(html).toContain('timetable-agent.css?v=2');
+    expect(html).toContain('timetable-agent.css?v=4');
     expect(html).toContain('Export JSON (technique)');
     expect(html).not.toMatch(/<pre[^>]*>\s*\{\s*"classes"/);
   });
@@ -149,6 +149,80 @@ describe('timetable-agent views', () => {
       input: emptyInput(),
     });
     expect(html).toContain('Emploi du temps — Ma session');
+  });
+
+  test('show.ejs assistant step renders Claude chat UI', () => {
+    const render = compileView('school/timetable-agent/show.ejs');
+    const html = render({
+      ...baseLocals,
+      safeJson,
+      title: 'Ma session',
+      timetableAgentCss: true,
+      csrfToken: 'test-csrf',
+      session: { id: 'sess-1', name: 'Ma session', status: 'DRAFT', schoolYear: '2025-2026' },
+      input: emptyInput(),
+      chatHistory: [],
+      output: null,
+      validation: { errors: [], warnings: [], slotCount: 0, totalDemand: 0 },
+      step: 'assistant',
+      validDays: ['Lundi'],
+      defaultConstraints: {},
+      claudeAvailable: true,
+      generationMode: null,
+      skipped: 0,
+    });
+    expect(html).toContain('Assistant Claude');
+    expect(html).toContain('Posez vos questions à Claude');
+    expect(html).toContain('Powered by Claude');
+    expect(html).toContain('taClaudeChat');
+    expect(html).toContain('Comment équilibrer les matières en CM2');
+  });
+
+  test('show.ejs assistant step shows API key message when unavailable', () => {
+    const render = compileView('school/timetable-agent/show.ejs');
+    const html = render({
+      ...baseLocals,
+      safeJson,
+      title: 'Ma session',
+      timetableAgentCss: true,
+      csrfToken: 'test-csrf',
+      session: { id: 'sess-1', name: 'Ma session', status: 'DRAFT', schoolYear: '2025-2026' },
+      input: emptyInput(),
+      chatHistory: [],
+      output: null,
+      validation: { errors: [], warnings: [], slotCount: 0, totalDemand: 0 },
+      step: 'assistant',
+      validDays: ['Lundi'],
+      defaultConstraints: {},
+      claudeAvailable: false,
+      generationMode: null,
+      skipped: 0,
+    });
+    expect(html).toContain('Clé API non configurée');
+  });
+
+  test('show.ejs generer step shows prominent Claude card', () => {
+    const render = compileView('school/timetable-agent/show.ejs');
+    const html = render({
+      ...baseLocals,
+      safeJson,
+      title: 'Ma session',
+      timetableAgentCss: true,
+      csrfToken: 'test-csrf',
+      session: { id: 'sess-1', name: 'Ma session', status: 'DRAFT', schoolYear: '2025-2026' },
+      input: emptyInput(),
+      chatHistory: [],
+      output: null,
+      validation: { errors: [], warnings: [], slotCount: 5, totalDemand: 10 },
+      step: 'generer',
+      validDays: ['Lundi'],
+      defaultConstraints: {},
+      claudeAvailable: true,
+      generationMode: null,
+      skipped: 0,
+    });
+    expect(html).toContain('Génération intelligente avec Claude');
+    expect(html).toContain('ta-claude-generate-card');
   });
 
   test('show.ejs resultats step renders timetable grid', () => {

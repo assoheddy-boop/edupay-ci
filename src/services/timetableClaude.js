@@ -257,10 +257,108 @@ async function generateTimetableWithClaude(rawInput) {
   };
 }
 
+const CHAT_SYSTEM_PROMPT = `Tu es le Responsable Pédagogique Virtuel d'EduConnect pour les établissements scolaires ivoiriens et francophones.
+
+Tu aides le directeur ou le responsable pédagogique à construire et optimiser un emploi du temps scolaire.
+
+Tu peux :
+- Expliquer comment répartir les matières sur la semaine (ex. matières difficiles le matin)
+- Aider à définir des contraintes (horaires, pauses, disponibilités professeurs)
+- Suggérer des volumes horaires par niveau (CM2, 6ème, etc.)
+- Identifier des conflits potentiels dans les données saisies ou générées
+- Proposer des ajustements concrets (changer un créneau, équilibrer les profs)
+
+Règles :
+1. Réponds toujours en français, de façon claire et concise.
+2. Reste focalisé sur l'emploi du temps scolaire — pas de sujets hors contexte.
+3. N'invente pas de professeurs, classes ou salles absents des données fournies.
+4. Si des données de session sont fournies, base tes conseils dessus.
+5. Utilise des listes ou étapes numérotées quand c'est utile.
+6. Si l'utilisateur demande de générer l'emploi du temps, indique-lui d'utiliser le bouton « Générer l'emploi du temps » à l'étape Générer.`;
+
+const MAX_CHAT_HISTORY = 20;
+
+function buildChatContextBlock(input, output) {
+  const parts = [];
+  if (input) {
+    parts.push('Données de saisie actuelles (inputJson) :\n' + JSON.stringify(input, null, 2));
+  }
+  if (output) {
+    parts.push('Emploi du temps généré (outputJson) :\n' + JSON.stringify(output, null, 2));
+  }
+  return parts.join('\n\n');
+}
+
+function sanitizeChatHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-MAX_CHAT_HISTORY)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+}
+
+async function chatWithClaude({ input, output, message, history = [] }) {
+  if (!isClaudeAvailable()) {
+    return { ok: false, error: 'no_api_key', message: 'Clé API non configurée.' };
+  }
+
+  const trimmed = (message || '').trim();
+  if (!trimmed) {
+    return { ok: false, error: 'empty_message', message: 'Message vide.' };
+  }
+
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: REQUEST_TIMEOUT_MS,
+  });
+
+  const contextBlock = buildChatContextBlock(input, output);
+  const systemWithContext = contextBlock
+    ? `${CHAT_SYSTEM_PROMPT}\n\n--- Contexte de la session ---\n${contextBlock}`
+    : CHAT_SYSTEM_PROMPT;
+
+  const priorMessages = sanitizeChatHistory(history);
+  const apiMessages = [
+    ...priorMessages.map((m) => ({ role: m.role, content: m.content })),
+    { role: 'user', content: trimmed },
+  ];
+
+  try {
+    const response = await client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: systemWithContext,
+      messages: apiMessages,
+    });
+
+    const textBlock = response.content?.find((b) => b.type === 'text');
+    const reply = textBlock?.text?.trim() || 'Je n\'ai pas pu formuler de réponse. Réessayez.';
+
+    const updatedHistory = [
+      ...priorMessages,
+      { role: 'user', content: trimmed },
+      { role: 'assistant', content: reply },
+    ].slice(-MAX_CHAT_HISTORY);
+
+    return { ok: true, reply, history: updatedHistory };
+  } catch (err) {
+    console.error('[timetable-claude] chat error:', err?.message || err);
+    return {
+      ok: false,
+      error: 'api_error',
+      message: err?.message || 'Erreur API Claude.',
+    };
+  }
+}
+
 module.exports = {
   SYSTEM_PROMPT,
+  CHAT_SYSTEM_PROMPT,
   isClaudeAvailable,
   extractJsonText,
   validateClaudeOutput,
   generateTimetableWithClaude,
+  chatWithClaude,
+  sanitizeChatHistory,
+  MAX_CHAT_HISTORY,
 };
