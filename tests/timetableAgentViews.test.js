@@ -45,6 +45,8 @@ describe('timetable-agent views', () => {
       step: 'contraintes',
       validDays: ['LUNDI'],
       defaultConstraints: {},
+      claudeAvailable: false,
+      generationMode: null,
       skipped: 0,
     });
     expect(html).toContain("getElementById('addSalle')");
@@ -126,6 +128,8 @@ describe('timetable-agent views', () => {
       step: 'contraintes',
       validDays: ['LUNDI'],
       defaultConstraints: {},
+      claudeAvailable: false,
+      generationMode: null,
       skipped: 0,
     });
     expect(html).toContain('Ma session');

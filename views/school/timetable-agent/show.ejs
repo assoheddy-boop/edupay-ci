@@ -34,7 +34,9 @@
 <% if (success === 'draft') { %>
   <div class="alert alert-success">Brouillon enregistré. Vous pouvez reprendre plus tard.</div>
 <% } else if (success === 'generated') { %>
-  <div class="alert alert-success">Emploi du temps généré avec succès.</div>
+  <div class="alert alert-success">Emploi du temps généré avec succès (mode classique).</div>
+<% } else if (success === 'generated-ai') { %>
+  <div class="alert alert-success">Emploi du temps généré avec Claude IA. <span class="ta-badge ta-badge-claude">Powered by Claude</span></div>
 <% } else if (success === 'applied') { %>
   <div class="alert alert-success">Emploi du temps importé dans EduConnect.<% if (typeof skipped !== 'undefined' && skipped) { %> (<%= skipped %> ligne(s) ignorée(s))<% } %></div>
 <% } %>
@@ -123,6 +125,26 @@
         <% } %>
         <p>Créneaux disponibles estimés : <strong><%= validation.slotCount || 0 %></strong> · Volume demandé : <strong><%= validation.totalDemand || 0 %>h</strong></p>
         <p class="hint">L'algorithme place les cours sans inventer de données : professeurs, classes et matières saisis uniquement.</p>
+
+        <div class="ta-ai-panel">
+          <h3 style="margin:0 0 0.75rem;font-size:1rem">Mode de génération</h3>
+          <% if (typeof claudeAvailable !== 'undefined' && claudeAvailable) { %>
+            <label class="ta-ai-option">
+              <input type="radio" name="generationMode" value="ai" checked>
+              <span><strong>Génération IA (Claude)</strong> — optimisation pédagogique intelligente</span>
+            </label>
+            <label class="ta-ai-option">
+              <input type="radio" name="generationMode" value="classic">
+              <span>Génération classique — algorithme déterministe rapide</span>
+            </label>
+            <p class="hint" style="margin-top:0.75rem">Claude analyse vos contraintes et propose un emploi du temps équilibré avec des suggestions.</p>
+          <% } else { %>
+            <div class="alert alert-info" style="margin:0">
+              <strong>Claude IA non configuré</strong> — ajoutez <code>ANTHROPIC_API_KEY</code> sur le serveur (Vercel → Environment Variables) pour activer la génération intelligente.
+            </div>
+            <input type="hidden" name="generationMode" value="classic">
+          <% } %>
+        </div>
       </div>
     </div>
   </div>
@@ -132,7 +154,12 @@
       <div class="alert alert-info">Générez d'abord l'emploi du temps (étape « Générer »).</div>
     <% } else {
       const hasSlots = (output.classes || []).some(c => (c.emploi_du_temps || []).length);
+      const aiUsed = (typeof generationMode !== 'undefined' && generationMode === 'claude')
+        || output.meta?.generationMode === 'claude';
     %>
+      <% if (aiUsed) { %>
+        <p style="margin-bottom:1rem"><span class="ta-badge ta-badge-claude">Powered by Claude</span> Génération intelligente</p>
+      <% } %>
       <% if (!hasSlots) { %>
         <div class="alert alert-warning">
           <strong>Données insuffisantes</strong> — aucun créneau n'a été placé.
@@ -182,6 +209,7 @@
       <button type="submit" class="btn btn-outline" id="btnSaveDraft">Enregistrer pour plus tard</button>
       <% if (activeStep === 'generer') { %>
         <button type="submit" formaction="/school/timetable-agent/<%= session.id %>/generate" class="btn btn-primary" id="btnGenerate" <%= validation.errors.length ? 'disabled' : '' %>>Générer l'emploi du temps</button>
+        <button type="submit" formaction="/school/timetable-agent/<%= session.id %>/generate" class="btn btn-outline" id="btnGenerateClassic" name="generationMode" value="classic" <%= validation.errors.length ? 'disabled' : '' %>>Génération classique</button>
       <% } %>
     </div>
   <% } %>
@@ -377,7 +405,32 @@
     }
   });
 
-  document.getElementById('taForm')?.addEventListener('submit', () => syncJson());
+  document.getElementById('taForm')?.addEventListener('submit', (e) => {
+    syncJson();
+    const submitter = e.submitter;
+    if (submitter?.name === 'generationMode' && submitter.value === 'classic') {
+      let modeField = document.getElementById('taModeField');
+      if (!modeField) {
+        modeField = document.createElement('input');
+        modeField.type = 'hidden';
+        modeField.name = 'mode';
+        modeField.id = 'taModeField';
+        document.getElementById('taForm').appendChild(modeField);
+      }
+      modeField.value = 'classic';
+    } else if (submitter?.id === 'btnGenerate') {
+      const aiRadio = document.querySelector('input[name="generationMode"][value="ai"]');
+      let modeField = document.getElementById('taModeField');
+      if (!modeField) {
+        modeField = document.createElement('input');
+        modeField.type = 'hidden';
+        modeField.name = 'mode';
+        modeField.id = 'taModeField';
+        document.getElementById('taForm').appendChild(modeField);
+      }
+      modeField.value = (aiRadio && aiRadio.checked) ? 'ai' : 'classic';
+    }
+  });
 
   if (!data.salles?.length) data.salles = [{ nom: 'Salle 1', type: 'classe', capacite: 35 }];
   if (!data.professeurs?.length) data.professeurs = [{ nom: '', matieres: [], disponibilites: {}, contraintes: '' }];

@@ -167,7 +167,28 @@ async function runGenerate(req, res) {
     return res.redirect(`/school/timetable-agent/${session.id}?error=${encodeURIComponent(errMsg)}&step=generer`);
   }
 
-  const result = generateTimetable(input);
+  const useAi = req.body.mode === 'ai' || req.body.generationMode === 'ai';
+  let result;
+  let generationMode = 'deterministic';
+  let fallbackReason = null;
+
+  if (useAi && isClaudeAvailable()) {
+    result = await generateTimetableWithClaude(input);
+    if (result.ok) {
+      generationMode = 'claude';
+    } else {
+      fallbackReason = result.error || result.message || 'claude_failed';
+      console.warn('[timetable-agent] Claude fallback:', fallbackReason);
+      result = generateTimetable(input);
+      generationMode = 'deterministic';
+    }
+  } else {
+    if (useAi && !isClaudeAvailable()) {
+      fallbackReason = 'no_api_key';
+    }
+    result = generateTimetable(input);
+  }
+
   if (!result.ok) {
     await prisma.timetableGenerationSession.update({
       where: { id: session.id },
@@ -176,6 +197,12 @@ async function runGenerate(req, res) {
     const errMsg = result.errors?.join(' ') || 'Génération impossible.';
     return res.redirect(`/school/timetable-agent/${session.id}?error=${encodeURIComponent(errMsg)}&step=generer`);
   }
+
+  result.output.meta = {
+    generationMode,
+    ...(fallbackReason ? { fallbackReason } : {}),
+    generatedAt: new Date().toISOString(),
+  };
 
   await prisma.timetableGenerationSession.update({
     where: { id: session.id },
@@ -188,7 +215,8 @@ async function runGenerate(req, res) {
     },
   });
 
-  return res.redirect(`/school/timetable-agent/${session.id}?success=generated&step=resultats`);
+  const successParam = generationMode === 'claude' ? 'generated-ai' : 'generated';
+  return res.redirect(`/school/timetable-agent/${session.id}?success=${successParam}&step=resultats`);
 }
 
 async function applySession(req, res) {

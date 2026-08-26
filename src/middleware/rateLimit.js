@@ -69,6 +69,15 @@ const reviewLimiter = rateLimit({
   ...vercelSafe,
 });
 
+const timetableAiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Trop de générations IA. Réessayez dans 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...vercelSafe,
+});
+
 module.exports = {
   authLimiter,
   uploadLimiter,
@@ -78,4 +87,5 @@ module.exports = {
   devisLimiter,
   contactLimiter,
   reviewLimiter,
+  timetableAiLimiter,
 };
