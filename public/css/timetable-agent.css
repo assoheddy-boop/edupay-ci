@@ -611,6 +611,19 @@
   border-top-right-radius: 4px;
 }
 
+.ta-claude-bubble-error {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca;
+}
+
+.ta-claude-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
 .ta-claude-input-row {
   display: flex;
   gap: 0.65rem;

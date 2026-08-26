@@ -176,6 +176,10 @@ describe('timetable-agent views', () => {
     expect(html).toContain('Powered by Claude');
     expect(html).toContain('taClaudeChat');
     expect(html).toContain('Comment équilibrer les matières en CM2');
+    expect(html).toContain('id="taChatSend"');
+    expect(html).toContain('Générer l\'emploi du temps maintenant');
+    expect(html).not.toMatch(/<form[^>]*id="taChatForm"/);
+    expect(html).toContain('sendChatMessage');
   });
 
   test('show.ejs assistant step shows API key message when unavailable', () => {

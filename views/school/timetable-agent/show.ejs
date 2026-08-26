@@ -189,11 +189,14 @@
           <div class="ta-claude-loading" id="taChatLoading" hidden>
             <span class="ta-claude-spinner"></span> Claude réfléchit…
           </div>
-          <form class="ta-claude-input-row" id="taChatForm">
+          <div class="ta-claude-actions">
+            <button type="button" class="btn btn-outline btn-sm" id="taChatGenerate">Générer l'emploi du temps maintenant</button>
+          </div>
+          <div class="ta-claude-input-row" id="taChatInputRow">
             <label class="sr-only" for="taChatInput">Votre message</label>
             <textarea id="taChatInput" rows="2" placeholder="Ex: Comment équilibrer les matières en CM2 ?" maxlength="2000"></textarea>
-            <button type="submit" class="btn btn-primary" id="taChatSend">Envoyer</button>
-          </form>
+            <button type="button" class="btn btn-primary" id="taChatSend">Envoyer</button>
+          </div>
         <% } else { %>
           <div class="alert alert-info" style="margin:1rem">
             <strong>Clé API non configurée</strong> — le chat avec Claude nécessite <code>ANTHROPIC_API_KEY</code> sur le serveur. Contactez l'administrateur ou configurez la variable dans Vercel → Environment Variables.
@@ -502,7 +505,7 @@
   renderProfs();
   renderClasses();
 
-  function appendChatMessage(role, content) {
+  function appendChatMessage(role, content, isError) {
     const container = document.getElementById('taChatMessages');
     if (!container) return;
     const wrap = document.createElement('div');
@@ -511,15 +514,24 @@
       const avatar = document.createElement('div');
       avatar.className = 'ta-claude-avatar';
       avatar.setAttribute('aria-hidden', 'true');
-      avatar.textContent = 'C';
+      avatar.textContent = isError ? '!' : 'C';
       wrap.appendChild(avatar);
     }
     const bubble = document.createElement('div');
-    bubble.className = 'ta-claude-bubble';
+    bubble.className = 'ta-claude-bubble' + (isError ? ' ta-claude-bubble-error' : '');
     bubble.textContent = content;
     wrap.appendChild(bubble);
     container.appendChild(wrap);
     container.scrollTop = container.scrollHeight;
+  }
+
+  function formatChatError(payload, res) {
+    if (payload?.error === 'no_api_key') return 'Vérifiez ANTHROPIC_API_KEY sur le serveur (Vercel → Environment Variables).';
+    if (payload?.code === 'csrf_invalid' || res?.status === 403) return 'Session expirée. Rechargez la page et réessayez.';
+    if (payload?.message) return payload.message;
+    if (payload?.error) return String(payload.error);
+    if (res && !res.ok) return 'Erreur serveur (' + res.status + ').';
+    return 'Erreur lors de la communication avec Claude.';
   }
 
   function setChatLoading(on) {
@@ -531,8 +543,7 @@
     if (input) input.disabled = on;
   }
 
-  document.getElementById('taChatForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function sendChatMessage() {
     if (!CLAUDE_AVAILABLE) return;
     const input = document.getElementById('taChatInput');
     const message = (input?.value || '').trim();
@@ -553,18 +564,56 @@
         },
         body: JSON.stringify({ message, history: chatHistory, _csrf: CSRF_TOKEN }),
       });
-      const payload = await res.json();
-      if (!payload.ok) {
-        appendChatMessage('assistant', payload.message || 'Erreur lors de la communication avec Claude.');
+      let payload = null;
+      try {
+        payload = await res.json();
+      } catch (_) {
+        payload = null;
+      }
+      if (!payload || !payload.ok) {
+        appendChatMessage('assistant', 'Erreur Claude: ' + formatChatError(payload, res), true);
       } else {
         chatHistory = payload.history || chatHistory;
         appendChatMessage('assistant', payload.reply);
       }
     } catch (err) {
-      appendChatMessage('assistant', 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+      appendChatMessage('assistant', 'Erreur Claude: connexion impossible. Vérifiez votre réseau et réessayez.', true);
     } finally {
       setChatLoading(false);
     }
+  }
+
+  document.getElementById('taChatSend')?.addEventListener('click', sendChatMessage);
+  document.getElementById('taChatInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+
+  document.getElementById('taChatGenerate')?.addEventListener('click', () => {
+    syncJson();
+    const form = document.getElementById('taForm');
+    if (!form) return;
+    let modeField = document.getElementById('taModeField');
+    if (!modeField) {
+      modeField = document.createElement('input');
+      modeField.type = 'hidden';
+      modeField.name = 'mode';
+      modeField.id = 'taModeField';
+      form.appendChild(modeField);
+    }
+    modeField.value = 'ai';
+    let genBtn = document.getElementById('taChatGenerateSubmit');
+    if (!genBtn) {
+      genBtn = document.createElement('button');
+      genBtn.type = 'submit';
+      genBtn.id = 'taChatGenerateSubmit';
+      genBtn.hidden = true;
+      form.appendChild(genBtn);
+    }
+    genBtn.setAttribute('formaction', '/school/timetable-agent/' + SESSION_ID + '/generate');
+    form.requestSubmit(genBtn);
   });
 })();
 </script>
