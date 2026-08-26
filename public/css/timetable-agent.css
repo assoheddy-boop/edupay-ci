@@ -1,0 +1,152 @@
+/* Assistant emploi du temps — EduConnect */
+.ta-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding-bottom: 0.75rem;
+}
+
+.ta-tab {
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text-muted, #64748b);
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.ta-tab:hover {
+  background: var(--surface-alt, #f8fafc);
+  color: var(--primary, #0052CC);
+}
+
+.ta-tab.active {
+  background: var(--primary, #0052CC);
+  color: #fff;
+  border-color: var(--primary, #0052CC);
+}
+
+.ta-panel { display: none; }
+.ta-panel.active { display: block; }
+
+.ta-empty {
+  padding: 2rem 1.5rem;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+}
+
+.ta-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ta-badge-draft { background: #fef3c7; color: #92400e; }
+.ta-badge-generated { background: #dbeafe; color: #1e40af; }
+.ta-badge-applied { background: #d1fae5; color: #065f46; }
+
+.ta-actions { white-space: nowrap; }
+.ta-actions .btn { margin-left: 0.25rem; }
+
+.ta-row-list { display: flex; flex-direction: column; gap: 0.75rem; margin: 1rem 0; }
+
+.ta-row {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  background: var(--surface-alt, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.ta-row.grid-4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.ta-row.grid-5 { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+
+.ta-row label { font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.ta-row input, .ta-row select, .ta-row textarea { width: 100%; }
+
+.ta-matiere-block {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border, #e2e8f0);
+}
+
+.ta-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.ta-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ta-result-card {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ta-result-card h3 {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-alt, #f8fafc);
+  font-size: 0.95rem;
+}
+
+.ta-slot-table {
+  width: 100%;
+  font-size: 0.82rem;
+  border-collapse: collapse;
+}
+
+.ta-slot-table th, .ta-slot-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  text-align: left;
+}
+
+.ta-conflicts {
+  border-left: 4px solid #e74c3c;
+  background: #fef2f2;
+  padding: 0.85rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+}
+
+.ta-suggestions {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+  padding: 0.85rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+}
+
+.ta-conflicts ul, .ta-suggestions ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+
+.ta-sticky-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding: 1rem 0;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  z-index: 2;
+}
+
+@media (max-width: 640px) {
+  .ta-tabs { flex-direction: column; }
+}

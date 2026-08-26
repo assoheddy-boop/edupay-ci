@@ -78,6 +78,7 @@
 
   <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
     <div style="padding:0 1rem 1rem;display:flex;gap:.75rem;flex-wrap:wrap">
+    <a href="/school/timetable-agent" class="btn btn-outline">Assistant emploi du temps</a>
       <% if (filterClassId) { %>
         <form method="POST" action="/timetable/notify-class" onsubmit="return confirm('Envoyer l\'emploi du temps à tous les parents de cette classe ?');">
           <input type="hidden" name="classId" value="<%= filterClassId %>">

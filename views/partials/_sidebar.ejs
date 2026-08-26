@@ -68,6 +68,7 @@
         </button>
         <div class="nav-group-items" id="nav-items-vie-scolaire">
           <% if (can('classes:read')) { %><a href="/timetable">Emploi du temps</a><% } %>
+          <% if (can('classes:write')) { %><a href="/school/timetable-agent">Assistant emploi du temps</a><% } %>
           <% if (on('absences') && can('absences:write')) { %><a href="/school/justificatifs">Justificatifs</a><% } %>
           <% if (on('canteen') && can('canteen:write')) { %><a href="/school/canteen">Cantine</a><% } %>
           <% if (on('lost_items') && can('lost_items:write')) { %><a href="/school/lost-items">Objets perdus</a><% } %>

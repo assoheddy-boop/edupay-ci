@@ -1,0 +1,415 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timetable-agent/show', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: title || session.name, user, modules, timetableAgentCss: true }) %>
+<% } else { %>
+<%
+  const activeStep = step || 'contraintes';
+  const steps = [
+    { id: 'contraintes', label: 'Contraintes école' },
+    { id: 'salles', label: 'Salles' },
+    { id: 'professeurs', label: 'Professeurs' },
+    { id: 'classes', label: 'Classes & matières' },
+    { id: 'generer', label: 'Générer' },
+    { id: 'resultats', label: 'Résultats' },
+  ];
+%>
+
+<div class="page-header">
+  <div>
+    <h1><%= session.name %></h1>
+    <p class="page-sub">
+      Assistant emploi du temps —
+      <span class="ta-badge ta-badge-<%= session.status.toLowerCase() %>"><%= statusLabels[session.status] %></span>
+      · <%= session.schoolYear %>
+    </p>
+  </div>
+  <div class="btn-group">
+    <a href="/school/timetable-agent" class="btn btn-outline">← Sessions</a>
+    <% if (output) { %>
+      <a href="/school/timetable-agent/<%= session.id %>/preview" class="btn btn-outline" target="_blank">Aperçu JSON</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (success === 'draft') { %>
+  <div class="alert alert-success">Brouillon enregistré. Vous pouvez reprendre plus tard.</div>
+<% } else if (success === 'generated') { %>
+  <div class="alert alert-success">Emploi du temps généré avec succès.</div>
+<% } else if (success === 'applied') { %>
+  <div class="alert alert-success">Emploi du temps importé dans EduConnect.<% if (typeof skipped !== 'undefined' && skipped) { %> (<%= skipped %> ligne(s) ignorée(s))<% } %></div>
+<% } %>
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+
+<nav class="ta-tabs" aria-label="Étapes">
+  <% steps.forEach(s => { %>
+    <a href="?step=<%= s.id %>" class="ta-tab <%= activeStep === s.id ? 'active' : '' %>"><%= s.label %></a>
+  <% }) %>
+</nav>
+
+<form id="taForm" method="POST" action="/school/timetable-agent/<%= session.id %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="step" id="taStepField" value="<%= activeStep %>">
+  <input type="hidden" name="inputJson" id="inputJsonField" value="">
+
+  <label style="display:block;margin-bottom:1rem;max-width:420px">
+    Nom de la session
+    <input type="text" name="name" id="sessionName" value="<%= session.name %>" required>
+  </label>
+
+  <div class="ta-panel <%= activeStep === 'contraintes' ? 'active' : '' %>" data-panel="contraintes">
+    <div class="card">
+      <div class="card-header"><h2>Contraintes de l'établissement</h2></div>
+      <div class="form grid-3" style="padding:1rem">
+        <label>Jours ouvrés (séparés par virgule)
+          <input type="text" id="c_jours" value="<%= (input.contraintes_ecole.jours || []).join(', ') %>">
+        </label>
+        <label>Heure début <input type="time" id="c_heure_debut" value="<%= input.contraintes_ecole.heure_debut || '07:30' %>"></label>
+        <label>Heure fin <input type="time" id="c_heure_fin" value="<%= input.contraintes_ecole.heure_fin || '17:00' %>"></label>
+        <label>Pause début <input type="time" id="c_pause_debut" value="<%= input.contraintes_ecole.pause_debut || '12:00' %>"></label>
+        <label>Pause fin <input type="time" id="c_pause_fin" value="<%= input.contraintes_ecole.pause_fin || '14:00' %>"></label>
+        <label>Durée créneau (min) <input type="number" id="c_duree" min="30" step="15" value="<%= input.contraintes_ecole.duree_creneau || 60 %>"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'salles' ? 'active' : '' %>" data-panel="salles">
+    <div class="card">
+      <div class="card-header"><h2>Salles</h2></div>
+      <div style="padding:1rem">
+        <div id="sallesList" class="ta-row-list"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addSalle">+ Ajouter une salle</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'professeurs' ? 'active' : '' %>" data-panel="professeurs">
+    <div class="card">
+      <div class="card-header"><h2>Professeurs</h2></div>
+      <div style="padding:1rem">
+        <p class="hint">Format disponibilités : <code>08:00-12:00</code> (une plage par ligne, par jour).</p>
+        <div id="profList" class="ta-row-list"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addProf">+ Ajouter un professeur</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'classes' ? 'active' : '' %>" data-panel="classes">
+    <div class="card">
+      <div class="card-header"><h2>Classes & matières</h2></div>
+      <div style="padding:1rem">
+        <p class="hint">Utilisez les mêmes noms que dans EduConnect pour faciliter l'import.</p>
+        <div id="classesList" class="ta-row-list"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addClasse">+ Ajouter une classe</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'generer' ? 'active' : '' %>" data-panel="generer">
+    <div class="card">
+      <div class="card-header"><h2>Génération intelligente</h2></div>
+      <div style="padding:1rem">
+        <% if (validation.errors.length) { %>
+          <div class="alert alert-danger">
+            <strong>Corrigez avant de générer :</strong>
+            <ul><% validation.errors.forEach(e => { %><li><%= e %></li><% }) %></ul>
+          </div>
+        <% } %>
+        <% if (validation.warnings.length) { %>
+          <div class="alert alert-warning">
+            <ul><% validation.warnings.forEach(w => { %><li><%= w %></li><% }) %></ul>
+          </div>
+        <% } %>
+        <p>Créneaux disponibles estimés : <strong><%= validation.slotCount || 0 %></strong> · Volume demandé : <strong><%= validation.totalDemand || 0 %>h</strong></p>
+        <p class="hint">L'algorithme place les cours sans inventer de données : professeurs, classes et matières saisis uniquement.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ta-panel <%= activeStep === 'resultats' ? 'active' : '' %>" data-panel="resultats">
+    <% if (!output) { %>
+      <div class="alert alert-info">Générez d'abord l'emploi du temps (étape « Générer »).</div>
+    <% } else { %>
+      <% if (output.conflits && output.conflits.length) { %>
+        <div class="ta-conflicts">
+          <strong>Conflits (<%= output.conflits.length %>)</strong>
+          <ul><% output.conflits.forEach(c => { %><li><%= c.message %></li><% }) %></ul>
+        </div>
+      <% } %>
+      <% if (output.suggestions && output.suggestions.length) { %>
+        <div class="ta-suggestions">
+          <strong>Suggestions</strong>
+          <ul><% output.suggestions.forEach(s => { %><li><%= s %></li><% }) %></ul>
+        </div>
+      <% } %>
+
+      <div class="ta-results-grid">
+        <div class="ta-result-card">
+          <h3>Par classe</h3>
+          <% (output.classes || []).forEach(bloc => { %>
+            <details style="padding:0.5rem 0.85rem">
+              <summary><strong><%= bloc.classe %></strong> (<%= (bloc.emploi_du_temps || []).length %> créneaux)</summary>
+              <table class="ta-slot-table">
+                <thead><tr><th>Jour</th><th>Heure</th><th>Matière</th><th>Prof.</th><th>Salle</th></tr></thead>
+                <tbody>
+                  <% (bloc.emploi_du_temps || []).forEach(slot => { %>
+                    <tr>
+                      <td><%= slot.jour %></td>
+                      <td><%= slot.heure %><% if (slot.heure_fin) { %>–<%= slot.heure_fin %><% } %></td>
+                      <td><%= slot.matiere %></td>
+                      <td><%= slot.professeur %></td>
+                      <td><%= slot.salle %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </details>
+          <% }) %>
+        </div>
+
+        <div class="ta-result-card">
+          <h3>Par professeur</h3>
+          <% (output.professeurs || []).forEach(bloc => { %>
+            <details style="padding:0.5rem 0.85rem">
+              <summary><strong><%= bloc.professeur %></strong></summary>
+              <table class="ta-slot-table">
+                <tbody>
+                  <% (bloc.emploi_du_temps || []).forEach(slot => { %>
+                    <tr>
+                      <td><%= slot.jour %> <%= slot.heure %></td>
+                      <td><%= slot.matiere %> — <%= slot.classe || '' %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </details>
+          <% }) %>
+        </div>
+      </div>
+
+      <% if (session.status !== 'APPLIED' && (!output.conflits || !output.conflits.length)) { %>
+        <form method="POST" action="/school/timetable-agent/<%= session.id %>/apply" style="margin-top:1.5rem" onsubmit="return confirm('Importer cet emploi du temps ? Les créneaux existants des classes concernées seront remplacés.');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="replaceExisting" value="1">
+          <button type="submit" class="btn btn-primary">Appliquer à l'emploi du temps officiel</button>
+          <a href="/timetable" class="btn btn-outline">Voir l'emploi du temps</a>
+        </form>
+      <% } else if (session.status === 'APPLIED') { %>
+        <div class="alert alert-success" style="margin-top:1rem">Cette session a déjà été appliquée le <%= session.appliedAt ? new Date(session.appliedAt).toLocaleString('fr-FR') : '—' %>.</div>
+      <% } %>
+    <% } %>
+  </div>
+
+  <% if (activeStep !== 'resultats') { %>
+    <div class="ta-sticky-footer">
+      <button type="submit" class="btn btn-outline" id="btnSaveDraft">Enregistrer pour plus tard</button>
+      <% if (activeStep === 'generer') { %>
+        <button type="submit" formaction="/school/timetable-agent/<%= session.id %>/generate" class="btn btn-primary" id="btnGenerate" <%= validation.errors.length ? 'disabled' : '' %>>Générer l'emploi du temps</button>
+      <% } %>
+    </div>
+  <% } %>
+</form>
+
+<script type="application/json" id="taInitialData"><%- safeJson(input) %></script>
+<script>
+(function () {
+  const DAYS = <%- safeJson(validDays) %>;
+  let data = JSON.parse(document.getElementById('taInitialData').textContent || '{}');
+
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function collectConstraints() {
+    const joursRaw = document.getElementById('c_jours').value;
+    data.contraintes_ecole = {
+      jours: joursRaw.split(',').map(s => s.trim()).filter(Boolean),
+      heure_debut: document.getElementById('c_heure_debut').value.slice(0, 5),
+      heure_fin: document.getElementById('c_heure_fin').value.slice(0, 5),
+      pause_debut: document.getElementById('c_pause_debut').value.slice(0, 5),
+      pause_fin: document.getElementById('c_pause_fin').value.slice(0, 5),
+      duree_creneau: Number(document.getElementById('c_duree').value) || 60,
+    };
+  }
+
+  function renderSalles() {
+    const list = document.getElementById('sallesList');
+    if (!list) return;
+    list.innerHTML = (data.salles || []).map((s, i) => `
+      <div class="ta-row grid-4" data-salle="${i}">
+        <label>Nom <input type="text" class="s-nom" value="${esc(s.nom)}"></label>
+        <label>Type <input type="text" class="s-type" value="${esc(s.type || 'classe')}" placeholder="classe, labo…"></label>
+        <label>Capacité <input type="number" class="s-cap" min="1" value="${esc(s.capacite || 30)}"></label>
+        <label>&nbsp;<button type="button" class="btn btn-sm btn-outline rm-salle">Supprimer</button></label>
+      </div>`).join('');
+  }
+
+  function renderProfs() {
+    const list = document.getElementById('profList');
+    if (!list) return;
+    list.innerHTML = (data.professeurs || []).map((p, i) => {
+      const dispos = p.disponibilites || {};
+      const disposText = DAYS.map(d => {
+        const slots = (dispos[d] || []).join(', ');
+        return `${d}: ${slots}`;
+      }).join('\\n');
+      return `
+      <div class="ta-row" data-prof="${i}">
+        <div class="grid-3" style="display:grid;gap:0.65rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+          <label>Nom complet <input type="text" class="p-nom" value="${esc(p.nom)}" placeholder="Koné Awa"></label>
+          <label>Matières (virgules) <input type="text" class="p-matieres" value="${esc((p.matieres || []).join(', '))}"></label>
+          <label>Contraintes <input type="text" class="p-contraintes" value="${esc(p.contraintes || '')}"></label>
+        </div>
+        <label>Disponibilités (une ligne par jour, ex. Lundi: 08:00-12:00, 14:00-17:00)
+          <textarea class="p-dispos" rows="4">${esc(disposText)}</textarea>
+        </label>
+        <button type="button" class="btn btn-sm btn-outline rm-prof">Supprimer</button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderClasses() {
+    const list = document.getElementById('classesList');
+    if (!list) return;
+    list.innerHTML = (data.classes || []).map((c, ci) => {
+      const matieres = (c.matieres || []).map((m, mi) => `
+        <div class="ta-row grid-4 ta-matiere-block" data-classe="${ci}" data-matiere="${mi}">
+          <label>Matière <input type="text" class="m-matiere" value="${esc(m.matiere)}"></label>
+          <label>h/sem. <input type="number" class="m-heures" min="1" value="${esc(m.heures_semaine || 2)}"></label>
+          <label>Professeur <input type="text" class="m-prof" value="${esc(m.professeur)}"></label>
+          <label>&nbsp;<button type="button" class="btn btn-sm btn-outline rm-matiere">×</button></label>
+        </div>`).join('');
+      return `
+      <div class="ta-row" data-classe="${ci}">
+        <div class="grid-4" style="display:grid;gap:0.65rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+          <label>Nom classe <input type="text" class="c-nom" value="${esc(c.nom)}"></label>
+          <label>Niveau <input type="text" class="c-niveau" value="${esc(c.niveau || '')}"></label>
+          <label colspan="2">&nbsp;<button type="button" class="btn btn-sm btn-outline add-matiere">+ Matière</button>
+          <button type="button" class="btn btn-sm btn-outline rm-classe">Supprimer classe</button></label>
+        </div>
+        ${matieres}
+      </div>`;
+    }).join('');
+  }
+
+  function readSalles() {
+    data.salles = [...document.querySelectorAll('#sallesList [data-salle]')].map(row => ({
+      nom: row.querySelector('.s-nom').value.trim(),
+      type: row.querySelector('.s-type').value.trim() || 'classe',
+      capacite: Number(row.querySelector('.s-cap').value) || 30,
+    })).filter(s => s.nom);
+  }
+
+  function readProfs() {
+    data.professeurs = [...document.querySelectorAll('#profList [data-prof]')].map(row => {
+      const dispos = {};
+      const text = row.querySelector('.p-dispos').value.split('\\n');
+      text.forEach(line => {
+        const idx = line.indexOf(':');
+        if (idx < 0) return;
+        const day = line.slice(0, idx).trim();
+        const slots = line.slice(idx + 1).split(',').map(s => s.trim()).filter(Boolean);
+        if (day) dispos[day] = slots;
+      });
+      return {
+        nom: row.querySelector('.p-nom').value.trim(),
+        matieres: row.querySelector('.p-matieres').value.split(',').map(s => s.trim()).filter(Boolean),
+        contraintes: row.querySelector('.p-contraintes').value.trim(),
+        disponibilites: dispos,
+      };
+    }).filter(p => p.nom);
+  }
+
+  function readClasses() {
+    data.classes = [...document.querySelectorAll('#classesList > [data-classe]')].map(row => {
+      const ci = row.getAttribute('data-classe');
+      const matieres = [...row.querySelectorAll(`[data-classe="${ci}"][data-matiere]`)].map(mrow => ({
+        matiere: mrow.querySelector('.m-matiere').value.trim(),
+        heures_semaine: Number(mrow.querySelector('.m-heures').value) || 1,
+        professeur: mrow.querySelector('.m-prof').value.trim(),
+      })).filter(m => m.matiere);
+      return {
+        nom: row.querySelector('.c-nom').value.trim(),
+        niveau: row.querySelector('.c-niveau').value.trim(),
+        matieres,
+      };
+    }).filter(c => c.nom);
+  }
+
+  function syncJson() {
+    collectConstraints();
+    readSalles();
+    readProfs();
+    readClasses();
+    const json = JSON.stringify(data);
+    const field = document.getElementById('inputJsonField');
+    if (field) field.value = json;
+  }
+
+  document.getElementById('taForm')?.addEventListener('submit', () => syncJson());
+    data.salles = data.salles || [];
+    data.salles.push({ nom: '', type: 'classe', capacite: 30 });
+    renderSalles();
+  });
+
+  document.getElementById('addProf')?.addEventListener('click', () => {
+    data.professeurs = data.professeurs || [];
+    data.professeurs.push({ nom: '', matieres: [], disponibilites: {}, contraintes: '' });
+    renderProfs();
+  });
+
+  document.getElementById('addClasse')?.addEventListener('click', () => {
+    data.classes = data.classes || [];
+    data.classes.push({ nom: '', niveau: '', matieres: [{ matiere: '', heures_semaine: 2, professeur: '' }] });
+    renderClasses();
+  });
+
+  document.body.addEventListener('click', (e) => {
+    if (e.target.classList.contains('rm-salle')) {
+      const i = Number(e.target.closest('[data-salle]').getAttribute('data-salle'));
+      data.salles.splice(i, 1);
+      readSalles();
+      renderSalles();
+    }
+    if (e.target.classList.contains('rm-prof')) {
+      readProfs();
+      const i = Number(e.target.closest('[data-prof]').getAttribute('data-prof'));
+      data.professeurs.splice(i, 1);
+      renderProfs();
+    }
+    if (e.target.classList.contains('rm-classe')) {
+      readClasses();
+      const i = Number(e.target.closest('[data-classe]').getAttribute('data-classe'));
+      data.classes.splice(i, 1);
+      renderClasses();
+    }
+    if (e.target.classList.contains('add-matiere')) {
+      readClasses();
+      const i = Number(e.target.closest('[data-classe]').getAttribute('data-classe'));
+      data.classes[i].matieres = data.classes[i].matieres || [];
+      data.classes[i].matieres.push({ matiere: '', heures_semaine: 2, professeur: '' });
+      renderClasses();
+    }
+    if (e.target.classList.contains('rm-matiere')) {
+      readClasses();
+      const row = e.target.closest('[data-matiere]');
+      const ci = Number(row.getAttribute('data-classe'));
+      const mi = Number(row.getAttribute('data-matiere'));
+      data.classes[ci].matieres.splice(mi, 1);
+      renderClasses();
+    }
+  });
+
+  document.getElementById('taForm')?.addEventListener('submit', () => syncJson());
+
+  if (!data.salles?.length) data.salles = [{ nom: 'Salle 1', type: 'classe', capacite: 35 }];
+  if (!data.professeurs?.length) data.professeurs = [{ nom: '', matieres: [], disponibilites: {}, contraintes: '' }];
+  if (!data.classes?.length) data.classes = [{ nom: '', niveau: '', matieres: [{ matiere: '', heures_semaine: 2, professeur: '' }] }];
+
+  renderSalles();
+  renderProfs();
+  renderClasses();
+})();
+</script>
+<% } %>

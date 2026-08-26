@@ -1,0 +1,18 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timetable-agent/preview', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Aperçu', user, modules, timetableAgentCss: true }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Aperçu — <%= session.name %></h1>
+    <p class="page-sub">Export JSON · <%= statusLabels[session.status] || session.status %></p>
+  </div>
+  <a href="/school/timetable-agent/<%= session.id %>?step=resultats" class="btn btn-outline">← Retour</a>
+</div>
+
+<% if (!output) { %>
+  <div class="alert alert-info">Aucun résultat généré.</div>
+<% } else { %>
+  <pre style="background:#f8fafc;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;max-height:70vh"><%= JSON.stringify(output, null, 2) %></pre>
+<% } %>
+<% } %>

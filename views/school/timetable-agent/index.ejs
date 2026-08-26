@@ -1,0 +1,59 @@
+<% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
+<% const content = include('timetable-agent/index', { _inLayout: true }); %>
+<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Assistant emploi du temps', user, modules, timetableAgentCss: true }) %>
+<% } else { %>
+<div class="page-header">
+  <div>
+    <h1>Assistant emploi du temps</h1>
+    <p class="page-sub">Génération intelligente — saisissez vos données, enregistrez et générez plus tard</p>
+  </div>
+  <div class="btn-group">
+    <a href="/school/timetable-agent/new" class="btn btn-primary">Nouvelle session</a>
+    <a href="/timetable" class="btn btn-outline">Emploi du temps officiel</a>
+  </div>
+</div>
+
+<% if (success === 'deleted') { %>
+  <div class="alert alert-success">Session supprimée.</div>
+<% } %>
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h2>Sessions en cours</h2></div>
+  <% if (!sessions.length) { %>
+    <p class="ta-empty">Aucune session. Créez une session pour commencer à saisir professeurs, classes et contraintes.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Statut</th>
+            <th>Année</th>
+            <th>Modifié</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sessions.forEach(s => { %>
+            <tr>
+              <td><a href="/school/timetable-agent/<%= s.id %>"><%= s.name %></a></td>
+              <td><span class="ta-badge ta-badge-<%= s.status.toLowerCase() %>"><%= statusLabels[s.status] || s.status %></span></td>
+              <td><%= s.schoolYear %></td>
+              <td><%= new Date(s.updatedAt).toLocaleString('fr-FR') %></td>
+              <td class="ta-actions">
+                <a href="/school/timetable-agent/<%= s.id %>" class="btn btn-sm btn-outline">Ouvrir</a>
+                <% if (s.status === 'GENERATED' || s.status === 'APPLIED') { %>
+                  <a href="/school/timetable-agent/<%= s.id %>/preview" class="btn btn-sm btn-outline">Aperçu</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+<% } %>

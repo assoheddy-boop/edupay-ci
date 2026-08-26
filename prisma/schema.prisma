@@ -203,6 +203,13 @@ enum TransferStatus {
   COMPLETED
 }
 
+/// Session de génération d'emploi du temps (assistant direction).
+enum TimetableGenerationStatus {
+  DRAFT
+  GENERATED
+  APPLIED
+}
+
 enum ConsentType {
   DATA_PROCESSING
   PHOTOS
@@ -401,6 +408,7 @@ model School {
   absenceJustifications AbsenceJustification[]
   subjects             Subject[]
   timetables           Timetable[]
+  timetableGenerations TimetableGenerationSession[]
   notificationJobs     NotificationJob[]
   deliberations        Deliberation[]
   socialCases          SocialCase[]
@@ -1155,6 +1163,27 @@ model Timetable {
 
   @@index([classId, dayOfWeek])
   @@index([teacherId, dayOfWeek])
+}
+
+/// Brouillon / génération / application d'emploi du temps par la direction.
+model TimetableGenerationSession {
+  id         String                    @id @default(cuid())
+  name       String                    @default("Nouvelle session")
+  status     TimetableGenerationStatus @default(DRAFT)
+  inputJson  Json?
+  outputJson Json?
+  schoolYear String                    @default("2025-2026")
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  generatedAt DateTime?
+  appliedAt  DateTime?
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId   String?
+
+  @@index([schoolId, status])
+  @@index([schoolId, createdAt])
 }
 
 model Group {

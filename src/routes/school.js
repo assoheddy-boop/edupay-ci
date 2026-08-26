@@ -15,6 +15,7 @@ const riskController = require('../controllers/riskController');
 const emargementController = require('../controllers/emargementController');
 const enrollmentController = require('../controllers/enrollmentController');
 const convocationController = require('../controllers/convocationController');
+const timetableAgentController = require('../controllers/timetableAgentController');
 const palmaresController = require('../controllers/palmaresController');
 const justificationController = require('../controllers/justificationController');
 const schoolPortalController = require('../controllers/schoolPortalController');
@@ -122,6 +123,15 @@ router.post('/school-year', requirePermission(P.SCHOOL_YEAR), schoolController.u
 router.post('/school-year/promote', requirePermission(P.SCHOOL_YEAR), schoolController.promoteClass);
 
 router.get('/timetable', (_req, res) => res.redirect('/timetable'));
+
+router.get('/timetable-agent', requirePermission(P.CLASSES_WRITE), timetableAgentController.index);
+router.get('/timetable-agent/new', requirePermission(P.CLASSES_WRITE), timetableAgentController.newSession);
+router.get('/timetable-agent/:id', requirePermission(P.CLASSES_WRITE), timetableAgentController.show);
+router.post('/timetable-agent/:id', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_save', 'TimetableGenerationSession'), timetableAgentController.saveDraft);
+router.post('/timetable-agent/:id/generate', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_generate', 'TimetableGenerationSession'), timetableAgentController.runGenerate);
+router.post('/timetable-agent/:id/apply', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_apply', 'TimetableGenerationSession'), timetableAgentController.applySession);
+router.get('/timetable-agent/:id/preview', requirePermission(P.CLASSES_READ), timetableAgentController.preview);
+router.post('/timetable-agent/:id/delete', requirePermission(P.CLASSES_WRITE), auditMiddleware('timetable_agent_delete', 'TimetableGenerationSession'), timetableAgentController.deleteSession);
 
 router.get('/homeworks', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.homeworksPage);
 router.get('/homeworks/export.xlsx', requireModule('homeworks'), requirePermission(P.CLASSES_READ), schoolController.exportHomeworksExcel);
