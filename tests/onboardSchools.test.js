@@ -8,6 +8,7 @@ const {
   generateTempPassword,
 } = require('../src/config/epvSchools');
 const { IGEST_SCHOOL } = require('../src/config/igestSchool');
+const { CABEL_SCHOOL } = require('../src/config/cabelSchool');
 const { EXTRA_SCHOOLS } = require('../src/config/extraSchools');
 
 describe('Catalogue EPV', () => {
@@ -101,11 +102,12 @@ describe('generateTempPassword', () => {
   });
 });
 
-describe('Catalogue IGEST', () => {
+describe('Catalogue partenaires hors EPV', () => {
   test('reste hors du catalogue EPV (toujours 6 écoles EPV)', () => {
     expect(EPV_SCHOOLS).toHaveLength(6);
     expect(EPV_SCHOOLS.some((s) => s.slug === IGEST_SCHOOL.slug)).toBe(false);
-    expect(EXTRA_SCHOOLS).toEqual([IGEST_SCHOOL]);
+    expect(EPV_SCHOOLS.some((s) => s.slug === CABEL_SCHOOL.slug)).toBe(false);
+    expect(EXTRA_SCHOOLS).toEqual([IGEST_SCHOOL, CABEL_SCHOOL]);
   });
 
   test('définit le nom, le slug, le téléphone, le logo et l’identité bulletin IGES', () => {

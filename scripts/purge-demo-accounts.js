@@ -57,6 +57,7 @@ function isProtectedEmail(email) {
   if (PROTECTED_EMAILS.has(e)) return true;
   if (/^epv\..+@(edupay|educonnect)\.ci$/i.test(e)) return true;
   if (/^igest@(edupay|educonnect)\.ci$/i.test(e)) return true;
+  if (/^cabel@(edupay|educonnect)\.ci$/i.test(e)) return true;
   return false;
 }
 

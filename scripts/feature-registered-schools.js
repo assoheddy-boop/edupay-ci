@@ -12,10 +12,12 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { IGEST_SCHOOL } = require('../src/config/igestSchool');
+const { CABEL_SCHOOL } = require('../src/config/cabelSchool');
 const { EPV_SCHOOLS } = require('../src/config/epvSchools');
 
 const CATALOG = [
   { name: IGEST_SCHOOL.name, slug: IGEST_SCHOOL.slug },
+  { name: CABEL_SCHOOL.name, slug: CABEL_SCHOOL.slug },
   ...EPV_SCHOOLS.map((s) => ({ name: s.name, slug: s.slug })),
 ];
 

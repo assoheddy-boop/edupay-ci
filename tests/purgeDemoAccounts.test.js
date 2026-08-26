@@ -19,9 +19,11 @@ describe('purge-demo-accounts allowlist', () => {
     expect(isDemoEmail('parent2@demo.ci')).toBe(true);
   });
 
-  test('never flags IGEST or EPV partner emails', () => {
+  test('never flags IGEST, CABEL or EPV partner emails', () => {
     expect(isProtectedEmail('igest@educonnect.ci')).toBe(true);
     expect(isDemoEmail('igest@educonnect.ci')).toBe(false);
+    expect(isProtectedEmail('cabel@educonnect.ci')).toBe(true);
+    expect(isDemoEmail('cabel@educonnect.ci')).toBe(false);
     expect(isProtectedEmail('epv.fatoumaba@educonnect.ci')).toBe(true);
     expect(isDemoEmail('epv.fatoumaba@educonnect.ci')).toBe(false);
     expect(isProtectedEmail('igest@edupay.ci')).toBe(true);
