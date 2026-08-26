@@ -156,6 +156,9 @@ function getEffectiveStaffRole(user, schoolId) {
   const assignment = findStaffAssignment(user, schoolId);
   if (assignment) return assignment.staffRole;
 
+  // Compte école titulaire lié à School sans ligne staff (ex. adminId désynchronisé en base).
+  if (user.school?.id === schoolId) return 'DIRECTOR';
+
   return null;
 }
 

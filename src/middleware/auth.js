@@ -41,7 +41,7 @@ const ROLE_ALIASES = {
 };
 
 function isApiRequest(req) {
-  return req.originalUrl.startsWith('/api/');
+  return Boolean(req.originalUrl?.startsWith('/api/'));
 }
 
 function usesBearerAuth(req) {
@@ -239,6 +239,10 @@ function checkRole(role) {
   const expected = ROLE_ALIASES[role] || role;
   return (req, res, next) => {
     if (!req.user || !hasEffectiveRole(req.user, expected)) {
+      if (isApiRequest(req)) return res.status(403).json({ error: 'Accès refusé' });
+      if (typeof req.accepts === 'function' && req.accepts('html')) {
+        return res.status(403).render('error', { message: 'Accès refusé', user: req.user });
+      }
       return res.status(403).send('Forbidden');
     }
     next();

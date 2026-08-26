@@ -76,7 +76,8 @@
     </label>
   </form>
 
-  <% if (user.role === 'SCHOOL_ADMIN' || user.role === 'SUPER_ADMIN') { %>
+  <% const canTimetableAgent = user.role === 'SCHOOL_ADMIN' || (user.role === 'SUPER_ADMIN' && typeof adminAssist !== 'undefined' && adminAssist && adminAssist.type === 'school'); %>
+  <% if (canTimetableAgent) { %>
     <div style="padding:0 1rem 1rem;display:flex;gap:.75rem;flex-wrap:wrap">
     <a href="/school/timetable-agent" class="btn btn-outline">Assistant emploi du temps</a>
       <% if (filterClassId) { %>

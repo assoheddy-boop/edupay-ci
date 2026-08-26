@@ -235,6 +235,7 @@ router.get('/', requireAuth, attachModules, async (req, res) => {
 
     res.render('school/timetableDashboard', {
       user: req.user,
+      adminAssist: res.locals.adminAssist || null,
       modules: res.locals.modules,
       title: 'Emploi du temps',
       ...data,

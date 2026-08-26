@@ -19,7 +19,7 @@ const timetableAgentController = require('../controllers/timetableAgentControlle
 const palmaresController = require('../controllers/palmaresController');
 const justificationController = require('../controllers/justificationController');
 const schoolPortalController = require('../controllers/schoolPortalController');
-const { requireAuth, checkRole } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { attachModules, requireModule } = require('../middleware/modules');
 const { requirePermission } = require('../middleware/requirePermission');
@@ -40,7 +40,7 @@ const { persistUpload } = upload;
 
 const router = express.Router();
 
-router.use(requireAuth, checkRole('school'), attachModules, csrfProtection);
+router.use(requireAuth, requireRole('SCHOOL_ADMIN'), attachModules, csrfProtection);
 
 router.get('/dashboard', requirePermission(P.DASHBOARD), schoolController.dashboard);
 router.get('/analyse', requirePermission(P.STATS), schoolAnalyseController.analysePage);
