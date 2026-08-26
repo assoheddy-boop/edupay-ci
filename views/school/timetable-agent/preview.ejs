@@ -1,13 +1,23 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('preview', { _inLayout: true }); %>
-<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Emploi du temps', user, modules, timetableAgentCss: true }) %>
+<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Emploi du temps', user, modules, school, timetableAgentCss: true }) %>
 <% } else { %>
-<div class="page-header ta-preview-header">
+<%
+  const primaryClass = timetableGrids?.byClass?.[0]?.label || session.name;
+%>
+<div class="page-header edt-preview-header">
   <div>
-    <h1>Emploi du temps — <%= session.name %></h1>
-    <p class="page-sub"><%= statusLabels[session.status] || session.status %> · <%= session.schoolYear || '' %></p>
+    <% if (typeof school !== 'undefined' && school && school.name) { %>
+      <p class="edt-school-name"><%= school.name %></p>
+    <% } %>
+    <h1>Emploi du temps — <%= primaryClass %></h1>
+    <p class="page-sub">
+      <% if (session.schoolYear) { %><%= session.schoolYear %><% } %>
+      <% if (session.schoolYear && statusLabels[session.status]) { %> · <% } %>
+      <%= statusLabels[session.status] || session.status %>
+    </p>
   </div>
-  <div class="btn-group">
+  <div class="btn-group edt-preview-actions">
     <button type="button" class="btn btn-outline" onclick="window.print()">Imprimer</button>
     <a href="/school/timetable-agent/<%= session.id %>?step=resultats" class="btn btn-outline">← Retour</a>
   </div>

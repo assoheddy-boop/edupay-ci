@@ -457,6 +457,14 @@ async function applyToDatabase(schoolId, output, { schoolYear, replaceExisting =
 
 const SUBJECT_COLOR_COUNT = 12;
 
+function formatSalleLabel(salle) {
+  if (!salle) return '';
+  const trimmed = String(salle).trim();
+  if (!trimmed) return '';
+  if (/^salle\s/i.test(trimmed)) return trimmed;
+  return `Salle ${trimmed}`;
+}
+
 function formatTimeSlotLabel(heure, heureFin) {
   if (heureFin && heureFin !== heure) return `${heure} - ${heureFin}`;
   return heure || '';
@@ -501,7 +509,7 @@ function buildGridFromSlots(slots = []) {
     cells[`${timeKey}|${day}`] = {
       matiere: slot.matiere || '',
       professeur: slot.professeur || '',
-      salle: slot.salle || '',
+      salle: formatSalleLabel(slot.salle),
       classe: slot.classe || '',
       colorIndex: subjectColorIndex(slot.matiere),
     };
@@ -581,6 +589,7 @@ module.exports = {
   buildSlots,
   buildGridFromOutput,
   buildGridFromSlots,
+  formatSalleLabel,
   subjectColorIndex,
   generateTimetable,
   detectConflicts,

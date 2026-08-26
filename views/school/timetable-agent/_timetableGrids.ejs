@@ -10,22 +10,22 @@
     <strong>Données insuffisantes</strong> — la génération n'a produit aucun créneau.
   </div>
 <% } else { %>
-  <div class="ta-view-toolbar" id="<%= uid %>-toolbar" data-grid-root="<%= uid %>">
-    <div class="ta-view-tabs" role="tablist" aria-label="Mode d'affichage">
-      <button type="button" class="ta-view-tab <%= initialMode === 'class' ? 'active' : '' %>" data-mode="class" aria-selected="<%= initialMode === 'class' ? 'true' : 'false' %>">Par classe</button>
-      <button type="button" class="ta-view-tab <%= initialMode === 'teacher' ? 'active' : '' %>" data-mode="teacher" aria-selected="<%= initialMode === 'teacher' ? 'true' : 'false' %>">Par professeur</button>
+  <div class="edt-view-toolbar" id="<%= uid %>-toolbar" data-grid-root="<%= uid %>">
+    <div class="edt-view-tabs" role="tablist" aria-label="Mode d'affichage">
+      <button type="button" class="edt-view-tab <%= initialMode === 'class' ? 'active' : '' %>" data-mode="class" aria-selected="<%= initialMode === 'class' ? 'true' : 'false' %>">Par classe</button>
+      <button type="button" class="edt-view-tab <%= initialMode === 'teacher' ? 'active' : '' %>" data-mode="teacher" aria-selected="<%= initialMode === 'teacher' ? 'true' : 'false' %>">Par professeur</button>
     </div>
-    <label class="ta-view-select ta-view-select-class" style="<%= initialMode === 'teacher' ? 'display:none' : '' %>">
+    <label class="edt-view-select edt-view-select-class" style="<%= initialMode === 'teacher' ? 'display:none' : '' %>">
       <span class="sr-only">Choisir une classe</span>
-      <select class="ta-block-select" data-mode="class" aria-label="Choisir une classe">
+      <select class="edt-block-select" data-mode="class" aria-label="Choisir une classe">
         <% classBlocks.forEach((bloc, i) => { %>
           <option value="<%= i %>" <%= i === 0 ? 'selected' : '' %>><%= bloc.label %></option>
         <% }) %>
       </select>
     </label>
-    <label class="ta-view-select ta-view-select-teacher" style="<%= initialMode !== 'teacher' ? 'display:none' : '' %>">
+    <label class="edt-view-select edt-view-select-teacher" style="<%= initialMode !== 'teacher' ? 'display:none' : '' %>">
       <span class="sr-only">Choisir un professeur</span>
-      <select class="ta-block-select" data-mode="teacher" aria-label="Choisir un professeur">
+      <select class="edt-block-select" data-mode="teacher" aria-label="Choisir un professeur">
         <% teacherBlocks.forEach((bloc, i) => { %>
           <option value="<%= i %>" <%= i === 0 ? 'selected' : '' %>><%= bloc.label %></option>
         <% }) %>
@@ -33,26 +33,26 @@
     </label>
   </div>
 
-  <div class="ta-grids-root" id="<%= uid %>" data-initial-mode="<%= initialMode %>">
+  <div class="edt-grids-root" id="<%= uid %>" data-initial-mode="<%= initialMode %>">
     <% [
       { mode: 'class', blocks: classBlocks, entityLabel: 'Classe' },
       { mode: 'teacher', blocks: teacherBlocks, entityLabel: 'Professeur' },
     ].forEach(({ mode, blocks, entityLabel }) => { %>
-      <div class="ta-grids-mode <%= mode === initialMode ? 'active' : '' %>" data-mode="<%= mode %>">
+      <div class="edt-grids-mode <%= mode === initialMode ? 'active' : '' %>" data-mode="<%= mode %>">
         <% if (!blocks.length) { %>
           <div class="alert alert-info">Aucun emploi du temps <%= mode === 'teacher' ? 'par professeur' : 'par classe' %>.</div>
         <% } %>
         <% blocks.forEach((bloc, bi) => { %>
-          <section class="ta-timetable-section <%= bi === 0 ? 'active' : '' %>" data-block-index="<%= bi %>" aria-label="Emploi du temps — <%= bloc.label %>">
-            <header class="ta-timetable-header">
-              <h3 class="ta-timetable-title"><%= entityLabel %> : <strong><%= bloc.label %></strong></h3>
-              <p class="ta-timetable-meta"><%= bloc.slotCount %> créneau(x) · <%= bloc.days.length %> jour(s)</p>
+          <section class="edt-timetable-section <%= bi === 0 ? 'active' : '' %>" data-block-index="<%= bi %>" aria-label="Emploi du temps — <%= bloc.label %>">
+            <header class="edt-timetable-header">
+              <h3 class="edt-timetable-title"><%= entityLabel %> : <strong><%= bloc.label %></strong></h3>
+              <p class="edt-timetable-meta"><%= bloc.slotCount %> créneau(x) · <%= bloc.days.length %> jour(s)</p>
             </header>
-            <div class="ta-timetable-scroll">
-              <table class="ta-timetable-grid">
+            <div class="edt-timetable-wrap">
+              <table class="edt-grid">
                 <thead>
                   <tr>
-                    <th class="ta-col-time" scope="col">Heure</th>
+                    <th class="edt-col-corner" scope="col"><span class="sr-only">Heure</span></th>
                     <% bloc.days.forEach(day => { %>
                       <th scope="col"><%= day %></th>
                     <% }) %>
@@ -60,27 +60,27 @@
                 </thead>
                 <tbody>
                   <% if (!bloc.timeSlots.length) { %>
-                    <tr><td colspan="<%= bloc.days.length + 1 %>" class="ta-empty-cell">Aucun créneau</td></tr>
+                    <tr><td colspan="<%= bloc.days.length + 1 %>" class="edt-empty-cell">Aucun créneau</td></tr>
                   <% } else {
                     bloc.timeSlots.forEach((timeKey, rowIdx) => { %>
-                    <tr class="<%= rowIdx % 2 === 0 ? 'ta-row-even' : 'ta-row-odd' %>">
-                      <th class="ta-col-time" scope="row"><%= timeKey %></th>
+                    <tr class="<%= rowIdx % 2 === 0 ? 'edt-row-even' : 'edt-row-odd' %>">
+                      <th class="edt-col-time" scope="row"><%= timeKey %></th>
                       <% bloc.days.forEach(day => {
                         const cell = bloc.cells[`${timeKey}|${day}`];
                       %>
-                        <td class="ta-cell <%= cell ? 'ta-cell-filled ta-subject-' + cell.colorIndex : 'ta-cell-empty' %>">
+                        <td class="edt-cell <%= cell ? 'edt-cell-filled edt-subject-' + cell.colorIndex : 'edt-cell-empty' %>">
                           <% if (cell) { %>
-                            <span class="ta-cell-matiere"><%= cell.matiere %></span>
+                            <div class="edt-cell-matiere"><%= cell.matiere %></div>
                             <% if (mode === 'teacher' && cell.classe) { %>
-                              <span class="ta-cell-classe"><%= cell.classe %></span>
+                              <div class="edt-cell-classe"><%= cell.classe %></div>
                             <% } else if (cell.professeur) { %>
-                              <span class="ta-cell-prof">Prof. <%= cell.professeur %></span>
+                              <div class="edt-cell-prof">Prof. <%= cell.professeur %></div>
                             <% } %>
                             <% if (cell.salle) { %>
-                              <span class="ta-cell-salle">Salle <%= cell.salle %></span>
+                              <div class="edt-cell-salle"><%= cell.salle %></div>
                             <% } %>
                           <% } else { %>
-                            <span class="ta-cell-dash">—</span>
+                            <span class="edt-cell-dash">—</span>
                           <% } %>
                         </td>
                       <% }) %>
@@ -115,16 +115,16 @@
     const toolbar = document.querySelector('[data-grid-root="' + rootId + '"]');
     if (!toolbar) return;
 
-    const tabs = [...toolbar.querySelectorAll('.ta-view-tab')];
-    const modeContainers = [...root.querySelectorAll('.ta-grids-mode')];
-    const classSelectWrap = toolbar.querySelector('.ta-view-select-class');
-    const teacherSelectWrap = toolbar.querySelector('.ta-view-select-teacher');
-    const selects = [...toolbar.querySelectorAll('.ta-block-select')];
+    const tabs = [...toolbar.querySelectorAll('.edt-view-tab')];
+    const modeContainers = [...root.querySelectorAll('.edt-grids-mode')];
+    const classSelectWrap = toolbar.querySelector('.edt-view-select-class');
+    const teacherSelectWrap = toolbar.querySelector('.edt-view-select-teacher');
+    const selects = [...toolbar.querySelectorAll('.edt-block-select')];
 
     function showBlock(mode, index) {
-      const container = root.querySelector('.ta-grids-mode[data-mode="' + mode + '"]');
+      const container = root.querySelector('.edt-grids-mode[data-mode="' + mode + '"]');
       if (!container) return;
-      container.querySelectorAll('.ta-timetable-section').forEach((sec, i) => {
+      container.querySelectorAll('.edt-timetable-section').forEach((sec, i) => {
         sec.classList.toggle('active', i === index);
       });
     }
@@ -138,7 +138,7 @@
       });
       if (classSelectWrap) classSelectWrap.style.display = mode === 'class' ? '' : 'none';
       if (teacherSelectWrap) teacherSelectWrap.style.display = mode === 'teacher' ? '' : 'none';
-      const sel = toolbar.querySelector('.ta-block-select[data-mode="' + mode + '"]');
+      const sel = toolbar.querySelector('.edt-block-select[data-mode="' + mode + '"]');
       if (sel) showBlock(mode, Number(sel.value) || 0);
     }
 
@@ -155,8 +155,8 @@
 
   initTimetableGrids('<%= uid %>');
 
-  const downloadBtn = document.querySelector('#<%= uid %>')?.closest('.ta-grids-root')?.parentElement?.querySelector('.ta-json-download');
-  const jsonEl = document.querySelector('#<%= uid %>')?.closest('.ta-grids-root')?.parentElement?.querySelector('.ta-json-data');
+  const downloadBtn = document.querySelector('#<%= uid %>')?.closest('.edt-grids-root')?.parentElement?.querySelector('.ta-json-download');
+  const jsonEl = document.querySelector('#<%= uid %>')?.closest('.edt-grids-root')?.parentElement?.querySelector('.ta-json-data');
   if (downloadBtn && jsonEl) {
     downloadBtn.addEventListener('click', (e) => {
       e.preventDefault();

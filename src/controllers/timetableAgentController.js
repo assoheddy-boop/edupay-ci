@@ -11,6 +11,7 @@ const {
   VALID_DAYS,
   DEFAULT_CONSTRAINTS,
 } = require('../services/timetableAgent');
+const { generateTimetableWithClaude, isClaudeAvailable } = require('../services/timetableClaude');
 
 function schoolFromUser(user) {
   return user?.school || user?.staffAssignments?.[0]?.school || null;
@@ -100,6 +101,8 @@ async function show(req, res) {
     statusLabels: STATUS_LABELS,
     validDays: VALID_DAYS,
     defaultConstraints: DEFAULT_CONSTRAINTS,
+    claudeAvailable: isClaudeAvailable(),
+    generationMode: output?.meta?.generationMode || null,
     success: req.query.success || null,
     error: req.query.error || null,
     skipped,
@@ -231,6 +234,8 @@ async function preview(req, res) {
     return res.render('school/timetable-agent/preview', {
       title: `Emploi du temps — ${session.name}`,
       timetableAgentCss: true,
+      user: req.user,
+      modules: res.locals.modules,
       school,
       session,
       output: session.outputJson,

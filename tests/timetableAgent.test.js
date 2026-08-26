@@ -36,6 +36,7 @@ const {
   applyToDatabase,
   buildSlots,
   buildGridFromOutput,
+  formatSalleLabel,
   subjectColorIndex,
   parseInputFromForm,
   emptyInput,
@@ -235,6 +236,27 @@ describe('timetableAgent', () => {
     expect(grids.byTeacher[0].name).toBe('Koné Awa');
     const cell = Object.values(grids.byTeacher[0].cells)[0];
     expect(cell.classe).toBe('CE2 A');
+  });
+
+  test('formatSalleLabel avoids duplicate Salle prefix', () => {
+    expect(formatSalleLabel('Salle 1')).toBe('Salle 1');
+    expect(formatSalleLabel('salle 2')).toBe('salle 2');
+    expect(formatSalleLabel('Labo')).toBe('Salle Labo');
+    expect(formatSalleLabel('')).toBe('');
+  });
+
+  test('buildGridFromOutput normalizes salle labels in cells', () => {
+    const grids = buildGridFromOutput({
+      classes: [{
+        classe: 'CM2',
+        emploi_du_temps: [{
+          jour: 'Lundi', heure: '07:30', heure_fin: '08:30', matiere: 'ANGLAIS', professeur: 'ASSOH', salle: 'Salle 1',
+        }],
+      }],
+      professeurs: [],
+    });
+    const cell = Object.values(grids.byClass[0].cells)[0];
+    expect(cell.salle).toBe('Salle 1');
   });
 
   test('subjectColorIndex is stable for same matiere', () => {

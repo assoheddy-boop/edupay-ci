@@ -1,4 +1,14 @@
-<%- include('../partials/head') %>
+<%- include('../partials/head', {
+  title: typeof title !== 'undefined' ? title : undefined,
+  user: typeof user !== 'undefined' ? user : undefined,
+  modules: typeof modules !== 'undefined' ? modules : undefined,
+  timetableAgentCss: typeof timetableAgentCss !== 'undefined' ? timetableAgentCss : undefined,
+  portalCss: typeof portalCss !== 'undefined' ? portalCss : undefined,
+  homeCss: typeof homeCss !== 'undefined' ? homeCss : undefined,
+  devisCss: typeof devisCss !== 'undefined' ? devisCss : undefined,
+  correspondanceCss: typeof correspondanceCss !== 'undefined' ? correspondanceCss : undefined,
+  csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : undefined,
+}) %>
 <div class="app-shell app-shell-school">
   <%- include('../partials/_navbar') %>
   <div class="app-body">

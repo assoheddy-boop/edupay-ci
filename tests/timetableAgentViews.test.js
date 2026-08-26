@@ -91,16 +91,22 @@ describe('timetable-agent views', () => {
       safeJson,
       title: 'Emploi du temps — Ma session',
       timetableAgentCss: true,
+      school: { id: 'sch-demo', name: 'École Demo' },
       session: { id: 'sess-1', name: 'Ma session', status: 'GENERATED', schoolYear: '2025-2026' },
       output,
       timetableGrids: buildGridFromOutput(output),
       gridViewMode: 'class',
       input: emptyInput(),
     });
-    expect(html).toContain('Emploi du temps — Ma session');
-    expect(html).toContain('ta-timetable-grid');
+    expect(html).toContain('Emploi du temps — CM2');
+    expect(html).toContain('École Demo');
+    expect(html).toContain('class="edt-grid"');
+    expect(html).toContain('edt-cell-matiere');
     expect(html).toContain('ANGLAIS');
+    expect(html).toContain('edt-cell-salle">Salle 1</div>');
+    expect(html).not.toContain('Salle Salle');
     expect(html).toContain('Par classe');
+    expect(html).toContain('timetable-agent.css?v=2');
     expect(html).toContain('Export JSON (technique)');
     expect(html).not.toMatch(/<pre[^>]*>\s*\{\s*"classes"/);
   });
@@ -171,7 +177,7 @@ describe('timetable-agent views', () => {
       defaultConstraints: {},
       skipped: 0,
     });
-    expect(html).toContain('ta-timetable-grid');
+    expect(html).toContain('class="edt-grid"');
     expect(html).toContain('Par professeur');
     expect(html).toContain('Aperçu emploi du temps');
   });
