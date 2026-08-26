@@ -1,5 +1,5 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
-<% const content = include('timetable-agent/show', { _inLayout: true }); %>
+<% const content = include('show', { _inLayout: true }); %>
 <%- include('../../layouts/schoolLayout', { body: content, title: title || session.name, user, modules, timetableAgentCss: true }) %>
 <% } else { %>
 <%

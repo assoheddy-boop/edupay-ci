@@ -1,5 +1,5 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
-<% const content = include('timetable-agent/index', { _inLayout: true }); %>
+<% const content = include('index', { _inLayout: true }); %>
 <%- include('../../layouts/schoolLayout', { body: content, title: title || 'Assistant emploi du temps', user, modules, timetableAgentCss: true }) %>
 <% } else { %>
 <div class="page-header">

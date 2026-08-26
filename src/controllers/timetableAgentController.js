@@ -22,24 +22,34 @@ async function loadSession(id, schoolId) {
 }
 
 async function index(req, res) {
-  const school = schoolFromUser(req.user);
-  if (!school) return res.redirect('/auth/login');
+  try {
+    const school = schoolFromUser(req.user);
+    if (!school) return res.redirect('/auth/login');
 
-  const sessions = await prisma.timetableGenerationSession.findMany({
-    where: { schoolId: school.id },
-    orderBy: { updatedAt: 'desc' },
-    take: 50,
-  });
+    const sessions = await prisma.timetableGenerationSession.findMany({
+      where: { schoolId: school.id },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    });
 
-  res.render('school/timetable-agent/index', {
-    title: 'Assistant emploi du temps',
-    timetableAgentCss: true,
-    school,
-    sessions,
-    statusLabels: STATUS_LABELS,
-    success: req.query.success || null,
-    error: req.query.error || null,
-  });
+    res.render('school/timetable-agent/index', {
+      title: 'Assistant emploi du temps',
+      timetableAgentCss: true,
+      user: req.user,
+      modules: res.locals.modules,
+      school,
+      sessions,
+      statusLabels: STATUS_LABELS,
+      success: req.query.success || null,
+      error: req.query.error || null,
+    });
+  } catch (err) {
+    console.error('[timetable-agent] index failed:', err?.message || err);
+    return res.status(500).render('error', {
+      message: 'Impossible d\'afficher l\'assistant emploi du temps. Réessayez ou contactez le support.',
+      user: req.user,
+    });
+  }
 }
 
 async function newSession(req, res) {
