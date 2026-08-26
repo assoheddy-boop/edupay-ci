@@ -35,6 +35,8 @@ const {
   detectConflicts,
   applyToDatabase,
   buildSlots,
+  buildGridFromOutput,
+  subjectColorIndex,
   parseInputFromForm,
   emptyInput,
 } = require('../src/services/timetableAgent');
@@ -197,5 +199,47 @@ describe('timetableAgent', () => {
     const result = await applyToDatabase('school-1', output);
     expect(result.ok).toBe(false);
     expect(result.error).toBe('conflicts');
+  });
+
+  test('buildGridFromOutput builds class grid with days and time slots', () => {
+    const output = generateTimetable(SAMPLE_INPUT).output;
+    const grids = buildGridFromOutput(output);
+    expect(grids.hasData).toBe(true);
+    expect(grids.byClass).toHaveLength(1);
+    expect(grids.byClass[0].name).toBe('CE2 A');
+    expect(grids.byClass[0].days).toContain('Lundi');
+    expect(grids.byClass[0].timeSlots.length).toBeGreaterThan(0);
+    const cellKey = `${grids.byClass[0].timeSlots[0]}|Lundi`;
+    expect(grids.byClass[0].cells[cellKey]?.matiere).toBe('Maths');
+  });
+
+  test('buildGridFromOutput supports legacy eleves key', () => {
+    const grids = buildGridFromOutput({
+      eleves: [{
+        classe: 'CM2',
+        emploi_du_temps: [{
+          jour: 'Lundi', heure: '07:30', heure_fin: '08:30', matiere: 'ANGLAIS', professeur: 'ASSOH', salle: 'Salle 1',
+        }],
+      }],
+      professeurs: [],
+    });
+    expect(grids.byClass).toHaveLength(1);
+    expect(grids.byClass[0].name).toBe('CM2');
+    expect(grids.hasData).toBe(true);
+  });
+
+  test('buildGridFromOutput builds teacher view with classe in cells', () => {
+    const output = generateTimetable(SAMPLE_INPUT).output;
+    const grids = buildGridFromOutput(output);
+    expect(grids.byTeacher).toHaveLength(1);
+    expect(grids.byTeacher[0].name).toBe('Koné Awa');
+    const cell = Object.values(grids.byTeacher[0].cells)[0];
+    expect(cell.classe).toBe('CE2 A');
+  });
+
+  test('subjectColorIndex is stable for same matiere', () => {
+    expect(subjectColorIndex('Maths')).toBe(subjectColorIndex('Maths'));
+    expect(subjectColorIndex('Maths')).toBeGreaterThanOrEqual(0);
+    expect(subjectColorIndex('Maths')).toBeLessThan(12);
   });
 });

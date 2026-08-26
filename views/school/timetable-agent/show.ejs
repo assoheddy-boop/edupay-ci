@@ -26,7 +26,7 @@
   <div class="btn-group">
     <a href="/school/timetable-agent" class="btn btn-outline">← Sessions</a>
     <% if (output) { %>
-      <a href="/school/timetable-agent/<%= session.id %>/preview" class="btn btn-outline" target="_blank">Aperçu JSON</a>
+      <a href="/school/timetable-agent/<%= session.id %>/preview" class="btn btn-outline" target="_blank">Aperçu emploi du temps</a>
     <% } %>
   </div>
 </div>
@@ -152,48 +152,16 @@
         </div>
       <% } %>
 
-      <div class="ta-results-grid">
-        <div class="ta-result-card">
-          <h3>Par classe</h3>
-          <% (output.classes || []).forEach(bloc => { %>
-            <details style="padding:0.5rem 0.85rem">
-              <summary><strong><%= bloc.classe %></strong> (<%= (bloc.emploi_du_temps || []).length %> créneaux)</summary>
-              <table class="ta-slot-table">
-                <thead><tr><th>Jour</th><th>Heure</th><th>Matière</th><th>Prof.</th><th>Salle</th></tr></thead>
-                <tbody>
-                  <% (bloc.emploi_du_temps || []).forEach(slot => { %>
-                    <tr>
-                      <td><%= slot.jour %></td>
-                      <td><%= slot.heure %><% if (slot.heure_fin) { %>–<%= slot.heure_fin %><% } %></td>
-                      <td><%= slot.matiere %></td>
-                      <td><%= slot.professeur %></td>
-                      <td><%= slot.salle %></td>
-                    </tr>
-                  <% }) %>
-                </tbody>
-              </table>
-            </details>
-          <% }) %>
-        </div>
-
-        <div class="ta-result-card">
-          <h3>Par professeur</h3>
-          <% (output.professeurs || []).forEach(bloc => { %>
-            <details style="padding:0.5rem 0.85rem">
-              <summary><strong><%= bloc.professeur %></strong></summary>
-              <table class="ta-slot-table">
-                <tbody>
-                  <% (bloc.emploi_du_temps || []).forEach(slot => { %>
-                    <tr>
-                      <td><%= slot.jour %> <%= slot.heure %></td>
-                      <td><%= slot.matiere %> — <%= slot.classe || '' %></td>
-                    </tr>
-                  <% }) %>
-                </tbody>
-              </table>
-            </details>
-          <% }) %>
-        </div>
+      <div class="ta-results-panel">
+        <%- include('_timetableGrids', {
+          timetableGrids,
+          gridViewMode: 'class',
+          gridUid: 'results-grid',
+          showJsonExport: false,
+          output,
+          session,
+          safeJson,
+        }) %>
       </div>
 
       <% if (session.status !== 'APPLIED' && (!output.conflits || !output.conflits.length)) { %>

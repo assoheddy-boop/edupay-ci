@@ -6,6 +6,7 @@ const {
   generateTimetable,
   applyToDatabase,
   parseInputFromForm,
+  buildGridFromOutput,
   STATUS_LABELS,
   VALID_DAYS,
   DEFAULT_CONSTRAINTS,
@@ -84,6 +85,7 @@ async function show(req, res) {
   const step = req.query.step || 'contraintes';
 
   const skipped = req.query.skipped ? Number(req.query.skipped) : 0;
+  const timetableGrids = output ? buildGridFromOutput(output) : null;
 
   res.render('school/timetable-agent/show', {
     title: session.name,
@@ -92,6 +94,7 @@ async function show(req, res) {
     session,
     input,
     output,
+    timetableGrids,
     validation,
     step,
     statusLabels: STATUS_LABELS,
@@ -224,15 +227,19 @@ async function preview(req, res) {
   if (!session) return res.status(404).json({ ok: false, error: 'Session introuvable' });
 
   if (req.accepts('html')) {
-    return   res.render('school/timetable-agent/preview', {
-    title: `Aperçu — ${session.name}`,
-    timetableAgentCss: true,
-    school,
-    session,
-    output: session.outputJson,
-    input: normalizeInput(session.inputJson || emptyInput()),
-    statusLabels: STATUS_LABELS,
-  });
+    const gridViewMode = req.query.view === 'teacher' ? 'teacher' : 'class';
+    return res.render('school/timetable-agent/preview', {
+      title: `Emploi du temps — ${session.name}`,
+      timetableAgentCss: true,
+      school,
+      session,
+      output: session.outputJson,
+      timetableGrids: session.outputJson ? buildGridFromOutput(session.outputJson) : null,
+      gridViewMode,
+      input: normalizeInput(session.inputJson || emptyInput()),
+      statusLabels: STATUS_LABELS,
+      safeJson: require('../utils/safeJson').safeJson,
+    });
   }
 
   return res.json({

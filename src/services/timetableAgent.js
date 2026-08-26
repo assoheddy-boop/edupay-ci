@@ -455,6 +455,108 @@ async function applyToDatabase(schoolId, output, { schoolYear, replaceExisting =
   };
 }
 
+const SUBJECT_COLOR_COUNT = 12;
+
+function formatTimeSlotLabel(heure, heureFin) {
+  if (heureFin && heureFin !== heure) return `${heure} - ${heureFin}`;
+  return heure || '';
+}
+
+function timeSlotSortKey(label) {
+  const start = (label || '').split(' - ')[0]?.trim();
+  const minutes = parseTime(start);
+  return minutes != null ? minutes : 0;
+}
+
+function sortTimeSlotLabels(slots) {
+  return [...new Set(slots)].sort((a, b) => timeSlotSortKey(a) - timeSlotSortKey(b));
+}
+
+function sortDayLabels(days) {
+  const order = Object.fromEntries(VALID_DAYS.map((d, i) => [d, i]));
+  return [...new Set(days)].sort((a, b) => (order[a] ?? 99) - (order[b] ?? 99));
+}
+
+function subjectColorIndex(name) {
+  let hash = 0;
+  const s = String(name || '').toUpperCase();
+  for (let i = 0; i < s.length; i += 1) {
+    hash = ((hash << 5) - hash) + s.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % SUBJECT_COLOR_COUNT;
+}
+
+function buildGridFromSlots(slots = []) {
+  const daysSet = new Set();
+  const timesSet = new Set();
+  const cells = {};
+
+  for (const slot of slots) {
+    if (!slot?.jour || !slot?.heure) continue;
+    const day = slot.jour;
+    const timeKey = formatTimeSlotLabel(slot.heure, slot.heure_fin);
+    daysSet.add(day);
+    timesSet.add(timeKey);
+    cells[`${timeKey}|${day}`] = {
+      matiere: slot.matiere || '',
+      professeur: slot.professeur || '',
+      salle: slot.salle || '',
+      classe: slot.classe || '',
+      colorIndex: subjectColorIndex(slot.matiere),
+    };
+  }
+
+  return {
+    days: sortDayLabels([...daysSet]),
+    timeSlots: sortTimeSlotLabels([...timesSet]),
+    cells,
+  };
+}
+
+function buildGridFromOutput(outputJson = {}) {
+  const classBlocks = (outputJson.classes?.length
+    ? outputJson.classes
+    : (outputJson.eleves || []).map((e) => ({ classe: e.classe, emploi_du_temps: e.emploi_du_temps || [] })));
+
+  const byClass = classBlocks.map((bloc) => {
+    const grid = buildGridFromSlots(bloc.emploi_du_temps || []);
+    return {
+      name: bloc.classe,
+      label: bloc.classe,
+      slotCount: (bloc.emploi_du_temps || []).length,
+      ...grid,
+    };
+  });
+
+  const byTeacher = (outputJson.professeurs || []).map((bloc) => {
+    const grid = buildGridFromSlots(bloc.emploi_du_temps || []);
+    return {
+      name: bloc.professeur,
+      label: bloc.professeur,
+      slotCount: (bloc.emploi_du_temps || []).length,
+      ...grid,
+    };
+  });
+
+  const allDays = sortDayLabels([
+    ...byClass.flatMap((g) => g.days),
+    ...byTeacher.flatMap((g) => g.days),
+  ]);
+  const allTimeSlots = sortTimeSlotLabels([
+    ...byClass.flatMap((g) => g.timeSlots),
+    ...byTeacher.flatMap((g) => g.timeSlots),
+  ]);
+
+  return {
+    byClass,
+    byTeacher,
+    days: allDays.length ? allDays : VALID_DAYS.slice(0, 5),
+    timeSlots: allTimeSlots,
+    hasData: byClass.some((g) => g.slotCount > 0) || byTeacher.some((g) => g.slotCount > 0),
+  };
+}
+
 function parseInputFromForm(body) {
   let input = emptyInput();
   try {
@@ -472,10 +574,14 @@ module.exports = {
   DEFAULT_CONSTRAINTS,
   STATUS_LABELS,
   VALID_DAYS,
+  SUBJECT_COLOR_COUNT,
   emptyInput,
   normalizeInput,
   validateInput,
   buildSlots,
+  buildGridFromOutput,
+  buildGridFromSlots,
+  subjectColorIndex,
   generateTimetable,
   detectConflicts,
   applyToDatabase,

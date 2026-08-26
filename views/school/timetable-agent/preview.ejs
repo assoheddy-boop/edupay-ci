@@ -1,28 +1,29 @@
 <% if (typeof _inLayout === 'undefined' || !_inLayout) { %>
 <% const content = include('preview', { _inLayout: true }); %>
-<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Aperçu', user, modules, timetableAgentCss: true }) %>
+<%- include('../../layouts/schoolLayout', { body: content, title: title || 'Emploi du temps', user, modules, timetableAgentCss: true }) %>
 <% } else { %>
-<div class="page-header">
+<div class="page-header ta-preview-header">
   <div>
-    <h1>Aperçu — <%= session.name %></h1>
-    <p class="page-sub">Export JSON · <%= statusLabels[session.status] || session.status %></p>
+    <h1>Emploi du temps — <%= session.name %></h1>
+    <p class="page-sub"><%= statusLabels[session.status] || session.status %> · <%= session.schoolYear || '' %></p>
   </div>
-  <a href="/school/timetable-agent/<%= session.id %>?step=resultats" class="btn btn-outline">← Retour</a>
+  <div class="btn-group">
+    <button type="button" class="btn btn-outline" onclick="window.print()">Imprimer</button>
+    <a href="/school/timetable-agent/<%= session.id %>?step=resultats" class="btn btn-outline">← Retour</a>
+  </div>
 </div>
 
 <% if (!output) { %>
   <div class="alert alert-info">Aucun résultat généré.</div>
-<% } else {
-  const hasData = (output.classes || []).some(c => (c.emploi_du_temps || []).length)
-    || (output.professeurs || []).some(p => (p.emploi_du_temps || []).length);
-%>
-  <% if (!hasData) { %>
-    <div class="alert alert-warning">
-      <strong>Données insuffisantes</strong> — la génération n'a produit aucun créneau.
-      <a href="/school/timetable-agent/<%= session.id %>?step=classes">Compléter les classes et matières</a>,
-      enregistrez le brouillon, puis regénérez.
-    </div>
-  <% } %>
-  <pre style="background:#f8fafc;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;max-height:70vh"><%= JSON.stringify(output, null, 2) %></pre>
+<% } else { %>
+  <%- include('_timetableGrids', {
+    timetableGrids,
+    gridViewMode: gridViewMode || 'class',
+    gridUid: 'preview-grid',
+    showJsonExport: true,
+    output,
+    session,
+    safeJson,
+  }) %>
 <% } %>
 <% } %>
