@@ -13,6 +13,7 @@ const CABEL_SCHOOL = {
   address: 'Cocody, Abidjan',
   logoFile: 'public/img/schools/cabel-cocody.png',
   secondaryLogoFile: 'public/img/schools/cabel-cocody.png',
+  publicBanner: '/img/schools/cabel-cocody-cover.jpg',
   waveNumber: null,
   omNumber: null,
   menetAgrement: null,
