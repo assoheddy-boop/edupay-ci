@@ -35,6 +35,8 @@ const {
   detectConflicts,
   applyToDatabase,
   buildSlots,
+  parseInputFromForm,
+  emptyInput,
 } = require('../src/services/timetableAgent');
 
 const SAMPLE_INPUT = {
@@ -88,6 +90,42 @@ describe('timetableAgent', () => {
     const slots = buildSlots(SAMPLE_INPUT.contraintes_ecole);
     expect(slots.length).toBe(12);
     expect(slots[0]).toMatchObject({ day: 'Lundi', startTime: '08:00', endTime: '09:00' });
+  });
+
+  test('validateInput rejects empty classes', () => {
+    const empty = { ...SAMPLE_INPUT, classes: [] };
+    const result = validateInput(empty);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => /classe/i.test(e))).toBe(true);
+  });
+
+  test('validateInput rejects class without matieres', () => {
+    const bad = {
+      ...SAMPLE_INPUT,
+      classes: [{ nom: 'CE2 A', niveau: 'CE2', matieres: [] }],
+    };
+    const result = validateInput(bad);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => /matière/i.test(e))).toBe(true);
+  });
+
+  test('generateTimetable rejects empty input', () => {
+    const result = generateTimetable(emptyInput());
+    expect(result.ok).toBe(false);
+    expect(result.errors?.length).toBeGreaterThan(0);
+  });
+
+  test('parseInputFromForm returns emptyInput when inputJson missing', () => {
+    const parsed = parseInputFromForm({});
+    expect(parsed.ok).toBe(true);
+    expect(parsed.input.classes).toEqual([]);
+  });
+
+  test('parseInputFromForm parses valid JSON body', () => {
+    const parsed = parseInputFromForm({ inputJson: JSON.stringify(SAMPLE_INPUT) });
+    expect(parsed.ok).toBe(true);
+    expect(parsed.input.classes).toHaveLength(1);
+    expect(parsed.input.classes[0].nom).toBe('CE2 A');
   });
 
   test('generateTimetable produces valid JSON structure', () => {

@@ -12,7 +12,17 @@
 
 <% if (!output) { %>
   <div class="alert alert-info">Aucun résultat généré.</div>
-<% } else { %>
+<% } else {
+  const hasData = (output.classes || []).some(c => (c.emploi_du_temps || []).length)
+    || (output.professeurs || []).some(p => (p.emploi_du_temps || []).length);
+%>
+  <% if (!hasData) { %>
+    <div class="alert alert-warning">
+      <strong>Données insuffisantes</strong> — la génération n'a produit aucun créneau.
+      <a href="/school/timetable-agent/<%= session.id %>?step=classes">Compléter les classes et matières</a>,
+      enregistrez le brouillon, puis regénérez.
+    </div>
+  <% } %>
   <pre style="background:#f8fafc;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;max-height:70vh"><%= JSON.stringify(output, null, 2) %></pre>
 <% } %>
 <% } %>

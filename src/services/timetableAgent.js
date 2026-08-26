@@ -91,6 +91,20 @@ function validateInput(data) {
   const slots = buildSlots(c);
   if (!slots.length && !errors.length) errors.push('Aucun créneau horaire généré avec ces contraintes.');
 
+  if (!input.classes.length) {
+    errors.push('Ajoutez au moins une classe avec des matières.');
+  }
+
+  let matiereCount = 0;
+  for (const cls of input.classes) {
+    for (const mat of cls.matieres || []) {
+      if (mat.matiere?.trim()) matiereCount += 1;
+    }
+  }
+  if (input.classes.length && matiereCount === 0) {
+    errors.push('Chaque classe doit contenir au moins une matière.');
+  }
+
   for (const salle of input.salles) {
     if (!salle.nom?.trim()) warnings.push('Une salle sans nom sera ignorée.');
   }
@@ -305,13 +319,24 @@ function generateTimetable(rawInput) {
     }
   }
 
+  const creneaux = classes.reduce((n, c) => n + c.emploi_du_temps.length, 0);
+  if (!classes.length || creneaux === 0) {
+    return {
+      ok: false,
+      errors: [
+        'Données insuffisantes pour générer un emploi du temps. Vérifiez les classes, matières et professeurs, puis enregistrez le brouillon avant de générer.',
+      ],
+      warnings: validation.warnings,
+    };
+  }
+
   return {
     ok: true,
     output,
     warnings: validation.warnings,
     stats: {
       classes: classes.length,
-      creneaux: classes.reduce((n, c) => n + c.emploi_du_temps.length, 0),
+      creneaux,
       conflits: output.conflits.length,
       unplaced: unplaced.length,
     },

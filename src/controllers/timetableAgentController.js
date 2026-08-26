@@ -143,9 +143,22 @@ async function runGenerate(req, res) {
   }
 
   let input = normalizeInput(session.inputJson || emptyInput());
-  if (req.body.inputJson) {
+  if (req.body.inputJson != null && String(req.body.inputJson).trim() !== '') {
     const parsed = parseInputFromForm(req.body);
-    if (parsed.ok) input = parsed.input;
+    if (!parsed.ok) {
+      return res.redirect(`/school/timetable-agent/${session.id}?error=${encodeURIComponent(parsed.message)}&step=generer`);
+    }
+    input = parsed.input;
+  }
+
+  const preValidation = validateInput(input);
+  if (!preValidation.ok) {
+    await prisma.timetableGenerationSession.update({
+      where: { id: session.id },
+      data: { inputJson: input, updatedAt: new Date() },
+    });
+    const errMsg = preValidation.errors.join(' ');
+    return res.redirect(`/school/timetable-agent/${session.id}?error=${encodeURIComponent(errMsg)}&step=generer`);
   }
 
   const result = generateTimetable(input);

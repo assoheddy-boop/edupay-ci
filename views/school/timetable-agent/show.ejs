@@ -130,7 +130,15 @@
   <div class="ta-panel <%= activeStep === 'resultats' ? 'active' : '' %>" data-panel="resultats">
     <% if (!output) { %>
       <div class="alert alert-info">Générez d'abord l'emploi du temps (étape « Générer »).</div>
-    <% } else { %>
+    <% } else {
+      const hasSlots = (output.classes || []).some(c => (c.emploi_du_temps || []).length);
+    %>
+      <% if (!hasSlots) { %>
+        <div class="alert alert-warning">
+          <strong>Données insuffisantes</strong> — aucun créneau n'a été placé.
+          <a href="?step=classes">Retour aux classes & matières</a>, enregistrez le brouillon, puis regénérez.
+        </div>
+      <% } %>
       <% if (output.conflits && output.conflits.length) { %>
         <div class="ta-conflicts">
           <strong>Conflits (<%= output.conflits.length %>)</strong>
@@ -253,7 +261,7 @@
       const disposText = DAYS.map(d => {
         const slots = (dispos[d] || []).join(', ');
         return `${d}: ${slots}`;
-      }).join('\\n');
+      }).join('\n');
       return `
       <div class="ta-row" data-prof="${i}">
         <div class="grid-3" style="display:grid;gap:0.65rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
@@ -304,7 +312,7 @@
   function readProfs() {
     data.professeurs = [...document.querySelectorAll('#profList [data-prof]')].map(row => {
       const dispos = {};
-      const text = row.querySelector('.p-dispos').value.split('\\n');
+      const text = row.querySelector('.p-dispos').value.split('\n');
       text.forEach(line => {
         const idx = line.indexOf(':');
         if (idx < 0) return;
@@ -347,7 +355,7 @@
     if (field) field.value = json;
   }
 
-  document.getElementById('taForm')?.addEventListener('submit', () => syncJson());
+  document.getElementById('addSalle')?.addEventListener('click', () => {
     data.salles = data.salles || [];
     data.salles.push({ nom: '', type: 'classe', capacite: 30 });
     renderSalles();

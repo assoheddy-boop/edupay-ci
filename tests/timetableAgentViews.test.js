@@ -30,6 +30,40 @@ describe('timetable-agent views', () => {
     expect(html).toContain('Nouvelle session');
   });
 
+  test('show.ejs script includes addSalle handler', () => {
+    const render = compileView('school/timetable-agent/show.ejs');
+    const html = render({
+      ...baseLocals,
+      safeJson,
+      title: 'Ma session',
+      timetableAgentCss: true,
+      csrfToken: 'test-csrf',
+      session: { id: 'sess-1', name: 'Ma session', status: 'DRAFT', schoolYear: '2025-2026' },
+      input: emptyInput(),
+      output: null,
+      validation: { errors: [], warnings: [], slotCount: 0, totalDemand: 0 },
+      step: 'contraintes',
+      validDays: ['LUNDI'],
+      defaultConstraints: {},
+      skipped: 0,
+    });
+    expect(html).toContain("getElementById('addSalle')");
+    expect(html).not.toMatch(/addEventListener\('submit'[^)]*\)\s*;\s*data\.salles/);
+  });
+
+  test('preview.ejs shows insufficient data warning when empty', () => {
+    const render = compileView('school/timetable-agent/preview.ejs');
+    const html = render({
+      ...baseLocals,
+      title: 'Aperçu',
+      timetableAgentCss: true,
+      session: { id: 'sess-1', name: 'Ma session', status: 'GENERATED' },
+      output: { classes: [], professeurs: [], eleves: [], conflits: [], suggestions: [], unplaced: [] },
+      input: emptyInput(),
+    });
+    expect(html).toContain('Données insuffisantes');
+  });
+
   test('show.ejs renders without include errors', () => {
     const render = compileView('school/timetable-agent/show.ejs');
     const html = render({
